@@ -3,10 +3,11 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/toaster";
+import { KernelProvider } from "@/components/kernel/KernelProvider";
 
 export const metadata: Metadata = {
-  title: 'MetaScale | AI-Powered Ad Automation',
-  description: 'Precision ad scaling for Meta advertising platforms',
+  title: 'Sovereign OS | Deterministic Infrastructure',
+  description: 'Mission-critical operating system for civic and financial infrastructure',
 };
 
 export default function RootLayout({
@@ -22,10 +23,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased bg-background text-foreground">
-        <SidebarProvider>
-          {children}
-        </SidebarProvider>
-        <Toaster />
+        <KernelProvider>
+          <SidebarProvider>
+            {children}
+          </SidebarProvider>
+          <Toaster />
+        </KernelProvider>
       </body>
     </html>
   );
