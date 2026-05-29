@@ -12,7 +12,8 @@ import {
   BrainCircuit,
   Bell,
   Users,
-  Terminal
+  Terminal,
+  Database
 } from "lucide-react";
 import {
   Sidebar,
@@ -31,20 +32,21 @@ import { usePathname } from "next/navigation";
 
 const mainNav = [
   { icon: LayoutDashboard, label: "Command Center", href: "/" },
-  { icon: Layers, label: "Multi-Platform Ads", href: "/campaigns" },
-  { icon: BarChart3, label: "Intelligence & Forecast", href: "/analytics" },
+  { icon: Layers, label: "Campaign Operations", href: "/campaigns" },
+  { icon: BarChart3, label: "Predictive Analytics", href: "/analytics" },
 ];
 
 const aiNav = [
+  { icon: Terminal, label: "Intelligence Chat (RAG)", href: "/intelligence" },
   { icon: Sparkles, label: "AI Creative Studio", href: "/ai-tools/copywriter" },
-  { icon: BrainCircuit, label: "Optimization Engine", href: "/ai-tools/optimization" },
-  { icon: Terminal, label: "Marketing Insights", href: "/intelligence" },
+  { icon: BrainCircuit, label: "Autonomous Optimization", href: "/ai-tools/optimization" },
+  { icon: Target, label: "Targeting Intelligence", href: "/ai-tools/targeting" },
 ];
 
-const agencyNav = [
+const knowledgeNav = [
+  { icon: Database, label: "Knowledge Repository", href: "/library" },
   { icon: Users, label: "Agency Clients", href: "/clients" },
   { icon: Bell, label: "Alert Center", href: "/notifications" },
-  { icon: ImageIcon, label: "Global Asset Library", href: "/library" },
 ];
 
 export function AppSidebar() {
@@ -106,10 +108,10 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Management</SidebarGroupLabel>
+          <SidebarGroupLabel>Knowledge & Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {agencyNav.map((item) => (
+              {knowledgeNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
@@ -132,7 +134,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="Settings">
               <Settings className="h-4 w-4" />
-              <span>System Config</span>
+              <span>System Configuration</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
