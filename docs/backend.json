@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Campaign": {
@@ -24,7 +25,7 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
-        "role": { "type": "string", "enum": ["marketing", "sales", "analytics", "research", "forecasting", "executive"] },
+        "role": { "type": "string", "enum": ["marketing", "sales", "analytics", "research", "forecasting", "executive", "finance", "operations", "risk"] },
         "status": { "type": "string", "enum": ["idle", "executing", "completed", "error"] },
         "lastRun": { "type": "string", "format": "date-time" },
         "performanceScore": { "type": "number" }
@@ -38,47 +39,48 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "email": { "type": "string" },
-        "ltv": { "type": "number", "description": "Lifetime Value" },
-        "cac": { "type": "number", "description": "Customer Acquisition Cost" },
+        "ltv": { "type": "number" },
+        "cac": { "type": "number" },
         "segment": { "type": "string" },
-        "churnRisk": { "type": "number" },
-        "lastInteraction": { "type": "string", "format": "date-time" }
+        "churnRisk": { "type": "number" }
       }
     },
-    "Sale": {
-      "title": "Revenue Transaction",
-      "description": "Sales data for revenue operations.",
+    "Finance": {
+      "title": "Financial Record",
+      "description": "Corporate financial data for Sovereign SEIP.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "amount": { "type": "number" },
-        "date": { "type": "string", "format": "date-time" },
-        "customerId": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "closed", "lost"] },
-        "source": { "type": "string" }
+        "category": { "type": "string", "enum": ["revenue", "expense", "opex", "capex"] },
+        "actual": { "type": "number" },
+        "projected": { "type": "number" },
+        "variance": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" }
       }
     },
-    "Objective": {
-      "title": "Corporate Objective",
-      "description": "Strategic goal for business growth.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "progress": { "type": "number" },
-        "targetValue": { "type": "number" },
-        "deadline": { "type": "string", "format": "date-time" }
-      }
-    },
-    "Asset": {
-      "title": "Creative Asset",
-      "description": "Marketing asset synced from Google Drive.",
+    "OperationalKPI": {
+      "title": "Operational Metric",
+      "description": "Real-time process performance indicator.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
-        "driveFileId": { "type": "string" },
-        "clientId": { "type": "string" }
+        "value": { "type": "number" },
+        "target": { "type": "number" },
+        "status": { "type": "string", "enum": ["optimal", "warning", "critical"] }
+      }
+    },
+    "Risk": {
+      "title": "Enterprise Risk",
+      "description": "Strategic, financial, or operational risks.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string", "enum": ["strategic", "financial", "operational", "compliance"] },
+        "impact": { "type": "number" },
+        "probability": { "type": "number" },
+        "mitigationPlan": { "type": "string" }
       }
     }
   },
@@ -87,10 +89,10 @@
   },
   "firestore": {
     "/campaigns/{campaignId}": { "schema": "Campaign", "description": "Global campaigns." },
-    "/agents/{agentId}": { "schema": "Agent", "description": "Specialized enterprise agents." },
-    "/customers/{customerId}": { "schema": "Customer", "description": "360 Customer Hub." },
-    "/sales/{saleId}": { "schema": "Sale", "description": "Revenue stream logs." },
-    "/objectives/{objectiveId}": { "schema": "Objective", "description": "Strategic board objectives." },
-    "/assets/{assetId}": { "schema": "Asset", "description": "Creative library." }
+    "/agents/{agentId}": { "schema": "Agent", "description": "Sovereign AI Council." },
+    "/customers/{customerId}": { "schema": "Customer", "description": "Customer Hub." },
+    "/finance/{financeId}": { "schema": "Finance", "description": "Financial records." },
+    "/operations/{opId}": { "schema": "OperationalKPI", "description": "Operational Twin metrics." },
+    "/risks/{riskId}": { "schema": "Risk", "description": "Risk Observatory." }
   }
 }

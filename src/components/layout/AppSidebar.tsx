@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -8,7 +9,6 @@ import {
   Settings,
   BarChart3,
   BrainCircuit,
-  Bell,
   Users,
   Terminal,
   Database,
@@ -16,7 +16,10 @@ import {
   ShieldAlert,
   DollarSign,
   TrendingUp,
-  Briefcase
+  Briefcase,
+  Activity,
+  ShieldCheck,
+  Cpu
 } from "lucide-react";
 import {
   Sidebar,
@@ -34,24 +37,29 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const mainNav = [
-  { icon: LayoutDashboard, label: "Global Command", href: "/" },
+  { icon: LayoutDashboard, label: "Digital Boardroom", href: "/" },
+  { icon: DollarSign, label: "Finance Intel", href: "/finance" },
+  { icon: Activity, label: "Operational Twin", href: "/operations" },
+  { icon: ShieldAlert, label: "Risk Observatory", href: "/risk" },
+];
+
+const executiveNav = [
+  { icon: Cpu, label: "AI Council", href: "/agents" },
+  { icon: Terminal, label: "Sovereign Chat", href: "/intelligence" },
+  { icon: Briefcase, label: "Board Objectives", href: "/strategy" },
+];
+
+const growthNav = [
   { icon: BarChart3, label: "Revenue Ops", href: "/revenue" },
   { icon: Users, label: "Customer 360", href: "/customers" },
+  { icon: Layers, label: "Campaign Hub", href: "/campaigns" },
+  { icon: Database, label: "Knowledge Bank", href: "/library" },
 ];
 
-const aiNav = [
-  { icon: Rocket, label: "Agent Hub", href: "/agents" },
-  { icon: Terminal, label: "Intelligence Chat", href: "/intelligence" },
+const toolsNav = [
   { icon: Sparkles, label: "Creative Studio", href: "/ai-tools/copywriter" },
   { icon: BrainCircuit, label: "Strategy Engine", href: "/ai-tools/optimization" },
-  { icon: Target, label: "Market Intelligence", href: "/ai-tools/targeting" },
-];
-
-const strategyNav = [
-  { icon: Briefcase, label: "Board Objectives", href: "/strategy" },
-  { icon: Database, label: "Knowledge Assets", href: "/library" },
-  { icon: Layers, label: "Campaign Hub", href: "/campaigns" },
-  { icon: ShieldAlert, label: "War Room Alerts", href: "/notifications" },
+  { icon: Target, label: "Market Intel", href: "/ai-tools/targeting" },
 ];
 
 export function AppSidebar() {
@@ -62,23 +70,19 @@ export function AppSidebar() {
       <SidebarHeader className="p-6">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center blue-glow">
-            <span className="font-headline font-bold text-primary-foreground">E</span>
+            <span className="font-headline font-bold text-primary-foreground">S</span>
           </div>
-          <span className="font-headline font-bold text-xl tracking-tight text-white">EGIOS</span>
+          <span className="font-headline font-bold text-xl tracking-tight text-white">SEIP</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Enterprise Growth</SidebarGroupLabel>
+          <SidebarGroupLabel>Sovereign Core</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                    tooltip={item.label}
-                  >
+                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
                     <Link href={item.href} className="flex items-center gap-3">
                       <item.icon className="h-4 w-4" />
                       <span>{item.label}</span>
@@ -91,16 +95,12 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Autonomous Intelligence</SidebarGroupLabel>
+          <SidebarGroupLabel>Executive Council</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {aiNav.map((item) => (
+              {executiveNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                    tooltip={item.label}
-                  >
+                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
                     <Link href={item.href} className="flex items-center gap-3">
                       <item.icon className="h-4 w-4" />
                       <span>{item.label}</span>
@@ -113,16 +113,30 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Governance & Ops</SidebarGroupLabel>
+          <SidebarGroupLabel>Growth & Ops</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {strategyNav.map((item) => (
+              {growthNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                    tooltip={item.label}
-                  >
+                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
+                    <Link href={item.href} className="flex items-center gap-3">
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Intelligence Tools</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {toolsNav.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
                     <Link href={item.href} className="flex items-center gap-3">
                       <item.icon className="h-4 w-4" />
                       <span>{item.label}</span>
@@ -139,7 +153,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="Settings">
               <Settings className="h-4 w-4" />
-              <span>System Config</span>
+              <span>Sovereign Settings</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
