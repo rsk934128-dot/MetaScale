@@ -1,72 +1,50 @@
 
 {
   "entities": {
-    "Campaign": {
-      "title": "Campaign",
-      "description": "Cross-platform marketing campaign.",
+    "TrustProfile": {
+      "title": "Continuous Trust Profile",
+      "description": "Dynamic identity and behavioral trust assessment.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "name": { "type": "string" },
-        "platform": { "type": "string", "enum": ["meta", "google", "tiktok", "linkedin"] },
-        "status": { "type": "string", "enum": ["active", "paused", "archived", "scheduled"] },
-        "objective": { "type": "string" },
-        "totalBudget": { "type": "number" },
-        "spent": { "type": "number" },
-        "startDate": { "type": "string", "format": "date-time" },
-        "clientId": { "type": "string" }
-      },
-      "required": ["name", "platform", "status"]
-    },
-    "LegalEntity": {
-      "title": "Legal Entity (Layer 1)",
-      "description": "Enterprise KYB and registration details.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "companyName": { "type": "string" },
-        "registrationNumber": { "type": "string" },
-        "jurisdiction": { "type": "string" },
-        "status": { "type": "string", "enum": ["verified", "pending", "action-needed", "expired"] },
-        "progress": { "type": "number" }
+        "entityId": { "type": "string" },
+        "trustScore": { "type": "number", "minimum": 0, "maximum": 100 },
+        "riskDimensions": {
+          "type": "object",
+          "properties": {
+            "identity": { "type": "number" },
+            "financial": { "type": "number" },
+            "network": { "type": "number" },
+            "regulatory": { "type": "number" }
+          }
+        },
+        "authorizationTier": { "type": "string", "enum": ["full", "limited", "manual_review", "hard_block"] },
+        "lastEvaluated": { "type": "string", "format": "date-time" }
       }
     },
-    "UBO": {
-      "title": "Beneficial Owner (Layer 2)",
-      "description": "Individual identity verification data.",
+    "WalletBinding": {
+      "title": "Cryptographic Identity Binding",
+      "description": "Verification of wallet ownership bound to a UBO.",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "fullName": { "type": "string" },
-        "role": { "type": "string" },
-        "status": { "type": "string", "enum": ["verified", "pending", "rejected"] },
-        "identityProvider": { "type": "string" }
-      }
-    },
-    "SettlementConfig": {
-      "title": "Treasury & Settlement (Layer 3)",
-      "description": "Financial disbursement configuration and governance.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
         "walletAddress": { "type": "string" },
-        "network": { "type": "string" },
-        "currency": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "gated", "restricted"] },
-        "proofOfOwnership": { "type": "boolean" }
+        "ownerId": { "type": "string" },
+        "proofHash": { "type": "string" },
+        "status": { "type": "string", "enum": ["bound", "pending_proof", "rejected", "revoked"] },
+        "reputationScore": { "type": "number" }
       }
     },
-    "AuditLog": {
-      "title": "Governance Audit Trail",
-      "description": "Immutable ledger of compliance and treasury events.",
+    "TrustAuditLog": {
+      "title": "Trust Event Ledger",
+      "description": "Immutable log of changes to trust scores and tiers.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" },
-        "actor": { "type": "string" },
-        "action": { "type": "string" },
-        "details": { "type": "string" },
-        "impact": { "type": "string" }
+        "trigger": { "type": "string" },
+        "beforeScore": { "type": "number" },
+        "afterScore": { "type": "number" },
+        "reason": { "type": "string" }
       }
     }
   },
@@ -74,9 +52,8 @@
     "providers": ["google.com"]
   },
   "firestore": {
-    "/compliance/entities/{entityId}": { "schema": "LegalEntity", "description": "L1 Legal Entities." },
-    "/compliance/ubos/{uboId}": { "schema": "UBO", "description": "L2 Beneficial Owners." },
-    "/compliance/settlements/{settleId}": { "schema": "SettlementConfig", "description": "L3 Settlement Governance." },
-    "/compliance/audit_logs/{logId}": { "schema": "AuditLog", "description": "Immutable Governance Trail." }
+    "/trust/profiles/{profileId}": { "schema": "TrustProfile", "description": "Continuous Trust Assessment." },
+    "/trust/bindings/{bindingId}": { "schema": "WalletBinding", "description": "Identity-bound assets." },
+    "/trust/audit_logs/{logId}": { "schema": "TrustAuditLog", "description": "Immutable Trust Ledger." }
   }
 }
