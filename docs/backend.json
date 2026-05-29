@@ -83,17 +83,47 @@
         "mitigationPlan": { "type": "string" }
       }
     },
+    "ComplianceRecord": {
+      "title": "Compliance Evidence",
+      "description": "Evidence-backed document for entity verification.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["incorporation", "id", "tax", "license", "utility"] },
+        "status": { "type": "string", "enum": ["verified", "pending", "expired", "missing"] },
+        "expiryDate": { "type": "string", "format": "date-time" },
+        "fileUrl": { "type": "string" },
+        "lastVerifiedAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "LegalEntity": {
       "title": "Legal Entity & Compliance",
-      "description": "Enterprise KYB and legal registration details.",
+      "description": "Enterprise KYB and legal registration details with evidence tracking.",
       "type": "object",
       "properties": {
         "companyName": { "type": "string" },
         "registrationNumber": { "type": "string" },
+        "jurisdiction": { "type": "string" },
         "verificationLevel": { "type": "string" },
-        "status": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "action-needed", "restricted"] },
+        "complianceScore": { "type": "number" },
         "settlementAddress": { "type": "string" },
-        "network": { "type": "string" }
+        "network": { "type": "string" },
+        "documents": { "type": "array", "items": { "$ref": "#/backend/entities/ComplianceRecord" } }
+      }
+    },
+    "AuditLog": {
+      "title": "Audit Trail Entry",
+      "description": "Immutable log of governance actions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "action": { "type": "string" },
+        "actor": { "type": "string" },
+        "details": { "type": "string" },
+        "entityId": { "type": "string" }
       }
     }
   },
@@ -107,6 +137,7 @@
     "/finance/{financeId}": { "schema": "Finance", "description": "Financial records." },
     "/operations/{opId}": { "schema": "OperationalKPI", "description": "Operational Twin metrics." },
     "/risks/{riskId}": { "schema": "Risk", "description": "Risk Observatory." },
-    "/compliance/status": { "schema": "LegalEntity", "description": "Sovereign legal standing." }
+    "/compliance/entities/{entityId}": { "schema": "LegalEntity", "description": "Sovereign legal standing per entity." },
+    "/compliance/audit_logs/{logId}": { "schema": "AuditLog", "description": "Governance audit trail." }
   }
 }
