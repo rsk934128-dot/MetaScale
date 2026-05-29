@@ -56,6 +56,21 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "isRead": { "type": "boolean" }
       }
+    },
+    "Asset": {
+      "title": "Creative Asset",
+      "description": "Marketing asset stored in Google Drive or system storage.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "mimeType": { "type": "string" },
+        "driveFileId": { "type": "string" },
+        "thumbnailUrl": { "type": "string" },
+        "clientId": { "type": "string" },
+        "syncedAt": { "type": "string", "format": "date-time" },
+        "size": { "type": "number" }
+      }
     }
   },
   "auth": {
@@ -77,6 +92,10 @@
     "/notifications": {
       "schema": "Notification",
       "description": "System-wide alerts."
+    },
+    "/assets/{assetId}": {
+      "schema": "Asset",
+      "description": "Creative library assets synced from Google Drive."
     }
   }
 }
