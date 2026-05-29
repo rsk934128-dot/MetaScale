@@ -19,7 +19,8 @@ import {
   Briefcase,
   Activity,
   ShieldCheck,
-  Cpu
+  Cpu,
+  FileBadge
 } from "lucide-react";
 import {
   Sidebar,
@@ -41,6 +42,7 @@ const mainNav = [
   { icon: DollarSign, label: "Finance Intel", href: "/finance" },
   { icon: Activity, label: "Operational Twin", href: "/operations" },
   { icon: ShieldAlert, label: "Risk Observatory", href: "/risk" },
+  { icon: FileBadge, label: "Compliance & Legal", href: "/compliance" },
 ];
 
 const executiveNav = [

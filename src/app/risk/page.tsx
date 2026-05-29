@@ -4,9 +4,10 @@
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ShieldAlert, ShieldCheck, AlertTriangle, Eye, Activity, FileText } from "lucide-react";
+import { ShieldAlert, ShieldCheck, AlertTriangle, Eye, Activity, FileText, FileBadge } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function RiskObservatory() {
   return (
@@ -27,9 +28,14 @@ export default function RiskObservatory() {
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
-          <div>
-            <h2 className="text-3xl font-headline font-bold mb-2">Strategic Monitoring</h2>
-            <p className="text-muted-foreground">Global threat detection, financial exposure, and compliance audits.</p>
+          <div className="flex justify-between items-end">
+            <div>
+              <h2 className="text-3xl font-headline font-bold mb-2">Strategic Monitoring</h2>
+              <p className="text-muted-foreground">Global threat detection, financial exposure, and compliance audits.</p>
+            </div>
+            <Button variant="outline" asChild className="border-accent/20 text-accent">
+               <Link href="/compliance"><FileBadge className="mr-2 h-4 w-4" /> View Compliance Hub</Link>
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -42,13 +48,13 @@ export default function RiskObservatory() {
                 <p className="text-[10px] text-green-400 mt-1 font-bold">Stable against 4 models</p>
               </CardContent>
             </Card>
-            <Card className="glass-panel border-b-4 border-b-yellow-400">
+            <Card className="glass-panel border-b-4 border-b-yellow-400 ring-2 ring-yellow-400/20">
               <CardHeader className="pb-2">
                 <CardTitle className="text-xs font-bold uppercase text-muted-foreground">Compliance Drift</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-white">8% Variance</div>
-                <p className="text-[10px] text-yellow-400 mt-1 font-bold">Audit required in 12 days</p>
+                <div className="text-3xl font-bold text-white">Action Needed</div>
+                <p className="text-[10px] text-yellow-400 mt-1 font-bold">Legal Entity: Rubelpay requires L1 sync</p>
               </CardContent>
             </Card>
             <Card className="glass-panel border-b-4 border-b-red-400">
@@ -72,6 +78,7 @@ export default function RiskObservatory() {
             <CardContent>
               <div className="space-y-4">
                 {[
+                  { time: "11:45 AM", category: "Compliance", msg: "Entity 'Rubelpay' verification level L1 requires final settlement validation.", impact: "Medium" },
                   { time: "08:12 AM", category: "Financial", msg: "Unusual opex variance detected in EU marketing node. Audit initialized.", impact: "Low" },
                   { time: "07:45 AM", category: "Compliance", msg: "GDPR policy update requires institutional memory refresh. Auto-patching metadata.", impact: "Medium" },
                   { time: "06:30 AM", category: "Strategic", msg: "Competitor 'MetaCorp' launched aggressive conquesting in APAC. Offensive agents ready.", impact: "High" }
