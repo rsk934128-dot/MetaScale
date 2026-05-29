@@ -6,81 +6,85 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
-  FileBadge, 
   ShieldCheck, 
   AlertCircle, 
   Building2, 
   UserCheck, 
-  CreditCard, 
+  Wallet, 
   History, 
   FileText, 
   Clock, 
   ShieldAlert,
-  Search,
-  Filter,
   CheckCircle2,
   XCircle,
-  MoreVertical,
-  Download,
-  ExternalLink,
-  ChevronRight,
   Lock,
-  Unlock,
-  Scale,
   Gavel,
   Zap,
   Activity,
   RefreshCw,
-  PlayCircle
+  PlayCircle,
+  ChevronRight,
+  ArrowRight
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
-export default function ComplianceIntelligencePage() {
+export default function KYBOrchestrationPage() {
   const [isSimulating, setIsSimulating] = useState(false);
   const { toast } = useToast();
 
-  const handleSimulatePolicy = () => {
+  const handleSimulateSync = () => {
     setIsSimulating(true);
     setTimeout(() => {
       setIsSimulating(false);
       toast({
-        title: "Simulation Complete",
-        description: "Adaptive policy update: Suggesting grace period extension for L1 verification to prevent $1.2M settlement block.",
+        title: "Orchestration Sync Complete",
+        description: "Dependency check: Entity status 'Action Needed' is blocking Settlement Layer activation.",
       });
     }, 2000);
   };
 
-  const entityData = {
-    legalName: "Rubelpay",
-    regNo: "2200882501903677",
-    country: "Bangladesh",
-    address: "masumpor,sirajganj,6700, Bangladesh",
-    established: "06/11/2025",
-    verificationLevel: "L1 Verification",
-    status: "Action Needed",
-    complianceScore: 72,
-    enforcementBlocks: [
-      { id: "eb-1", feature: "Settlement Execution", status: "Blocked", reason: "License Expired", severity: "Critical", recovery: "Upload Q1 2024 Renewed License" },
-      { id: "eb-2", feature: "Campaign Launch", status: "Restricted", reason: "UBO L2 Pending", severity: "Warning", recovery: "Farid Sheikh identity re-verification" }
-    ],
-    rules: [
-      { id: "rule-1", condition: "IF Operational License Expired", action: "BLOCK Settlement", status: "Active" },
-      { id: "rule-2", condition: "IF Compliance Score < 60%", action: "PAUSE All Agents", status: "Active" },
-      { id: "rule-3", condition: "IF High Risk Transaction", action: "REQUIRE Multi-Sig", status: "Active" }
-    ]
+  const layers = {
+    entity: {
+      name: "Rubelpay",
+      status: "Action Needed", // Pending | Verified | Action Needed
+      progress: 60,
+      details: {
+        regNo: "2200882501903677",
+        jurisdiction: "Bangladesh",
+        type: "Company"
+      }
+    },
+    ubo: {
+      name: "Farid Sheikh",
+      status: "Verified",
+      progress: 100,
+      details: {
+        role: "UBO & Director",
+        identityProvider: "Sumsub",
+        verifiedAt: "2024-05-15"
+      }
+    },
+    settlement: {
+      name: "USDT Treasury",
+      status: "Gated", // Gated | Active | Restricted
+      progress: 0,
+      details: {
+        wallet: "0xaf3c...1207",
+        network: "BNB Smart Chain",
+        proofStatus: "Missing Signature"
+      }
+    }
   };
 
-  const documents = [
-    { id: "doc-1", title: "Certificate of Incorporation", type: "Incorporation", status: "Verified", expiry: "N/A", lastChecked: "Today" },
-    { id: "doc-2", title: "Farid Sheikh Passport", type: "ID", status: "Verified", expiry: "12/2028", lastChecked: "Yesterday" },
-    { id: "doc-3", title: "Operational License Q4", type: "License", status: "Expired", expiry: "02/2024", lastChecked: "1h ago" },
-    { id: "doc-4", title: "Tax Residency Certificate", type: "Tax", status: "Pending", expiry: "12/2024", lastChecked: "4h ago" },
+  const logs = [
+    { time: "10:00 AM", actor: "System", action: "Cascade Block", detail: "Settlement Gated: Dependent on Entity Verification" },
+    { time: "09:45 AM", actor: "Farid Sheikh", action: "Identity Sync", detail: "Sumsub L2 verification successful" },
+    { time: "09:30 AM", actor: "System", action: "Entity Audit", detail: "Registration certificate expired in jurisdiction: Bangladesh" }
   ];
 
   return (
@@ -92,206 +96,186 @@ export default function ComplianceIntelligencePage() {
           <div className="flex-1">
             <h1 className="text-lg font-headline font-bold flex items-center gap-2">
               <Gavel className="h-5 w-5 text-accent" />
-              Sovereign Governance & Self-Healing
+              KYB Orchestration & Settlement Governance
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-[10px] text-muted-foreground uppercase font-bold">Regulatory Readiness</p>
-              <p className="text-lg font-headline font-bold text-accent">{entityData.complianceScore}%</p>
-            </div>
-            <Badge variant="destructive" className="animate-pulse">
-              <Lock className="mr-1 h-3 w-3" /> {entityData.enforcementBlocks.length} Active Blocks
-            </Badge>
+             <div className="text-right">
+                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Global Readiness</p>
+                <p className="text-lg font-headline font-bold text-accent">53%</p>
+             </div>
+             <Badge variant="destructive" className="animate-pulse">
+                <Lock className="mr-1 h-3 w-3" /> Settlement Gated
+             </Badge>
           </div>
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-3xl font-headline font-bold mb-2">Self-Healing Compliance</h2>
-              <p className="text-muted-foreground">AI-driven resolution paths, adaptive policies, and regulatory simulation.</p>
+              <h2 className="text-3xl font-headline font-bold mb-2">Governance Orchestrator</h2>
+              <p className="text-muted-foreground">Decoupled identity, legal, and financial verification with dependency-aware enforcement.</p>
             </div>
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
                 size="sm" 
                 className="border-accent/20 text-accent"
-                onClick={handleSimulatePolicy}
+                onClick={handleSimulateSync}
                 disabled={isSimulating}
               >
-                {isSimulating ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
-                Policy Simulator
-              </Button>
-              <Button size="sm" className="cyan-glow bg-accent text-background font-bold">
-                Run Self-Healing Sync
+                {isSimulating ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                Sync Orchestration
               </Button>
             </div>
           </div>
 
-          <Tabs defaultValue="enforcement" className="space-y-6">
-            <TabsList className="bg-secondary/50 border border-white/5 p-1">
-              <TabsTrigger value="overview">Executive Overview</TabsTrigger>
-              <TabsTrigger value="enforcement">Recovery Center</TabsTrigger>
-              <TabsTrigger value="rules">Adaptive Policies</TabsTrigger>
+          {/* Tiered Verification Layers */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Layer 1: Entity */}
+            <Card className={cn("glass-panel relative border-l-4", layers.entity.status === 'Verified' ? "border-l-green-500" : "border-l-yellow-500")}>
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <Badge variant="outline" className="text-[10px]">Layer 1: Entity</Badge>
+                  {layers.entity.status === 'Verified' ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <AlertCircle className="h-4 w-4 text-yellow-500" />}
+                </div>
+                <CardTitle className="text-lg mt-2">{layers.entity.name}</CardTitle>
+                <CardDescription className="text-xs uppercase font-bold">{layers.entity.status}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] font-bold">
+                    <span>Validation Progress</span>
+                    <span>{layers.entity.progress}%</span>
+                  </div>
+                  <Progress value={layers.entity.progress} className="h-1" />
+                </div>
+                <div className="p-2 rounded bg-secondary/30 text-[10px] space-y-1">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Reg No:</span> <span>{layers.entity.details.regNo}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Jurisdiction:</span> <span>{layers.entity.details.jurisdiction}</span></div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Layer 2: UBO */}
+            <Card className={cn("glass-panel relative border-l-4", layers.ubo.status === 'Verified' ? "border-l-green-500" : "border-l-red-500")}>
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <Badge variant="outline" className="text-[10px]">Layer 2: UBO</Badge>
+                  {layers.ubo.status === 'Verified' ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Lock className="h-4 w-4 text-red-500" />}
+                </div>
+                <CardTitle className="text-lg mt-2">{layers.ubo.name}</CardTitle>
+                <CardDescription className="text-xs uppercase font-bold">{layers.ubo.status}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] font-bold">
+                    <span>Identity Progress</span>
+                    <span>{layers.ubo.progress}%</span>
+                  </div>
+                  <Progress value={layers.ubo.progress} className="h-1" />
+                </div>
+                <div className="p-2 rounded bg-secondary/30 text-[10px] space-y-1">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Role:</span> <span>{layers.ubo.details.role}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Provider:</span> <span>{layers.ubo.details.identityProvider}</span></div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Layer 3: Settlement */}
+            <Card className={cn("glass-panel relative border-l-4", layers.settlement.status === 'Active' ? "border-l-green-500" : "border-l-red-500 ring-2 ring-red-500/10")}>
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <Badge variant="outline" className="text-[10px]">Layer 3: Settlement</Badge>
+                  <Lock className="h-4 w-4 text-red-500" />
+                </div>
+                <CardTitle className="text-lg mt-2">{layers.settlement.name}</CardTitle>
+                <CardDescription className="text-xs uppercase font-bold text-red-500">{layers.settlement.status}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] font-bold">
+                    <span>Treasury Readiness</span>
+                    <span>{layers.settlement.progress}%</span>
+                  </div>
+                  <Progress value={layers.settlement.progress} className="h-1" />
+                </div>
+                <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20 text-[10px] space-y-2">
+                  <div className="flex items-center gap-2 text-red-400 font-bold">
+                    <ShieldAlert className="h-3 w-3" /> DEP-BLOCK: Entity Level Fail
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Treasury execution is restricted until Entity Layer (Rubelpay) resolves registration gaps.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Orchestration View */}
+          <Tabs defaultValue="dependencies" className="space-y-6">
+            <TabsList className="bg-secondary/50 border border-white/5">
+              <TabsTrigger value="dependencies">Dependency Graph</TabsTrigger>
               <TabsTrigger value="vault">Evidence Vault</TabsTrigger>
+              <TabsTrigger value="ledger">KYB Audit Ledger</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-2 glass-panel border-l-4 border-l-red-500">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <ShieldAlert className="h-5 w-5 text-red-500" />
-                      Active Violations & Recovery Paths
-                    </CardTitle>
-                    <CardDescription>Platform restrictions with AI-suggested remediation steps.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {entityData.enforcementBlocks.map((block) => (
-                      <div key={block.id} className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 flex items-center justify-between group">
-                        <div className="flex items-center gap-4">
-                           <div className="p-2 rounded-lg bg-red-500/10">
-                              <Lock className="h-4 w-4 text-red-500" />
-                           </div>
-                           <div>
-                              <p className="text-sm font-bold text-white">{block.feature}</p>
-                              <p className="text-[10px] text-muted-foreground uppercase">{block.reason}</p>
-                              <p className="text-xs text-accent mt-1 font-bold">➔ Recovery: {block.recovery}</p>
-                           </div>
-                        </div>
-                        <Button size="sm" variant="outline" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          Resolve Now
-                        </Button>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                <Card className="glass-panel">
-                  <CardHeader>
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-accent" />
-                      Adaptive Intelligence
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                     <div className="p-3 rounded-lg bg-accent/5 border border-accent/20">
-                        <p className="text-xs font-bold text-white mb-1">Policy Update Proposal</p>
-                        <p className="text-[10px] text-muted-foreground leading-relaxed italic">"Jurisdiction Bangladesh: Recent tax regulation drift detected. Suggest adding 'Tax ID Refresh' check 45 days prior to expiry."</p>
-                     </div>
-                     <div className="space-y-2">
-                        <div className="flex justify-between text-[10px] uppercase font-bold">
-                           <span>Regulatory Drift Risk</span>
-                           <span className="text-accent">14%</span>
-                        </div>
-                        <Progress value={14} className="h-1" />
-                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="enforcement">
+            <TabsContent value="dependencies" className="space-y-6">
                <Card className="glass-panel">
                  <CardHeader>
-                   <CardTitle>Recovery Ledger</CardTitle>
-                   <CardDescription>Real-time status of self-healing tasks and feature restoration.</CardDescription>
+                   <CardTitle className="text-lg">Verification Cascade</CardTitle>
+                   <CardDescription>Visualizing how compliance health affects operational capability.</CardDescription>
+                 </CardHeader>
+                 <CardContent>
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-8 p-8 border border-white/5 rounded-2xl bg-secondary/10">
+                       <div className="flex flex-col items-center gap-3">
+                          <div className="w-16 h-16 rounded-full bg-yellow-500/20 border-2 border-yellow-500 flex items-center justify-center">
+                            <Building2 className="h-8 w-8 text-yellow-500" />
+                          </div>
+                          <span className="text-xs font-bold">Entity</span>
+                       </div>
+                       <ArrowRight className="h-8 w-8 text-muted-foreground hidden md:block" />
+                       <div className="flex flex-col items-center gap-3">
+                          <div className="w-16 h-16 rounded-full bg-green-500/20 border-2 border-green-500 flex items-center justify-center">
+                            <UserCheck className="h-8 w-8 text-green-500" />
+                          </div>
+                          <span className="text-xs font-bold">UBO</span>
+                       </div>
+                       <ArrowRight className="h-8 w-8 text-muted-foreground hidden md:block" />
+                       <div className="flex flex-col items-center gap-3 opacity-50 grayscale">
+                          <div className="w-16 h-16 rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center">
+                            <Wallet className="h-8 w-8 text-red-500" />
+                          </div>
+                          <span className="text-xs font-bold">Settlement</span>
+                       </div>
+                    </div>
+                 </CardContent>
+               </Card>
+            </TabsContent>
+
+            <TabsContent value="ledger">
+               <Card className="glass-panel">
+                 <CardHeader>
+                   <CardTitle>Immutable KYB Trail</CardTitle>
+                   <CardDescription>Cryptographically signed history of compliance events.</CardDescription>
                  </CardHeader>
                  <CardContent>
                     <div className="space-y-4">
-                       {entityData.enforcementBlocks.map((block) => (
-                         <div key={block.id} className="flex items-center justify-between p-4 border border-white/5 rounded-xl bg-secondary/10 group hover:border-accent/30 transition-all">
-                            <div className="flex gap-4 items-center">
-                               <Lock className="h-5 w-5 text-red-400" />
-                               <div>
-                                  <h4 className="text-sm font-bold">{block.feature}</h4>
-                                  <p className="text-xs text-muted-foreground">{block.reason}</p>
-                                  <div className="mt-2 flex items-center gap-4">
-                                    <div className="flex items-center gap-1 text-[10px] text-yellow-400">
-                                      <Clock className="h-3 w-3" /> ETA: 24h
-                                    </div>
-                                    <div className="flex items-center gap-1 text-[10px] text-accent font-bold">
-                                      <Zap className="h-3 w-3" /> Auto-Verify Active
-                                    </div>
-                                  </div>
+                       {logs.map((log, i) => (
+                         <div key={i} className="flex gap-4 p-4 border border-white/5 rounded-xl bg-secondary/10 hover:border-accent/30 transition-all">
+                            <div className="text-[10px] font-mono text-muted-foreground pt-1">{log.time}</div>
+                            <div className="flex-1">
+                               <div className="flex items-center gap-2 mb-1">
+                                  <Badge variant="outline" className="text-[9px] uppercase">{log.actor}</Badge>
+                                  <span className="text-xs font-bold">{log.action}</span>
                                </div>
-                            </div>
-                            <Button size="sm" className="bg-accent text-background font-bold text-[10px] h-7">Upload Evidence</Button>
-                         </div>
-                       ))}
-                    </div>
-                 </CardContent>
-               </Card>
-            </TabsContent>
-
-            <TabsContent value="rules">
-               <Card className="glass-panel">
-                 <CardHeader>
-                   <div className="flex justify-between items-center">
-                      <div>
-                         <CardTitle>Adaptive Governance Rules</CardTitle>
-                         <CardDescription>AI-refined policies that evolve based on operational outcomes.</CardDescription>
-                      </div>
-                      <Button size="sm" variant="outline" className="text-xs border-accent/20 text-accent">Suggest Optimization</Button>
-                   </div>
-                 </CardHeader>
-                 <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       {entityData.rules.map((rule) => (
-                         <div key={rule.id} className="p-4 rounded-xl border border-white/5 bg-secondary/20 flex flex-col justify-between group hover:border-accent/30">
-                            <div className="space-y-2">
-                               <div className="flex justify-between items-center">
-                                  <Badge className="text-[9px] bg-accent/20 text-accent">{rule.status}</Badge>
-                                  <Activity className="h-3 w-3 text-muted-foreground group-hover:text-accent animate-pulse" />
-                               </div>
-                               <p className="text-xs font-mono text-white/90">{rule.condition}</p>
-                               <p className="text-xs font-bold text-accent">➔ {rule.action}</p>
-                            </div>
-                            <div className="flex gap-2 mt-4 pt-4 border-t border-white/5">
-                               <Button variant="ghost" size="sm" className="text-[10px] h-6 flex-1">View Analytics</Button>
-                               <Button variant="ghost" size="sm" className="text-[10px] h-6 flex-1 text-red-400">Edit Rule</Button>
+                               <p className="text-xs text-muted-foreground">{log.detail}</p>
                             </div>
                          </div>
                        ))}
                     </div>
                  </CardContent>
                </Card>
-            </TabsContent>
-
-            <TabsContent value="vault">
-              <Card className="glass-panel">
-                <CardHeader>
-                  <CardTitle>Sovereign Evidence Repository</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {documents.map((doc) => (
-                      <div key={doc.id} className="p-4 rounded-xl border border-white/5 bg-secondary/20 hover:border-accent/30 transition-all group">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className={`p-2 rounded-lg ${doc.status === 'Verified' ? 'bg-green-400/10' : doc.status === 'Expired' ? 'bg-red-400/10' : 'bg-yellow-400/10'}`}>
-                            <FileText className={`h-4 w-4 ${doc.status === 'Verified' ? 'text-green-400' : doc.status === 'Expired' ? 'text-red-400' : 'text-yellow-400'}`} />
-                          </div>
-                          <Badge variant="outline" className="text-[9px] border-white/10">{doc.status}</Badge>
-                        </div>
-                        <h4 className="text-xs font-bold mb-1 truncate">{doc.title}</h4>
-                        <div className="space-y-1 mb-4">
-                          <p className="text-[9px] text-muted-foreground uppercase">Type: {doc.type}</p>
-                          <p className="text-[9px] text-muted-foreground uppercase">Expires: {doc.expiry}</p>
-                        </div>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Download className="h-3 w-3" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
-                            <MoreVertical className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
           </Tabs>
         </main>

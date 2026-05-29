@@ -4,14 +4,14 @@
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { DollarSign, TrendingUp, ArrowUpRight, Target, PieChart, Wallet, Lock, ShieldAlert, Gavel } from "lucide-react";
+import { DollarSign, TrendingUp, ArrowUpRight, Target, Lock, ShieldAlert, Wallet, AlertCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
 export default function FinancialIntelligence() {
-  const isSettlementBlocked = true; // Derived from compliance state
+  const complianceStatus = "Entity Blocked"; // Derived from KYB Orchestration
 
   return (
     <div className="flex min-h-screen">
@@ -26,30 +26,37 @@ export default function FinancialIntelligence() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            {isSettlementBlocked && (
-              <Badge variant="destructive" className="mr-2">
-                <Lock className="mr-1 h-3 w-3" /> Settlement Gated
-              </Badge>
-            )}
+            <Badge variant="destructive" className="mr-2">
+              <Lock className="mr-1 h-3 w-3" /> KYB Gated
+            </Badge>
             <Button variant="outline" size="sm">Export Fiscal Audit</Button>
           </div>
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
-          {isSettlementBlocked && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <ShieldAlert className="h-5 w-5 text-red-500" />
-                <div>
-                  <p className="text-sm font-bold text-white">Settlement Infrastructure Locked</p>
-                  <p className="text-xs text-muted-foreground">Automated enforcement policy triggered due to expired Operational License in jurisdiction: Bangladesh.</p>
+          {/* Orchestration Alert */}
+          <div className="p-6 rounded-2xl bg-red-500/10 border border-red-500/20 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-red-500/20">
+                <ShieldAlert className="h-6 w-6 text-red-500" />
+              </div>
+              <div>
+                <p className="text-lg font-headline font-bold text-white">Treasury Execution Halted</p>
+                <p className="text-sm text-muted-foreground">Settlement Layer is locked due to L1 Entity (Rubelpay) verification failure.</p>
+                <div className="mt-2 flex items-center gap-4">
+                   <div className="flex items-center gap-1.5 text-[10px] text-red-400 font-bold uppercase">
+                      <Lock className="h-3 w-3" /> Withdrawal Blocked
+                   </div>
+                   <div className="flex items-center gap-1.5 text-[10px] text-yellow-400 font-bold uppercase">
+                      <AlertCircle className="h-3 w-3" /> Proof of Wallet Pending
+                   </div>
                 </div>
               </div>
-              <Button size="sm" variant="outline" asChild className="border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white">
-                <Link href="/compliance">View Violation Details</Link>
-              </Button>
             </div>
-          )}
+            <Button size="sm" variant="outline" asChild className="border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white shrink-0">
+              <Link href="/compliance">Resolve Compliance Chain</Link>
+            </Button>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="glass-panel border-l-4 border-l-green-400">
@@ -98,28 +105,34 @@ export default function FinancialIntelligence() {
             
             <Card className="glass-panel">
               <CardHeader>
-                <CardTitle className="text-sm">Enforcement Analytics</CardTitle>
+                <CardTitle className="text-sm">Settlement Governance</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/10">
-                   <div className="flex items-center gap-2 mb-1">
-                      <Lock className="h-3 w-3 text-red-500" />
-                      <span className="text-[10px] font-bold uppercase text-red-500">Active Enforcement</span>
-                   </div>
-                   <p className="text-xs text-white">Payout capability is restricted. $1.2M pending clearance.</p>
-                </div>
-                {[
-                  { title: "Treasury multi-sig", status: "Enabled", msg: "Policy active for transfers > $10k." },
-                  { title: "Compliance gating", status: "Active", msg: "Automated check before every execution." }
-                ].map((item, i) => (
-                  <div key={i} className="p-3 rounded-lg bg-secondary/30 border border-white/5 space-y-1">
-                    <Badge variant="default" className="text-[9px] bg-accent/20 text-accent">
-                      {item.status}
-                    </Badge>
-                    <p className="text-xs font-bold mt-1">{item.title}</p>
-                    <p className="text-[10px] text-muted-foreground">{item.msg}</p>
+                <div className="p-4 rounded-xl bg-secondary/30 border border-white/5 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-muted-foreground">Primary Wallet</span>
+                    <Badge variant="outline" className="text-[9px]">Unverified</Badge>
                   </div>
-                ))}
+                  <div className="font-mono text-[10px] text-white/70 bg-black/20 p-2 rounded">
+                    0xaf3c724065016dfe4458c05140fa4cbb40131207
+                  </div>
+                  <Button size="sm" variant="ghost" className="w-full text-[10px] h-7 border border-dashed border-white/10">
+                    Sign Ownership Proof
+                  </Button>
+                </div>
+
+                <div className="space-y-2 pt-4">
+                   <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Enforcement Policies</p>
+                   {[
+                     { title: "Treasury Multi-Sig", status: "Active" },
+                     { title: "KYB Cascade Lock", status: "Triggered" }
+                   ].map((item, i) => (
+                     <div key={i} className="flex justify-between items-center p-2 rounded bg-secondary/20">
+                        <span className="text-xs">{item.title}</span>
+                        <Badge className={item.status === 'Triggered' ? "bg-red-500/20 text-red-500" : "bg-accent/20 text-accent"}>{item.status}</Badge>
+                     </div>
+                   ))}
+                </div>
               </CardContent>
             </Card>
           </div>

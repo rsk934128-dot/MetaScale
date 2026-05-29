@@ -18,127 +18,55 @@
       },
       "required": ["name", "platform", "status"]
     },
-    "Agent": {
-      "title": "Autonomous Agent",
-      "description": "Specialized AI agent (Marketing, Sales, Research, Forecasting).",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "role": { "type": "string", "enum": ["marketing", "sales", "analytics", "research", "forecasting", "executive", "finance", "operations", "risk"] },
-        "status": { "type": "string", "enum": ["idle", "executing", "completed", "error"] },
-        "lastRun": { "type": "string", "format": "date-time" },
-        "performanceScore": { "type": "number" }
-      }
-    },
-    "Customer": {
-      "title": "Enterprise Customer",
-      "description": "Unified 360 customer profile.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "email": { "type": "string" },
-        "ltv": { "type": "number" },
-        "cac": { "type": "number" },
-        "segment": { "type": "string" },
-        "churnRisk": { "type": "number" }
-      }
-    },
-    "Finance": {
-      "title": "Financial Record",
-      "description": "Corporate financial data for Sovereign SEIP.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "category": { "type": "string", "enum": ["revenue", "expense", "opex", "capex"] },
-        "actual": { "type": "number" },
-        "projected": { "type": "number" },
-        "variance": { "type": "number" },
-        "date": { "type": "string", "format": "date-time" }
-      }
-    },
-    "OperationalKPI": {
-      "title": "Operational Metric",
-      "description": "Real-time process performance indicator.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "value": { "type": "number" },
-        "target": { "type": "number" },
-        "status": { "type": "string", "enum": ["optimal", "warning", "critical"] }
-      }
-    },
-    "Risk": {
-      "title": "Enterprise Risk",
-      "description": "Strategic, financial, or operational risks.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "category": { "type": "string", "enum": ["strategic", "financial", "operational", "compliance", "regulatory"] },
-        "impact": { "type": "number" },
-        "probability": { "type": "number" },
-        "mitigationPlan": { "type": "string" },
-        "isEnforced": { "type": "boolean" }
-      }
-    },
-    "ComplianceRule": {
-      "title": "Enforcement Rule",
-      "description": "IF-THEN logic for automated compliance gating.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "condition": { "type": "string" },
-        "action": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "disabled"] },
-        "remediationPath": { "type": "string" }
-      }
-    },
-    "ComplianceRecord": {
-      "title": "Compliance Evidence",
-      "description": "Evidence-backed document for entity verification.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "type": { "type": "string", "enum": ["incorporation", "id", "tax", "license", "utility"] },
-        "status": { "type": "string", "enum": ["verified", "pending", "expired", "missing"] },
-        "expiryDate": { "type": "string", "format": "date-time" },
-        "fileUrl": { "type": "string" },
-        "lastVerifiedAt": { "type": "string", "format": "date-time" }
-      }
-    },
     "LegalEntity": {
-      "title": "Legal Entity & Compliance",
-      "description": "Enterprise KYB and legal registration details with automated enforcement gates.",
+      "title": "Legal Entity (Layer 1)",
+      "description": "Enterprise KYB and registration details.",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "companyName": { "type": "string" },
         "registrationNumber": { "type": "string" },
         "jurisdiction": { "type": "string" },
-        "verificationLevel": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "action-needed", "restricted"] },
-        "complianceScore": { "type": "number" },
-        "settlementAddress": { "type": "string" },
+        "status": { "type": "string", "enum": ["verified", "pending", "action-needed", "expired"] },
+        "progress": { "type": "number" }
+      }
+    },
+    "UBO": {
+      "title": "Beneficial Owner (Layer 2)",
+      "description": "Individual identity verification data.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "role": { "type": "string" },
+        "status": { "type": "string", "enum": ["verified", "pending", "rejected"] },
+        "identityProvider": { "type": "string" }
+      }
+    },
+    "SettlementConfig": {
+      "title": "Treasury & Settlement (Layer 3)",
+      "description": "Financial disbursement configuration and governance.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "walletAddress": { "type": "string" },
         "network": { "type": "string" },
-        "enforcementBlocks": { "type": "array", "items": { "type": "string" } },
-        "documents": { "type": "array", "items": { "$ref": "#/backend/entities/ComplianceRecord" } }
+        "currency": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "gated", "restricted"] },
+        "proofOfOwnership": { "type": "boolean" }
       }
     },
     "AuditLog": {
-      "title": "Audit Trail Entry",
-      "description": "Immutable log of governance actions.",
+      "title": "Governance Audit Trail",
+      "description": "Immutable ledger of compliance and treasury events.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" },
-        "action": { "type": "string" },
         "actor": { "type": "string" },
+        "action": { "type": "string" },
         "details": { "type": "string" },
-        "entityId": { "type": "string" },
-        "signature": { "type": "string" }
+        "impact": { "type": "string" }
       }
     }
   },
@@ -146,14 +74,9 @@
     "providers": ["google.com"]
   },
   "firestore": {
-    "/campaigns/{campaignId}": { "schema": "Campaign", "description": "Global campaigns." },
-    "/agents/{agentId}": { "schema": "Agent", "description": "Sovereign AI Council." },
-    "/customers/{customerId}": { "schema": "Customer", "description": "Customer Hub." },
-    "/finance/{financeId}": { "schema": "Finance", "description": "Financial records." },
-    "/operations/{opId}": { "schema": "OperationalKPI", "description": "Operational Twin metrics." },
-    "/risks/{riskId}": { "schema": "Risk", "description": "Risk Observatory." },
-    "/compliance/entities/{entityId}": { "schema": "LegalEntity", "description": "Sovereign legal standing per entity." },
-    "/compliance/audit_logs/{logId}": { "schema": "AuditLog", "description": "Governance audit trail." },
-    "/compliance/rules/{ruleId}": { "schema": "ComplianceRule", "description": "Active enforcement policies." }
+    "/compliance/entities/{entityId}": { "schema": "LegalEntity", "description": "L1 Legal Entities." },
+    "/compliance/ubos/{uboId}": { "schema": "UBO", "description": "L2 Beneficial Owners." },
+    "/compliance/settlements/{settleId}": { "schema": "SettlementConfig", "description": "L3 Settlement Governance." },
+    "/compliance/audit_logs/{logId}": { "schema": "AuditLog", "description": "Immutable Governance Trail." }
   }
 }
