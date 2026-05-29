@@ -6,14 +6,15 @@ import {
   Layers,
   Sparkles,
   Target,
-  Image as ImageIcon,
   Settings,
   BarChart3,
   BrainCircuit,
   Bell,
   Users,
   Terminal,
-  Database
+  Database,
+  Rocket,
+  ShieldAlert
 } from "lucide-react";
 import {
   Sidebar,
@@ -31,22 +32,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const mainNav = [
-  { icon: LayoutDashboard, label: "Command Center", href: "/" },
-  { icon: Layers, label: "Campaign Operations", href: "/campaigns" },
+  { icon: LayoutDashboard, label: "Mission Control", href: "/" },
+  { icon: Layers, label: "Operations Hub", href: "/campaigns" },
   { icon: BarChart3, label: "Predictive Analytics", href: "/analytics" },
 ];
 
 const aiNav = [
-  { icon: Terminal, label: "Intelligence Chat (RAG)", href: "/intelligence" },
+  { icon: Rocket, label: "Agent Console", href: "/agents" },
+  { icon: Terminal, label: "Command Chat (RAG)", href: "/intelligence" },
   { icon: Sparkles, label: "AI Creative Studio", href: "/ai-tools/copywriter" },
-  { icon: BrainCircuit, label: "Autonomous Optimization", href: "/ai-tools/optimization" },
+  { icon: BrainCircuit, label: "Optimization Engine", href: "/ai-tools/optimization" },
   { icon: Target, label: "Targeting Intelligence", href: "/ai-tools/targeting" },
 ];
 
 const knowledgeNav = [
-  { icon: Database, label: "Knowledge Repository", href: "/library" },
+  { icon: Database, label: "Knowledge Assets", href: "/library" },
   { icon: Users, label: "Agency Clients", href: "/clients" },
-  { icon: Bell, label: "Alert Center", href: "/notifications" },
+  { icon: ShieldAlert, label: "War Room Alerts", href: "/notifications" },
 ];
 
 export function AppSidebar() {
@@ -64,7 +66,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Executive Overview</SidebarGroupLabel>
+          <SidebarGroupLabel>Core Mission</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNav.map((item) => (
@@ -86,7 +88,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Intelligence Layer</SidebarGroupLabel>
+          <SidebarGroupLabel>Autonomous Intelligence</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {aiNav.map((item) => (
@@ -108,7 +110,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Knowledge & Management</SidebarGroupLabel>
+          <SidebarGroupLabel>Knowledge & Governance</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {knowledgeNav.map((item) => (

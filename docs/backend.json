@@ -18,6 +18,45 @@
       },
       "required": ["name", "platform", "status"]
     },
+    "Agent": {
+      "title": "Marketing Agent",
+      "description": "Autonomous AI agent specialized in a marketing domain.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["campaign", "analytics", "content", "research"] },
+        "status": { "type": "string", "enum": ["idle", "executing", "completed", "error"] },
+        "lastRun": { "type": "string", "format": "date-time" },
+        "performanceScore": { "type": "number" }
+      }
+    },
+    "Task": {
+      "title": "Agent Task",
+      "description": "A specific action executed by an autonomous agent.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "agentId": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string" },
+        "result": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Opportunity": {
+      "title": "Strategic Opportunity",
+      "description": "AI-detected market gap or scaling potential.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["risk", "opportunity"] },
+        "priority": { "type": "string", "enum": ["high", "medium", "low"] },
+        "detectedAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "Recommendation": {
       "title": "AI Recommendation",
       "description": "AI-generated optimization insight.",
@@ -80,6 +119,18 @@
     "/campaigns/{campaignId}": {
       "schema": "Campaign",
       "description": "Global campaigns across platforms."
+    },
+    "/agents/{agentId}": {
+      "schema": "Agent",
+      "description": "Autonomous specialized agents."
+    },
+    "/tasks": {
+      "schema": "Task",
+      "description": "Logs of agent executions."
+    },
+    "/opportunities": {
+      "schema": "Opportunity",
+      "description": "Strategic risks and opportunities."
     },
     "/recommendations": {
       "schema": "Recommendation",

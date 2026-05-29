@@ -6,16 +6,18 @@ import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
 import { 
   ArrowUpRight, 
-  Users, 
   Target, 
   Zap, 
   Globe,
   TrendingUp,
-  AlertCircle,
+  AlertTriangle,
   BrainCircuit,
   ChevronRight,
   Database,
-  BarChart3
+  BarChart3,
+  Rocket,
+  ShieldAlert,
+  Lightbulb
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -30,14 +32,14 @@ export default function Dashboard() {
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-6">
           <SidebarTrigger />
           <div className="flex-1">
-            <h1 className="text-lg font-headline font-bold">AMOS Executive Command Center</h1>
+            <h1 className="text-lg font-headline font-bold">AMOS Mission Control Dashboard</h1>
           </div>
           <div className="flex items-center gap-4">
             <Badge variant="outline" className="text-accent border-accent/20">
-              <Globe className="mr-1 h-3 w-3" /> Cross-Platform Live
+              <Rocket className="mr-1 h-3 w-3" /> Agent Mode: Active
             </Badge>
             <Button size="sm" className="cyan-glow text-xs font-bold bg-accent hover:bg-accent/90">
-              <Zap className="mr-1 h-3 w-3" /> Refresh IQ
+              <Zap className="mr-1 h-3 w-3" /> Execute Global Audit
             </Button>
           </div>
         </header>
@@ -46,10 +48,10 @@ export default function Dashboard() {
           {/* Executive KPI Wall */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { label: "Total Managed Spend", value: "$142,502", trend: "+5.2%", icon: Target, detail: "Meta, Google, TikTok" },
-              { label: "Predictive Revenue", value: "$524,900", trend: "+12.4%", icon: TrendingUp, isGood: true, detail: "AMOS Forecast Accuracy: 92%" },
-              { label: "Knowledge Assets", value: "248", trend: "+12", icon: Database, isGood: true, detail: "Indexed Documents & Creatives" },
-              { label: "Active IQ Tasks", value: "7", trend: "+3", icon: BrainCircuit, detail: "AI Optimizations Running" },
+              { label: "Predictive Managed Spend", value: "$142,502", trend: "+5.2%", icon: Target, detail: "Meta, Google, TikTok" },
+              { label: "Forecasted Revenue", value: "$524,900", trend: "+12.4%", icon: TrendingUp, isGood: true, detail: "Confidence Interval: 94%" },
+              { label: "Autonomous Actions", value: "34", trend: "+8", icon: BrainCircuit, isGood: true, detail: "Successful optimizations this week" },
+              { label: "Strategic Assets", value: "248", trend: "+12", icon: Database, detail: "Knowledge Graphs & Docs" },
             ].map((stat, i) => (
               <Card key={i} className="glass-panel border-white/5 hover:border-accent/20 transition-all">
                 <CardContent className="p-6">
@@ -67,7 +69,7 @@ export default function Dashboard() {
                     <span className={`text-xs font-bold ${stat.isGood ? 'text-green-400' : 'text-primary'}`}>
                       {stat.trend}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">vs last month</span>
+                    <span className="text-[10px] text-muted-foreground">vs last period</span>
                   </div>
                 </CardContent>
               </Card>
@@ -75,76 +77,105 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            {/* Main Performance Forecast */}
-            <Card className="glass-panel xl:col-span-2">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
+            {/* Mission Critical War Room */}
+            <div className="xl:col-span-2 space-y-8">
+              <Card className="glass-panel">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <ShieldAlert className="h-5 w-5 text-red-400" />
+                      Executive War Room: Risks & Opportunities
+                    </CardTitle>
+                    <CardDescription>Real-time autonomous intelligence detection</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl bg-red-400/5 border border-red-400/20 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold uppercase text-red-400">High Severity Risks</h4>
+                        <Badge variant="destructive" className="text-[10px]">3 Active</Badge>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-xs bg-red-400/10 p-2 rounded border border-red-400/10">
+                          <p className="font-bold">Meta CPM Spike (London)</p>
+                          <p className="text-muted-foreground text-[10px]">CPA exceeded threshold by 45%. Agent suggests immediate pause.</p>
+                        </div>
+                        <div className="text-xs bg-red-400/10 p-2 rounded border border-red-400/10 opacity-70">
+                          <p className="font-bold">Creative Fatigue: Ad V2</p>
+                          <p className="text-muted-foreground text-[10px]">CTR drop detected across all platforms.</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-accent/5 border border-accent/20 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold uppercase text-accent">Strategic Opportunities</h4>
+                        <Badge variant="outline" className="text-[10px] text-accent border-accent/20">5 Detected</Badge>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-xs bg-accent/10 p-2 rounded border border-accent/10">
+                          <p className="font-bold text-accent">Scaling Pocket: Gen Z Urban</p>
+                          <p className="text-muted-foreground text-[10px]">High intent detected in new interest group. Reallocating $2k.</p>
+                        </div>
+                        <div className="text-xs bg-accent/10 p-2 rounded border border-accent/10 opacity-70">
+                          <p className="font-bold text-accent">Trend Sync: Solar Tech</p>
+                          <p className="text-muted-foreground text-[10px]">Search volume up 300%. Agent drafting content series.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-panel">
+                <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-accent" />
-                    Predictive Performance Modeling
+                    Predictive Forecasting Engine
                   </CardTitle>
-                  <CardDescription>AI-driven reach and conversion forecasting across all platforms</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                   <Badge variant="secondary" className="cursor-pointer">Meta</Badge>
-                   <Badge variant="outline" className="opacity-50">Google</Badge>
-                   <Badge variant="outline" className="opacity-50">TikTok</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <PerformanceChart />
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent>
+                  <PerformanceChart />
+                </CardContent>
+              </Card>
+            </div>
 
-            {/* AI Insight Feed - The Knowledge Layer */}
+            {/* Agent Status Panel */}
             <Card className="glass-panel">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BrainCircuit className="h-5 w-5 text-accent" />
-                  Marketing Intelligence
+                  Autonomous Agents
                 </CardTitle>
-                <CardDescription>Strategic findings from document intelligence</CardDescription>
+                <CardDescription>Live execution status of AMOS specialized agents</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  { title: "Strategic Alignment", msg: "Campaign 'Summer 24' is missing core value props identified in 'Brand_Guidelines.pdf'. Suggest copy update.", type: "strategy" },
-                  { title: "Anomaly Detected", msg: "TikTok CPA spiked by 42% in London. Correlates with competitor launch noted in Market_Scan.pdf.", type: "risk" },
-                  { title: "Scaling Pocket", msg: "LAL 1% Interest Group shows 94% forecast confidence for $5k daily scale. Context: Historical Q2 peaks.", type: "budget" }
-                ].map((item, i) => (
-                  <div key={i} className="p-3 rounded-lg bg-secondary/30 border border-white/5 space-y-1 group hover:border-accent/30 cursor-pointer transition-all">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase text-accent">{item.title}</span>
-                      <Badge variant="outline" className="text-[8px] py-0">View Context</Badge>
+                  { name: "Campaign Optimization Agent", role: "Optimization", status: "Executing", color: "text-green-400" },
+                  { name: "Creative Strategy Agent", role: "Content", status: "Idle", color: "text-muted-foreground" },
+                  { name: "Competitive Intelligence Agent", role: "Research", status: "Analyzing", color: "text-accent" },
+                  { name: "Predictive Analytics Agent", role: "Analytics", status: "Syncing", color: "text-primary" }
+                ].map((agent, i) => (
+                  <div key={i} className="p-3 rounded-lg bg-secondary/30 border border-white/5 flex items-center justify-between group hover:border-accent/30 cursor-pointer transition-all">
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-white">{agent.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{agent.role}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground leading-snug">{item.msg}</p>
+                    <div className="text-right">
+                      <p className={`text-[10px] font-bold ${agent.color}`}>{agent.status}</p>
+                      <div className="flex gap-1 mt-1 justify-end">
+                        <div className={`w-1 h-1 rounded-full ${agent.status === 'Executing' ? 'bg-green-400 animate-pulse' : 'bg-muted-foreground'}`} />
+                        <div className={`w-1 h-1 rounded-full ${agent.status === 'Executing' ? 'bg-green-400 animate-pulse delay-75' : 'bg-muted-foreground'}`} />
+                        <div className={`w-1 h-1 rounded-full ${agent.status === 'Executing' ? 'bg-green-400 animate-pulse delay-150' : 'bg-muted-foreground'}`} />
+                      </div>
+                    </div>
                   </div>
                 ))}
-                <Button variant="ghost" className="w-full text-xs text-muted-foreground hover:text-white" asChild>
-                  <Link href="/intelligence">Open Command Chat <ChevronRight className="ml-1 h-3 w-3" /></Link>
+                <Button variant="outline" className="w-full text-xs font-bold border-accent/20 text-accent" asChild>
+                  <Link href="/agents">Agent Console <ChevronRight className="ml-1 h-3 w-3" /></Link>
                 </Button>
               </CardContent>
             </Card>
-          </div>
-
-          {/* Platform Performance IQ Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {['Meta IQ', 'Google IQ', 'TikTok IQ', 'LinkedIn IQ'].map((platform) => (
-              <Card key={platform} className="glass-panel p-4 flex items-center justify-between hover:bg-white/5 transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold">{platform}</p>
-                    <p className="text-[10px] text-muted-foreground">Strategic Sync: 100%</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-bold text-green-400">4.1x ROAS</p>
-                  <p className="text-[10px] text-muted-foreground">Forecast: Stable</p>
-                </div>
-              </Card>
-            ))}
           </div>
         </main>
       </SidebarInset>
