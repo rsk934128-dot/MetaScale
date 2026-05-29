@@ -1,0 +1,41 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "ad-creative-1",
+      "description": "Modern office setup for business ad",
+      "imageUrl": "https://picsum.photos/seed/ad1/600/400",
+      "imageHint": "office business"
+    },
+    {
+      "id": "ad-creative-2",
+      "description": "Mobile app interface display",
+      "imageUrl": "https://picsum.photos/seed/ad2/600/400",
+      "imageHint": "technology app"
+    },
+    {
+      "id": "ad-creative-3",
+      "description": "Lifestyle shot of person using product",
+      "imageUrl": "https://picsum.photos/seed/ad3/600/400",
+      "imageHint": "lifestyle person"
+    },
+    {
+      "id": "ad-creative-4",
+      "description": "Abstract technological background",
+      "imageUrl": "https://picsum.photos/seed/ad4/600/400",
+      "imageHint": "abstract tech"
+    },
+    {
+      "id": "ad-creative-5",
+      "description": "Team collaboration in creative space",
+      "imageUrl": "https://picsum.photos/seed/ad5/600/400",
+      "imageHint": "team collaboration"
+    },
+    {
+      "id": "hero-bg",
+      "description": "Data visualization abstract",
+      "imageUrl": "https://picsum.photos/seed/hero/1200/800",
+      "imageHint": "data visualization"
+    }
+  ]
+}
