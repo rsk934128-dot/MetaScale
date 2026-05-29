@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -14,7 +13,10 @@ import {
   Terminal,
   Database,
   Rocket,
-  ShieldAlert
+  ShieldAlert,
+  DollarSign,
+  TrendingUp,
+  Briefcase
 } from "lucide-react";
 import {
   Sidebar,
@@ -32,22 +34,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const mainNav = [
-  { icon: LayoutDashboard, label: "Mission Control", href: "/" },
-  { icon: Layers, label: "Operations Hub", href: "/campaigns" },
-  { icon: BarChart3, label: "Predictive Analytics", href: "/analytics" },
+  { icon: LayoutDashboard, label: "Global Command", href: "/" },
+  { icon: BarChart3, label: "Revenue Ops", href: "/revenue" },
+  { icon: Users, label: "Customer 360", href: "/customers" },
 ];
 
 const aiNav = [
-  { icon: Rocket, label: "Agent Console", href: "/agents" },
-  { icon: Terminal, label: "Command Chat (RAG)", href: "/intelligence" },
-  { icon: Sparkles, label: "AI Creative Studio", href: "/ai-tools/copywriter" },
-  { icon: BrainCircuit, label: "Optimization Engine", href: "/ai-tools/optimization" },
-  { icon: Target, label: "Targeting Intelligence", href: "/ai-tools/targeting" },
+  { icon: Rocket, label: "Agent Hub", href: "/agents" },
+  { icon: Terminal, label: "Intelligence Chat", href: "/intelligence" },
+  { icon: Sparkles, label: "Creative Studio", href: "/ai-tools/copywriter" },
+  { icon: BrainCircuit, label: "Strategy Engine", href: "/ai-tools/optimization" },
+  { icon: Target, label: "Market Intelligence", href: "/ai-tools/targeting" },
 ];
 
-const knowledgeNav = [
+const strategyNav = [
+  { icon: Briefcase, label: "Board Objectives", href: "/strategy" },
   { icon: Database, label: "Knowledge Assets", href: "/library" },
-  { icon: Users, label: "Agency Clients", href: "/clients" },
+  { icon: Layers, label: "Campaign Hub", href: "/campaigns" },
   { icon: ShieldAlert, label: "War Room Alerts", href: "/notifications" },
 ];
 
@@ -59,14 +62,14 @@ export function AppSidebar() {
       <SidebarHeader className="p-6">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center blue-glow">
-            <span className="font-headline font-bold text-primary-foreground">A</span>
+            <span className="font-headline font-bold text-primary-foreground">E</span>
           </div>
-          <span className="font-headline font-bold text-xl tracking-tight text-white">AMOS</span>
+          <span className="font-headline font-bold text-xl tracking-tight text-white">EGIOS</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Core Mission</SidebarGroupLabel>
+          <SidebarGroupLabel>Enterprise Growth</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNav.map((item) => (
@@ -110,10 +113,10 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Knowledge & Governance</SidebarGroupLabel>
+          <SidebarGroupLabel>Governance & Ops</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {knowledgeNav.map((item) => (
+              {strategyNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
@@ -136,7 +139,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="Settings">
               <Settings className="h-4 w-4" />
-              <span>System Configuration</span>
+              <span>System Config</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
