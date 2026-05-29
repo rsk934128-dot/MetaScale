@@ -9,6 +9,10 @@ import {
   Image as ImageIcon,
   Settings,
   BarChart3,
+  BrainCircuit,
+  Bell,
+  Users,
+  Terminal
 } from "lucide-react";
 import {
   Sidebar,
@@ -26,18 +30,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const mainNav = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/" },
-  { icon: Layers, label: "Campaigns", href: "/campaigns" },
-  { icon: BarChart3, label: "Analytics", href: "/analytics" },
+  { icon: LayoutDashboard, label: "Command Center", href: "/" },
+  { icon: Layers, label: "Multi-Platform Ads", href: "/campaigns" },
+  { icon: BarChart3, label: "Intelligence & Forecast", href: "/analytics" },
 ];
 
 const aiNav = [
-  { icon: Sparkles, label: "AI Copywriter", href: "/ai-tools/copywriter" },
-  { icon: Target, label: "Targeting Intel", href: "/ai-tools/targeting" },
+  { icon: Sparkles, label: "AI Creative Studio", href: "/ai-tools/copywriter" },
+  { icon: BrainCircuit, label: "Optimization Engine", href: "/ai-tools/optimization" },
+  { icon: Terminal, label: "Marketing Insights", href: "/intelligence" },
 ];
 
-const assetsNav = [
-  { icon: ImageIcon, label: "Creative Library", href: "/library" },
+const agencyNav = [
+  { icon: Users, label: "Agency Clients", href: "/clients" },
+  { icon: Bell, label: "Alert Center", href: "/notifications" },
+  { icon: ImageIcon, label: "Global Asset Library", href: "/library" },
 ];
 
 export function AppSidebar() {
@@ -48,14 +55,14 @@ export function AppSidebar() {
       <SidebarHeader className="p-6">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center blue-glow">
-            <span className="font-headline font-bold text-primary-foreground">M</span>
+            <span className="font-headline font-bold text-primary-foreground">A</span>
           </div>
-          <span className="font-headline font-bold text-xl tracking-tight text-white">MetaScale</span>
+          <span className="font-headline font-bold text-xl tracking-tight text-white">AMOS</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>General</SidebarGroupLabel>
+          <SidebarGroupLabel>Executive Overview</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNav.map((item) => (
@@ -77,7 +84,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>AI Tools</SidebarGroupLabel>
+          <SidebarGroupLabel>Intelligence Layer</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {aiNav.map((item) => (
@@ -99,10 +106,10 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Assets</SidebarGroupLabel>
+          <SidebarGroupLabel>Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {assetsNav.map((item) => (
+              {agencyNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
@@ -125,7 +132,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="Settings">
               <Settings className="h-4 w-4" />
-              <span>Settings</span>
+              <span>System Config</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

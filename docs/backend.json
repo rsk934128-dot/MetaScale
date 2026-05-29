@@ -3,54 +3,58 @@
   "entities": {
     "Campaign": {
       "title": "Campaign",
-      "description": "Represents a high-level marketing campaign.",
+      "description": "Cross-platform marketing campaign.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "paused", "archived"] },
+        "platform": { "type": "string", "enum": ["meta", "google", "tiktok", "linkedin"] },
+        "status": { "type": "string", "enum": ["active", "paused", "archived", "scheduled"] },
         "objective": { "type": "string" },
         "totalBudget": { "type": "number" },
+        "spent": { "type": "number" },
         "startDate": { "type": "string", "format": "date-time" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "clientId": { "type": "string" }
       },
-      "required": ["name", "status", "objective"]
+      "required": ["name", "platform", "status"]
     },
-    "AdSet": {
-      "title": "Ad Set",
-      "description": "A group of ads within a campaign targeting a specific audience.",
+    "Recommendation": {
+      "title": "AI Recommendation",
+      "description": "AI-generated optimization insight.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "campaignId": { "type": "string" },
-        "name": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "paused"] },
-        "dailyBudget": { "type": "number" },
-        "targeting": {
-          "type": "object",
-          "properties": {
-            "locations": { "type": "array", "items": { "type": "string" } },
-            "interests": { "type": "array", "items": { "type": "string" } },
-            "ageMin": { "type": "number" },
-            "ageMax": { "type": "number" }
-          }
-        }
-      },
-      "required": ["campaignId", "name", "status"]
+        "type": { "type": "string", "enum": ["budget", "targeting", "creative", "scaling"] },
+        "priority": { "type": "string", "enum": ["high", "medium", "low"] },
+        "description": { "type": "string" },
+        "impact": { "type": "string" },
+        "targetId": { "type": "string" },
+        "isApplied": { "type": "boolean" }
+      }
     },
-    "PerformanceMetric": {
-      "title": "Performance Metric",
-      "description": "Daily performance data for a campaign or ad set.",
+    "Client": {
+      "title": "Agency Client",
+      "description": "External client account for Agency Mode.",
       "type": "object",
       "properties": {
-        "date": { "type": "string", "format": "date" },
-        "entityId": { "type": "string" },
-        "entityType": { "type": "string", "enum": ["campaign", "adset", "ad"] },
-        "spend": { "type": "number" },
-        "impressions": { "type": "number" },
-        "clicks": { "type": "number" },
-        "conversions": { "type": "number" },
-        "revenue": { "type": "number" }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "company": { "type": "string" },
+        "email": { "type": "string" },
+        "logoUrl": { "type": "string" }
+      }
+    },
+    "Notification": {
+      "title": "System Alert",
+      "description": "Real-time alerts for campaign anomalies.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "severity": { "type": "string", "enum": ["info", "warning", "critical"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isRead": { "type": "boolean" }
       }
     }
   },
@@ -60,15 +64,19 @@
   "firestore": {
     "/campaigns/{campaignId}": {
       "schema": "Campaign",
-      "description": "Top-level marketing campaigns."
+      "description": "Global campaigns across platforms."
     },
-    "/campaigns/{campaignId}/adsets/{adsetId}": {
-      "schema": "AdSet",
-      "description": "Targeting groups within a campaign."
+    "/recommendations": {
+      "schema": "Recommendation",
+      "description": "AI-driven optimization pool."
     },
-    "/analytics": {
-      "schema": "PerformanceMetric",
-      "description": "Historical performance data."
+    "/clients/{clientId}": {
+      "schema": "Client",
+      "description": "Agency clients."
+    },
+    "/notifications": {
+      "schema": "Notification",
+      "description": "System-wide alerts."
     }
   }
 }
