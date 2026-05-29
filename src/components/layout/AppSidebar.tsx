@@ -20,7 +20,9 @@ import {
   Activity,
   ShieldCheck,
   Cpu,
-  FileBadge
+  FileBadge,
+  Network,
+  Globe
 } from "lucide-react";
 import {
   Sidebar,
@@ -47,6 +49,7 @@ const mainNav = [
 
 const executiveNav = [
   { icon: Cpu, label: "AI Council", href: "/agents" },
+  { icon: Network, label: "Trust Network", href: "/network" },
   { icon: Terminal, label: "Sovereign Chat", href: "/intelligence" },
   { icon: Briefcase, label: "Board Objectives", href: "/strategy" },
 ];

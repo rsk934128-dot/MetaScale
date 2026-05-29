@@ -15,7 +15,8 @@ import {
   BarChart3,
   Fingerprint,
   Zap,
-  AlertTriangle
+  AlertTriangle,
+  Network
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 const trustTrendData = [
   { time: "09:00", score: 88 },
   { time: "10:00", score: 85 },
-  { time: "11:00", score: 72 }, // Drop due to license expiry
+  { time: "11:00", score: 72 }, 
   { time: "12:00", score: 74 },
   { time: "13:00", score: 75 },
 ];
@@ -92,7 +93,7 @@ export default function RiskObservatory() {
             {[
               { label: "Identity Risk", value: 12, status: "Low", color: "bg-green-500" },
               { label: "Financial Risk", value: 45, status: "Moderate", color: "bg-yellow-500" },
-              { label: "Network Risk", value: 8, status: "Secure", color: "bg-green-500" },
+              { label: "Network Propagation", value: 68, status: "High", color: "bg-red-500" },
             ].map((dim, i) => (
               <Card key={i} className="glass-panel">
                 <CardHeader className="pb-2">
@@ -103,7 +104,7 @@ export default function RiskObservatory() {
                     <span className="text-2xl font-bold text-white">{dim.value}%</span>
                     <Badge variant="outline" className="text-[9px] mb-1">{dim.status}</Badge>
                   </div>
-                  <Progress value={dim.value} className="h-1" />
+                  <Progress value={dim.value} className={`h-1 ${dim.status === 'High' ? '[&>div]:bg-red-500' : ''}`} />
                 </CardContent>
               </Card>
             ))}
@@ -148,53 +149,52 @@ export default function RiskObservatory() {
               <Card className="glass-panel">
                 <CardHeader>
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Scale className="h-4 w-4 text-accent" />
-                    Adaptive Enforcement Fabric
+                    <Network className="h-4 w-4 text-accent" />
+                    Network Propagation Risk
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                   <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 space-y-2">
+                      <p className="text-[11px] font-bold text-red-400 uppercase">External Exposure Detected</p>
+                      <p className="text-[10px] text-muted-foreground">Node 'Subsidiary-BD' trust score dropped to 42.1. Connected settlement corridors are being downgraded to prevent systemic contagion.</p>
+                   </div>
                    {[
-                     { area: "Full Authorization", eligible: false, msg: "Trust Score < 80 required", tier: "manual_review" },
-                     { area: "Treasury Payouts", eligible: false, msg: "Entity Drift Triggered", tier: "hard_block" },
-                     { area: "Operational Access", eligible: true, msg: "Compliant", tier: "full" }
+                     { area: "Corridor: Rubelpay → UK", risk: "Low", msg: "Stable" },
+                     { area: "Corridor: Rubelpay → BD", risk: "Critical", msg: "Cascading Block" }
                    ].map((item, i) => (
                      <div key={i} className="p-3 rounded-lg bg-secondary/30 border border-white/5 space-y-2">
                         <div className="flex justify-between items-center">
                            <span className="text-xs font-bold text-white">{item.area}</span>
-                           <Badge className={item.eligible ? "bg-green-500/20 text-green-500" : "bg-red-500/20 text-red-500"}>
-                             {item.eligible ? "Eligible" : "Restricted"}
+                           <Badge className={item.risk === 'Low' ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}>
+                             {item.risk} Risk
                            </Badge>
                         </div>
                         <p className="text-[10px] text-muted-foreground">{item.msg}</p>
                      </div>
                    ))}
-                   <Button className="w-full text-xs font-bold cyan-glow bg-accent text-background">
-                     Simulate Trust Impact
-                   </Button>
                 </CardContent>
               </Card>
           </div>
 
           <Card className="glass-panel">
             <CardHeader>
-              <CardTitle className="text-sm">Immutable Trust Ledger</CardTitle>
+              <CardTitle className="text-sm">Global Trust Ledger (Immutable)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {[
-                  { time: "14:20:05", trigger: "Drift Engine", before: 88.2, after: 75.4, reason: "License nearing expiry (Bangladesh) detected in vault." },
-                  { time: "12:05:12", trigger: "Identity Sync", before: 87.5, after: 88.2, reason: "UBO Farid Sheikh identity proof validated." },
-                  { time: "09:00:00", trigger: "System Re-eval", before: 87.5, after: 87.5, reason: "Daily trust re-normalization complete." }
+                  { time: "16:45:00", trigger: "Propagation Engine", node: "Sub-BD", action: "CORRIDOR_SHUTDOWN", reason: "Entity drift exceeded threshold for connected node." },
+                  { time: "14:20:05", trigger: "Drift Engine", node: "Rubelpay", action: "SCORE_DOWNGRADE", reason: "License nearing expiry (Bangladesh) detected in vault." },
+                  { time: "12:05:12", trigger: "Identity Sync", node: "Farid Sheikh", action: "IDENTITY_VALIDATED", reason: "UBO Farid Sheikh identity proof validated." }
                 ].map((log, i) => (
                   <div key={i} className="flex gap-4 p-3 border-b border-white/5 last:border-0 items-center">
                     <div className="text-[10px] font-mono text-muted-foreground w-20">{log.time}</div>
                     <div className="flex-1">
                       <p className="text-xs text-white/90">{log.reason}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-[8px]">{log.trigger}</Badge>
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          {log.before} → <span className={log.after < log.before ? 'text-red-400' : 'text-green-400'}>{log.after}</span>
-                        </span>
+                        <Badge variant="outline" className="text-[8px] uppercase">{log.trigger}</Badge>
+                        <Badge variant="secondary" className="text-[8px] font-mono">{log.action}</Badge>
+                        <span className="text-[10px] text-muted-foreground italic">Node: {log.node}</span>
                       </div>
                     </div>
                   </div>

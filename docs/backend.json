@@ -22,6 +22,19 @@
         "lastEvaluated": { "type": "string", "format": "date-time" }
       }
     },
+    "NetworkTrustRelationship": {
+      "title": "Inter-Entity Trust Link",
+      "description": "A bidirectional trust relationship between two network nodes.",
+      "type": "object",
+      "properties": {
+        "sourceId": { "type": "string" },
+        "targetId": { "type": "string" },
+        "relationshipType": { "type": "string", "enum": ["partner", "subsidiary", "vendor", "client"] },
+        "mutualTrustScore": { "type": "number" },
+        "settlementCorridorActive": { "type": "boolean" },
+        "lastAuditDate": { "type": "string", "format": "date-time" }
+      }
+    },
     "WalletBinding": {
       "title": "Cryptographic Identity Binding",
       "description": "Verification of wallet ownership bound to a UBO.",
@@ -33,19 +46,6 @@
         "status": { "type": "string", "enum": ["bound", "pending_proof", "rejected", "revoked"] },
         "reputationScore": { "type": "number" }
       }
-    },
-    "TrustAuditLog": {
-      "title": "Trust Event Ledger",
-      "description": "Immutable log of changes to trust scores and tiers.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" },
-        "trigger": { "type": "string" },
-        "beforeScore": { "type": "number" },
-        "afterScore": { "type": "number" },
-        "reason": { "type": "string" }
-      }
     }
   },
   "auth": {
@@ -53,7 +53,7 @@
   },
   "firestore": {
     "/trust/profiles/{profileId}": { "schema": "TrustProfile", "description": "Continuous Trust Assessment." },
-    "/trust/bindings/{bindingId}": { "schema": "WalletBinding", "description": "Identity-bound assets." },
-    "/trust/audit_logs/{logId}": { "schema": "TrustAuditLog", "description": "Immutable Trust Ledger." }
+    "/trust/network_links/{linkId}": { "schema": "NetworkTrustRelationship", "description": "Inter-entity trust graph links." },
+    "/trust/bindings/{bindingId}": { "schema": "WalletBinding", "description": "Identity-bound assets." }
   }
 }
