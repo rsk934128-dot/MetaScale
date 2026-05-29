@@ -1,33 +1,36 @@
+
 "use client";
 
+import { useState } from "react";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
 import { 
-  DollarSign, 
-  TrendingUp, 
   ShieldAlert, 
   Activity, 
+  Zap, 
+  Globe, 
   Cpu, 
   RefreshCw, 
-  Database,
-  Globe,
-  Scale,
-  Zap,
-  ChevronRight
+  AlertTriangle,
+  Lock,
+  Network,
+  Waves,
+  DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
-export default function GlobalCivilizationBoardroom() {
-  const [isSimulating, setIsSimulating] = useState(false);
+export default function SovereignControlPlane() {
+  const [systemMode, setSystemMode] = useState<"NORMAL" | "EMERGENCY" | "LOCKDOWN">("NORMAL");
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  const triggerSimulation = () => {
-    setIsSimulating(true);
-    setTimeout(() => setIsSimulating(false), 2500);
+  const handleModeChange = (mode: "NORMAL" | "EMERGENCY" | "LOCKDOWN") => {
+    setSystemMode(mode);
+    setIsSyncing(true);
+    setTimeout(() => setIsSyncing(false), 1500);
   };
 
   return (
@@ -39,191 +42,209 @@ export default function GlobalCivilizationBoardroom() {
           <div className="flex-1">
             <h1 className="text-lg font-headline font-bold flex items-center gap-2">
               <Globe className="h-5 w-5 text-accent" />
-              Sovereign Economic Civilization Command
+              Sovereign Control Plane
             </h1>
           </div>
-          <div className="flex items-center gap-4">
-            <Badge variant="outline" className="text-accent border-accent/20">
-              <RefreshCw className="mr-1 h-3 w-3 animate-spin" /> Institutional Memory: Syncing
+          <div className="flex items-center gap-2">
+            <div className="flex bg-secondary/50 p-1 rounded-lg border border-white/5">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn("text-[10px] h-7 px-3 font-bold", systemMode === 'NORMAL' && "bg-green-500/20 text-green-400")}
+                onClick={() => handleModeChange('NORMAL')}
+              >
+                NORMAL
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn("text-[10px] h-7 px-3 font-bold", systemMode === 'EMERGENCY' && "bg-yellow-500/20 text-yellow-400")}
+                onClick={() => handleModeChange('EMERGENCY')}
+              >
+                EMERGENCY
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn("text-[10px] h-7 px-3 font-bold", systemMode === 'LOCKDOWN' && "bg-red-500/20 text-red-400")}
+                onClick={() => handleModeChange('LOCKDOWN')}
+              >
+                LOCKDOWN
+              </Button>
+            </div>
+            <Badge variant="outline" className="border-accent/20 text-accent">
+              {isSyncing ? <RefreshCw className="mr-1 h-3 w-3 animate-spin" /> : <Zap className="mr-1 h-3 w-3" />}
+              Mesh Sync
             </Badge>
-            <Button size="sm" onClick={triggerSimulation} className="cyan-glow text-xs font-bold bg-accent hover:bg-accent/90" disabled={isSimulating}>
-              <Cpu className={`mr-1 h-3 w-3 ${isSimulating ? 'animate-pulse' : ''}`} /> 
-              {isSimulating ? "Simulating Policy..." : "Civilization Simulation"}
-            </Button>
           </div>
         </header>
 
         <main className="flex-1 space-y-8 p-8 max-w-[1600px] mx-auto w-full">
-          {/* Civilization KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="flex justify-between items-end">
+            <div>
+              <h2 className="text-3xl font-headline font-bold mb-1">Mission Control</h2>
+              <p className="text-muted-foreground">Unified Decision Orchestration for Civic, Financial, and Security Planes.</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Global Priority</p>
+              <Badge className={cn(
+                "font-headline font-bold text-lg",
+                systemMode === 'NORMAL' ? 'bg-accent/20 text-accent' : 
+                systemMode === 'EMERGENCY' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-red-500/20 text-red-500'
+              )}>
+                {systemMode === 'NORMAL' ? 'EFFICIENCY' : systemMode === 'EMERGENCY' ? 'RESPONSE' : 'SURVIVAL'}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {[
-              { label: "Micro Stability", value: "95.1", trend: "+2.4", icon: Database, detail: "Entity-level health" },
-              { label: "Meso Stability", value: "88.4", trend: "-1.2", icon: Activity, detail: "Network/Corridor health" },
-              { label: "Macro Stability", value: "94.2", trend: "+0.8", icon: Globe, isGood: true, detail: "Global civilization health" },
-              { label: "Systemic Risk Index", value: "12/100", trend: "-4", icon: ShieldAlert, detail: "Threat: Negligible" },
-            ].map((stat, i) => (
-              <Card key={i} className="glass-panel border-white/5 hover:border-accent/20 transition-all shadow-xl">
+              { label: "Civic Health", value: "92.4", icon: Waves, color: "text-blue-400", sub: "River AI: Stable" },
+              { label: "Treasury Sync", value: "98.1", icon: DollarSign, color: "text-green-400", sub: "L1 Validation: Active" },
+              { label: "Threat Level", value: "0.2%", icon: ShieldAlert, color: "text-red-400", sub: "Anycast: Isolated" },
+              { label: "Mesh Nodes", value: "42/42", icon: Network, color: "text-accent", sub: "Routing: Optimal" }
+            ].map((card, i) => (
+              <Card key={i} className="glass-panel border-white/5 hover:border-accent/20 transition-all">
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 font-bold">{stat.label}</p>
-                      <h3 className="text-3xl font-headline font-bold">{stat.value}</h3>
-                      <p className="text-[10px] text-muted-foreground mt-1">{stat.detail}</p>
+                    <div className="space-y-1">
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground">{card.label}</p>
+                      <p className="text-3xl font-headline font-bold">{card.value}</p>
                     </div>
-                    <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-                      <stat.icon className="h-5 w-5 text-primary" />
+                    <div className={cn("p-2 rounded-lg bg-secondary/50", card.color.replace('text', 'bg').replace('400', '400/10'))}>
+                      <card.icon className={cn("h-5 w-5", card.color)} />
                     </div>
                   </div>
-                  <div className="mt-4 flex items-center gap-1">
-                    <span className={`text-xs font-bold ${stat.isGood ? 'text-green-400' : 'text-primary'}`}>
-                      {stat.trend}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">vs prev cycle</span>
-                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2 font-mono uppercase italic">{card.sub}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 h-full">
             <div className="xl:col-span-2 space-y-8">
-              <Card className="glass-panel overflow-hidden border-l-4 border-l-accent">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Scale className="h-5 w-5 text-accent" />
-                      Sovereign Policy Simulator
-                    </CardTitle>
-                    <CardDescription>Predicting the impact of macroeconomic policy changes across layers</CardDescription>
-                  </div>
-                  <Badge className="bg-accent/20 text-accent">Confidence: 94%</Badge>
+              <Card className="glass-panel border-l-4 border-l-accent overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-accent" />
+                    Real-time Priority Resolver
+                  </CardTitle>
+                  <CardDescription>Balancing conflicting module requests based on the current System Mode.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 rounded-xl bg-secondary/30 border border-white/5 text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1 tracking-widest">Policy A</p>
-                      <p className="text-sm font-bold text-white">Aggressive Expansion</p>
-                      <p className="text-xs text-yellow-400 mt-2">Risk: Trust Inflation</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-accent/10 border border-accent/20 text-center ring-2 ring-accent/30">
-                      <p className="text-[10px] text-accent uppercase font-bold mb-1 tracking-widest">Recommended</p>
-                      <p className="text-sm font-bold text-white">Stability Pivot</p>
-                      <p className="text-xs text-green-400 mt-2">Optimal Re-balancing</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-secondary/30 border border-white/5 text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1 tracking-widest">Policy C</p>
-                      <p className="text-sm font-bold text-white">Defensive Throttling</p>
-                      <p className="text-xs text-red-400 mt-2">Risk: Liquidity Stall</p>
-                    </div>
-                  </div>
-                  <div className="h-[250px]">
-                    <PerformanceChart />
+                <CardContent>
+                  <div className="space-y-4">
+                    {[
+                      { plane: "Civic Intelligence", request: "River AI Warning: Level 4", action: "Dispatched SOS", priority: 1 },
+                      { plane: "Financial Sovereign", request: "L1 Settlement Authorization", action: "Execution Gated", priority: 3 },
+                      { plane: "Security Intelligence", request: "Threat Signature: Isolated", action: "Monitoring", priority: 2 }
+                    ].map((row, i) => (
+                      <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-secondary/30 border border-white/5 group hover:border-accent/30 transition-all">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="text-[8px] uppercase">{row.plane}</Badge>
+                            <span className="text-xs font-bold text-white">{row.request}</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground italic">DECISION: {row.action}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] uppercase font-bold text-accent">P{row.priority}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <Card className="glass-panel">
-                  <CardHeader>
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-accent" />
-                      Economic Shock Response
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {[
-                      { title: "Liquidity Redistribution", status: "Active", impact: "High" },
-                      { title: "Corridor Rerouting", status: "Standby", impact: "Med" },
-                      { title: "Risk Isolation", status: "Active", impact: "Critical" }
-                    ].map((item, i) => (
-                      <div key={i} className="flex justify-between items-center p-3 rounded-lg bg-secondary/20 border border-white/5">
-                        <span className="text-xs font-bold text-white">{item.title}</span>
-                        <Badge variant="outline" className="text-[9px]">{item.status}</Badge>
+                 <Card className="glass-panel">
+                   <CardHeader>
+                     <CardTitle className="text-sm flex items-center gap-2">
+                       <Waves className="h-4 w-4 text-blue-400" />
+                       River AI & Civic Intel
+                     </CardTitle>
+                   </CardHeader>
+                   <CardContent className="space-y-4">
+                      <div className="p-3 rounded-lg bg-blue-400/5 border border-blue-400/20 text-[10px] text-blue-400 font-bold italic">
+                        "Pre-disaster modeling predicts 12% rise in sector 4. Auto-deploying sensors."
                       </div>
-                    ))}
-                  </CardContent>
-                </Card>
+                      <Button variant="outline" className="w-full text-xs font-bold border-blue-400/20 text-blue-400">
+                        View Civic Map
+                      </Button>
+                   </CardContent>
+                 </Card>
 
-                <Card className="glass-panel">
-                  <CardHeader>
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-primary" />
-                      Cross-Network Diplomacy
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-[10px] font-bold">
-                        <span>Inter-Network Sync (LAL-UK)</span>
-                        <span>92%</span>
+                 <Card className="glass-panel">
+                   <CardHeader>
+                     <CardTitle className="text-sm flex items-center gap-2">
+                       <Network className="h-4 w-4 text-accent" />
+                       Mesh Infrastructure
+                     </CardTitle>
+                   </CardHeader>
+                   <CardContent className="space-y-4">
+                      <div className="flex justify-between items-center text-[10px] font-bold uppercase">
+                        <span>Active Nodes</span>
+                        <span className="text-accent">42 Online</span>
                       </div>
-                      <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                        <div className="h-full bg-accent" style={{ width: '92%' }} />
+                      <div className="flex justify-between items-center text-[10px] font-bold uppercase">
+                        <span>Anycast Status</span>
+                        <span className="text-green-400">Isolated</span>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-[10px] font-bold">
-                        <span>Jurisdictional Alignment</span>
-                        <span>78%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                        <div className="h-full bg-primary" style={{ width: '78%' }} />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      <Button variant="outline" className="w-full text-xs font-bold border-accent/20 text-accent">
+                        Infrastructure Dashboard
+                      </Button>
+                   </CardContent>
+                 </Card>
               </div>
             </div>
 
             <div className="space-y-6">
-              <Card className="glass-panel bg-primary/5">
+              <Card className="glass-panel border-red-500/20 bg-red-500/5">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Cpu className="h-5 w-5 text-accent" />
-                    Sovereign AI Council
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4 text-red-500" />
+                    Security Enforcement
                   </CardTitle>
-                  <CardDescription>Multi-Layer Civilization Governance</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {[
-                    { name: "Global Governor", role: "Macro Policy", status: "Simulating", color: "text-accent" },
-                    { name: "Network Stabilizer", role: "Meso Control", status: "Monitoring", color: "text-primary" },
-                    { name: "Entity Intelligence", role: "Micro Advisor", status: "Forecasting", color: "text-green-400" },
-                    { name: "Risk Diplomat", role: "External Governance", status: "Negotiating", color: "text-red-400" }
-                  ].map((agent, i) => (
-                    <div key={i} className="p-4 rounded-xl bg-secondary/30 border border-white/5 flex items-center justify-between group hover:border-accent/30 transition-all cursor-pointer">
-                      <div className="space-y-1">
-                        <p className="text-sm font-bold text-white">{agent.name}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-tighter">{agent.role}</p>
+                  <div className="space-y-2">
+                    {[
+                      { title: "Fingerprint Auth", status: "Active" },
+                      { title: "Counter Intel Sandbox", status: "Enabled" },
+                      { title: "Audit Trace", status: "Live" }
+                    ].map((item, i) => (
+                      <div key={i} className="flex justify-between items-center p-2 rounded bg-secondary/30">
+                        <span className="text-[10px] font-bold uppercase">{item.title}</span>
+                        <Badge variant="outline" className="text-[8px] bg-red-500/10 text-red-500">{item.status}</Badge>
                       </div>
-                      <div className="text-right">
-                        <p className={`text-[10px] font-bold ${agent.color}`}>{agent.status}</p>
-                        <div className="flex gap-1 mt-1 justify-end">
-                          <div className={`w-1 h-1 rounded-full bg-current ${agent.status !== 'Idle' ? 'animate-pulse' : ''} ${agent.color}`} />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  <Button variant="outline" className="w-full text-xs font-bold border-accent/20 text-accent hover:bg-accent hover:text-background transition-colors" asChild>
-                    <Link href="/agents">Executive Council Hub <ChevronRight className="ml-1 h-3 w-3" /></Link>
+                    ))}
+                  </div>
+                  <Button className="w-full text-xs font-bold bg-red-500 hover:bg-red-600 text-white">
+                    Emergency Lockdown
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="glass-panel border-white/5">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                    <Globe className="h-3 w-3" />
-                    Civilization Insights
+              <Card className="glass-panel">
+                <CardHeader>
+                  <CardTitle className="text-sm flex items-center gap-2 text-accent">
+                    <Cpu className="h-4 w-4" />
+                    AI Decision Council
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="p-3 rounded-lg bg-secondary/30 text-xs leading-relaxed italic">
-                    "Strategic Advisory: Macro stability is holding at 94.2. Recommend meso-layer corridor rerouting to avoid UK jurisdictional congestion."
-                  </div>
-                  <Button variant="ghost" className="w-full text-[10px] h-7 text-muted-foreground hover:text-white border border-white/5">
-                    Explore Civilization Graph
-                  </Button>
+                  {[
+                    { agent: "Civic Governor", action: "Flood Prediction", color: "text-blue-400" },
+                    { agent: "Treasury Master", action: "Settlement Sync", color: "text-green-400" },
+                    { agent: "Risk Advisor", action: "Threat Analysis", color: "text-red-400" }
+                  ].map((agent, i) => (
+                    <div key={i} className="flex justify-between items-center p-3 rounded-lg bg-secondary/20 border border-white/5">
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold">{agent.agent}</p>
+                        <p className="text-[9px] text-muted-foreground uppercase">{agent.action}</p>
+                      </div>
+                      <div className={cn("w-2 h-2 rounded-full animate-pulse", agent.color.replace('text', 'bg'))} />
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
             </div>

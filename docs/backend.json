@@ -1,59 +1,39 @@
 
 {
   "entities": {
-    "TrustProfile": {
-      "title": "Continuous Trust Profile",
-      "description": "Dynamic identity and behavioral trust assessment.",
+    "SystemControlState": {
+      "title": "System Control State",
+      "description": "Current operational mode and priority settings for the Sovereign OS.",
+      "type": "object",
+      "properties": {
+        "currentMode": { "type": "string", "enum": ["NORMAL", "EMERGENCY", "LOCKDOWN", "DISASTER"] },
+        "activePriority": { "type": "string", "enum": ["EFFICIENCY", "SECURITY", "SURVIVAL"] },
+        "lastModeChange": { "type": "string", "format": "date-time" }
+      }
+    },
+    "CivicEmergency": {
+      "title": "Civic Emergency Event",
+      "description": "Real-time incident data for flood, SOS, or dispatch events.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "entityId": { "type": "string" },
-        "trustScore": { "type": "number", "minimum": 0, "maximum": 100 },
-        "economicMetrics": {
-          "type": "object",
-          "properties": {
-            "creditCapacity": { "type": "number" },
-            "liquidityTier": { "type": "string", "enum": ["prime", "standard", "restricted", "escrow_only"] },
-            "settlementVelocity": { "type": "string" }
-          }
-        },
-        "riskDimensions": {
-          "type": "object",
-          "properties": {
-            "identity": { "type": "number" },
-            "financial": { "type": "number" },
-            "network": { "type": "number" },
-            "regulatory": { "type": "number" }
-          }
-        },
-        "authorizationTier": { "type": "string", "enum": ["full", "limited", "manual_review", "hard_block"] },
-        "lastEvaluated": { "type": "string", "format": "date-time" }
+        "type": { "type": "string", "enum": ["FLOOD", "SOS", "FIRE", "CIVIL_UNREST"] },
+        "severity": { "type": "number", "minimum": 1, "maximum": 5 },
+        "location": { "type": "string" },
+        "status": { "type": "string", "enum": ["DETECTED", "DISPATCHED", "RESOLVED"] },
+        "timestamp": { "type": "string", "format": "date-time" }
       }
     },
-    "NetworkTrustRelationship": {
-      "title": "Inter-Entity Trust Link",
-      "description": "A bidirectional trust relationship between two network nodes with economic capacity.",
+    "NetworkNode": {
+      "title": "Infrastructure Mesh Node",
+      "description": "Data for one of the 42 distributed nodes in the anycast mesh.",
       "type": "object",
       "properties": {
-        "sourceId": { "type": "string" },
-        "targetId": { "type": "string" },
-        "relationshipType": { "type": "string", "enum": ["partner", "subsidiary", "vendor", "client"] },
-        "mutualTrustScore": { "type": "number" },
-        "corridorStatus": { "type": "string", "enum": ["optimal", "congested", "throttled", "isolated"] },
-        "liquidityThroughput": { "type": "number" },
-        "lastAuditDate": { "type": "string", "format": "date-time" }
-      }
-    },
-    "WalletBinding": {
-      "title": "Cryptographic Identity Binding",
-      "description": "Verification of wallet ownership bound to a UBO.",
-      "type": "object",
-      "properties": {
-        "walletAddress": { "type": "string" },
-        "ownerId": { "type": "string" },
-        "proofHash": { "type": "string" },
-        "status": { "type": "string", "enum": ["bound", "pending_proof", "rejected", "revoked"] },
-        "reputationScore": { "type": "number" }
+        "nodeId": { "type": "string" },
+        "status": { "type": "string", "enum": ["ONLINE", "OFFLINE", "DEGRADED", "ISOLATED"] },
+        "load": { "type": "number" },
+        "latency": { "type": "number" },
+        "region": { "type": "string" }
       }
     }
   },
@@ -61,8 +41,8 @@
     "providers": ["google.com"]
   },
   "firestore": {
-    "/trust/profiles/{profileId}": { "schema": "TrustProfile", "description": "Continuous Trust Assessment." },
-    "/trust/network_links/{linkId}": { "schema": "NetworkTrustRelationship", "description": "Inter-entity trust graph links." },
-    "/trust/bindings/{bindingId}": { "schema": "WalletBinding", "description": "Identity-bound assets." }
+    "/system/control": { "schema": "SystemControlState", "description": "Global OS mode state." },
+    "/civic/emergencies": { "schema": "CivicEmergency", "description": "Active SOS and disaster events." },
+    "/infrastructure/nodes": { "schema": "NetworkNode", "description": "Mesh network status logs." }
   }
 }

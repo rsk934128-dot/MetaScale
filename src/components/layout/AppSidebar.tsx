@@ -1,22 +1,21 @@
+
 "use client";
 
 import {
-  LayoutDashboard,
-  Settings,
-  BarChart3,
-  BrainCircuit,
-  Users,
-  Terminal,
-  Database,
+  Globe,
+  Waves,
   ShieldAlert,
   DollarSign,
   Activity,
   Cpu,
-  FileBadge,
   Network,
-  Globe,
-  Coins,
-  Scale
+  Terminal,
+  Database,
+  Lock,
+  Zap,
+  Radio,
+  Gavel,
+  Settings
 } from "lucide-react";
 import {
   Sidebar,
@@ -33,31 +32,29 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const mainNav = [
-  { icon: Globe, label: "Civilization Boardroom", href: "/" },
-  { icon: Coins, label: "Civilization Economy", href: "/economy" },
-  { icon: DollarSign, label: "Finance Intel", href: "/finance" },
-  { icon: Activity, label: "Operational Twin", href: "/operations" },
+const civicNav = [
+  { icon: Globe, label: "Control Plane", href: "/" },
+  { icon: Waves, label: "Civic Intelligence", href: "/civic" },
+  { icon: Zap, label: "SOS Dispatcher", href: "/civic/sos" },
 ];
 
-const executiveNav = [
-  { icon: Cpu, label: "AI Council", href: "/agents" },
-  { icon: Network, label: "Trust Network", href: "/network" },
+const financialNav = [
+  { icon: DollarSign, label: "Fiscal Command", href: "/finance" },
+  { icon: Gavel, label: "Compliance & KYB", href: "/compliance" },
+  { icon: Activity, label: "Revenue Ops", href: "/revenue" },
+];
+
+const securityNav = [
+  { icon: ShieldAlert, label: "Security Intelligence", href: "/risk" },
+  { icon: Lock, label: "Identity & Trust", href: "/network" },
   { icon: Terminal, label: "Sovereign Chat", href: "/intelligence" },
-  { icon: ShieldAlert, label: "Risk Observatory", href: "/risk" },
 ];
 
-const growthNav = [
-  { icon: FileBadge, label: "Compliance & Legal", href: "/compliance" },
-  { icon: BarChart3, label: "Revenue Ops", href: "/revenue" },
-  { icon: Users, label: "Customer 360", href: "/customers" },
+const infraNav = [
+  { icon: Network, label: "42-Node Mesh", href: "/infrastructure" },
+  { icon: Radio, label: "Anycast Routing", href: "/infrastructure/routing" },
+  { icon: Cpu, label: "AI Council", href: "/agents" },
   { icon: Database, label: "Knowledge Bank", href: "/library" },
-];
-
-const toolsNav = [
-  { icon: Scale, label: "Policy Simulator", href: "/ai-tools/optimization" },
-  { icon: BrainCircuit, label: "Strategy Engine", href: "/ai-tools/copywriter" },
-  { icon: Database, label: "Market Intel", href: "/ai-tools/targeting" },
 ];
 
 export function AppSidebar() {
@@ -67,21 +64,21 @@ export function AppSidebar() {
     <Sidebar className="border-r border-border/50">
       <SidebarHeader className="p-6">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center blue-glow">
-            <span className="font-headline font-bold text-primary-foreground">S</span>
+          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center cyan-glow">
+            <span className="font-headline font-bold text-accent-foreground">S</span>
           </div>
-          <span className="font-headline font-bold text-xl tracking-tight text-white">SEIP</span>
+          <span className="font-headline font-bold text-xl tracking-tight text-white uppercase italic">Sovereign</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Sovereign Core</SidebarGroupLabel>
+          <SidebarGroupLabel>Civic Intelligence</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNav.map((item) => (
+              {civicNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
-                    <Link href={item.href} className="flex items-center gap-3">
+                    <Link href={item.href} className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest">
                       <item.icon className="h-4 w-4" />
                       <span>{item.label}</span>
                     </Link>
@@ -93,13 +90,13 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Executive Council</SidebarGroupLabel>
+          <SidebarGroupLabel>Financial Sovereign</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {executiveNav.map((item) => (
+              {financialNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
-                    <Link href={item.href} className="flex items-center gap-3">
+                    <Link href={item.href} className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest">
                       <item.icon className="h-4 w-4" />
                       <span>{item.label}</span>
                     </Link>
@@ -111,13 +108,13 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Growth & Ops</SidebarGroupLabel>
+          <SidebarGroupLabel>Security Intelligence</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {growthNav.map((item) => (
+              {securityNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
-                    <Link href={item.href} className="flex items-center gap-3">
+                    <Link href={item.href} className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest">
                       <item.icon className="h-4 w-4" />
                       <span>{item.label}</span>
                     </Link>
@@ -129,13 +126,13 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Governance Tools</SidebarGroupLabel>
+          <SidebarGroupLabel>Infrastructure Mesh</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {toolsNav.map((item) => (
+              {infraNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
-                    <Link href={item.href} className="flex items-center gap-3">
+                    <Link href={item.href} className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest">
                       <item.icon className="h-4 w-4" />
                       <span>{item.label}</span>
                     </Link>
@@ -146,12 +143,12 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="p-4 border-t border-white/5">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Settings">
+            <SidebarMenuButton tooltip="Global Settings">
               <Settings className="h-4 w-4" />
-              <span>Sovereign Settings</span>
+              <span className="text-xs font-bold uppercase">System Settings</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
