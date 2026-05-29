@@ -1,30 +1,22 @@
-
 "use client";
 
 import {
   LayoutDashboard,
-  Layers,
-  Sparkles,
-  Target,
   Settings,
   BarChart3,
   BrainCircuit,
   Users,
   Terminal,
   Database,
-  Rocket,
   ShieldAlert,
   DollarSign,
-  TrendingUp,
-  Briefcase,
   Activity,
-  ShieldCheck,
   Cpu,
   FileBadge,
   Network,
   Globe,
-  Wallet,
-  Coins
+  Coins,
+  Scale
 } from "lucide-react";
 import {
   Sidebar,
@@ -42,8 +34,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const mainNav = [
-  { icon: LayoutDashboard, label: "Digital Boardroom", href: "/" },
-  { icon: Coins, label: "Trust Economy", href: "/economy" },
+  { icon: Globe, label: "Civilization Boardroom", href: "/" },
+  { icon: Coins, label: "Civilization Economy", href: "/economy" },
   { icon: DollarSign, label: "Finance Intel", href: "/finance" },
   { icon: Activity, label: "Operational Twin", href: "/operations" },
 ];
@@ -63,9 +55,9 @@ const growthNav = [
 ];
 
 const toolsNav = [
-  { icon: Sparkles, label: "Creative Studio", href: "/ai-tools/copywriter" },
-  { icon: BrainCircuit, label: "Strategy Engine", href: "/ai-tools/optimization" },
-  { icon: Target, label: "Market Intel", href: "/ai-tools/targeting" },
+  { icon: Scale, label: "Policy Simulator", href: "/ai-tools/optimization" },
+  { icon: BrainCircuit, label: "Strategy Engine", href: "/ai-tools/copywriter" },
+  { icon: Database, label: "Market Intel", href: "/ai-tools/targeting" },
 ];
 
 export function AppSidebar() {
@@ -137,7 +129,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Intelligence Tools</SidebarGroupLabel>
+          <SidebarGroupLabel>Governance Tools</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {toolsNav.map((item) => (

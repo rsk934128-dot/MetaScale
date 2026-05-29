@@ -1,18 +1,24 @@
-
 'use server';
 /**
- * @fileOverview Autonomous Global Trust Economy Simulator.
- * Predicts network-wide stability, liquidity health, and optimizes settlement routing.
+ * @fileOverview Sovereign Economic Governance Simulator.
+ * Predicts network-wide stability, civilization-level liquidity health, and optimizes settlement policy.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+
+const EconomicLayerSchema = z.object({
+  micro: z.number().describe('Entity-level stability index.'),
+  meso: z.number().describe('Network-level stability index.'),
+  macro: z.number().describe('Global system stability index.'),
+});
 
 const EconomyInputSchema = z.object({
   networkNodes: z.array(z.object({
     id: z.string(),
     trustScore: z.number(),
     liquidityAvailable: z.number(),
+    layer: z.enum(['micro', 'meso', 'macro']).default('micro'),
   })),
   activeCorridors: z.array(z.object({
     from: z.string(),
@@ -20,21 +26,28 @@ const EconomyInputSchema = z.object({
     throughput: z.number(),
     latency: z.number(),
   })),
+  policyChanges: z.object({
+    creditExpansion: z.boolean().optional(),
+    trustThresholdAdjustment: z.number().optional(),
+    settlementThrottling: z.boolean().optional(),
+  }).optional(),
   marketTrend: z.enum(['stable', 'volatile', 'stressed']),
 });
 
 const EconomyOutputSchema = z.object({
-  networkStabilityIndex: z.number().describe('0-100 score of total network health.'),
+  civilizationStabilityIndex: z.number().describe('0-100 score of total civilization health.'),
+  layerStability: EconomicLayerSchema,
   liquidityConcentrationRisk: z.number().describe('Percentage of liquidity tied to single points of failure.'),
+  policyImpactForecast: z.string().describe('Predicted result of proposed policy changes.'),
   recommendedRouting: z.array(z.object({
     path: z.string(),
     priority: z.number(),
     reason: z.string(),
   })),
-  isolationAlerts: z.array(z.object({
-    nodeId: z.string(),
+  shockResponseActions: z.array(z.object({
     action: z.string(),
-    reason: z.string(),
+    trigger: z.string(),
+    impact: z.string(),
   })).optional(),
 });
 
@@ -46,25 +59,23 @@ const economySimulatorPrompt = ai.definePrompt({
   name: 'economySimulatorPrompt',
   input: { schema: EconomyInputSchema },
   output: { schema: EconomyOutputSchema },
-  prompt: `You are the AGTEL Economic Stabilizer Agent.
-Analyze the current state of the Global Trust Economy.
+  prompt: `You are the SEG-MLC Global Economic Governor.
+Analyze the current state of the Digital Economic Civilization.
 
 MARKET CONDITION: {{{marketTrend}}}
 
-NETWORK NODES:
+HIERARCHICAL NODES:
 {{#each networkNodes}}
-- {{id}}: Trust {{trustScore}}, Liquidity ${{liquidityAvailable}}
+- {{id}} [Layer: {{layer}}]: Trust {{trustScore}}, Liquidity ${{liquidityAvailable}}
 {{/each}}
 
-ACTIVE CORRIDORS:
-{{#each activeCorridors}}
-- {{from}} -> {{to}}: Throughput {{throughput}}, Latency {{latency}}ms
-{{/each}}
+PROPOSED POLICY:
+{{{json policyChanges}}}
 
-1. Calculate a Network Stability Index.
-2. Identify high-risk liquidity concentrations.
-3. Determine the "Prime Path" for settlements to minimize risk/cost.
-4. If a node's trust score is < 50, recommend immediate isolation or throttling of its corridors.`,
+1. Calculate a Civilization-Level Stability Index across Micro, Meso, and Macro layers.
+2. Forecast the impact of the proposed policy changes (e.g., will credit expansion cause trust inflation?).
+3. Detect "Economic Shocks" (e.g., liquidity bottlenecks) and recommend immediate response actions.
+4. Identify high-risk liquidity concentrations and determine the "Prime Path" for settlements.`,
 });
 
 const simulateTrustEconomyFlow = ai.defineFlow(
