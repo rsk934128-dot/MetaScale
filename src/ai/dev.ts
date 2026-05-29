@@ -1,3 +1,4 @@
+
 import { config } from 'dotenv';
 config();
 
@@ -9,3 +10,4 @@ import '@/ai/flows/predictive-forecasting.ts';
 import '@/ai/flows/autonomous-agent-execution.ts';
 import '@/ai/flows/revenue-intelligence.ts';
 import '@/ai/flows/customer-intelligence.ts';
+import '@/ai/flows/predictive-compliance.ts';

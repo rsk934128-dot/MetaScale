@@ -77,10 +77,22 @@
       "properties": {
         "id": { "type": "string" },
         "title": { "type": "string" },
-        "category": { "type": "string", "enum": ["strategic", "financial", "operational", "compliance"] },
+        "category": { "type": "string", "enum": ["strategic", "financial", "operational", "compliance", "regulatory"] },
         "impact": { "type": "number" },
         "probability": { "type": "number" },
-        "mitigationPlan": { "type": "string" }
+        "mitigationPlan": { "type": "string" },
+        "isEnforced": { "type": "boolean" }
+      }
+    },
+    "ComplianceRule": {
+      "title": "Enforcement Rule",
+      "description": "IF-THEN logic for automated compliance gating.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "condition": { "type": "string" },
+        "action": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "disabled"] }
       }
     },
     "ComplianceRecord": {
@@ -99,7 +111,7 @@
     },
     "LegalEntity": {
       "title": "Legal Entity & Compliance",
-      "description": "Enterprise KYB and legal registration details with evidence tracking.",
+      "description": "Enterprise KYB and legal registration details with automated enforcement gates.",
       "type": "object",
       "properties": {
         "companyName": { "type": "string" },
@@ -110,6 +122,7 @@
         "complianceScore": { "type": "number" },
         "settlementAddress": { "type": "string" },
         "network": { "type": "string" },
+        "enforcementBlocks": { "type": "array", "items": { "type": "string" } },
         "documents": { "type": "array", "items": { "$ref": "#/backend/entities/ComplianceRecord" } }
       }
     },
@@ -123,7 +136,8 @@
         "action": { "type": "string" },
         "actor": { "type": "string" },
         "details": { "type": "string" },
-        "entityId": { "type": "string" }
+        "entityId": { "type": "string" },
+        "signature": { "type": "string" }
       }
     }
   },
@@ -138,6 +152,7 @@
     "/operations/{opId}": { "schema": "OperationalKPI", "description": "Operational Twin metrics." },
     "/risks/{riskId}": { "schema": "Risk", "description": "Risk Observatory." },
     "/compliance/entities/{entityId}": { "schema": "LegalEntity", "description": "Sovereign legal standing per entity." },
-    "/compliance/audit_logs/{logId}": { "schema": "AuditLog", "description": "Governance audit trail." }
+    "/compliance/audit_logs/{logId}": { "schema": "AuditLog", "description": "Governance audit trail." },
+    "/compliance/rules/{ruleId}": { "schema": "ComplianceRule", "description": "Active enforcement policies." }
   }
 }
