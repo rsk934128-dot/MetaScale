@@ -1,8 +1,9 @@
 
 'use server';
 /**
- * @fileOverview Predictive Compliance Engine.
- * Analyzes historical documentation trends and jurisdictional changes to predict future compliance gaps.
+ * @fileOverview Predictive Compliance & Self-Healing Engine.
+ * Analyzes historical documentation trends and jurisdictional changes to predict future compliance gaps
+ * and suggests automated remediation steps.
  */
 
 import { ai } from '@/ai/genkit';
@@ -16,6 +17,7 @@ const PredictiveComplianceInputSchema = z.object({
     status: z.string(),
   })),
   jurisdiction: z.string(),
+  activeBlocks: z.array(z.string()).optional(),
 });
 
 const PredictiveComplianceOutputSchema = z.object({
@@ -24,9 +26,15 @@ const PredictiveComplianceOutputSchema = z.object({
     estimatedFailureDate: z.string(),
     probability: z.number(),
     reason: z.string(),
+    remediationSteps: z.array(z.string()),
   })),
   regulatoryDriftScore: z.number().describe('Score 0-100 indicating jurisdictional change risk.'),
-  automatedRecommendations: z.array(z.string()),
+  automatedRemediationPlan: z.array(z.object({
+    blockId: z.string(),
+    fix: z.string(),
+    eta: z.string(),
+  })),
+  policyAdaptationSuggestions: z.array(z.string()),
 });
 
 export async function predictComplianceRisk(input: z.infer<typeof PredictiveComplianceInputSchema>) {
@@ -37,16 +45,22 @@ const compliancePredictorPrompt = ai.definePrompt({
   name: 'compliancePredictorPrompt',
   input: { schema: PredictiveComplianceInputSchema },
   output: { schema: PredictiveComplianceOutputSchema },
-  prompt: `You are the SEIP Regulatory Intelligence Agent.
-Analyze the entity's documentation for jurisdiction: {{{jurisdiction}}}.
+  prompt: `You are the SEIP Regulatory Intelligence & Self-Healing Agent.
+Analyze the entity's documentation and active enforcement blocks for jurisdiction: {{{jurisdiction}}}.
 
 CURRENT DOCUMENTS:
 {{#each currentDocuments}}
 - {{type}}: Status {{status}}, Expiry {{expiryDate}}
 {{/each}}
 
-Predict potential compliance failures based on expiry dates and common jurisdictional regulatory updates. 
-Identify documents likely to be requested next based on enterprise scaling in {{{jurisdiction}}}.`,
+ACTIVE BLOCKS:
+{{#each activeBlocks}}
+- {{this}}
+{{/each}}
+
+1. Predict potential compliance failures and provide step-by-step remediation plans.
+2. For active blocks, suggest automated fixes and estimated time to restore compliance.
+3. Suggest adaptive policy updates (IF-THEN rules) to prevent future drift in {{{jurisdiction}}}.`,
 });
 
 const predictiveComplianceFlow = ai.defineFlow(

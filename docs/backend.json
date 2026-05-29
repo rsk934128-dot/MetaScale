@@ -92,7 +92,8 @@
         "id": { "type": "string" },
         "condition": { "type": "string" },
         "action": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "disabled"] }
+        "status": { "type": "string", "enum": ["active", "disabled"] },
+        "remediationPath": { "type": "string" }
       }
     },
     "ComplianceRecord": {
