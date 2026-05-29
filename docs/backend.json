@@ -9,6 +9,14 @@
         "id": { "type": "string" },
         "entityId": { "type": "string" },
         "trustScore": { "type": "number", "minimum": 0, "maximum": 100 },
+        "economicMetrics": {
+          "type": "object",
+          "properties": {
+            "creditCapacity": { "type": "number" },
+            "liquidityTier": { "type": "string", "enum": ["prime", "standard", "restricted", "escrow_only"] },
+            "settlementVelocity": { "type": "string" }
+          }
+        },
         "riskDimensions": {
           "type": "object",
           "properties": {
@@ -24,14 +32,15 @@
     },
     "NetworkTrustRelationship": {
       "title": "Inter-Entity Trust Link",
-      "description": "A bidirectional trust relationship between two network nodes.",
+      "description": "A bidirectional trust relationship between two network nodes with economic capacity.",
       "type": "object",
       "properties": {
         "sourceId": { "type": "string" },
         "targetId": { "type": "string" },
         "relationshipType": { "type": "string", "enum": ["partner", "subsidiary", "vendor", "client"] },
         "mutualTrustScore": { "type": "number" },
-        "settlementCorridorActive": { "type": "boolean" },
+        "corridorStatus": { "type": "string", "enum": ["optimal", "congested", "throttled", "isolated"] },
+        "liquidityThroughput": { "type": "number" },
         "lastAuditDate": { "type": "string", "format": "date-time" }
       }
     },

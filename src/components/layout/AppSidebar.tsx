@@ -22,7 +22,9 @@ import {
   Cpu,
   FileBadge,
   Network,
-  Globe
+  Globe,
+  Wallet,
+  Coins
 } from "lucide-react";
 import {
   Sidebar,
@@ -41,23 +43,22 @@ import { usePathname } from "next/navigation";
 
 const mainNav = [
   { icon: LayoutDashboard, label: "Digital Boardroom", href: "/" },
+  { icon: Coins, label: "Trust Economy", href: "/economy" },
   { icon: DollarSign, label: "Finance Intel", href: "/finance" },
   { icon: Activity, label: "Operational Twin", href: "/operations" },
-  { icon: ShieldAlert, label: "Risk Observatory", href: "/risk" },
-  { icon: FileBadge, label: "Compliance & Legal", href: "/compliance" },
 ];
 
 const executiveNav = [
   { icon: Cpu, label: "AI Council", href: "/agents" },
   { icon: Network, label: "Trust Network", href: "/network" },
   { icon: Terminal, label: "Sovereign Chat", href: "/intelligence" },
-  { icon: Briefcase, label: "Board Objectives", href: "/strategy" },
+  { icon: ShieldAlert, label: "Risk Observatory", href: "/risk" },
 ];
 
 const growthNav = [
+  { icon: FileBadge, label: "Compliance & Legal", href: "/compliance" },
   { icon: BarChart3, label: "Revenue Ops", href: "/revenue" },
   { icon: Users, label: "Customer 360", href: "/customers" },
-  { icon: Layers, label: "Campaign Hub", href: "/campaigns" },
   { icon: Database, label: "Knowledge Bank", href: "/library" },
 ];
 

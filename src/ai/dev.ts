@@ -12,3 +12,4 @@ import '@/ai/flows/revenue-intelligence.ts';
 import '@/ai/flows/customer-intelligence.ts';
 import '@/ai/flows/predictive-compliance.ts';
 import '@/ai/flows/analyze-network-trust.ts';
+import '@/ai/flows/economy-simulator.ts';
