@@ -1,0 +1,74 @@
+
+{
+  "entities": {
+    "Campaign": {
+      "title": "Campaign",
+      "description": "Represents a high-level marketing campaign.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "paused", "archived"] },
+        "objective": { "type": "string" },
+        "totalBudget": { "type": "number" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "status", "objective"]
+    },
+    "AdSet": {
+      "title": "Ad Set",
+      "description": "A group of ads within a campaign targeting a specific audience.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "campaignId": { "type": "string" },
+        "name": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "paused"] },
+        "dailyBudget": { "type": "number" },
+        "targeting": {
+          "type": "object",
+          "properties": {
+            "locations": { "type": "array", "items": { "type": "string" } },
+            "interests": { "type": "array", "items": { "type": "string" } },
+            "ageMin": { "type": "number" },
+            "ageMax": { "type": "number" }
+          }
+        }
+      },
+      "required": ["campaignId", "name", "status"]
+    },
+    "PerformanceMetric": {
+      "title": "Performance Metric",
+      "description": "Daily performance data for a campaign or ad set.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "entityId": { "type": "string" },
+        "entityType": { "type": "string", "enum": ["campaign", "adset", "ad"] },
+        "spend": { "type": "number" },
+        "impressions": { "type": "number" },
+        "clicks": { "type": "number" },
+        "conversions": { "type": "number" },
+        "revenue": { "type": "number" }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["google.com"]
+  },
+  "firestore": {
+    "/campaigns/{campaignId}": {
+      "schema": "Campaign",
+      "description": "Top-level marketing campaigns."
+    },
+    "/campaigns/{campaignId}/adsets/{adsetId}": {
+      "schema": "AdSet",
+      "description": "Targeting groups within a campaign."
+    },
+    "/analytics": {
+      "schema": "PerformanceMetric",
+      "description": "Historical performance data."
+    }
+  }
+}
