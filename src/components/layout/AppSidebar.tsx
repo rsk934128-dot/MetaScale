@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -16,7 +15,9 @@ import {
   Radio,
   Gavel,
   Settings,
-  Milestone
+  Milestone,
+  LogOut,
+  User as UserIcon
 } from "lucide-react";
 import {
   Sidebar,
@@ -32,7 +33,16 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useUser, useAuth } from "@/firebase";
+import { signOut } from "firebase/auth";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const civicNav = [
   { icon: Globe, label: "Control Plane", href: "/" },
@@ -60,13 +70,23 @@ const infraNav = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { isMobile, setOpenMobile } = useSidebar();
+  const { user } = useUser();
+  const auth = useAuth();
 
   const handleLinkClick = () => {
     if (isMobile) {
       setOpenMobile(false);
     }
   };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
+  };
+
+  if (pathname === '/login') return null;
 
   return (
     <Sidebar className="border-r border-border/50">
@@ -167,7 +187,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4 border-t border-white/5">
+      <SidebarFooter className="p-4 border-t border-white/5 space-y-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname === '/settings'} tooltip="Global Settings">
@@ -180,6 +200,36 @@ export function AppSidebar() {
                 <span>System Settings</span>
               </Link>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton className="w-full flex items-center gap-3">
+                  <Avatar className="h-6 w-6 border border-accent/20">
+                    <AvatarImage src={user?.photoURL || ''} />
+                    <AvatarFallback className="bg-accent/10 text-[10px] text-accent font-bold uppercase">
+                      {user?.displayName?.[0] || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col items-start truncate overflow-hidden">
+                    <span className="text-[10px] font-bold text-white truncate w-full">{user?.displayName || 'User'}</span>
+                    <span className="text-[8px] text-muted-foreground uppercase tracking-tighter truncate w-full">{user?.email}</span>
+                  </div>
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="end" className="w-48 glass-panel border-white/5">
+                <DropdownMenuItem className="text-[10px] font-bold uppercase tracking-widest">
+                  <UserIcon className="mr-2 h-3 w-3" /> Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-[10px] font-bold uppercase tracking-widest text-red-400 focus:text-red-400"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-2 h-3 w-3" /> Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

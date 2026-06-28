@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { KernelProvider } from "@/components/kernel/KernelProvider";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { FirebaseErrorListener } from "@/components/FirebaseErrorListener";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import Script from 'next/script';
 
 export const metadata: Metadata = {
@@ -58,9 +59,11 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background text-foreground">
         <FirebaseClientProvider>
           <KernelProvider>
-            <SidebarProvider>
-              {children}
-            </SidebarProvider>
+            <AuthGuard>
+              <SidebarProvider>
+                {children}
+              </SidebarProvider>
+            </AuthGuard>
             <Toaster />
             <FirebaseErrorListener />
           </KernelProvider>
