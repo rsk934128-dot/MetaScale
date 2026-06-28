@@ -19,11 +19,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 const INITIAL_AGENTS = [
   {
@@ -73,6 +73,7 @@ export function AgentControlCenter() {
   const [isUpdatingGovernance, setIsUpdatingGovernance] = useState(false);
   const { emitEvent } = useKernel();
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleToggleAgent = (agentId: string) => {
     setAgents(prev => prev.map(agent => {
@@ -130,6 +131,11 @@ export function AgentControlCenter() {
         description: "New operational thresholds have been pushed to the cluster.",
       });
     }, 1500);
+  };
+
+  const handleViewAnalytics = () => {
+    emitEvent('SECURITY', 'ANALYTICS_DASHBOARD_ACCESS', 4, { source: 'AGENT_CONTROL_CENTER' });
+    router.push('/analytics');
   };
 
   return (
@@ -282,7 +288,11 @@ export function AgentControlCenter() {
                 <p className="text-[10px] text-muted-foreground mt-1">{forecast.desc}</p>
               </div>
             ))}
-            <Button variant="ghost" className="w-full text-[10px] h-8 text-muted-foreground hover:text-white">
+            <Button 
+              variant="ghost" 
+              className="w-full text-[10px] h-8 text-muted-foreground hover:text-white"
+              onClick={handleViewAnalytics}
+            >
               View Analytics <BarChart2 className="ml-2 h-3 w-3" />
             </Button>
           </CardContent>
