@@ -1,14 +1,41 @@
 
 "use client";
 
+import { useState } from "react";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AgentControlCenter } from "@/components/agents/AgentControlCenter";
-import { BrainCircuit, Play, ShieldCheck, Activity } from "lucide-react";
+import { BrainCircuit, Play, ShieldCheck, Activity, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useKernel } from "@/components/kernel/KernelProvider";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AgentsPage() {
+  const [isInitializing, setIsInitializing] = useState(false);
+  const { emitEvent } = useKernel();
+  const { toast } = useToast();
+
+  const handleInitializeAll = () => {
+    setIsInitializing(true);
+    
+    // Emit kernel event for audit logging
+    emitEvent('SECURITY', 'AGENTS_BULK_INITIALIZATION', 2, { 
+      timestamp: Date.now(),
+      scope: 'GLOBAL_AGENT_CLUSTER',
+      mode: 'SAFE_EXECUTION'
+    });
+
+    // Simulate initialization sequence
+    setTimeout(() => {
+      setIsInitializing(false);
+      toast({
+        title: "Cluster Initialized",
+        description: "All autonomous agents are now synced with Knowledge Node 01.",
+      });
+    }, 2000);
+  };
+
   return (
     <div className="flex min-h-screen">
       <AppSidebar />
@@ -25,8 +52,18 @@ export default function AgentsPage() {
             <Badge variant="outline" className="border-green-400/20 text-green-400">
               <ShieldCheck className="mr-1 h-3 w-3" /> Safe Execution Mode
             </Badge>
-            <Button size="sm" className="cyan-glow font-bold">
-              <Play className="mr-2 h-4 w-4" /> Initialize All Agents
+            <Button 
+              size="sm" 
+              className="cyan-glow font-bold"
+              onClick={handleInitializeAll}
+              disabled={isInitializing}
+            >
+              {isInitializing ? (
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Play className="mr-2 h-4 w-4" />
+              )}
+              {isInitializing ? "Initializing..." : "Initialize All Agents"}
             </Button>
           </div>
         </header>
