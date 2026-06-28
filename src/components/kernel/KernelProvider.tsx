@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -22,6 +21,13 @@ const INITIAL_PLANES: Record<PlaneType, PlaneState> = {
   INFRA: { status: 'OPTIMAL', load: 42, latency: 8, lastSync: Date.now() },
 };
 
+/**
+ * SHURUKKHA-OS v1.2 Seal Generator
+ */
+const generateSystemSeal = () => {
+  return `FALLBACK_P180_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+};
+
 export function KernelProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<KernelState>({
     mode: 'NORMAL',
@@ -39,8 +45,9 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const emitEvent = useCallback((plane: PlaneType, type: string, priority: number, payload: any) => {
+    const systemSeal = generateSystemSeal();
     const newEvent: SovereignEvent = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: systemSeal,
       plane,
       type,
       priority,
@@ -57,10 +64,10 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
       return { ...prev, events: newEvents };
     });
 
-    if (priority <= 2) {
+    if (priority <= 2 || type.includes('PAYOUT')) {
       toast({
-        title: `Critical Event: ${type}`,
-        description: `Source: ${plane} | Priority: ${priority}`,
+        title: `Kernel Event: ${type}`,
+        description: `Source: ${plane} | Seal: ${systemSeal}`,
         variant: plane === 'SECURITY' ? 'destructive' : 'default',
       });
     }
@@ -79,8 +86,8 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
       }
       
       toast({
-        title: `System Mode: ${newMode}`,
-        description: `Kernel transitioning states...`,
+        title: `System Mode Transition: ${newMode}`,
+        description: `Kernel resolving deterministic order...`,
       });
 
       return { ...prev, mode: newMode };

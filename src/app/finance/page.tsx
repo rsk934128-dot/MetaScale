@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -18,7 +17,9 @@ import {
   Scale,
   Fingerprint,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  ShieldCheck,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { orchestratePayout } from "@/ai/flows/payout-orchestrator";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 export default function FinancialIntelligence() {
   const { mode, emitEvent } = useKernel();
@@ -37,13 +39,27 @@ export default function FinancialIntelligence() {
   const [amount, setAmount] = useState("");
   const [gateway, setGateway] = useState<"PAYPAL" | "PRIYO_PAY">("PAYPAL");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [validationStep, setValidationProgress] = useState(0);
   const [lastPayout, setLastPayout] = useState<any>(null);
 
   const handlePayout = async () => {
     if (!recipient || !amount) return;
     
     setIsProcessing(true);
+    setValidationProgress(10);
     emitEvent('FINANCE', 'PAYOUT_INITIATED', 3, { recipient, amount, gateway });
+
+    // Simulate Anycast Validation Steps
+    const steps = [
+      { p: 30, msg: "Validating Anycast Route: Dhaka -> PayPal Cloud" },
+      { p: 60, msg: "Verifying Identity Binding for UBO Farid Sheikh" },
+      { p: 90, msg: "Executing Imperial Directive Clearance" }
+    ];
+
+    for (const step of steps) {
+      await new Promise(r => setTimeout(r, 800));
+      setValidationProgress(step.p);
+    }
 
     try {
       const result = await orchestratePayout({
@@ -53,6 +69,7 @@ export default function FinancialIntelligence() {
       });
       
       setLastPayout(result);
+      setValidationProgress(100);
       emitEvent('FINANCE', 'PAYOUT_EXECUTED', 4, { batchId: result.batchId, status: result.status });
       
       toast({
@@ -61,10 +78,20 @@ export default function FinancialIntelligence() {
       });
     } catch (error) {
       emitEvent('FINANCE', 'PAYOUT_FAILED', 1, { error: "API Failure" });
+      toast({
+        variant: "destructive",
+        title: "Payout Failed",
+        description: "Kernel intercept: Secure routing failure.",
+      });
     } finally {
-      setIsProcessing(false);
+      setTimeout(() => {
+        setIsProcessing(false);
+        setValidationProgress(0);
+      }, 1000);
     }
   };
+
+  const isThrottled = mode === 'LOCKDOWN' || mode === 'EMERGENCY';
 
   return (
     <div className="flex min-h-screen">
@@ -78,9 +105,16 @@ export default function FinancialIntelligence() {
               Fiscal Command & Trust Fabric
             </h1>
           </div>
-          <Badge variant="outline" className="border-accent/20 text-accent font-mono">
-            MODE: {mode}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={`border-accent/20 text-accent font-mono ${isThrottled ? 'animate-pulse text-yellow-400' : ''}`}>
+              MODE: {mode}
+            </Badge>
+            {isThrottled && (
+              <Badge variant="destructive" className="text-[10px]">
+                <AlertTriangle className="mr-1 h-3 w-3" /> Payouts Throttled
+              </Badge>
+            )}
+          </div>
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
@@ -100,7 +134,7 @@ export default function FinancialIntelligence() {
                         Automated Payout (PayPal / Priyo Pay)
                       </CardTitle>
                       <CardDescription>
-                        Programmatic disbursement logic using OAuth2 batch processing.
+                        Programmatic disbursement logic with Anycast path validation and Imperial Directive overrides.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -113,6 +147,7 @@ export default function FinancialIntelligence() {
                               size="sm" 
                               className="flex-1"
                               onClick={() => setGateway('PAYPAL')}
+                              disabled={isProcessing}
                             >
                               PayPal Business
                             </Button>
@@ -121,6 +156,7 @@ export default function FinancialIntelligence() {
                               size="sm" 
                               className="flex-1"
                               onClick={() => setGateway('PRIYO_PAY')}
+                              disabled={isProcessing}
                             >
                               Priyo Pay (Private)
                             </Button>
@@ -140,6 +176,7 @@ export default function FinancialIntelligence() {
                             className="bg-secondary/30"
                             value={recipient}
                             onChange={(e) => setRecipient(e.target.value)}
+                            disabled={isProcessing}
                           />
                         </div>
                         <div className="space-y-2">
@@ -150,23 +187,39 @@ export default function FinancialIntelligence() {
                             className="bg-secondary/30"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
+                            disabled={isProcessing}
                           />
                         </div>
                       </div>
 
-                      <Button 
-                        className="w-full cyan-glow font-bold bg-accent text-background"
-                        onClick={handlePayout}
-                        disabled={isProcessing || mode === 'LOCKDOWN'}
-                      >
-                        {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                        Execute Sovereign Batch Payout
-                      </Button>
+                      <div className="space-y-4">
+                        {isProcessing && (
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-[10px] uppercase font-bold text-accent">
+                              <span>Sovereign Path Validation</span>
+                              <span>{validationStep}%</span>
+                            </div>
+                            <Progress value={validationStep} className="h-1 bg-accent/10 [&>div]:bg-accent" />
+                          </div>
+                        )}
+                        
+                        <Button 
+                          className={`w-full cyan-glow font-bold ${isThrottled ? 'bg-secondary text-muted-foreground' : 'bg-accent text-background'}`}
+                          onClick={handlePayout}
+                          disabled={isProcessing || isThrottled}
+                        >
+                          {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+                          {isThrottled ? 'Kernel Throttling Active' : 'Execute Sovereign Batch Payout'}
+                        </Button>
+                      </div>
 
                       {lastPayout && (
                         <div className="p-4 rounded-lg bg-secondary/20 border border-accent/20 animate-fade-in">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold uppercase text-accent">Batch Success</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold uppercase text-accent">Batch Success</span>
+                              <Badge variant="outline" className="text-[8px] bg-accent/5">{lastPayout.directiveLevel}</Badge>
+                            </div>
                             <Badge variant="outline" className="text-[10px] font-mono">{lastPayout.routingToken}</Badge>
                           </div>
                           <div className="space-y-1">
@@ -188,11 +241,23 @@ export default function FinancialIntelligence() {
               <Card className="glass-panel border-accent/20 bg-accent/5">
                 <CardHeader>
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <ShieldAlert className="h-4 w-4 text-accent" />
-                    Treasury Safety Gating
+                    <ShieldCheck className="h-4 w-4 text-accent" />
+                    Secure Routing Mesh
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="p-3 rounded bg-secondary/30 border border-white/5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] uppercase font-bold text-muted-foreground">Anycast Cluster</span>
+                      <Badge variant="outline" className="text-[8px] text-green-400 border-green-400/20">ACTIVE</Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] text-accent">
+                      <Globe className="h-3 w-3" /> Node: Knowledge-Node-01
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground italic">
+                      "Imperial Directive Level: Alpha Enabled"
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-[10px] font-bold uppercase">
                       <span>Daily Limit Usage</span>
@@ -200,17 +265,6 @@ export default function FinancialIntelligence() {
                     </div>
                     <div className="h-1 bg-secondary rounded-full overflow-hidden">
                       <div className="h-full bg-accent" style={{ width: '12%' }} />
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed italic">
-                    "Determinstic Priority Engine active. Payouts are throttled in Emergency Mode."
-                  </p>
-                  <div className="p-3 rounded bg-secondary/30 border border-white/5 space-y-2">
-                    <div className="flex items-center gap-2 text-[10px] text-green-400">
-                      <CheckCircle2 className="h-3 w-3" /> OAuth2 Scopes Validated
-                    </div>
-                    <div className="flex items-center gap-2 text-[10px] text-accent">
-                      <Globe className="h-3 w-3" /> Anycast Route: Dhaka -> PayPal Cloud
                     </div>
                   </div>
                 </CardContent>
@@ -222,12 +276,15 @@ export default function FinancialIntelligence() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                    {[
-                     { label: "Rubelpay Primary", addr: "0xaf3c...1207", type: "BNB" },
-                     { label: "Partner Escrow", addr: "0x742d...444e", type: "ETH" }
+                     { label: "Rubelpay Primary", addr: "0xaf3c...1207", type: "BNB", verified: true },
+                     { label: "Partner Escrow", addr: "0x742d...444e", type: "ETH", verified: true }
                    ].map((w, i) => (
                      <div key={i} className="flex justify-between items-center p-2 rounded bg-secondary/20 border border-white/5">
                         <div className="flex flex-col">
-                           <span className="text-[10px] font-bold">{w.label}</span>
+                           <div className="flex items-center gap-1">
+                             <span className="text-[10px] font-bold">{w.label}</span>
+                             {w.verified && <CheckCircle2 className="h-2 w-2 text-green-400" />}
+                           </div>
                            <span className="text-[8px] font-mono text-muted-foreground">{w.addr}</span>
                         </div>
                         <Badge variant="outline" className="text-[8px]">{w.type}</Badge>
