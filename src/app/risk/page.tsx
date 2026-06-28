@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -48,118 +49,81 @@ export default function SecurityIntelligence() {
     <div className="flex min-h-screen">
       <AppSidebar />
       <SidebarInset>
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 md:gap-4 border-b bg-background/80 backdrop-blur px-4 md:px-6">
           <SidebarTrigger />
-          <div className="flex-1">
-            <h1 className="text-lg font-headline font-bold flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-red-400" />
-              Security Intelligence Command (SIC)
+          <div className="flex-1 truncate">
+            <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 text-red-400">
+              <ShieldAlert className="h-4 w-4 md:h-5 md:w-5 shrink-0" />
+              <span className="truncate">Security Command</span>
             </h1>
           </div>
-          <div className="flex items-center gap-3">
-             <div className="text-right">
-                <p className="text-[10px] text-muted-foreground uppercase font-bold">Threat Posture</p>
-                <p className="text-sm font-bold text-yellow-400">Elevated Probing</p>
-             </div>
-             <Badge variant="destructive" className="animate-pulse bg-red-500/20 text-red-400 border-red-500/30">
-                <Radar className="mr-1 h-3 w-3" /> Counter-Intel Active
-             </Badge>
-          </div>
+          <Badge variant="destructive" className="animate-pulse bg-red-500/20 text-red-400 text-[8px] md:text-[10px] shrink-0">
+             Active
+          </Badge>
         </header>
 
-        <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
-          <div className="flex justify-between items-end">
+        <main className="flex-1 p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6 md:space-y-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
-              <h2 className="text-3xl font-headline font-bold mb-2">Threat Intelligence & Risk</h2>
-              <p className="text-muted-foreground">Global vector analysis, identity fingerprinting, and automated threat containment.</p>
+              <h2 className="text-2xl md:text-3xl font-headline font-bold mb-1">Threat Intelligence</h2>
+              <p className="text-xs md:text-sm text-muted-foreground">Global vector analysis and containment.</p>
             </div>
-            <Button size="sm" variant="outline" className="border-red-400/20 text-red-400 font-bold hover:bg-red-400/10">
-              <ServerCrash className="mr-2 h-4 w-4" /> Isolate Suspicious Nodes
+            <Button size="sm" variant="outline" className="w-full md:w-auto border-red-400/20 text-red-400 font-bold text-[10px] h-8">
+              <ServerCrash className="mr-2 h-4 w-4" /> Isolate Nodes
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="glass-panel border-b-4 border-b-accent relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-2 opacity-10">
-                <Fingerprint className="h-12 w-12" />
-              </div>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-bold uppercase text-muted-foreground">Unified Trust Index</CardTitle>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <Card className="glass-panel border-b-4 border-b-accent">
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Trust Index</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-4xl font-bold text-white">75.4</div>
-                <div className="flex items-center gap-1 text-red-400 text-xs font-bold mt-1">
-                  <TrendingUp className="h-3 w-3 rotate-180" /> -12.4% Drift Detected
+              <CardContent className="p-4 pt-0">
+                <div className="text-3xl font-bold">75.4</div>
+                <div className="flex items-center gap-1 text-red-400 text-[10px] font-bold mt-1">
+                  <TrendingUp className="h-3 w-3 rotate-180" /> -12.4%
                 </div>
               </CardContent>
             </Card>
 
             {[
-              { label: "DDoS Resistance", value: 98, status: "Optimal", color: "bg-green-500", icon: ShieldCheck },
-              { label: "API Probing", value: 45, status: "Warning", color: "bg-yellow-500", icon: Eye },
-              { label: "Identity Integrity", value: 82, status: "Validated", color: "bg-accent", icon: Fingerprint },
+              { label: "DDoS", value: 98, color: "bg-green-500", icon: ShieldCheck },
+              { label: "Probing", value: 45, color: "bg-yellow-500", icon: Eye },
+              { label: "Identity", value: 82, color: "bg-accent", icon: Fingerprint },
             ].map((dim, i) => (
               <Card key={i} className="glass-panel">
-                <CardHeader className="pb-2">
+                <CardHeader className="pb-2 p-4">
                   <div className="flex justify-between items-center">
-                    <CardTitle className="text-xs font-bold uppercase text-muted-foreground">{dim.label}</CardTitle>
-                    <dim.icon className="h-3 w-3 text-muted-foreground opacity-50" />
+                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">{dim.label}</CardTitle>
+                    <dim.icon className="h-3 w-3 opacity-50" />
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex justify-between items-end">
-                    <span className="text-2xl font-bold text-white">{dim.value}%</span>
-                    <Badge variant="outline" className="text-[9px] mb-1">{dim.status}</Badge>
-                  </div>
-                  <Progress value={dim.value} className={`h-1 ${dim.status === 'Warning' ? '[&>div]:bg-yellow-500' : dim.status === 'Optimal' ? '[&>div]:bg-green-500' : '[&>div]:bg-accent'}`} />
+                <CardContent className="p-4 pt-0 space-y-2">
+                  <div className="text-xl font-bold">{dim.value}%</div>
+                  <Progress value={dim.value} className={`h-1 [&>div]:${dim.color}`} />
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
              <Card className="xl:col-span-2 glass-panel">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-accent" />
-                    Global Threat Vectors vs Trust
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="flex items-center gap-2 text-sm md:text-base">
+                    <Activity className="h-4 w-4 text-accent" />
+                    Global Threat Vectors
                   </CardTitle>
-                  <CardDescription>Correlation between external attack probes and organizational integrity signals.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="h-[350px] w-full mt-4">
+                <CardContent className="p-4 md:p-6 pt-0">
+                  <div className="h-[250px] md:h-[350px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={trustTrendData}>
-                        <defs>
-                          <linearGradient id="trustGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
-                          </linearGradient>
-                          <linearGradient id="threatGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.2} />
-                            <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                         <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fill: 'rgba(255,255,255,0.5)', fontSize: 10}} />
                         <YAxis hide domain={[0, 100]} />
                         <Tooltip content={<ChartTooltipContent />} />
-                        <Area 
-                          type="monotone" 
-                          dataKey="score" 
-                          stroke="hsl(var(--accent))" 
-                          strokeWidth={3} 
-                          fill="url(#trustGradient)" 
-                          name="Trust Score"
-                        />
-                        <Area 
-                          type="monotone" 
-                          dataKey="threats" 
-                          stroke="hsl(var(--destructive))" 
-                          strokeWidth={2} 
-                          fill="url(#threatGradient)" 
-                          name="Detected Probes"
-                        />
+                        <Area type="monotone" dataKey="score" stroke="hsl(var(--accent))" strokeWidth={2} fill="transparent" />
+                        <Area type="monotone" dataKey="threats" stroke="hsl(var(--destructive))" strokeWidth={2} fill="transparent" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -168,88 +132,27 @@ export default function SecurityIntelligence() {
 
               <div className="space-y-6">
                 <Card className="glass-panel border-red-500/20 bg-red-500/5">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
+                  <CardHeader className="p-4">
+                    <CardTitle className="text-xs flex items-center gap-2">
                       <Radar className="h-4 w-4 text-red-400" />
-                      Intelligence Isolation Sandbox
+                      Isolation Sandbox
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                     <div className="p-3 rounded-lg bg-black/20 border border-red-500/20 space-y-2">
-                        <p className="text-[11px] font-bold text-red-400 uppercase">Suspicious API Probe Trapped</p>
-                        <p className="text-[10px] text-muted-foreground leading-relaxed">
-                          Incoming requests from node <strong>PROXY-DE-77</strong> are being routed to a synthetic shadow environment. 
+                  <CardContent className="p-4 pt-0 space-y-4">
+                     <div className="p-3 rounded bg-black/20 border border-red-500/20 space-y-2">
+                        <p className="text-[10px] font-bold text-red-400 uppercase">Probe Trapped</p>
+                        <p className="text-[9px] text-muted-foreground leading-relaxed">
+                          Node: PROXY-DE-77
                         </p>
                         <div className="flex gap-2">
-                           <Button size="sm" className="h-7 text-[9px] bg-red-500 text-white flex-1">Isolate Node</Button>
-                           <Button size="sm" variant="outline" className="h-7 text-[9px] flex-1">Monitor Flow</Button>
+                           <Button size="sm" className="h-7 text-[8px] bg-red-500 text-white flex-1">Isolate</Button>
+                           <Button size="sm" variant="outline" className="h-7 text-[8px] flex-1">Monitor</Button>
                         </div>
                      </div>
                   </CardContent>
                 </Card>
-
-                <Card className="glass-panel">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Fingerprint className="h-4 w-4 text-accent" />
-                      UBO Identity Fingerprinting
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                     {[
-                       { user: "Farid Sheikh", status: "Verified", cert: "RSA-4096-S1", load: 100 },
-                       { user: "System Admin", status: "TOTP-Verified", cert: "MFA-GATE-A", load: 100 },
-                       { user: "Guest Proxy", status: "UNTRUSTED", cert: "NONE", load: 0 }
-                     ].map((item, i) => (
-                       <div key={i} className="p-3 rounded-lg bg-secondary/30 border border-white/5 space-y-2">
-                          <div className="flex justify-between items-center">
-                             <span className="text-xs font-bold text-white">{item.user}</span>
-                             <Badge className={item.status === 'Verified' ? "bg-accent/20 text-accent" : item.status === 'UNTRUSTED' ? "bg-red-500/20 text-red-400" : "bg-primary/20 text-primary"}>
-                               {item.status}
-                             </Badge>
-                          </div>
-                          <div className="flex justify-between items-center text-[8px] font-mono text-muted-foreground uppercase tracking-widest">
-                            <span>Fingerprint: {item.cert}</span>
-                            <span className={item.load === 100 ? 'text-green-400' : 'text-red-400'}>{item.load}% Match</span>
-                          </div>
-                       </div>
-                     ))}
-                  </CardContent>
-                </Card>
               </div>
           </div>
-
-          <Card className="glass-panel">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-sm">Active Threat Intelligence Log</CardTitle>
-                <CardDescription className="text-[10px]">Deterministic security events across all Sovereign Mesh nodes.</CardDescription>
-              </div>
-              <Button size="sm" variant="ghost" className="text-[10px] h-8">View Full Ledger</Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  { time: "13:45:12", trigger: "Anycast Guard", node: "Frankfurt-09", action: "PIS_VALIDATED", msg: "Cross-border SEPA routing path verified via Yapily BIC handshake." },
-                  { time: "12:20:05", trigger: "Vector Engine", node: "Global-Proxy-01", action: "PROBE_CONTAINED", msg: "High-frequency API probing detected and isolated to counter-intel sandbox." },
-                  { time: "11:05:42", trigger: "Identity Sync", node: "Kernel-Core", action: "FINGERPRINT_BOUND", msg: "Cryptographic identity binding confirmed for UBO: Farid Sheikh." }
-                ].map((log, i) => (
-                  <div key={i} className="flex gap-4 p-3 border-b border-white/5 last:border-0 items-center">
-                    <div className="text-[10px] font-mono text-muted-foreground w-20">{log.time}</div>
-                    <div className="flex-1">
-                      <p className="text-xs text-white/90">{log.msg}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-[8px] uppercase">{log.trigger}</Badge>
-                        <Badge variant="secondary" className="text-[8px] font-mono">{log.action}</Badge>
-                        <span className="text-[10px] text-muted-foreground italic">Node: {log.node}</span>
-                      </div>
-                    </div>
-                    {log.action.includes('CONTAINED') && <UserX className="h-4 w-4 text-red-400 animate-pulse" />}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </main>
       </SidebarInset>
     </div>

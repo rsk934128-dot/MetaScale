@@ -62,134 +62,97 @@ export default function CivicIntelligencePage() {
     <div className="flex min-h-screen">
       <AppSidebar />
       <SidebarInset>
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 md:gap-4 border-b bg-background/80 backdrop-blur px-4 md:px-6">
           <SidebarTrigger />
-          <div className="flex-1">
-            <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-blue-400">
-              <Waves className="h-5 w-5" />
-              Civic Intelligence & Dispatch
+          <div className="flex-1 truncate">
+            <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 text-blue-400">
+              <Waves className="h-4 w-4 md:h-5 md:w-5 shrink-0" />
+              <span className="truncate">Civic Intelligence</span>
             </h1>
           </div>
-          <div className="flex items-center gap-4">
-            <Badge variant="outline" className="border-blue-400/20 text-blue-400">
-              <Radio className="mr-1 h-3 w-3 animate-pulse" /> River AI: Monitoring
-            </Badge>
+          <div className="flex items-center gap-2">
             <Button 
               size="sm" 
               variant="outline"
               onClick={handlePinPolice}
               disabled={isPinningPolice}
-              className="border-accent/30 text-accent hover:bg-accent/10 text-xs font-bold"
+              className="hidden sm:flex border-accent/30 text-accent hover:bg-accent/10 text-[10px] md:text-xs font-bold h-8"
             >
               {isPinningPolice ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Shield className="h-3 w-3 mr-1" />}
-              পুলিশ পিন করুন
+              পুলিশ পিন
             </Button>
-            <Button size="sm" onClick={handleSOS} disabled={isSimulating} className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold">
+            <Button size="sm" onClick={handleSOS} disabled={isSimulating} className="bg-red-500 hover:bg-red-600 text-white text-[10px] md:text-xs font-bold h-8 px-2 md:px-3">
               {isSimulating ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Zap className="h-3 w-3 mr-1" />}
-              EMERGENCY SOS
+              SOS
             </Button>
           </div>
         </header>
 
-        <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
-          <div className="flex justify-between items-end">
+        <main className="flex-1 p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6 md:space-y-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-2">
             <div>
-              <h2 className="text-3xl font-headline font-bold mb-2">Civic Intelligence Hub</h2>
-              <p className="text-muted-foreground">Managing river health, flood prediction, and SOS emergency dispatch.</p>
+              <h2 className="text-2xl md:text-3xl font-headline font-bold mb-1">Intelligence Hub</h2>
+              <p className="text-xs md:text-sm text-muted-foreground">River health and SOS emergency dispatch.</p>
             </div>
-            <div className="text-right">
-              <p className="text-xs font-bold uppercase text-muted-foreground">Civic Stability</p>
-              <p className="text-4xl font-headline font-bold text-blue-400">92.4</p>
+            <div className="text-left md:text-right">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground">Stability</p>
+              <p className="text-3xl md:text-4xl font-headline font-bold text-blue-400">92.4</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             <Card className="glass-panel border-l-4 border-l-blue-400">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">River Intelligence</CardTitle>
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">River Level</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-3xl font-bold">STABLE</div>
-                <div className="space-y-2">
-                   <div className="flex justify-between text-[10px] font-bold">
-                     <span>Water Level (m)</span>
-                     <span>4.2 / 6.0</span>
-                   </div>
-                   <Progress value={70} className="h-1 bg-blue-400/10 [&>div]:bg-blue-400" />
-                </div>
+              <CardContent className="p-4 pt-0 space-y-3">
+                <div className="text-2xl font-bold">4.2m</div>
+                <Progress value={70} className="h-1 bg-blue-400/10 [&>div]:bg-blue-400" />
               </CardContent>
             </Card>
             <Card className="glass-panel border-l-4 border-l-yellow-400">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Flood Prediction</CardTitle>
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Flood Risk</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-3xl font-bold">12%</div>
-                <p className="text-[10px] text-yellow-400 mt-1 uppercase font-bold">Risk Level: Minimal</p>
-                <p className="text-[10px] text-muted-foreground italic">"Prediction stable for 72 hours based on satellite weather data."</p>
+              <CardContent className="p-4 pt-0">
+                <div className="text-2xl font-bold">12%</div>
+                <p className="text-[10px] text-yellow-400 uppercase font-bold mt-1">Minimal</p>
               </CardContent>
             </Card>
-            <Card className="glass-panel border-l-4 border-l-red-500 ring-2 ring-red-500/10">
-              <CardHeader className="pb-2">
+            <Card className="glass-panel border-l-4 border-l-red-500 sm:col-span-2 md:col-span-1">
+              <CardHeader className="pb-2 p-4">
                 <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">SOS Active</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-3xl font-bold">0</div>
-                <p className="text-[10px] text-muted-foreground mt-1 uppercase">Dispatch Center: Standby</p>
-                <Button variant="outline" size="sm" className="w-full text-[10px] border-red-500/50 text-red-500">
-                  Manual Alert Activation
-                </Button>
+              <CardContent className="p-4 pt-0">
+                <div className="text-2xl font-bold">0</div>
+                <p className="text-[10px] text-muted-foreground uppercase mt-1">Standby</p>
               </CardContent>
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
             <Card className="xl:col-span-2 glass-panel">
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Map className="h-5 w-5 text-blue-400" />
-                      Civic Intelligence Map
-                    </CardTitle>
-                    <CardDescription>Visualizing river sensors, sector health, and active emergency beacons.</CardDescription>
-                  </div>
+              <CardHeader className="p-4 md:p-6">
+                <div className="flex justify-between items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-sm md:text-base">
+                    <Map className="h-4 w-4 md:h-5 md:w-5 text-blue-400" />
+                    Civic Map
+                  </CardTitle>
                   <Button variant="ghost" size="sm" onClick={handlePinPolice} className="text-[10px] h-8 gap-1">
-                    <MapPin className="h-3 w-3" /> ম্যাপে পিন করুন
+                    <MapPin className="h-3 w-3" /> ম্যাপ পিন
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="h-[400px] border border-white/5 rounded-xl bg-black/20 relative flex items-center justify-center overflow-hidden">
-                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #60a5fa 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+              <CardContent className="p-4 md:p-6 pt-0">
+                <div className="h-[300px] md:h-[400px] border border-white/5 rounded-xl bg-black/20 relative flex items-center justify-center overflow-hidden">
+                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #60a5fa 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
                    
-                   <div className="relative z-10 w-full max-w-lg p-12 text-center space-y-4">
-                      <div className="inline-block p-4 rounded-full bg-blue-400/10 border border-blue-400/20">
-                        <Waves className="h-12 w-12 text-blue-400 animate-pulse" />
+                   <div className="relative z-10 w-full max-w-lg p-6 text-center space-y-4">
+                      <div className="inline-block p-3 rounded-full bg-blue-400/10 border border-blue-400/20">
+                        <Waves className="h-8 w-8 text-blue-400 animate-pulse" />
                       </div>
-                      <h3 className="text-xl font-headline font-bold">Sector 7 Intelligence</h3>
-                      <p className="text-xs text-muted-foreground">River Level: 4.2m | Humidity: 84% | Status: Nominal</p>
-                      
-                      <div className="flex justify-center gap-8 pt-4">
-                         {[1, 2, 3, 4].map((s) => (
-                           <div key={s} className="flex flex-col items-center gap-2 relative group cursor-pointer">
-                              <div className="w-3 h-3 rounded-full bg-blue-400 group-hover:bg-accent transition-colors" />
-                              <span className="text-[8px] uppercase font-bold">S-{s}</span>
-                              {s === 2 && (
-                                <div className="absolute -top-6 left-1/2 -translate-x-1/2">
-                                  <Shield className="h-4 w-4 text-accent animate-bounce" />
-                                </div>
-                              )}
-                           </div>
-                         ))}
-                      </div>
-                   </div>
-
-                   <div className="absolute bottom-4 right-4 space-y-2">
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-400" /> <span className="text-[10px]">Sensor Active</span></div>
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-yellow-500" /> <span className="text-[10px]">Warning Zone</span></div>
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500" /> <span className="text-[10px]">SOS Zone</span></div>
-                      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-accent" /> <span className="text-[10px]">Police Pinned</span></div>
+                      <h3 className="text-lg font-headline font-bold">Sector 7</h3>
+                      <p className="text-[10px] text-muted-foreground">River: 4.2m | Status: Nominal</p>
                    </div>
                 </div>
               </CardContent>
@@ -197,42 +160,19 @@ export default function CivicIntelligencePage() {
 
             <div className="space-y-6">
                <Card className="glass-panel border-blue-400/20">
-                  <CardHeader>
-                    <CardTitle className="text-sm flex items-center gap-2">
+                  <CardHeader className="p-4">
+                    <CardTitle className="text-xs flex items-center gap-2">
                       <Navigation className="h-4 w-4 text-blue-400" />
-                      Emergency Dispatch AI
+                      Dispatch AI
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                     <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-                        "Evaluating nearest responders. Optimal route found through Sector 4. Estimated arrival: 124 seconds."
+                  <CardContent className="p-4 pt-0 space-y-4">
+                     <p className="text-[11px] text-muted-foreground italic">
+                        "Evaluating routes... Optimal path: Sector 4."
                      </p>
-                     <Button className="w-full text-xs font-bold blue-glow bg-blue-400 text-background">
-                        Authorize Dispatch
+                     <Button className="w-full text-[10px] font-bold blue-glow bg-blue-400 text-background h-8">
+                        Authorize
                      </Button>
-                  </CardContent>
-               </Card>
-
-               <Card className="glass-panel">
-                  <CardHeader>
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-yellow-400" />
-                      Flood Defense Protocols
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                     {[
-                       { node: "Sluice Gate 1", status: "Closed" },
-                       { node: "Auto-Barrier 4", status: "Standby" },
-                       { node: "Pump Station 2", status: "Nominal" }
-                     ].map((item, i) => (
-                       <div key={i} className="flex justify-between items-center p-2 rounded bg-secondary/20">
-                          <span className="text-[10px] font-bold uppercase">{item.node}</span>
-                          <Badge variant="outline" className="text-[8px] bg-blue-400/10 text-blue-400">
-                            {item.status}
-                          </Badge>
-                       </div>
-                     ))}
                   </CardContent>
                </Card>
             </div>
