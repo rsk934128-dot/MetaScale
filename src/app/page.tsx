@@ -246,10 +246,10 @@ export default function LandingPage() {
           <div className="space-y-4">
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-white">Operational Planes</h4>
             <ul className="space-y-2 text-xs text-muted-foreground">
-              <li><Link href="#" className="hover:text-accent">Civic Intelligence</Link></li>
-              <li><Link href="#" className="hover:text-accent">Financial Sovereign</Link></li>
-              <li><Link href="#" className="hover:text-accent">Security Intelligence</Link></li>
-              <li><Link href="#" className="hover:text-accent">Infrastructure Mesh</Link></li>
+              <li><Link href="/civic" className="hover:text-accent">Civic Intelligence</Link></li>
+              <li><Link href="/finance" className="hover:text-accent">Financial Sovereign</Link></li>
+              <li><Link href="/risk" className="hover:text-accent">Security Intelligence</Link></li>
+              <li><Link href="/infrastructure" className="hover:text-accent">Infrastructure Mesh</Link></li>
             </ul>
           </div>
           <div className="space-y-4">
@@ -257,8 +257,8 @@ export default function LandingPage() {
             <ul className="space-y-2 text-xs text-muted-foreground">
               <li><Link href="/roadmap" className="hover:text-accent">Roadmap</Link></li>
               <li><Link href="/login" className="hover:text-accent">Identity Link</Link></li>
-              <li><Link href="#" className="hover:text-accent">API Docs</Link></li>
-              <li><Link href="#" className="hover:text-accent">Legal Bound</Link></li>
+              <li><Link href="/legal" className="hover:text-accent">Legal Bound</Link></li>
+              <li><Link href="/settings" className="hover:text-accent">System Settings</Link></li>
             </ul>
           </div>
         </div>

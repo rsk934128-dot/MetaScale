@@ -91,7 +91,6 @@ export function AppSidebar() {
   };
 
   // Sidebar is hidden on landing page and login page for non-logged-in users
-  // But usually we want sidebar only in dashboard routes
   const isDashboardRoute = pathname !== '/' && pathname !== '/login';
 
   if (!isDashboardRoute) return null;
@@ -206,6 +205,19 @@ export function AppSidebar() {
               >
                 <Settings className="h-4 w-4" />
                 <span>System Settings</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={pathname === '/legal'} tooltip="Legal Bound">
+              <Link 
+                href="/legal" 
+                className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest"
+                onClick={handleLinkClick}
+              >
+                <Gavel className="h-4 w-4" />
+                <span>Legal Bound</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
