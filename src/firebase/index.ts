@@ -9,11 +9,16 @@ import { firebaseConfig } from './config';
 export function initializeFirebase() {
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
-  // Use initializeFirestore for more control in workstation environments
-  // This enables persistent local cache for better offline/slow connection handling
-  const firestore = initializeFirestore(app, {
-    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-  });
+  let firestore;
+  try {
+    // Attempt to initialize with custom settings
+    firestore = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    });
+  } catch (e) {
+    // If already initialized (common during HMR), get the existing instance
+    firestore = getFirestore(app);
+  }
   
   const auth = getAuth(app);
 
@@ -21,10 +26,14 @@ export function initializeFirebase() {
   if (typeof window !== 'undefined') {
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
     if (siteKey && siteKey !== 'YOUR_RECAPTCHA_ENTERPRISE_SITE_KEY') {
-      initializeAppCheck(app, {
-        provider: new ReCaptchaEnterpriseProvider(siteKey),
-        isTokenAutoRefreshEnabled: true,
-      });
+      try {
+        initializeAppCheck(app, {
+          provider: new ReCaptchaEnterpriseProvider(siteKey),
+          isTokenAutoRefreshEnabled: true,
+        });
+      } catch (e) {
+        // App Check might also be already initialized
+      }
     }
   }
 
