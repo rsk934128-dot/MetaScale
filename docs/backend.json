@@ -41,6 +41,20 @@
       },
       "required": ["id", "plane", "type", "priority", "timestamp", "status"]
     },
+    "Notification": {
+      "title": "System Notification",
+      "description": "A real-time alert delivered to a citizen node.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["INFO", "WARNING", "CRITICAL", "DIRECTIVE"] },
+        "read": { "type": "boolean" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "title", "message", "type", "read", "timestamp"]
+    },
     "BankAccount": {
       "title": "Simulated Bank Account",
       "description": "Mock account data for Open Banking testing.",
@@ -65,32 +79,6 @@
         "description": { "type": "string" },
         "date": { "type": "string", "format": "date-time" }
       }
-    },
-    "CommunicationMessage": {
-      "title": "Communication Log",
-      "description": "Metadata and intelligence derived from intercepted or synced communications.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "source": { "type": "string", "enum": ["GMAIL", "INTERNAL", "SIGNAL"] },
-        "sender": { "type": "string" },
-        "subject": { "type": "string" },
-        "intelligenceRating": { "type": "number" },
-        "processedAt": { "type": "string", "format": "date-time" }
-      }
-    },
-    "CivicEmergency": {
-      "title": "Civic Emergency Event",
-      "description": "Real-time incident data for flood, SOS, or dispatch events.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "type": { "type": "string", "enum": ["FLOOD", "SOS", "FIRE", "CIVIL_UNREST"] },
-        "severity": { "type": "number", "minimum": 1, "maximum": 5 },
-        "location": { "type": "string" },
-        "status": { "type": "string", "enum": ["DETECTED", "DISPATCHED", "RESOLVED"] },
-        "timestamp": { "type": "string", "format": "date-time" }
-      }
     }
   },
   "auth": {
@@ -98,6 +86,7 @@
   },
   "firestore": {
     "/users/{userId}": { "schema": "UserProfile", "description": "Extended user profile information." },
+    "/users/{userId}/notifications": { "schema": "Notification", "description": "User specific real-time alerts." },
     "/system/control": { "schema": "SystemControlState", "description": "Global OS mode state." },
     "/system/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." },
     "/civic/emergencies": { "schema": "CivicEmergency", "description": "Active SOS and disaster events." },

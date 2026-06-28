@@ -5,8 +5,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { KernelState, SovereignEvent, SystemMode, PlaneType, PlaneState } from '@/lib/kernel/types';
 import { resolveEventPriority, isTransitionAllowed } from '@/lib/kernel/priority-engine';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, doc, setDoc, query, orderBy, limit, Firestore } from 'firebase/firestore';
+import { useFirestore, useCollection, useUser } from '@/firebase';
+import { collection, doc, setDoc, query, orderBy, limit, Firestore, addDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -32,6 +32,7 @@ const generateSystemSeal = () => {
 
 export function KernelProvider({ children }: { children: React.ReactNode }) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
   const [localMode, setLocalMode] = useState<SystemMode>('NORMAL');
@@ -76,6 +77,22 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
         });
         errorEmitter.emit('permission-error', permissionError);
       });
+
+      // Also create a notification for high priority events
+      if (user?.uid && (resolvedPriority <= 2 || type.includes('EMERGENCY'))) {
+        const notifRef = collection(firestore, 'users', user.uid, 'notifications');
+        const notification = {
+          id: systemSeal,
+          title: `Kernel Trigger: ${type}`,
+          message: `Priority ${resolvedPriority} event detected in ${plane} plane.`,
+          type: resolvedPriority === 1 ? 'CRITICAL' : 'WARNING',
+          read: false,
+          timestamp: Date.now(),
+        };
+        addDoc(notifRef, notification).catch(async (err) => {
+          // contextual error handled silently for background tasks
+        });
+      }
     }
 
     if (priority <= 2 || type.includes('PAYOUT')) {
@@ -85,7 +102,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
         variant: plane === 'SECURITY' ? 'destructive' : 'default',
       });
     }
-  }, [firestore, localMode, toast]);
+  }, [firestore, localMode, toast, user?.uid]);
 
   const setSystemMode = useCallback((newMode: SystemMode) => {
     if (localMode === newMode) return;
