@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth, useFirestore } from '@/firebase';
@@ -37,6 +36,8 @@ import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
+const ADMIN_EMAIL = 'rubels1k994@gmail.com';
+
 export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
@@ -58,37 +59,38 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
-    // Force account selection to avoid auto-login issues
     provider.setCustomParameters({ prompt: 'select_account' });
 
     try {
       const result = await signInWithPopup(auth, provider);
       
       if (result.user) {
-        // Save/Update basic profile on Google Login
+        const isAdmin = result.user.email === ADMIN_EMAIL;
         const userRef = doc(firestore, 'users', result.user.uid);
-        setDoc(userRef, {
+        
+        const userData = {
           uid: result.user.uid,
           displayName: result.user.displayName,
           email: result.user.email,
           kernelId: `SKO-${result.user.uid.substring(0, 6).toUpperCase()}`,
           lastLogin: serverTimestamp(),
-          role: 'CITIZEN', // Default role
-        }, { merge: true }).catch(async (err) => {
+          role: isAdmin ? 'ADMIN' : 'CITIZEN',
+        };
+
+        setDoc(userRef, userData, { merge: true }).catch(async (err) => {
           const pErr = new FirestorePermissionError({
             path: userRef.path,
             operation: 'update',
-            requestResourceData: { uid: result.user.uid }
+            requestResourceData: userData
           });
           errorEmitter.emit('permission-error', pErr);
         });
 
         toast({ 
-          title: "Identity Bound", 
-          description: "Sovereign Mesh link established successfully." 
+          title: isAdmin ? "Admin Handshake Success" : "Identity Bound", 
+          description: isAdmin ? "Welcome back, System Administrator." : "Sovereign Mesh link established successfully." 
         });
         
-        // Use replace to prevent going back to login
         router.replace('/dashboard');
       }
     } catch (error: any) {
@@ -125,7 +127,7 @@ export default function LoginPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: name });
       
-      // Save extended profile to Firestore
+      const isAdmin = email === ADMIN_EMAIL;
       const userRef = doc(firestore, 'users', userCredential.user.uid);
       const userData = {
         uid: userCredential.user.uid,
@@ -133,7 +135,7 @@ export default function LoginPage() {
         email: email,
         mobile: mobile,
         kernelId: `SKO-${userCredential.user.uid.substring(0, 6).toUpperCase()}`,
-        role: 'CITIZEN',
+        role: isAdmin ? 'ADMIN' : 'CITIZEN',
         createdAt: serverTimestamp(),
       };
 
@@ -146,7 +148,7 @@ export default function LoginPage() {
         errorEmitter.emit('permission-error', pErr);
       });
 
-      toast({ title: "Protocol Established", description: "Kernel identity created successfully." });
+      toast({ title: isAdmin ? "Admin Protocol Active" : "Protocol Established", description: isAdmin ? "Root privileges granted." : "Kernel identity created successfully." });
       router.replace('/dashboard');
     } catch (error: any) {
       toast({ variant: "destructive", title: "Registration Blocked", description: error.message });
