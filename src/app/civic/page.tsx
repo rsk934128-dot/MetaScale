@@ -16,20 +16,26 @@ import {
   Filter,
   Navigation,
   Radio,
-  AlertTriangle
+  AlertTriangle,
+  Shield,
+  MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useKernel } from "@/components/kernel/KernelProvider";
 
 export default function CivicIntelligencePage() {
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isPinningPolice, setIsPinningPolice] = useState(false);
   const { toast } = useToast();
+  const { emitEvent } = useKernel();
 
   const handleSOS = () => {
     setIsSimulating(true);
+    emitEvent('CIVIC', 'EMERGENCY_SOS_DISPATCHED', 2, { sector: 7, priority: 'CRITICAL' });
     setTimeout(() => {
       setIsSimulating(false);
       toast({
@@ -38,6 +44,18 @@ export default function CivicIntelligencePage() {
         variant: "destructive",
       });
     }, 2000);
+  };
+
+  const handlePinPolice = () => {
+    setIsPinningPolice(true);
+    emitEvent('CIVIC', 'POLICE_UNIT_PINNED', 3, { location: 'Sector 7 - Junction A', type: 'PATROL' });
+    setTimeout(() => {
+      setIsPinningPolice(false);
+      toast({
+        title: "পুলিশ পিন করা হয়েছে",
+        description: "সেক্টর ৭-এ পুলিশ ইউনিটের অবস্থান চিহ্নিত করা হয়েছে এবং ব্যাকএন্ডে সিঙ্ক করা হয়েছে।",
+      });
+    }, 1500);
   };
 
   return (
@@ -56,6 +74,16 @@ export default function CivicIntelligencePage() {
             <Badge variant="outline" className="border-blue-400/20 text-blue-400">
               <Radio className="mr-1 h-3 w-3 animate-pulse" /> River AI: Monitoring
             </Badge>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={handlePinPolice}
+              disabled={isPinningPolice}
+              className="border-accent/30 text-accent hover:bg-accent/10 text-xs font-bold"
+            >
+              {isPinningPolice ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Shield className="h-3 w-3 mr-1" />}
+              পুলিশ পিন করুন
+            </Button>
             <Button size="sm" onClick={handleSOS} disabled={isSimulating} className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold">
               {isSimulating ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Zap className="h-3 w-3 mr-1" />}
               EMERGENCY SOS
@@ -118,11 +146,18 @@ export default function CivicIntelligencePage() {
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             <Card className="xl:col-span-2 glass-panel">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Map className="h-5 w-5 text-blue-400" />
-                  Civic Intelligence Map
-                </CardTitle>
-                <CardDescription>Visualizing river sensors, sector health, and active emergency beacons.</CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Map className="h-5 w-5 text-blue-400" />
+                      Civic Intelligence Map
+                    </CardTitle>
+                    <CardDescription>Visualizing river sensors, sector health, and active emergency beacons.</CardDescription>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={handlePinPolice} className="text-[10px] h-8 gap-1">
+                    <MapPin className="h-3 w-3" /> ম্যাপে পিন করুন
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="h-[400px] border border-white/5 rounded-xl bg-black/20 relative flex items-center justify-center overflow-hidden">
@@ -137,9 +172,14 @@ export default function CivicIntelligencePage() {
                       
                       <div className="flex justify-center gap-8 pt-4">
                          {[1, 2, 3, 4].map((s) => (
-                           <div key={s} className="flex flex-col items-center gap-2">
-                              <div className="w-3 h-3 rounded-full bg-blue-400" />
+                           <div key={s} className="flex flex-col items-center gap-2 relative group cursor-pointer">
+                              <div className="w-3 h-3 rounded-full bg-blue-400 group-hover:bg-accent transition-colors" />
                               <span className="text-[8px] uppercase font-bold">S-{s}</span>
+                              {s === 2 && (
+                                <div className="absolute -top-6 left-1/2 -translate-x-1/2">
+                                  <Shield className="h-4 w-4 text-accent animate-bounce" />
+                                </div>
+                              )}
                            </div>
                          ))}
                       </div>
@@ -149,6 +189,7 @@ export default function CivicIntelligencePage() {
                       <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-400" /> <span className="text-[10px]">Sensor Active</span></div>
                       <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-yellow-500" /> <span className="text-[10px]">Warning Zone</span></div>
                       <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500" /> <span className="text-[10px]">SOS Zone</span></div>
+                      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-accent" /> <span className="text-[10px]">Police Pinned</span></div>
                    </div>
                 </div>
               </CardContent>
