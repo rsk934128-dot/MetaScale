@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -15,23 +16,79 @@ import {
   Lock,
   ChevronRight,
   Gavel,
-  Scale
+  Scale,
+  ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/firebase";
+import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
+
+const HERO_SLIDES = [
+  {
+    id: 'sovereign',
+    badge: 'Next-Gen Deterministic Infrastructure',
+    title: 'THE KERNEL OF',
+    titleItalic: 'SOVEREIGNTY',
+    desc: 'Mission-critical operating system for the next generation of civic and financial infrastructure. Built with deterministic AI logic.',
+    color: 'text-accent',
+    glow: 'bg-accent/20',
+    icon: Zap
+  },
+  {
+    id: 'civic',
+    badge: 'Civilization Resilience active',
+    title: 'REAL-TIME',
+    titleItalic: 'INTELLIGENCE',
+    desc: 'Monitoring critical environmentals and river health via geo-distributed sensors. Automated SOS dispatch protocols.',
+    color: 'text-blue-400',
+    glow: 'bg-blue-400/20',
+    icon: Waves
+  },
+  {
+    id: 'finance',
+    badge: 'Global Fiscal Surface v1.2',
+    title: 'A GLOBAL FINANCIAL',
+    titleItalic: 'CONTROL SURFACE',
+    desc: 'Integrate directly with banking rails through the Sovereign Mesh. Multi-rail settlement system with integrated AI.',
+    color: 'text-green-400',
+    glow: 'bg-green-400/20',
+    icon: DollarSign
+  },
+  {
+    id: 'security',
+    badge: 'Zero-Trust Security Mesh',
+    title: 'CONTINUOUS',
+    titleItalic: 'THREAT VECTOR',
+    desc: 'Biometric identity binding and autonomous containment. All interactions with the Mesh are cryptographically signed.',
+    color: 'text-red-400',
+    glow: 'bg-red-400/20',
+    icon: ShieldAlert
+  }
+];
 
 export default function LandingPage() {
   const { user } = useUser();
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 5000); // Change banner every 5 seconds
+    return () => clearInterval(timer);
+  }, []);
+
+  const slide = HERO_SLIDES[activeSlide];
 
   return (
     <div className="min-h-screen bg-background selection:bg-accent selection:text-background overflow-x-hidden">
-      {/* Background Ambience */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
+      {/* Dynamic Background Ambience */}
+      <div className="fixed inset-0 z-0 pointer-events-none transition-all duration-1000">
         <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #00f2ff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent/10 rounded-full blur-[120px]" />
+        <div className={cn("absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] transition-all duration-1000", slide.glow)} />
+        <div className={cn("absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] transition-all duration-1000", slide.glow)} />
       </div>
 
       {/* Navigation */}
@@ -65,27 +122,44 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <header className="relative z-10 pt-32 pb-20 px-6 max-w-7xl mx-auto text-center">
-        <Badge variant="outline" className="mb-6 border-accent/20 text-accent uppercase tracking-[0.3em] px-4 py-1 text-[10px] font-bold animate-fade-in">
-          Next-Gen Deterministic Infrastructure
-        </Badge>
-        <h1 className="text-6xl md:text-8xl font-headline font-bold text-white leading-[0.9] tracking-tighter mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          THE KERNEL OF <br />
-          <span className="text-accent italic">SOVEREIGNTY</span>
-        </h1>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          Mission-critical operating system for the next generation of civic and financial infrastructure. Built with deterministic AI logic and high-clearance security protocols.
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-          <Button asChild size="lg" className="cyan-glow bg-accent text-background font-bold uppercase text-xs tracking-widest h-14 px-10 rounded-full">
+      {/* Dynamic Hero Banner Section */}
+      <header className="relative z-10 pt-32 pb-20 px-6 max-w-7xl mx-auto text-center min-h-[600px] flex flex-col justify-center">
+        <div className="transition-all duration-700 ease-in-out transform">
+          <Badge variant="outline" className={cn("mb-6 uppercase tracking-[0.3em] px-4 py-1 text-[10px] font-bold animate-fade-in border-current", slide.color)}>
+            {slide.badge}
+          </Badge>
+          <h1 className="text-6xl md:text-8xl font-headline font-bold text-white leading-[0.9] tracking-tighter mb-8 animate-fade-in">
+            {slide.title} <br />
+            <span className={cn("italic transition-colors duration-1000", slide.color)}>{slide.titleItalic}</span>
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in">
+            {slide.desc}
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
+          <Button asChild size="lg" className={cn("cyan-glow font-bold uppercase text-xs tracking-widest h-14 px-10 rounded-full transition-all duration-500", slide.color === 'text-accent' ? 'bg-accent text-background' : 'bg-white text-background')}>
             <Link href={user ? "/dashboard" : "/login"}>
               Launch Control Plane
             </Link>
           </Button>
-          <Button variant="outline" size="lg" className="h-14 px-10 rounded-full text-xs font-bold uppercase tracking-widest border-white/10 hover:bg-white/5 transition-all">
+          <Button variant="outline" size="lg" className="h-14 px-10 rounded-full text-xs font-bold uppercase tracking-widest border-white/10 hover:bg-white/5 transition-all text-white">
             Read Whitepaper
           </Button>
+        </div>
+
+        {/* Slide Indicators */}
+        <div className="mt-12 flex justify-center gap-3">
+          {HERO_SLIDES.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveSlide(idx)}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-500",
+                activeSlide === idx ? "w-12 bg-accent" : "w-3 bg-white/20"
+              )}
+            />
+          ))}
         </div>
       </header>
 
