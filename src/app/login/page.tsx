@@ -25,7 +25,8 @@ import {
   Phone, 
   Key,
   ArrowRight,
-  Loader2
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -57,30 +58,57 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
+    // Force account selection to avoid auto-login issues
+    provider.setCustomParameters({ prompt: 'select_account' });
+
     try {
       const result = await signInWithPopup(auth, provider);
       
-      // Save/Update basic profile on Google Login
-      const userRef = doc(firestore, 'users', result.user.uid);
-      setDoc(userRef, {
-        uid: result.user.uid,
-        displayName: result.user.displayName,
-        email: result.user.email,
-        kernelId: `SKO-${result.user.uid.substring(0, 6).toUpperCase()}`,
-        lastLogin: serverTimestamp(),
-      }, { merge: true }).catch(async (err) => {
-        const pErr = new FirestorePermissionError({
-          path: userRef.path,
-          operation: 'update',
-          requestResourceData: { uid: result.user.uid }
+      if (result.user) {
+        // Save/Update basic profile on Google Login
+        const userRef = doc(firestore, 'users', result.user.uid);
+        setDoc(userRef, {
+          uid: result.user.uid,
+          displayName: result.user.displayName,
+          email: result.user.email,
+          kernelId: `SKO-${result.user.uid.substring(0, 6).toUpperCase()}`,
+          lastLogin: serverTimestamp(),
+          role: 'CITIZEN', // Default role
+        }, { merge: true }).catch(async (err) => {
+          const pErr = new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'update',
+            requestResourceData: { uid: result.user.uid }
+          });
+          errorEmitter.emit('permission-error', pErr);
         });
-        errorEmitter.emit('permission-error', pErr);
-      });
 
-      toast({ title: "Identity Bound", description: "Google authentication successful." });
-      router.push('/dashboard');
+        toast({ 
+          title: "Identity Bound", 
+          description: "Sovereign Mesh link established successfully." 
+        });
+        
+        // Use replace to prevent going back to login
+        router.replace('/dashboard');
+      }
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Handshake Failed", description: error.message });
+      console.error("Google Auth Error:", error);
+      
+      let errorDesc = "Authentication sequence interrupted.";
+      
+      if (error.code === 'auth/operation-not-allowed') {
+        errorDesc = "গুগল লগইন এখনো সক্রিয় করা হয়নি। দয়া করে ফায়ারবেস কনসোল থেকে এটি এনাবল করুন।";
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorDesc = "পপ-আপ উইন্ডোটি বন্ধ করে দেওয়া হয়েছে। আবার চেষ্টা করুন।";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        errorDesc = "এই ডোমেইনটি অথেনটিকেশনের জন্য অনুমোদিত নয়।";
+      }
+
+      toast({ 
+        variant: "destructive", 
+        title: "Handshake Failed", 
+        description: errorDesc 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +147,7 @@ export default function LoginPage() {
       });
 
       toast({ title: "Protocol Established", description: "Kernel identity created successfully." });
-      router.push('/dashboard');
+      router.replace('/dashboard');
     } catch (error: any) {
       toast({ variant: "destructive", title: "Registration Blocked", description: error.message });
     } finally {
@@ -133,7 +161,7 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: "Access Granted", description: "Deterministic link established." });
-      router.push('/dashboard');
+      router.replace('/dashboard');
     } catch (error: any) {
       toast({ variant: "destructive", title: "Auth Failure", description: "Invalid credentials or unauthorized access." });
     } finally {
@@ -300,7 +328,7 @@ export default function LoginPage() {
                   <span className="w-full border-t border-white/10" />
                 </div>
                 <div className="relative flex justify-center text-[9px] uppercase font-bold text-muted-foreground tracking-[0.4em]">
-                  <span className="bg-[#1a1c23] px-4">Alternate Verification</span>
+                  <span className="bg-card px-4">Alternate Verification</span>
                 </div>
               </div>
 
