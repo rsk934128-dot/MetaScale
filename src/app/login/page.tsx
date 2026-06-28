@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { 
   GoogleAuthProvider, 
   signInWithPopup, 
@@ -8,8 +9,9 @@ import {
   signInWithEmailAndPassword,
   updateProfile
 } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/card';
 import { 
   Globe, 
   Lock, 
@@ -31,9 +33,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +58,25 @@ export default function LoginPage() {
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      
+      // Save/Update basic profile on Google Login
+      const userRef = doc(firestore, 'users', result.user.uid);
+      setDoc(userRef, {
+        uid: result.user.uid,
+        displayName: result.user.displayName,
+        email: result.user.email,
+        kernelId: `SKO-${result.user.uid.substring(0, 6).toUpperCase()}`,
+        lastLogin: serverTimestamp(),
+      }, { merge: true }).catch(async (err) => {
+        const pErr = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'update',
+          requestResourceData: { uid: result.user.uid }
+        });
+        errorEmitter.emit('permission-error', pErr);
+      });
+
       toast({ title: "Identity Bound", description: "Google authentication successful." });
       router.push('/dashboard');
     } catch (error: any) {
@@ -73,7 +96,28 @@ export default function LoginPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: name });
-      // Phone storage typically goes to Firestore profile, but for now we update basic UI
+      
+      // Save extended profile to Firestore
+      const userRef = doc(firestore, 'users', userCredential.user.uid);
+      const userData = {
+        uid: userCredential.user.uid,
+        displayName: name,
+        email: email,
+        mobile: mobile,
+        kernelId: `SKO-${userCredential.user.uid.substring(0, 6).toUpperCase()}`,
+        role: 'CITIZEN',
+        createdAt: serverTimestamp(),
+      };
+
+      setDoc(userRef, userData).catch(async (err) => {
+        const pErr = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'create',
+          requestResourceData: userData
+        });
+        errorEmitter.emit('permission-error', pErr);
+      });
+
       toast({ title: "Protocol Established", description: "Kernel identity created successfully." });
       router.push('/dashboard');
     } catch (error: any) {

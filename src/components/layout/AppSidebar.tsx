@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -20,7 +21,8 @@ import {
   User as UserIcon,
   Mail,
   Scale,
-  Code2
+  Code2,
+  UserCircle
 } from "lucide-react";
 import {
   Sidebar,
@@ -253,8 +255,10 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="end" className="w-48 glass-panel border-white/5">
-                <DropdownMenuItem className="text-[10px] font-bold uppercase tracking-widest">
-                  <UserIcon className="mr-2 h-3 w-3" /> Profile
+                <DropdownMenuItem asChild className="text-[10px] font-bold uppercase tracking-widest">
+                  <Link href="/profile" className="flex items-center w-full">
+                    <UserCircle className="mr-2 h-3 w-3" /> Profile
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   className="text-[10px] font-bold uppercase tracking-widest text-red-400 focus:text-red-400"

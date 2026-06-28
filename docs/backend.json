@@ -1,6 +1,21 @@
 
 {
   "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Extended identity data for Sovereign OS citizens.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "mobile": { "type": "string" },
+        "kernelId": { "type": "string" },
+        "role": { "type": "string", "enum": ["ADMIN", "OPERATOR", "CITIZEN"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "kernelId"]
+    },
     "SystemControlState": {
       "title": "System Control State",
       "description": "Current operational mode and priority settings for the Sovereign OS.",
@@ -82,6 +97,7 @@
     "providers": ["google.com"]
   },
   "firestore": {
+    "/users/{userId}": { "schema": "UserProfile", "description": "Extended user profile information." },
     "/system/control": { "schema": "SystemControlState", "description": "Global OS mode state." },
     "/system/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." },
     "/civic/emergencies": { "schema": "CivicEmergency", "description": "Active SOS and disaster events." },
