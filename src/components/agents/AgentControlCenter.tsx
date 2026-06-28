@@ -70,6 +70,7 @@ const INITIAL_AGENTS = [
 
 export function AgentControlCenter() {
   const [agents, setAgents] = useState(INITIAL_AGENTS);
+  const [isUpdatingGovernance, setIsUpdatingGovernance] = useState(false);
   const { emitEvent } = useKernel();
   const { toast } = useToast();
 
@@ -111,6 +112,24 @@ export function AgentControlCenter() {
     }
 
     emitEvent('SECURITY', 'LOG_ACCESS_INITIATED', 4, { agentName });
+  };
+
+  const handleUpdateGovernance = () => {
+    setIsUpdatingGovernance(true);
+    
+    emitEvent('SECURITY', 'GOVERNANCE_PROTOCOL_UPDATED', 1, {
+      timestamp: Date.now(),
+      mode: 'SEMI_AUTONOMOUS',
+      threshold: 2000
+    });
+
+    setTimeout(() => {
+      setIsUpdatingGovernance(false);
+      toast({
+        title: "Governance Updated",
+        description: "New operational thresholds have been pushed to the cluster.",
+      });
+    }, 1500);
   };
 
   return (
@@ -232,8 +251,13 @@ export function AgentControlCenter() {
             <p className="text-[10px] text-muted-foreground italic">
               Agents require human confirmation for budget changes exceeding 15% or structural campaign deletion.
             </p>
-            <Button className="w-full text-xs font-bold cyan-glow bg-accent text-background h-9">
-              Update Governance
+            <Button 
+              className="w-full text-xs font-bold cyan-glow bg-accent text-background h-9"
+              onClick={handleUpdateGovernance}
+              disabled={isUpdatingGovernance}
+            >
+              {isUpdatingGovernance ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isUpdatingGovernance ? "Updating..." : "Update Governance"}
             </Button>
           </CardContent>
         </Card>
