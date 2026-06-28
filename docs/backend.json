@@ -17,7 +17,7 @@
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "plane": { "type": "string", "enum": ["CIVIC", "FINANCE", "SECURITY", "INFRA"] },
+        "plane": { "type": "string", "enum": ["CIVIC", "FINANCE", "SECURITY", "INFRA", "COMMUNICATION"] },
         "type": { "type": "string" },
         "priority": { "type": "number" },
         "timestamp": { "type": "number" },
@@ -25,6 +25,19 @@
         "payload": { "type": "object" }
       },
       "required": ["id", "plane", "type", "priority", "timestamp", "status"]
+    },
+    "CommunicationMessage": {
+      "title": "Communication Log",
+      "description": "Metadata and intelligence derived from intercepted or synced communications.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "source": { "type": "string", "enum": ["GMAIL", "INTERNAL", "SIGNAL"] },
+        "sender": { "type": "string" },
+        "subject": { "type": "string" },
+        "intelligenceRating": { "type": "number" },
+        "processedAt": { "type": "string", "format": "date-time" }
+      }
     },
     "CivicEmergency": {
       "title": "Civic Emergency Event",
@@ -59,6 +72,7 @@
     "/system/control": { "schema": "SystemControlState", "description": "Global OS mode state." },
     "/system/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." },
     "/civic/emergencies": { "schema": "CivicEmergency", "description": "Active SOS and disaster events." },
-    "/infrastructure/nodes": { "schema": "NetworkNode", "description": "Mesh network status logs." }
+    "/infrastructure/nodes": { "schema": "NetworkNode", "description": "Mesh network status logs." },
+    "/communications/logs": { "schema": "CommunicationMessage", "description": "Intelligence logs from synced communications." }
   }
 }

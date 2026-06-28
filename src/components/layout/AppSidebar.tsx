@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -17,7 +18,8 @@ import {
   Settings,
   Milestone,
   LogOut,
-  User as UserIcon
+  User as UserIcon,
+  Mail
 } from "lucide-react";
 import {
   Sidebar,
@@ -66,6 +68,7 @@ const infraNav = [
   { icon: Network, label: "42-Node Mesh", href: "/infrastructure" },
   { icon: Cpu, label: "AI Council", href: "/agents" },
   { icon: Database, label: "Knowledge Bank", href: "/library" },
+  { icon: Mail, label: "Communication Plane", href: "/communications" },
 ];
 
 export function AppSidebar() {

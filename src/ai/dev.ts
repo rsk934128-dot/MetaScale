@@ -15,3 +15,4 @@ import '@/ai/flows/analyze-network-trust.ts';
 import '@/ai/flows/economy-simulator.ts';
 import '@/ai/flows/payout-orchestrator.ts';
 import '@/ai/flows/civic-incident-analysis.ts';
+import '@/ai/flows/communication-intelligence.ts';
