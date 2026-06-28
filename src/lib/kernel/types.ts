@@ -29,3 +29,13 @@ export interface KernelState {
   planes: Record<PlaneType, PlaneState>;
   uptime: number;
 }
+
+/**
+ * Extended Finance Event Types
+ */
+export type FinanceEventType = 
+  | 'PAYOUT_INITIATED' 
+  | 'PAYOUT_EXECUTED' 
+  | 'PAYOUT_FAILED' 
+  | 'TREASURY_SYNC' 
+  | 'KYB_UPDATE';
