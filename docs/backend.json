@@ -16,6 +16,31 @@
       },
       "required": ["uid", "email", "kernelId"]
     },
+    "MediaAsset": {
+      "title": "Media Asset",
+      "description": "Metadata for a media stream or file within the mesh.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "artist": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "duration": { "type": "number" },
+        "source": { "type": "string", "enum": ["MESH_LOCAL", "YOUTUBE_PIS", "STREAM_CORRIDOR"] }
+      }
+    },
+    "MediaTask": {
+      "title": "Media Extraction Task",
+      "description": "A background task for offline synchronization of media assets.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "assetId": { "type": "string" },
+        "status": { "type": "string", "enum": ["PENDING", "EXTRACTING", "COMPLETED", "FAILED"] },
+        "progress": { "type": "number" },
+        "bitrate": { "type": "string" }
+      }
+    },
     "SystemControlState": {
       "title": "System Control State",
       "description": "Current operational mode and priority settings for the Sovereign OS.",
@@ -32,7 +57,7 @@
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "plane": { "type": "string", "enum": ["CIVIC", "FINANCE", "SECURITY", "INFRA", "COMMUNICATION"] },
+        "plane": { "type": "string", "enum": ["CIVIC", "FINANCE", "SECURITY", "INFRA", "COMMUNICATION", "MEDIA"] },
         "type": { "type": "string" },
         "priority": { "type": "number" },
         "timestamp": { "type": "number" },
@@ -67,18 +92,6 @@
         "currency": { "type": "string" },
         "status": { "type": "string", "enum": ["CONNECTED", "DISCONNECTED"] }
       }
-    },
-    "BankTransaction": {
-      "title": "Simulated Transaction",
-      "description": "Mock transaction record for Open Banking AIS tests.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "accountId": { "type": "string" },
-        "amount": { "type": "number" },
-        "description": { "type": "string" },
-        "date": { "type": "string", "format": "date-time" }
-      }
     }
   },
   "auth": {
@@ -87,9 +100,8 @@
   "firestore": {
     "/users/{userId}": { "schema": "UserProfile", "description": "Extended user profile information." },
     "/users/{userId}/notifications": { "schema": "Notification", "description": "User specific real-time alerts." },
+    "/users/{userId}/media_tasks": { "schema": "MediaTask", "description": "User specific media extraction tasks." },
     "/system/control": { "schema": "SystemControlState", "description": "Global OS mode state." },
-    "/system/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." },
-    "/civic/emergencies": { "schema": "CivicEmergency", "description": "Active SOS and disaster events." },
-    "/finance/accounts": { "schema": "BankAccount", "description": "Connected mock bank accounts." }
+    "/system/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." }
   }
 }

@@ -22,7 +22,8 @@ import {
   Mail,
   Scale,
   Code2,
-  UserCircle
+  UserCircle,
+  Music2
 } from "lucide-react";
 import {
   Sidebar,
@@ -53,6 +54,7 @@ import { NotificationBell } from "./NotificationBell";
 const civicNav = [
   { icon: Globe, label: "Control Plane", href: "/dashboard" },
   { icon: Waves, label: "Civic Intelligence", href: "/civic" },
+  { icon: Music2, label: "Media Intelligence", href: "/media" },
   { icon: Milestone, label: "Roadmap", href: "/roadmap" },
 ];
 
