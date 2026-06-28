@@ -14,7 +14,8 @@ import {
   AlertCircle,
   BarChart2,
   Rocket,
-  Activity
+  Activity,
+  RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useKernel } from "@/components/kernel/KernelProvider";
+import { useToast } from "@/hooks/use-toast";
 
-const AGENTS = [
+const INITIAL_AGENTS = [
   {
     id: "ag-1",
     name: "Campaign Scaler",
@@ -67,11 +70,53 @@ const AGENTS = [
 ];
 
 export function AgentControlCenter() {
+  const [agents, setAgents] = useState(INITIAL_AGENTS);
+  const { emitEvent } = useKernel();
+  const { toast } = useToast();
+
+  const handleToggleAgent = (agentId: string) => {
+    setAgents(prev => prev.map(agent => {
+      if (agent.id === agentId) {
+        const isPausing = agent.status === 'Active';
+        const nextStatus = isPausing ? 'Paused' : 'Active';
+        
+        emitEvent('SECURITY', isPausing ? 'AGENT_PAUSED' : 'AGENT_RESUMED', 2, { 
+          agentId, 
+          agentName: agent.name,
+          timestamp: Date.now()
+        });
+
+        toast({
+          title: `Agent ${nextStatus}`,
+          description: `${agent.name} is now ${nextStatus.toLowerCase()}.`,
+        });
+
+        return { ...agent, status: nextStatus };
+      }
+      return agent;
+    }));
+  };
+
+  const handleViewLogs = (agentName: string) => {
+    toast({
+      title: "Loading Agent Logs",
+      description: `Fetching detailed execution history for ${agentName}...`,
+    });
+    
+    // Smooth scroll to logs section
+    const logsSection = document.getElementById('execution-logs');
+    if (logsSection) {
+      logsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    emitEvent('SECURITY', 'AGENT_LOG_INSPECTION', 4, { agentName });
+  };
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
       <div className="xl:col-span-2 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {AGENTS.map((agent) => (
+          {agents.map((agent) => (
             <Card key={agent.id} className="glass-panel group hover:border-accent/30 transition-all overflow-hidden">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
@@ -105,10 +150,19 @@ export function AgentControlCenter() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1 text-[10px] font-bold">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 text-[10px] font-bold"
+                    onClick={() => handleViewLogs(agent.name)}
+                  >
                     View Logs
                   </Button>
-                  <Button size="sm" className={`flex-1 text-[10px] font-bold ${agent.status === 'Active' ? 'bg-secondary' : 'bg-accent'}`}>
+                  <Button 
+                    size="sm" 
+                    className={`flex-1 text-[10px] font-bold ${agent.status === 'Active' ? 'bg-secondary' : 'bg-accent'}`}
+                    onClick={() => handleToggleAgent(agent.id)}
+                  >
                     {agent.status === 'Active' ? <Pause className="mr-1 h-3 w-3" /> : <Play className="mr-1 h-3 w-3" />}
                     {agent.status === 'Active' ? 'Pause Agent' : 'Resume'}
                   </Button>
@@ -118,7 +172,7 @@ export function AgentControlCenter() {
           ))}
         </div>
 
-        <Card className="glass-panel">
+        <Card className="glass-panel" id="execution-logs">
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
               <History className="h-4 w-4 text-accent" />
@@ -139,9 +193,11 @@ export function AgentControlCenter() {
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold text-white">{log.agent}</span>
-                        {log.status === 'success' && <CheckCircle2 className="h-3 w-3 text-green-400" />}
-                        {log.status === 'warning' && <AlertCircle className="h-3 w-3 text-yellow-400" />}
-                        {log.status === 'info' && <Activity className="h-3 w-3 text-accent" />}
+                        <div className="flex items-center gap-1">
+                          {log.status === 'success' && <CheckCircle2 className="h-3 w-3 text-green-400" />}
+                          {log.status === 'warning' && <AlertCircle className="h-3 w-3 text-yellow-400" />}
+                          {log.status === 'info' && <Activity className="h-3 w-3 text-accent" />}
+                        </div>
                       </div>
                       <p className="text-[10px] text-muted-foreground">{log.msg}</p>
                     </div>
