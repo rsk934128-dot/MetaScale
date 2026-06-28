@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth, useFirestore } from '@/firebase';
@@ -35,6 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { Logo } from '@/components/ui/logo';
 
 const ADMIN_EMAIL = 'rubels1k994@gmail.com';
 
@@ -203,7 +205,8 @@ export default function LoginPage() {
 
       <div className="relative z-10 w-full max-w-6xl flex flex-col items-center gap-8">
         {/* Brand Header */}
-        <div className="text-center space-y-2 max-w-2xl">
+        <div className="text-center space-y-4 max-w-2xl flex flex-col items-center">
+          <Logo size="xl" className="mb-2" />
           <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent mx-auto">
             <Zap className="h-4 w-4" />
             <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Sovereign OS v1.2</span>

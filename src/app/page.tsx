@@ -29,6 +29,7 @@ import { useUser } from "@/firebase";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import placeholderData from "@/app/lib/placeholder-images.json";
+import { Logo } from "@/components/ui/logo";
 
 const HERO_SLIDES = [
   {
@@ -99,10 +100,8 @@ export default function LandingPage() {
 
       {/* Navigation */}
       <nav className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md px-6 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center cyan-glow">
-            <span className="font-headline font-bold text-accent-foreground text-xl">S</span>
-          </div>
+        <div className="flex items-center gap-3 group">
+          <Logo size="md" className="transition-transform group-hover:scale-110" />
           <span className="font-headline font-bold text-2xl tracking-tighter uppercase italic text-white">Sovereign OS</span>
         </div>
         <div className="hidden md:flex items-center gap-8">
@@ -244,13 +243,11 @@ export default function LandingPage() {
       <footer className="relative z-10 py-20 px-6 border-t border-white/5 bg-black/20">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="col-span-1 md:col-span-2 space-y-6">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-                <span className="font-headline font-bold text-accent-foreground">S</span>
-              </div>
+            <div className="flex items-center gap-3">
+              <Logo size="sm" />
               <span className="font-headline font-bold text-xl uppercase italic text-white">Sovereign</span>
             </div>
-            <p className="text-sm text-muted-foreground max-w-sm">
+            <p className="text-sm text-muted-foreground max-sm">
               SHURUKKHA-OS: The deterministic operating system for the next digital economic civilization. Distributed via 42 anycast nodes globally.
             </p>
           </div>

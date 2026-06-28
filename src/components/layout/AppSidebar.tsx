@@ -50,6 +50,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NotificationBell } from "./NotificationBell";
+import { Logo } from "@/components/ui/logo";
 
 const civicNav = [
   { icon: Globe, label: "Control Plane", href: "/dashboard" },
@@ -104,10 +105,8 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r border-border/50">
       <SidebarHeader className="p-6 flex flex-row items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center cyan-glow">
-            <span className="font-headline font-bold text-accent-foreground">S</span>
-          </div>
+        <Link href="/" className="flex items-center gap-2 group">
+          <Logo size="sm" className="transition-transform group-hover:scale-110" />
           <span className="font-headline font-bold text-xl tracking-tight text-white uppercase italic">Sovereign</span>
         </Link>
         <NotificationBell />
