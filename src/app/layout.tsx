@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { KernelProvider } from "@/components/kernel/KernelProvider";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { FirebaseErrorListener } from "@/components/FirebaseErrorListener";
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Sovereign OS | Deterministic Infrastructure',
@@ -22,6 +23,19 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-N53RC4L541"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-N53RC4L541');
+          `}
+        </Script>
       </head>
       <body className="font-body antialiased bg-background text-foreground">
         <FirebaseClientProvider>
