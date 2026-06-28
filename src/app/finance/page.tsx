@@ -6,20 +6,18 @@ import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
   DollarSign, 
-  ArrowUpRight, 
   Send, 
   Lock, 
-  ShieldAlert, 
   Wallet, 
   RefreshCw, 
   Zap,
   Globe,
-  Scale,
-  Fingerprint,
   Loader2,
   CheckCircle2,
   ShieldCheck,
-  AlertTriangle
+  AlertTriangle,
+  Building2,
+  Euro
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +35,7 @@ export default function FinancialIntelligence() {
   
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
-  const [gateway, setGateway] = useState<"PAYPAL" | "PRIYO_PAY">("PAYPAL");
+  const [gateway, setGateway] = useState<"PAYPAL" | "PRIYO_PAY" | "PAYONEER">("PAYPAL");
   const [isProcessing, setIsProcessing] = useState(false);
   const [validationStep, setValidationProgress] = useState(0);
   const [lastPayout, setLastPayout] = useState<any>(null);
@@ -51,13 +49,14 @@ export default function FinancialIntelligence() {
 
     // Simulate Anycast Validation Steps
     const steps = [
-      { p: 30, msg: "Validating Anycast Route: Dhaka -> PayPal Cloud" },
-      { p: 60, msg: "Verifying Identity Binding for UBO Farid Sheikh" },
+      { p: 30, msg: "Validating Anycast Route: Core -> Global Mesh" },
+      { p: 50, msg: gateway === 'PAYONEER' ? "Initializing Yapily PSD2 Consent Flow" : "Verifying Identity Binding" },
+      { p: 70, msg: gateway === 'PAYONEER' ? "Mapping PIS Route via BIC PAYNUS33XXX" : "Executing Routing Seal" },
       { p: 90, msg: "Executing Imperial Directive Clearance" }
     ];
 
     for (const step of steps) {
-      await new Promise(r => setTimeout(r, 800));
+      await new Promise(r => setTimeout(r, 600));
       setValidationProgress(step.p);
     }
 
@@ -81,7 +80,7 @@ export default function FinancialIntelligence() {
       toast({
         variant: "destructive",
         title: "Payout Failed",
-        description: "Kernel intercept: Secure routing failure.",
+        description: "Kernel intercept: Secure routing or consent failure.",
       });
     } finally {
       setTimeout(() => {
@@ -131,48 +130,51 @@ export default function FinancialIntelligence() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Send className="h-5 w-5 text-accent" />
-                        Automated Payout (PayPal / Priyo Pay)
+                        Multi-Rail Automated Payout
                       </CardTitle>
                       <CardDescription>
-                        Programmatic disbursement logic with Anycast path validation and Imperial Directive overrides.
+                        Programmatic settlement via PayPal, Priyo Pay, or Payoneer (PSD2). Anycast validation active.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Select Gateway</Label>
-                          <div className="flex gap-2">
-                            <Button 
-                              variant={gateway === 'PAYPAL' ? 'default' : 'outline'} 
-                              size="sm" 
-                              className="flex-1"
-                              onClick={() => setGateway('PAYPAL')}
-                              disabled={isProcessing}
-                            >
-                              PayPal Business
-                            </Button>
-                            <Button 
-                              variant={gateway === 'PRIYO_PAY' ? 'default' : 'outline'} 
-                              size="sm" 
-                              className="flex-1"
-                              onClick={() => setGateway('PRIYO_PAY')}
-                              disabled={isProcessing}
-                            >
-                              Priyo Pay (Private)
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Currency</Label>
-                          <Input value="USD" disabled className="bg-secondary/30" />
+                      <div className="space-y-2">
+                        <Label>Select Settlement Rail</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Button 
+                            variant={gateway === 'PAYPAL' ? 'default' : 'outline'} 
+                            size="sm" 
+                            onClick={() => setGateway('PAYPAL')}
+                            disabled={isProcessing}
+                            className="text-[10px]"
+                          >
+                            PayPal Biz
+                          </Button>
+                          <Button 
+                            variant={gateway === 'PRIYO_PAY' ? 'default' : 'outline'} 
+                            size="sm" 
+                            onClick={() => setGateway('PRIYO_PAY')}
+                            disabled={isProcessing}
+                            className="text-[10px]"
+                          >
+                            Priyo Pay
+                          </Button>
+                          <Button 
+                            variant={gateway === 'PAYONEER' ? 'default' : 'outline'} 
+                            size="sm" 
+                            onClick={() => setGateway('PAYONEER')}
+                            disabled={isProcessing}
+                            className="text-[10px] flex items-center gap-1"
+                          >
+                            <Euro className="h-3 w-3" /> Payoneer EU
+                          </Button>
                         </div>
                       </div>
 
-                      <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label>Recipient Email</Label>
+                          <Label>Recipient Email / IBAN</Label>
                           <Input 
-                            placeholder="user@example.com" 
+                            placeholder="user@example.com or IBAN" 
                             className="bg-secondary/30"
                             value={recipient}
                             onChange={(e) => setRecipient(e.target.value)}
@@ -180,7 +182,7 @@ export default function FinancialIntelligence() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Disbursement Amount</Label>
+                          <Label>Amount ({gateway === 'PAYONEER' ? 'EUR' : 'USD'})</Label>
                           <Input 
                             type="number" 
                             placeholder="0.00" 
@@ -241,23 +243,36 @@ export default function FinancialIntelligence() {
               <Card className="glass-panel border-accent/20 bg-accent/5">
                 <CardHeader>
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-accent" />
-                    Secure Routing Mesh
+                    <Building2 className="h-4 w-4 text-accent" />
+                    Institutional Metadata
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="p-3 rounded bg-secondary/30 border border-white/5 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] uppercase font-bold text-muted-foreground">Anycast Cluster</span>
-                      <Badge variant="outline" className="text-[8px] text-green-400 border-green-400/20">ACTIVE</Badge>
+                  {gateway === 'PAYONEER' ? (
+                    <div className="space-y-3">
+                      <div className="p-2 rounded bg-secondary/50 border border-white/5 space-y-1">
+                        <p className="text-[9px] uppercase font-bold text-accent">Provider: Payoneer - EU</p>
+                        <p className="text-[10px] text-white">BIC: PAYNUS33XXX</p>
+                        <p className="text-[10px] text-muted-foreground">Network: SEPA / PSD2 Live</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {['AT', 'BE', 'DE', 'FR', 'IT'].map(c => (
+                          <Badge key={c} variant="outline" className="text-[8px] px-1">{c}</Badge>
+                        ))}
+                        <span className="text-[8px] text-muted-foreground">+26 more</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-accent">
-                      <Globe className="h-3 w-3" /> Node: Knowledge-Node-01
+                  ) : (
+                    <div className="p-3 rounded bg-secondary/30 border border-white/5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] uppercase font-bold text-muted-foreground">Anycast Cluster</span>
+                        <Badge variant="outline" className="text-[8px] text-green-400 border-green-400/20">ACTIVE</Badge>
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] text-accent">
+                        <Globe className="h-3 w-3" /> Node: Knowledge-Node-01
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground italic">
-                      "Imperial Directive Level: Alpha Enabled"
-                    </div>
-                  </div>
+                  )}
                   <div className="space-y-2">
                     <div className="flex justify-between text-[10px] font-bold uppercase">
                       <span>Daily Limit Usage</span>
@@ -272,10 +287,14 @@ export default function FinancialIntelligence() {
 
               <Card className="glass-panel">
                 <CardHeader>
-                  <CardTitle className="text-sm">Verified Wallets</CardTitle>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-accent" />
+                    Secure Routing Mesh
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                    {[
+                     { label: "Payoneer PIS Hub", addr: "Yapily Managed", type: "EU-SEPA", verified: true },
                      { label: "Rubelpay Primary", addr: "0xaf3c...1207", type: "BNB", verified: true },
                      { label: "Partner Escrow", addr: "0x742d...444e", type: "ETH", verified: true }
                    ].map((w, i) => (
