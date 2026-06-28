@@ -17,17 +17,23 @@ import {
   Scale,
   ShieldCheck,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  BrainCircuit,
+  Zap,
+  TrendingDown,
+  ShieldAlert
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { predictComplianceRisk } from "@/ai/flows/predictive-compliance";
 
 export default function KYBOrchestrationPage() {
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isAuditing, setIsAuditing] = useState(false);
+  const [auditResult, setAuditResult] = useState<any>(null);
   const { toast } = useToast();
 
   const handleSimulateSync = () => {
@@ -41,10 +47,32 @@ export default function KYBOrchestrationPage() {
     }, 2000);
   };
 
-  const trustDimensions = {
-    identity: 85,
-    behavior: 92,
-    governance: 48, // Low due to expired entity doc
+  const handleRunAIAudit = async () => {
+    setIsAuditing(true);
+    try {
+      const result = await predictComplianceRisk({
+        entityId: 'RUBELPAY-BD-01',
+        jurisdiction: 'Bangladesh',
+        currentDocuments: [
+          { type: 'Trade License', expiryDate: '2024-06-30', status: 'ACTIVE' },
+          { type: 'Certificate of Inc', expiryDate: '2028-12-01', status: 'ACTIVE' }
+        ],
+        activeBlocks: ['EU-VAT-DRIFT']
+      });
+      setAuditResult(result);
+      toast({
+        title: "AI Audit Complete",
+        description: `Regulatory Drift Score: ${result.regulatoryDriftScore}`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Audit Failed",
+        description: "Could not reach the Compliance Reasoning Engine.",
+      });
+    } finally {
+      setIsAuditing(false);
+    }
   };
 
   return (
@@ -76,16 +104,27 @@ export default function KYBOrchestrationPage() {
               <h2 className="text-3xl font-headline font-bold mb-2">Trust Orchestration Hub</h2>
               <p className="text-muted-foreground">Managing cryptographic identity binding and continuous entity health.</p>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-accent/20 text-accent font-bold"
-              onClick={handleSimulateSync}
-              disabled={isSimulating}
-            >
-              {isSimulating ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-              Re-evaluate Trust Fabric
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-accent/20 text-accent font-bold"
+                onClick={handleSimulateSync}
+                disabled={isSimulating}
+              >
+                {isSimulating ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                Re-evaluate Fabric
+              </Button>
+              <Button 
+                size="sm" 
+                className="cyan-glow bg-accent text-background font-bold"
+                onClick={handleRunAIAudit}
+                disabled={isAuditing}
+              >
+                {isAuditing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                Run AI Audit
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -103,9 +142,6 @@ export default function KYBOrchestrationPage() {
                   <div className="flex justify-between"><span>Reg Score:</span> <span className="text-yellow-500">48%</span></div>
                   <div className="flex justify-between"><span>Jurisdiction:</span> <span>Bangladesh</span></div>
                 </div>
-                <Button size="sm" variant="outline" className="w-full text-[10px] h-7 border-dashed border-yellow-500/50">
-                  Update Registration Evidence
-                </Button>
               </CardContent>
             </Card>
 
@@ -123,13 +159,10 @@ export default function KYBOrchestrationPage() {
                   <div className="flex justify-between"><span>Identity Score:</span> <span className="text-green-500">98%</span></div>
                   <div className="flex justify-between"><span>Binding:</span> <span className="text-accent font-mono">Bound to 0xaf3c...</span></div>
                 </div>
-                <Button size="sm" variant="outline" className="w-full text-[10px] h-7 border-dashed border-green-500/50">
-                  Rotate Identity Proof
-                </Button>
               </CardContent>
             </Card>
 
-            <Card className="glass-panel border-l-4 border-l-red-500 ring-2 ring-red-500/10">
+            <Card className="glass-panel border-l-4 border-l-red-500">
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <Badge variant="outline" className="text-[10px]">Settlement Tier</Badge>
@@ -143,61 +176,148 @@ export default function KYBOrchestrationPage() {
                   <div className="flex items-center gap-2 text-red-400 font-bold">
                     <Scale className="h-3 w-3" /> ADAPTIVE CAP: $10,000 / Day
                   </div>
-                  <p className="text-muted-foreground leading-relaxed italic">
-                    Restricted execution due to Entity Score Drift. Full tier requires score &gt; 80.
-                  </p>
                 </div>
-                <Button className="w-full text-xs font-bold cyan-glow bg-accent text-background">
-                  Sign Identity-Asset Bind
-                </Button>
               </CardContent>
             </Card>
           </div>
 
-          <Tabs defaultValue="fabric" className="space-y-6">
-            <TabsList className="bg-secondary/50 border border-white/5">
-              <TabsTrigger value="fabric">Trust Fabric Graph</TabsTrigger>
-              <TabsTrigger value="history">Trust Score History</TabsTrigger>
-              <TabsTrigger value="sim">Simulation Board</TabsTrigger>
-            </TabsList>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="xl:col-span-2">
+              <Tabs defaultValue="audit" className="space-y-6">
+                <TabsList className="bg-secondary/50 border border-white/5">
+                  <TabsTrigger value="audit">AI Risk Analysis</TabsTrigger>
+                  <TabsTrigger value="fabric">Fabric Map</TabsTrigger>
+                  <TabsTrigger value="sim">Simulation</TabsTrigger>
+                </TabsList>
 
-            <TabsContent value="fabric" className="space-y-6">
-               <Card className="glass-panel">
-                 <CardHeader>
-                   <CardTitle className="text-lg">Cryptographic Binding Map</CardTitle>
-                   <CardDescription>Visualizing the verified links between entities, identities, and financial assets.</CardDescription>
-                 </CardHeader>
-                 <CardContent>
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-8 p-12 border border-white/5 rounded-2xl bg-secondary/10 relative">
-                       <div className="flex flex-col items-center gap-3">
-                          <div className="w-20 h-20 rounded-xl bg-yellow-500/10 border-2 border-yellow-500/50 flex items-center justify-center">
-                            <Building2 className="h-10 w-10 text-yellow-500" />
-                          </div>
-                          <span className="text-xs font-bold">Legal Entity</span>
-                       </div>
-                       <div className="h-0.5 flex-1 bg-gradient-to-r from-yellow-500/50 to-green-500/50 relative">
-                          <Badge variant="outline" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[8px] bg-background">Continuous Sync</Badge>
-                       </div>
-                       <div className="flex flex-col items-center gap-3">
-                          <div className="w-20 h-20 rounded-xl bg-green-500/10 border-2 border-green-500 flex items-center justify-center">
-                            <UserCheck className="h-10 w-10 text-green-500" />
-                          </div>
-                          <span className="text-xs font-bold">Verified UBO</span>
-                       </div>
-                       <div className="h-0.5 flex-1 bg-gradient-to-r from-green-500 to-red-500/50 relative">
-                          <Badge variant="outline" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[8px] bg-background">Identity Bind</Badge>
-                       </div>
-                       <div className="flex flex-col items-center gap-3">
-                          <div className="w-20 h-20 rounded-xl bg-red-500/10 border-2 border-red-500/50 flex items-center justify-center">
-                            <Wallet className="h-10 w-10 text-red-500" />
-                          </div>
-                          <span className="text-xs font-bold">Bound Asset</span>
-                       </div>
+                <TabsContent value="audit" className="space-y-6">
+                  {auditResult ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+                      <Card className="glass-panel border-accent/20">
+                        <CardHeader>
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <TrendingDown className="h-4 w-4 text-accent" />
+                            Predicted Failures
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {auditResult.predictedFailures.map((failure: any, i: number) => (
+                            <div key={i} className="p-3 rounded bg-red-500/5 border border-red-500/20 space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-bold text-red-400 uppercase">{failure.type}</span>
+                                <Badge variant="outline" className="text-[8px]">{Math.round(failure.probability * 100)}% Prob</Badge>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground italic">"ETA: {failure.estimatedFailureDate}"</p>
+                              <p className="text-[11px] text-white/90">{failure.reason}</p>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+
+                      <Card className="glass-panel border-blue-400/20">
+                        <CardHeader>
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Zap className="h-4 w-4 text-blue-400" />
+                            Self-Healing Plan
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                           {auditResult.automatedRemediationPlan.map((step: any, i: number) => (
+                             <div key={i} className="p-3 rounded bg-blue-400/5 border border-blue-400/20 space-y-1">
+                                <div className="flex justify-between text-[9px] font-bold uppercase text-blue-400">
+                                   <span>Task</span>
+                                   <span>ETA: {step.eta}</span>
+                                </div>
+                                <p className="text-[11px] text-white">{step.fix}</p>
+                             </div>
+                           ))}
+                           <Button className="w-full text-[10px] font-bold h-8 bg-blue-500 hover:bg-blue-600 text-white">
+                              Execute All Fixes
+                           </Button>
+                        </CardContent>
+                      </Card>
                     </div>
-                 </CardContent>
-               </Card>
-            </TabsContent>
-          </Tabs>
+                  ) : (
+                    <div className="h-60 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-xl bg-secondary/10 text-center space-y-4">
+                       <BrainCircuit className="h-10 w-10 text-muted-foreground opacity-20" />
+                       <p className="text-xs text-muted-foreground italic">Run AI Audit to identify regulatory drift and predicted failures.</p>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="fabric">
+                  <Card className="glass-panel">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Cryptographic Binding Map</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-8 p-12 border border-white/5 rounded-2xl bg-secondary/10 relative">
+                           <div className="flex flex-col items-center gap-3">
+                              <div className="w-20 h-20 rounded-xl bg-yellow-500/10 border-2 border-yellow-500/50 flex items-center justify-center">
+                                <Building2 className="h-10 w-10 text-yellow-500" />
+                              </div>
+                              <span className="text-xs font-bold">Legal Entity</span>
+                           </div>
+                           <div className="h-0.5 flex-1 bg-gradient-to-r from-yellow-500/50 to-green-500/50 relative" />
+                           <div className="flex flex-col items-center gap-3">
+                              <div className="w-20 h-20 rounded-xl bg-green-500/10 border-2 border-green-500 flex items-center justify-center">
+                                <UserCheck className="h-10 w-10 text-green-500" />
+                              </div>
+                              <span className="text-xs font-bold">Verified UBO</span>
+                           </div>
+                           <div className="h-0.5 flex-1 bg-gradient-to-r from-green-500 to-red-500/50 relative" />
+                           <div className="flex flex-col items-center gap-3">
+                              <div className="w-20 h-20 rounded-xl bg-red-500/10 border-2 border-red-500/50 flex items-center justify-center">
+                                <Wallet className="h-10 w-10 text-red-500" />
+                              </div>
+                              <span className="text-xs font-bold">Bound Asset</span>
+                           </div>
+                        </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            <div className="space-y-6">
+              <Card className="glass-panel border-accent/20 bg-accent/5">
+                <CardHeader className="p-4">
+                   <CardTitle className="text-xs flex items-center gap-2 uppercase">
+                      <ShieldAlert className="h-4 w-4 text-accent" />
+                      Regulatory Drift
+                   </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0 space-y-4">
+                   <div className="text-center space-y-1">
+                      <p className="text-3xl font-headline font-bold text-accent">{auditResult?.regulatoryDriftScore || '24'}</p>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase">Drift Index</p>
+                   </div>
+                   <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] font-bold">
+                         <span>Jurisdiction Stability</span>
+                         <span className="text-green-400">Stable</span>
+                      </div>
+                      <Progress value={82} className="h-1" />
+                   </div>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-panel border-white/5">
+                <CardHeader className="p-4">
+                   <CardTitle className="text-xs uppercase">Policy Adapters</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0 space-y-3">
+                   {auditResult?.policyAdaptationSuggestions.map((policy: string, i: number) => (
+                     <div key={i} className="p-2 rounded bg-secondary/30 text-[10px] text-white/80 border border-white/5">
+                        {policy}
+                     </div>
+                   )) || (
+                     <p className="text-[10px] text-muted-foreground italic">No policies identified.</p>
+                   )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </main>
       </SidebarInset>
     </div>
