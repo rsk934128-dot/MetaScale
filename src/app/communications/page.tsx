@@ -1,4 +1,3 @@
-
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -125,7 +124,7 @@ export default function CommunicationPlanePage() {
                         size="sm" 
                         variant="ghost" 
                         className="text-[10px] font-bold text-accent group-hover:bg-accent/10 shrink-0"
-                        onClick={() => handle RunAnalysis(email)}
+                        onClick={() => handleRunAnalysis(email)}
                         disabled={analyzingId === email.id}
                       >
                         {analyzingId === email.id ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <BrainCircuit className="h-3 w-3 mr-1" />}
@@ -160,7 +159,7 @@ export default function CommunicationPlanePage() {
                         </p>
                         {intelligenceReport.suggestedKernelAction && (
                            <div className="p-2 rounded bg-black/40 border border-white/5 text-[10px] font-mono text-accent">
-                             >>> SUGGESTED: {intelligenceReport.suggestedKernelAction}
+                             &gt;&gt;&gt; SUGGESTED: {intelligenceReport.suggestedKernelAction}
                            </div>
                         )}
                       </div>

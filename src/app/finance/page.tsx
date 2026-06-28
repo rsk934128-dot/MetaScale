@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -273,10 +272,10 @@ export default function FinancialIntelligence() {
                           </div>
                         ))}
                         <div className="pt-2 text-green-400 font-bold">
-                          >>> SETTLEMENT SEAL: {lastPayout.routingToken}
+                          &gt;&gt;&gt; SETTLEMENT SEAL: {lastPayout.routingToken}
                         </div>
                         <div className="text-accent font-bold">
-                          >>> DIRECTIVE LEVEL: {lastPayout.directiveLevel}
+                          &gt;&gt;&gt; DIRECTIVE LEVEL: {lastPayout.directiveLevel}
                         </div>
                       </div>
                     </ScrollArea>
@@ -340,7 +339,7 @@ export default function FinancialIntelligence() {
                   </p>
                   {parseFloat(amount) >= 1000 && (
                     <div className="mt-2 p-2 rounded bg-yellow-500/10 border border-yellow-500/30 text-[9px] text-yellow-500 font-bold animate-pulse">
-                      >>> ALERT: HIGH-VALUE DISBURSEMENT DETECTED
+                      &gt;&gt;&gt; ALERT: HIGH-VALUE DISBURSEMENT DETECTED
                     </div>
                   )}
                 </CardContent>
@@ -352,4 +351,3 @@ export default function FinancialIntelligence() {
     </div>
   );
 }
-

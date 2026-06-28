@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const civicNav = [
-  { icon: Globe, label: "Control Plane", href: "/" },
+  { icon: Globe, label: "Control Plane", href: "/dashboard" },
   { icon: Waves, label: "Civic Intelligence", href: "/civic" },
   { icon: Milestone, label: "Roadmap", href: "/roadmap" },
 ];
@@ -90,17 +90,21 @@ export function AppSidebar() {
     router.push('/login');
   };
 
-  if (pathname === '/login') return null;
+  // Sidebar is hidden on landing page and login page for non-logged-in users
+  // But usually we want sidebar only in dashboard routes
+  const isDashboardRoute = pathname !== '/' && pathname !== '/login';
+
+  if (!isDashboardRoute) return null;
 
   return (
     <Sidebar className="border-r border-border/50">
       <SidebarHeader className="p-6">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center cyan-glow">
             <span className="font-headline font-bold text-accent-foreground">S</span>
           </div>
           <span className="font-headline font-bold text-xl tracking-tight text-white uppercase italic">Sovereign</span>
-        </div>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
