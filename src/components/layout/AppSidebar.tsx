@@ -28,6 +28,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -35,7 +36,6 @@ import { usePathname } from "next/navigation";
 const civicNav = [
   { icon: Globe, label: "Control Plane", href: "/" },
   { icon: Waves, label: "Civic Intelligence", href: "/civic" },
-  { icon: Zap, label: "SOS Dispatcher", href: "/civic/sos" },
 ];
 
 const financialNav = [
@@ -52,13 +52,19 @@ const securityNav = [
 
 const infraNav = [
   { icon: Network, label: "42-Node Mesh", href: "/infrastructure" },
-  { icon: Radio, label: "Anycast Routing", href: "/infrastructure/routing" },
   { icon: Cpu, label: "AI Council", href: "/agents" },
   { icon: Database, label: "Knowledge Bank", href: "/library" },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <Sidebar className="border-r border-border/50">
@@ -78,7 +84,11 @@ export function AppSidebar() {
               {civicNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
-                    <Link href={item.href} className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest">
+                    <Link 
+                      href={item.href} 
+                      className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest"
+                      onClick={handleLinkClick}
+                    >
                       <item.icon className="h-4 w-4" />
                       <span>{item.label}</span>
                     </Link>
@@ -96,7 +106,11 @@ export function AppSidebar() {
               {financialNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
-                    <Link href={item.href} className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest">
+                    <Link 
+                      href={item.href} 
+                      className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest"
+                      onClick={handleLinkClick}
+                    >
                       <item.icon className="h-4 w-4" />
                       <span>{item.label}</span>
                     </Link>
@@ -114,7 +128,11 @@ export function AppSidebar() {
               {securityNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
-                    <Link href={item.href} className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest">
+                    <Link 
+                      href={item.href} 
+                      className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest"
+                      onClick={handleLinkClick}
+                    >
                       <item.icon className="h-4 w-4" />
                       <span>{item.label}</span>
                     </Link>
@@ -132,7 +150,11 @@ export function AppSidebar() {
               {infraNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
-                    <Link href={item.href} className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest">
+                    <Link 
+                      href={item.href} 
+                      className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest"
+                      onClick={handleLinkClick}
+                    >
                       <item.icon className="h-4 w-4" />
                       <span>{item.label}</span>
                     </Link>
