@@ -168,9 +168,15 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 border-t border-white/5">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Global Settings">
-              <Settings className="h-4 w-4" />
-              <span className="text-xs font-bold uppercase">System Settings</span>
+            <SidebarMenuButton asChild isActive={pathname === '/settings'} tooltip="Global Settings">
+              <Link 
+                href="/settings" 
+                className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest"
+                onClick={handleLinkClick}
+              >
+                <Settings className="h-4 w-4" />
+                <span>System Settings</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
