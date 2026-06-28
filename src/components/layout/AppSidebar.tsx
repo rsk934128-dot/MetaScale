@@ -15,7 +15,8 @@ import {
   Zap,
   Radio,
   Gavel,
-  Settings
+  Settings,
+  Milestone
 } from "lucide-react";
 import {
   Sidebar,
@@ -36,6 +37,7 @@ import { usePathname } from "next/navigation";
 const civicNav = [
   { icon: Globe, label: "Control Plane", href: "/" },
   { icon: Waves, label: "Civic Intelligence", href: "/civic" },
+  { icon: Milestone, label: "Roadmap", href: "/roadmap" },
 ];
 
 const financialNav = [
