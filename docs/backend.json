@@ -11,6 +11,21 @@
         "lastModeChange": { "type": "string", "format": "date-time" }
       }
     },
+    "KernelEvent": {
+      "title": "Kernel Event Log",
+      "description": "A persistent record of a deterministic event processed by the kernel.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "plane": { "type": "string", "enum": ["CIVIC", "FINANCE", "SECURITY", "INFRA"] },
+        "type": { "type": "string" },
+        "priority": { "type": "number" },
+        "timestamp": { "type": "number" },
+        "status": { "type": "string" },
+        "payload": { "type": "object" }
+      },
+      "required": ["id", "plane", "type", "priority", "timestamp", "status"]
+    },
     "CivicEmergency": {
       "title": "Civic Emergency Event",
       "description": "Real-time incident data for flood, SOS, or dispatch events.",
@@ -42,6 +57,7 @@
   },
   "firestore": {
     "/system/control": { "schema": "SystemControlState", "description": "Global OS mode state." },
+    "/system/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." },
     "/civic/emergencies": { "schema": "CivicEmergency", "description": "Active SOS and disaster events." },
     "/infrastructure/nodes": { "schema": "NetworkNode", "description": "Mesh network status logs." }
   }
