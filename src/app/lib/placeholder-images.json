@@ -36,6 +36,24 @@
       "description": "Data visualization abstract",
       "imageUrl": "https://picsum.photos/seed/hero/1200/800",
       "imageHint": "data visualization"
+    },
+    {
+      "id": "readme-header",
+      "description": "Futuristic OS Banner for README",
+      "imageUrl": "https://picsum.photos/seed/readme-header/1200/400",
+      "imageHint": "futuristic network"
+    },
+    {
+      "id": "civic-preview",
+      "description": "Civic Intelligence Module Preview",
+      "imageUrl": "https://picsum.photos/seed/civic-preview/800/400",
+      "imageHint": "smart city"
+    },
+    {
+      "id": "finance-preview",
+      "description": "Financial Sovereign Module Preview",
+      "imageUrl": "https://picsum.photos/seed/finance-preview/800/400",
+      "imageHint": "digital currency"
     }
   ]
 }
