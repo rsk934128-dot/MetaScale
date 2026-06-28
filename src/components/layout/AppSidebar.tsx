@@ -19,7 +19,8 @@ import {
   LogOut,
   User as UserIcon,
   Mail,
-  Scale
+  Scale,
+  Code2
 } from "lucide-react";
 import {
   Sidebar,
@@ -196,6 +197,19 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-4 border-t border-white/5 space-y-2">
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={pathname === '/api-docs'} tooltip="API Docs">
+              <Link 
+                href="/api-docs" 
+                className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest"
+                onClick={handleLinkClick}
+              >
+                <Code2 className="h-4 w-4" />
+                <span>API Documentation</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname === '/settings'} tooltip="Global Settings">
               <Link 
