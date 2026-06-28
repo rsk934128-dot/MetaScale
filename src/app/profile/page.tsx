@@ -18,19 +18,25 @@ import {
   Edit2,
   RefreshCw,
   Copy,
-  Check
+  Check,
+  FileText,
+  Upload,
+  BadgeCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useState, useMemo } from 'react';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function ProfilePage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const userRef = useMemo(() => {
     if (!firestore || !user?.uid) return null;
@@ -45,6 +51,43 @@ export default function ProfilePage() {
     setCopied(true);
     toast({ title: "ID Copied", description: "Kernel ID saved to clipboard." });
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleLinkTIN = async () => {
+    if (!user?.uid || !firestore) return;
+    setIsUploading(true);
+    
+    const docData = {
+      userId: user.uid,
+      userName: profile?.displayName || user.displayName,
+      type: 'TIN',
+      status: 'PENDING',
+      submittedAt: Date.now(),
+      metadata: {
+        tin: "742322402703",
+        name: profile?.displayName || user.displayName,
+        father: "md.abdul barik sheikh",
+        address: "masumpor, shodor 1, Sirajganj, PO: 6700",
+        issueDate: "June 03, 2024"
+      }
+    };
+
+    const collRef = collection(firestore, 'verification_docs');
+    addDoc(collRef, docData).then(() => {
+      toast({
+        title: "TIN Submitted",
+        description: "Certificate 74232... is now pending admin review.",
+      });
+    }).catch(err => {
+       const pErr = new FirestorePermissionError({
+         path: collRef.path,
+         operation: 'create',
+         requestResourceData: docData
+       });
+       errorEmitter.emit('permission-error', pErr);
+    }).finally(() => {
+      setIsUploading(false);
+    });
   };
 
   return (
@@ -88,6 +131,11 @@ export default function ProfilePage() {
                    <Badge className="bg-accent text-background font-bold uppercase text-[9px] tracking-widest">
                       {profile?.role || 'OPERATOR'}
                    </Badge>
+                   {profile?.verificationStatus === 'VERIFIED' && (
+                     <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[9px] uppercase">
+                       <BadgeCheck className="mr-1 h-3 w-3" /> Verified
+                     </Badge>
+                   )}
                 </div>
                 <div className="flex items-center justify-center md:justify-start gap-2 text-muted-foreground">
                    <span className="text-xs font-mono uppercase tracking-tighter opacity-70">Sovereign Mesh ID:</span>
@@ -150,6 +198,27 @@ export default function ProfilePage() {
                       </div>
                    </CardContent>
                 </Card>
+
+                <Card className="glass-panel border-accent/20 bg-accent/5">
+                   <CardHeader className="p-4">
+                      <CardTitle className="text-xs uppercase flex items-center gap-2">
+                         <FileText className="h-4 w-4 text-accent" /> Compliance Binding
+                      </CardTitle>
+                   </CardHeader>
+                   <CardContent className="p-4 pt-0 space-y-4">
+                      <p className="text-[11px] text-muted-foreground italic">
+                         Link your taxpayer identification (TIN) to enable high-value financial corridors.
+                      </p>
+                      <Button 
+                        className="w-full text-[10px] font-bold h-9 bg-accent text-background cyan-glow"
+                        onClick={handleLinkTIN}
+                        disabled={isUploading || profile?.verificationStatus === 'PENDING'}
+                      >
+                         {isUploading ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <Upload className="mr-2 h-3 w-3" />}
+                         {profile?.verificationStatus === 'PENDING' ? 'Awaiting Audit' : 'Link TIN Certificate'}
+                      </Button>
+                   </CardContent>
+                </Card>
              </div>
 
              <div className="space-y-6">
@@ -163,10 +232,10 @@ export default function ProfilePage() {
                       <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-3">
                          <div className="flex justify-between items-center text-[10px] font-bold">
                             <span className="text-muted-foreground uppercase">Trust Rating</span>
-                            <span className="text-accent">98.4%</span>
+                            <span className="text-accent">{profile?.trustScore || '98.4'}%</span>
                          </div>
                          <div className="h-1 w-full bg-accent/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-accent" style={{ width: '98%' }} />
+                            <div className="h-full bg-accent" style={{ width: `${profile?.trustScore || 98}%` }} />
                          </div>
                          <p className="text-[9px] text-muted-foreground italic">
                             Your account is cryptographically signed and bound to the Sovereign Mesh Node-04.

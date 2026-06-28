@@ -23,7 +23,8 @@ import {
   Scale,
   Code2,
   UserCircle,
-  Music2
+  Music2,
+  ShieldCheck
 } from "lucide-react";
 import {
   Sidebar,
@@ -40,7 +41,7 @@ import {
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useUser, useAuth } from "@/firebase";
+import { useUser, useAuth, useFirestore, useDoc } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -51,6 +52,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NotificationBell } from "./NotificationBell";
 import { Logo } from "@/components/ui/logo";
+import { doc } from "firebase/firestore";
+import { useMemo } from "react";
 
 const civicNav = [
   { icon: Globe, label: "Control Plane", href: "/dashboard" },
@@ -85,6 +88,15 @@ export function AppSidebar() {
   const { isMobile, setOpenMobile } = useSidebar();
   const { user } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
+
+  const userRef = useMemo(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+
+  const { data: profile } = useDoc<any>(userRef);
+  const isAdmin = profile?.role === 'ADMIN';
 
   const handleLinkClick = () => {
     if (isMobile) {
@@ -97,7 +109,6 @@ export function AppSidebar() {
     router.push('/login');
   };
 
-  // Sidebar is hidden on landing page and login page for non-logged-in users
   const isDashboardRoute = pathname !== '/' && pathname !== '/login';
 
   if (!isDashboardRoute) return null;
@@ -112,6 +123,28 @@ export function AppSidebar() {
         <NotificationBell />
       </SidebarHeader>
       <SidebarContent>
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-accent">Admin Command</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === '/admin/compliance'} tooltip="Compliance Center">
+                    <Link 
+                      href="/admin/compliance" 
+                      className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-accent"
+                      onClick={handleLinkClick}
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      <span>Admin Compliance</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
         <SidebarGroup>
           <SidebarGroupLabel>Civic Intelligence</SidebarGroupLabel>
           <SidebarGroupContent>

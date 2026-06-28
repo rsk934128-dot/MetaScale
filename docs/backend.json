@@ -12,9 +12,38 @@
         "mobile": { "type": "string" },
         "kernelId": { "type": "string" },
         "role": { "type": "string", "enum": ["ADMIN", "OPERATOR", "CITIZEN"] },
+        "verificationStatus": { "type": "string", "enum": ["UNVERIFIED", "PENDING", "VERIFIED", "FLAGGED"] },
+        "trustScore": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "email", "kernelId"]
+    },
+    "TINCertificate": {
+      "title": "TIN Certificate",
+      "description": "Taxpayer Identification Number data for civic compliance.",
+      "type": "object",
+      "properties": {
+        "tin": { "type": "string" },
+        "name": { "type": "string" },
+        "fatherName": { "type": "string" },
+        "address": { "type": "string" },
+        "issueDate": { "type": "string" },
+        "status": { "type": "string" }
+      }
+    },
+    "VerificationDocument": {
+      "title": "Verification Document",
+      "description": "A document submitted for identity or compliance verification.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["TIN", "NID", "PASSPORT"] },
+        "fileUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
+        "metadata": { "$ref": "#/backend/entities/TINCertificate" },
+        "submittedAt": { "type": "number" }
+      }
     },
     "MediaAsset": {
       "title": "Media Asset",
@@ -101,6 +130,7 @@
     "/users/{userId}": { "schema": "UserProfile", "description": "Extended user profile information." },
     "/users/{userId}/notifications": { "schema": "Notification", "description": "User specific real-time alerts." },
     "/users/{userId}/media_tasks": { "schema": "MediaTask", "description": "User specific media extraction tasks." },
+    "/verification_docs/{docId}": { "schema": "VerificationDocument", "description": "Pending compliance documents." },
     "/system/control": { "schema": "SystemControlState", "description": "Global OS mode state." },
     "/system/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." }
   }
