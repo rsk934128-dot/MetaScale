@@ -1,4 +1,3 @@
-
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -18,7 +17,8 @@ import {
   Globe,
   ArrowUpRight,
   ShieldAlert,
-  Cpu
+  Cpu,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,8 @@ import {
   CartesianGrid
 } from "recharts";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { simulateTrustEconomy } from "@/ai/flows/economy-simulator";
+import { useToast } from "@/hooks/use-toast";
 
 const stabilityData = [
   { time: "00:00", micro: 88, meso: 82, macro: 90 },
@@ -61,10 +63,41 @@ const chartConfig = {
 
 export default function CivilizationEconomyPage() {
   const [isSimulating, setIsSimulating] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const { toast } = useToast();
 
-  const triggerSimulation = () => {
+  const handleRunSimulation = async () => {
     setIsSimulating(true);
-    setTimeout(() => setIsSimulating(false), 2000);
+    try {
+      const output = await simulateTrustEconomy({
+        networkNodes: [
+          { id: 'Global-Treasury', trustScore: 98, liquidityAvailable: 500000, layer: 'macro' },
+          { id: 'Rubelpay-HQ', trustScore: 75, liquidityAvailable: 25000, layer: 'meso' },
+          { id: 'Vendor-UK-01', trustScore: 88, liquidityAvailable: 12000, layer: 'micro' }
+        ],
+        activeCorridors: [
+          { from: 'Rubelpay-HQ', to: 'Vendor-UK-01', throughput: 4500, latency: 124 }
+        ],
+        policyChanges: {
+          creditExpansion: true,
+          trustThresholdAdjustment: 80
+        },
+        marketTrend: 'volatile'
+      });
+      setResult(output);
+      toast({
+        title: "Simulation Complete",
+        description: `Civilization Stability: ${output.civilizationStabilityIndex}%`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Simulation Failed",
+        description: "AI Governance Engine is currently under heavy load.",
+      });
+    } finally {
+      setIsSimulating(false);
+    }
   };
 
   return (
@@ -76,16 +109,16 @@ export default function CivilizationEconomyPage() {
           <div className="flex-1">
             <h1 className="text-lg font-headline font-bold flex items-center gap-2">
               <Globe className="h-5 w-5 text-accent" />
-              Sovereign Economic Governance (SEG-MLC)
+              Economic Governance (SEG-MLC)
             </h1>
           </div>
           <div className="flex items-center gap-4">
             <Badge variant="outline" className="border-accent/20 text-accent">
               <ShieldCheck className="mr-1 h-3 w-3" /> Civilization Status: Stable
             </Badge>
-            <Button size="sm" onClick={triggerSimulation} disabled={isSimulating} className="cyan-glow text-xs font-bold">
-              {isSimulating ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Cpu className="h-3 w-3 mr-1" />}
-              Run Policy Simulation
+            <Button size="sm" onClick={handleRunSimulation} disabled={isSimulating} className="cyan-glow text-xs font-bold">
+              {isSimulating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Cpu className="h-3 w-3 mr-1" />}
+              {isSimulating ? 'Analyzing...' : 'Run Macro Simulation'}
             </Button>
           </div>
         </header>
@@ -93,41 +126,41 @@ export default function CivilizationEconomyPage() {
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
           <div className="flex justify-between items-end">
             <div>
-              <h2 className="text-3xl font-headline font-bold mb-2">Civilization Economic Intelligence</h2>
-              <p className="text-muted-foreground">Managing multi-layer stability, policy enforcement, and macro-economic diplomacy.</p>
+              <h2 className="text-3xl font-headline font-bold mb-2">Civilization Intelligence</h2>
+              <p className="text-muted-foreground">Managing multi-layer stability and macro-economic diplomacy via AI Logic.</p>
             </div>
             <div className="text-right">
-              <p className="text-xs font-bold uppercase text-muted-foreground">Macro Stability Index</p>
-              <p className="text-4xl font-headline font-bold text-accent">94.2</p>
+              <p className="text-xs font-bold uppercase text-muted-foreground">Stability Index</p>
+              <p className="text-4xl font-headline font-bold text-accent">{result?.civilizationStabilityIndex || '94.2'}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="glass-panel border-l-4 border-l-blue-400">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Micro Layer (Entity)</CardTitle>
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Micro Layer</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">95.1</div>
-                <p className="text-[10px] text-blue-400 mt-1 uppercase font-bold tracking-tighter">Utilization: Optimal</p>
+              <CardContent className="p-4 pt-0">
+                <div className="text-3xl font-bold">{result?.layerStability.micro || '95.1'}</div>
+                <Progress value={result?.layerStability.micro || 95} className="h-1 mt-2 bg-blue-400/10 [&>div]:bg-blue-400" />
               </CardContent>
             </Card>
             <Card className="glass-panel border-l-4 border-l-primary">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Meso Layer (Network)</CardTitle>
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Meso Layer</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">88.4</div>
-                <p className="text-[10px] text-muted-foreground mt-1 uppercase">12 Active Corridors</p>
+              <CardContent className="p-4 pt-0">
+                <div className="text-3xl font-bold">{result?.layerStability.meso || '88.4'}</div>
+                <Progress value={result?.layerStability.meso || 88} className="h-1 mt-2 bg-primary/10 [&>div]:bg-primary" />
               </CardContent>
             </Card>
             <Card className="glass-panel border-l-4 border-l-accent">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Macro Layer (Global)</CardTitle>
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Macro Layer</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">94.2</div>
-                <p className="text-[10px] text-accent mt-1 uppercase font-bold">Civilization Consensus</p>
+              <CardContent className="p-4 pt-0">
+                <div className="text-3xl font-bold">{result?.layerStability.macro || '94.2'}</div>
+                <Progress value={result?.layerStability.macro || 94} className="h-1 mt-2 bg-accent/10 [&>div]:bg-accent" />
               </CardContent>
             </Card>
           </div>
@@ -137,9 +170,9 @@ export default function CivilizationEconomyPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-5 w-5 text-accent" />
-                  Multi-Layer Stability Chart
+                  Historical Stability Signals
                 </CardTitle>
-                <CardDescription>Real-time tracking of Micro, Meso, and Macro stability signals.</CardDescription>
+                <CardDescription>Live telemetry from geo-distributed financial anycast nodes.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[350px] w-full mt-4">
@@ -166,56 +199,59 @@ export default function CivilizationEconomyPage() {
 
             <div className="space-y-6">
               <Card className="glass-panel border-accent/20">
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
+                <CardHeader className="p-4">
+                  <CardTitle className="text-xs flex items-center gap-2">
                     <Scale className="h-4 w-4 text-accent" />
-                    Policy Simulator
+                    Policy Impact Analysis
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2">
-                    <p className="text-[11px] font-bold text-accent uppercase">Scenario: Credit Expansion</p>
-                    <p className="text-[10px] text-muted-foreground">"Expansion in Micro layer predicted to increase Macro instability by 4% due to Trust Inflation risk."</p>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] font-bold uppercase">
-                      <span>Trust Inflation Risk</span>
-                      <span className="text-yellow-400">Moderate</span>
+                <CardContent className="p-4 pt-0 space-y-4">
+                  {result ? (
+                    <div className="space-y-4 animate-fade-in">
+                      <div className="p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2">
+                        <p className="text-[11px] font-bold text-accent uppercase">Forecast Result</p>
+                        <p className="text-[10px] text-white/90 leading-relaxed italic">
+                          "{result.policyImpactForecast}"
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest">Concentration Risk</p>
+                        <div className="flex justify-between text-[10px] font-bold">
+                          <span>Risk Level</span>
+                          <span className={result.liquidityConcentrationRisk > 30 ? 'text-red-400' : 'text-green-400'}>
+                            {result.liquidityConcentrationRisk}%
+                          </span>
+                        </div>
+                        <Progress value={result.liquidityConcentrationRisk} className="h-1" />
+                      </div>
                     </div>
-                    <Progress value={45} className="h-1" />
-                  </div>
-                  <Button className="w-full text-xs font-bold cyan-glow bg-accent text-background">
-                    Analyze Policy Impact
-                  </Button>
+                  ) : (
+                    <div className="text-center py-10 space-y-3 opacity-40">
+                      <Cpu className="h-10 w-10 mx-auto animate-pulse" />
+                      <p className="text-[10px] uppercase font-bold tracking-widest">Ready for Analysis</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
-              <Card className="glass-panel">
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <ShieldAlert className="h-4 w-4 text-red-400" />
-                    Economic Shock Response
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                   <div className="p-2 rounded bg-red-500/5 border border-red-500/20 text-[10px] text-red-400 font-bold">
-                     AUTO-THROTTLE: UK Corridor Congested
-                   </div>
-                   <div className="space-y-2 pt-2">
-                     <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest">Active Stabilizers</p>
-                     {[
-                       { label: "Liquidity Redistribution", status: "Active" },
-                       { label: "Corridor Rerouting", status: "Standby" },
-                       { label: "Credit Throttling", status: "Active" }
-                     ].map((item, i) => (
-                       <div key={i} className="flex justify-between items-center p-2 rounded bg-secondary/20">
-                          <span className="text-[10px]">{item.label}</span>
-                          <Badge variant="outline" className="text-[8px] bg-accent/10">{item.status}</Badge>
+              {result?.shockResponseActions && (
+                <Card className="glass-panel border-red-500/20">
+                  <CardHeader className="p-4">
+                    <CardTitle className="text-xs flex items-center gap-2 text-red-400">
+                      <ShieldAlert className="h-4 w-4" />
+                      Shock Response Protocols
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0 space-y-3">
+                     {result.shockResponseActions.map((action: any, i: number) => (
+                       <div key={i} className="p-2 rounded bg-red-500/5 border border-red-500/10 space-y-1">
+                          <p className="text-[10px] font-bold text-red-400 uppercase">{action.action}</p>
+                          <p className="text-[9px] text-muted-foreground italic">Trigger: {action.trigger}</p>
                        </div>
                      ))}
-                   </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </main>

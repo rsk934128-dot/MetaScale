@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -19,7 +18,8 @@ import {
   Milestone,
   LogOut,
   User as UserIcon,
-  Mail
+  Mail,
+  Scale
 } from "lucide-react";
 import {
   Sidebar,
@@ -54,6 +54,7 @@ const civicNav = [
 
 const financialNav = [
   { icon: DollarSign, label: "Fiscal Command", href: "/finance" },
+  { icon: Scale, label: "Eco Governance", href: "/economy" },
   { icon: Gavel, label: "Compliance & KYB", href: "/compliance" },
   { icon: Activity, label: "Revenue Ops", href: "/revenue" },
 ];
