@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { 
   Globe, 
   ShieldCheck, 
@@ -17,7 +18,9 @@ import {
   ChevronRight,
   Gavel,
   Scale,
-  ShieldAlert
+  ShieldAlert,
+  Terminal,
+  Server
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/firebase";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import placeholderData from "@/app/lib/placeholder-images.json";
 
 const HERO_SLIDES = [
   {
@@ -32,19 +36,21 @@ const HERO_SLIDES = [
     badge: 'Next-Gen Deterministic Infrastructure',
     title: 'THE KERNEL OF',
     titleItalic: 'SOVEREIGNTY',
-    desc: 'Mission-critical operating system for the next generation of civic and financial infrastructure. Built with deterministic AI logic.',
+    desc: 'Mission-critical operating system for the next generation of digital civilizations. Built with deterministic AI logic and cryptographic security.',
     color: 'text-accent',
     glow: 'bg-accent/20',
+    image: placeholderData.placeholderImages.find(img => img.id === 'hero-bg')?.imageUrl || 'https://picsum.photos/seed/hero/1200/800',
     icon: Zap
   },
   {
     id: 'civic',
-    badge: 'Civilization Resilience active',
+    badge: 'Civilization Resilience Active',
     title: 'REAL-TIME',
     titleItalic: 'INTELLIGENCE',
-    desc: 'Monitoring critical environmentals and river health via geo-distributed sensors. Automated SOS dispatch protocols.',
+    desc: 'Monitoring critical environmentals and river health via geo-distributed sensors. Automated SOS dispatch protocols for rapid response.',
     color: 'text-blue-400',
     glow: 'bg-blue-400/20',
+    image: placeholderData.placeholderImages.find(img => img.id === 'ad-creative-4')?.imageUrl || 'https://picsum.photos/seed/civic/1200/800',
     icon: Waves
   },
   {
@@ -52,9 +58,10 @@ const HERO_SLIDES = [
     badge: 'Global Fiscal Surface v1.2',
     title: 'A GLOBAL FINANCIAL',
     titleItalic: 'CONTROL SURFACE',
-    desc: 'Integrate directly with banking rails through the Sovereign Mesh. Multi-rail settlement system with integrated AI.',
+    desc: 'Integrate directly with banking rails through the Sovereign Mesh. Multi-rail settlement system with integrated AI risk analysis.',
     color: 'text-green-400',
     glow: 'bg-green-400/20',
+    image: placeholderData.placeholderImages.find(img => img.id === 'ad-creative-1')?.imageUrl || 'https://picsum.photos/seed/finance/1200/800',
     icon: DollarSign
   },
   {
@@ -62,9 +69,10 @@ const HERO_SLIDES = [
     badge: 'Zero-Trust Security Mesh',
     title: 'CONTINUOUS',
     titleItalic: 'THREAT VECTOR',
-    desc: 'Biometric identity binding and autonomous containment. All interactions with the Mesh are cryptographically signed.',
+    desc: 'Biometric identity binding and autonomous containment. All interactions with the Mesh are cryptographically signed and logged.',
     color: 'text-red-400',
     glow: 'bg-red-400/20',
+    image: placeholderData.placeholderImages.find(img => img.id === 'ad-creative-2')?.imageUrl || 'https://picsum.photos/seed/security/1200/800',
     icon: ShieldAlert
   }
 ];
@@ -76,19 +84,17 @@ export default function LandingPage() {
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 5000); // Change banner every 5 seconds
+    }, 5000); 
     return () => clearInterval(timer);
   }, []);
 
-  const slide = HERO_SLIDES[activeSlide];
-
   return (
     <div className="min-h-screen bg-background selection:bg-accent selection:text-background overflow-x-hidden">
-      {/* Dynamic Background Ambience */}
+      {/* Background Ambience */}
       <div className="fixed inset-0 z-0 pointer-events-none transition-all duration-1000">
         <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #00f2ff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-        <div className={cn("absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] transition-all duration-1000", slide.glow)} />
-        <div className={cn("absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] transition-all duration-1000", slide.glow)} />
+        <div className={cn("absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] transition-all duration-1000 opacity-30", HERO_SLIDES[activeSlide].glow)} />
+        <div className={cn("absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] transition-all duration-1000 opacity-30", HERO_SLIDES[activeSlide].glow)} />
       </div>
 
       {/* Navigation */}
@@ -122,34 +128,58 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Dynamic Hero Banner Section */}
-      <header className="relative z-10 pt-32 pb-20 px-6 max-w-7xl mx-auto text-center min-h-[600px] flex flex-col justify-center">
-        <div className="transition-all duration-700 ease-in-out transform">
-          <Badge variant="outline" className={cn("mb-6 uppercase tracking-[0.3em] px-4 py-1 text-[10px] font-bold animate-fade-in border-current", slide.color)}>
-            {slide.badge}
-          </Badge>
-          <h1 className="text-6xl md:text-8xl font-headline font-bold text-white leading-[0.9] tracking-tighter mb-8 animate-fade-in">
-            {slide.title} <br />
-            <span className={cn("italic transition-colors duration-1000", slide.color)}>{slide.titleItalic}</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in">
-            {slide.desc}
-          </p>
-        </div>
+      {/* Main Banner Carousel */}
+      <header className="relative z-10 w-full h-[85vh] overflow-hidden">
+        {HERO_SLIDES.map((slide, index) => (
+          <div
+            key={slide.id}
+            className={cn(
+              "absolute inset-0 transition-all duration-1000 ease-in-out transform",
+              activeSlide === index ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full"
+            )}
+          >
+            {/* Background Image with Overlay */}
+            <div className="absolute inset-0 z-0">
+              <Image 
+                src={slide.image} 
+                alt={slide.title} 
+                fill 
+                className="object-cover opacity-20"
+                priority={index === 0}
+                data-ai-hint="futuristic technology"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+            </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
-          <Button asChild size="lg" className={cn("cyan-glow font-bold uppercase text-xs tracking-widest h-14 px-10 rounded-full transition-all duration-500", slide.color === 'text-accent' ? 'bg-accent text-background' : 'bg-white text-background')}>
-            <Link href={user ? "/dashboard" : "/login"}>
-              Launch Control Plane
-            </Link>
-          </Button>
-          <Button variant="outline" size="lg" className="h-14 px-10 rounded-full text-xs font-bold uppercase tracking-widest border-white/10 hover:bg-white/5 transition-all text-white">
-            Read Whitepaper
-          </Button>
-        </div>
+            {/* Content Container */}
+            <div className="relative z-10 h-full max-w-7xl mx-auto px-6 flex flex-col justify-center items-center text-center">
+              <Badge variant="outline" className={cn("mb-6 uppercase tracking-[0.3em] px-4 py-1 text-[10px] font-bold animate-fade-in border-current", slide.color)}>
+                {slide.badge}
+              </Badge>
+              <h1 className="text-5xl md:text-8xl font-headline font-bold text-white leading-[0.9] tracking-tighter mb-8 animate-fade-in">
+                {slide.title} <br />
+                <span className={cn("italic transition-colors duration-1000", slide.color)}>{slide.titleItalic}</span>
+              </h1>
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in">
+                {slide.desc}
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
+                <Button asChild size="lg" className={cn("cyan-glow font-bold uppercase text-xs tracking-widest h-14 px-10 rounded-full transition-all duration-500", slide.color === 'text-accent' ? 'bg-accent text-background' : 'bg-white text-background')}>
+                  <Link href={user ? "/dashboard" : "/login"}>
+                    Launch Control Plane
+                  </Link>
+                </Button>
+                <Button variant="outline" size="lg" className="h-14 px-10 rounded-full text-xs font-bold uppercase tracking-widest border-white/10 hover:bg-white/5 transition-all text-white">
+                  Read Whitepaper
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
 
-        {/* Slide Indicators */}
-        <div className="mt-12 flex justify-center gap-3">
+        {/* Carousel Navigation Indicators */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex gap-3">
           {HERO_SLIDES.map((_, idx) => (
             <button
               key={idx}
@@ -161,9 +191,31 @@ export default function LandingPage() {
             />
           ))}
         </div>
+
+        {/* Side Controls (Optional) */}
+        <div className="absolute inset-y-0 left-4 z-20 flex items-center">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white"
+            onClick={() => setActiveSlide(prev => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
+          >
+            <ChevronRight className="rotate-180 h-6 w-6" />
+          </Button>
+        </div>
+        <div className="absolute inset-y-0 right-4 z-20 flex items-center">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white"
+            onClick={() => setActiveSlide(prev => (prev + 1) % HERO_SLIDES.length)}
+          >
+            <ChevronRight className="h-6 w-6" />
+          </Button>
+        </div>
       </header>
 
-      {/* Feature Mesh */}
+      {/* Feature Mesh Section */}
       <section className="relative z-10 py-24 px-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { icon: Waves, label: 'Civic', title: 'Intelligence Hub', desc: 'Real-time river health, flood risk analysis, and automated SOS dispatch protocols.', color: 'text-blue-400' },
@@ -188,117 +240,6 @@ export default function LandingPage() {
         ))}
       </section>
 
-      {/* Detail Section: Civic */}
-      <section id="civic" className="relative z-10 py-24 px-6 max-w-7xl mx-auto border-t border-white/5 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          <div className="space-y-8">
-            <Badge variant="outline" className="border-blue-400/20 text-blue-400 uppercase tracking-widest px-3">Civic Plane Active</Badge>
-            <h2 className="text-4xl md:text-5xl font-headline font-bold text-white leading-tight">
-              Real-time Intelligence for <span className="text-blue-400">Civilization Resilience</span>
-            </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Monitoring critical environmentals and river health via geo-distributed sensors. When disaster strikes, SHURUKKHA-OS engages automated response protocols, dispatching resources to precise coordinates within milliseconds.
-            </p>
-            <div className="grid grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <p className="text-2xl font-headline font-bold text-white">12%</p>
-                <p className="text-xs uppercase font-bold text-muted-foreground">Current Flood Risk</p>
-                <div className="h-1 w-full bg-blue-400/10 rounded-full overflow-hidden">
-                   <div className="h-full bg-blue-400" style={{ width: '12%' }} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <p className="text-2xl font-headline font-bold text-white">4.2m</p>
-                <p className="text-xs uppercase font-bold text-muted-foreground">Avg. River Level</p>
-                <div className="h-1 w-full bg-blue-400/10 rounded-full overflow-hidden">
-                   <div className="h-full bg-blue-400" style={{ width: '70%' }} />
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="relative group">
-            <div className="absolute inset-0 bg-blue-400/20 rounded-3xl blur-[80px] opacity-20 group-hover:opacity-40 transition-opacity" />
-            <div className="relative glass-panel rounded-3xl border-white/10 p-4 aspect-square flex items-center justify-center overflow-hidden">
-               <Waves className="h-40 w-40 text-blue-400 animate-pulse" />
-               <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #60a5fa 2px, transparent 2px)', backgroundSize: '30px 30px' }} />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Detail Section: Finance */}
-      <section id="finance" className="relative z-10 py-24 px-6 max-w-7xl mx-auto border-t border-white/5">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          <div className="order-2 lg:order-1 relative group">
-            <div className="absolute inset-0 bg-green-400/20 rounded-3xl blur-[80px] opacity-20" />
-            <div className="relative glass-panel rounded-3xl border-white/10 p-12 space-y-6">
-               <div className="flex justify-between items-center pb-6 border-b border-white/5">
-                  <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Settlement Node-04</span>
-                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Verified</Badge>
-               </div>
-               <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-sm font-bold text-white">Fiscal Disbursement</span>
-                    <span className="text-sm font-mono text-accent">$12,450.00</span>
-                  </div>
-                  <div className="h-2 w-full bg-secondary/50 rounded-full overflow-hidden">
-                    <div className="h-full bg-accent animate-pulse" style={{ width: '100%' }} />
-                  </div>
-                  <div className="p-4 rounded-xl bg-black/40 border border-white/5 font-mono text-[10px] text-muted-foreground space-y-1">
-                    <p className="text-accent">&gt;&gt;&gt; HANDSHAKE: SUCCESS</p>
-                    <p>&gt;&gt;&gt; RAIL: PAYONEER_EU_PIS</p>
-                    <p>&gt;&gt;&gt; SEAL: FALLBACK_P180_9921</p>
-                  </div>
-               </div>
-            </div>
-          </div>
-          <div className="order-1 lg:order-2 space-y-8">
-            <Badge variant="outline" className="border-green-400/20 text-green-400 uppercase tracking-widest px-3">Finance Plane v1.2</Badge>
-            <h2 className="text-4xl md:text-5xl font-headline font-bold text-white leading-tight">
-              A Global Financial <span className="text-green-400">Control Surface</span>
-            </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Integrate directly with banking rails (PayPal, Priyo Pay, Payoneer) through the Sovereign Mesh. Our AI Orchestrator handles OAuth 2.0 exchanges, PSD2 compliance, and Imperial Directive seals for high-value disbursements automatically.
-            </p>
-            <ul className="space-y-4">
-              {[
-                { icon: Gavel, text: 'Predictive Compliance & KYB Sync' },
-                { icon: Scale, text: 'Macro-Economic Stability Simulation' },
-                { icon: Activity, text: 'Multi-Rail Liquidity Health Tracking' }
-              ].map((li, i) => (
-                <li key={i} className="flex items-center gap-3 text-sm font-bold text-white/80">
-                   <li.icon className="h-5 w-5 text-accent" />
-                   {li.text}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="relative z-10 py-32 px-6">
-        <div className="max-w-4xl mx-auto glass-panel rounded-[3rem] border-accent/20 p-12 md:p-24 text-center space-y-8 overflow-hidden relative">
-           <div className="absolute inset-0 bg-accent/5 pointer-events-none" />
-           <h2 className="text-4xl md:text-6xl font-headline font-bold text-white tracking-tighter">
-             READY TO ENTER THE <span className="text-accent">KERNEL?</span>
-           </h2>
-           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-             Join the distributed anycast grid and take control of your infrastructure. Deterministic governance is one click away.
-           </p>
-           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button asChild size="lg" className="cyan-glow bg-accent text-background font-bold uppercase text-xs tracking-widest h-14 px-12 rounded-full">
-                <Link href={user ? "/dashboard" : "/login"}>
-                  {user ? "Back to Console" : "Establish Identity"}
-                </Link>
-              </Button>
-              <Button variant="ghost" size="lg" className="h-14 px-10 rounded-full text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-white transition-all">
-                Contact Sovereign Core
-              </Button>
-           </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="relative z-10 py-20 px-6 border-t border-white/5 bg-black/20">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
@@ -312,10 +253,6 @@ export default function LandingPage() {
             <p className="text-sm text-muted-foreground max-w-sm">
               SHURUKKHA-OS: The deterministic operating system for the next digital economic civilization. Distributed via 42 anycast nodes globally.
             </p>
-            <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-               <span className="text-accent">Active Version</span>
-               <span>v1.2.0-stable</span>
-            </div>
           </div>
           <div className="space-y-4">
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-white">Operational Planes</h4>
@@ -329,7 +266,6 @@ export default function LandingPage() {
           <div className="space-y-4">
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-white">System</h4>
             <ul className="space-y-2 text-xs text-muted-foreground">
-              <li><Link href="/roadmap" className="hover:text-accent">Roadmap</Link></li>
               <li><Link href="/login" className="hover:text-accent">Identity Link</Link></li>
               <li><Link href="/legal" className="hover:text-accent">Legal Bound</Link></li>
               <li><Link href="/settings" className="hover:text-accent">System Settings</Link></li>
