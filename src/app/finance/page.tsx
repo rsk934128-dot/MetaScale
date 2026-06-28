@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,7 +17,8 @@ import {
   ShieldCheck,
   AlertTriangle,
   Building2,
-  Euro
+  Euro,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,10 +29,13 @@ import { useKernel } from "@/components/kernel/KernelProvider";
 import { orchestratePayout } from "@/ai/flows/payout-orchestrator";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function FinancialIntelligence() {
   const { mode, emitEvent } = useKernel();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
@@ -39,19 +43,50 @@ export default function FinancialIntelligence() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [validationStep, setValidationProgress] = useState(0);
   const [lastPayout, setLastPayout] = useState<any>(null);
+  const [scaPending, setScaPending] = useState(false);
+
+  // Handle SCA Callbacks
+  useEffect(() => {
+    const scaStatus = searchParams.get('sca_status');
+    if (scaStatus === 'success') {
+      toast({
+        title: "SCA Verified",
+        description: "Payoneer PIS consent granted. Executing settlement...",
+      });
+      // Simulate completion after redirect
+      setGateway('PAYONEER');
+      handlePayout();
+      router.replace('/finance');
+    }
+  }, [searchParams, router]);
 
   const handlePayout = async () => {
     if (!recipient || !amount) return;
     
+    // Check for Payoneer SCA Redirect requirement
+    if (gateway === 'PAYONEER' && !scaPending && searchParams.get('sca_status') !== 'success') {
+      setScaPending(true);
+      emitEvent('SECURITY', 'SCA_REDIRECT_INITIATED', 2, { provider: 'Payoneer EU' });
+      toast({
+        title: "SCA Required",
+        description: "Redirecting to Payoneer secure consent portal...",
+      });
+      setTimeout(() => {
+        // Simulate redirecting to Payoneer/Yapily SCA
+        window.location.href = `${window.location.pathname}?sca_status=success`;
+      }, 1500);
+      return;
+    }
+
     setIsProcessing(true);
     setValidationProgress(10);
     emitEvent('FINANCE', 'PAYOUT_INITIATED', 3, { recipient, amount, gateway });
 
-    // Simulate Anycast Validation Steps
+    // Anycast Validation Sequence
     const steps = [
       { p: 30, msg: "Validating Anycast Route: Core -> Global Mesh" },
-      { p: 50, msg: gateway === 'PAYONEER' ? "Initializing Yapily PSD2 Consent Flow" : "Verifying Identity Binding" },
-      { p: 70, msg: gateway === 'PAYONEER' ? "Mapping PIS Route via BIC PAYNUS33XXX" : "Executing Routing Seal" },
+      { p: 50, msg: gateway === 'PAYONEER' ? "Yapily PIS Token Handshake: BIC PAYNUS33XXX" : "Verifying Identity Binding" },
+      { p: 70, msg: gateway === 'PAYONEER' ? "Mapping SEPA Route via Frankfurt Node" : "Executing Routing Seal" },
       { p: 90, msg: "Executing Imperial Directive Clearance" }
     ];
 
@@ -76,16 +111,17 @@ export default function FinancialIntelligence() {
         description: `Batch ${result.batchId} processed via ${gateway}.`,
       });
     } catch (error) {
-      emitEvent('FINANCE', 'PAYOUT_FAILED', 1, { error: "API Failure" });
+      emitEvent('FINANCE', 'PAYOUT_FAILED', 1, { error: "Anycast Timeout" });
       toast({
         variant: "destructive",
         title: "Payout Failed",
-        description: "Kernel intercept: Secure routing or consent failure.",
+        description: "Kernel intercept: Routing anomaly or consent failure.",
       });
     } finally {
       setTimeout(() => {
         setIsProcessing(false);
         setValidationProgress(0);
+        setScaPending(false);
       }, 1000);
     }
   };
@@ -144,7 +180,7 @@ export default function FinancialIntelligence() {
                             variant={gateway === 'PAYPAL' ? 'default' : 'outline'} 
                             size="sm" 
                             onClick={() => setGateway('PAYPAL')}
-                            disabled={isProcessing}
+                            disabled={isProcessing || scaPending}
                             className="text-[10px]"
                           >
                             PayPal Biz
@@ -153,7 +189,7 @@ export default function FinancialIntelligence() {
                             variant={gateway === 'PRIYO_PAY' ? 'default' : 'outline'} 
                             size="sm" 
                             onClick={() => setGateway('PRIYO_PAY')}
-                            disabled={isProcessing}
+                            disabled={isProcessing || scaPending}
                             className="text-[10px]"
                           >
                             Priyo Pay
@@ -162,7 +198,7 @@ export default function FinancialIntelligence() {
                             variant={gateway === 'PAYONEER' ? 'default' : 'outline'} 
                             size="sm" 
                             onClick={() => setGateway('PAYONEER')}
-                            disabled={isProcessing}
+                            disabled={isProcessing || scaPending}
                             className="text-[10px] flex items-center gap-1"
                           >
                             <Euro className="h-3 w-3" /> Payoneer EU
@@ -174,11 +210,11 @@ export default function FinancialIntelligence() {
                         <div className="space-y-2">
                           <Label>Recipient Email / IBAN</Label>
                           <Input 
-                            placeholder="user@example.com or IBAN" 
+                            placeholder={gateway === 'PAYONEER' ? "European IBAN (e.g. DE...)" : "user@example.com"} 
                             className="bg-secondary/30"
                             value={recipient}
                             onChange={(e) => setRecipient(e.target.value)}
-                            disabled={isProcessing}
+                            disabled={isProcessing || scaPending}
                           />
                         </div>
                         <div className="space-y-2">
@@ -189,29 +225,31 @@ export default function FinancialIntelligence() {
                             className="bg-secondary/30"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
-                            disabled={isProcessing}
+                            disabled={isProcessing || scaPending}
                           />
                         </div>
                       </div>
 
                       <div className="space-y-4">
-                        {isProcessing && (
+                        {(isProcessing || scaPending) && (
                           <div className="space-y-2">
                             <div className="flex justify-between text-[10px] uppercase font-bold text-accent">
-                              <span>Sovereign Path Validation</span>
+                              <span>{scaPending ? "Redirecting to SCA Portal" : "Sovereign Path Validation"}</span>
                               <span>{validationStep}%</span>
                             </div>
-                            <Progress value={validationStep} className="h-1 bg-accent/10 [&>div]:bg-accent" />
+                            <Progress value={validationStep || 100} className={`h-1 bg-accent/10 [&>div]:bg-accent ${scaPending ? 'animate-pulse' : ''}`} />
                           </div>
                         )}
                         
                         <Button 
                           className={`w-full cyan-glow font-bold ${isThrottled ? 'bg-secondary text-muted-foreground' : 'bg-accent text-background'}`}
                           onClick={handlePayout}
-                          disabled={isProcessing || isThrottled}
+                          disabled={isProcessing || isThrottled || scaPending}
                         >
                           {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                          {isThrottled ? 'Kernel Throttling Active' : 'Execute Sovereign Batch Payout'}
+                          {isThrottled ? 'Kernel Throttling Active' : 
+                           gateway === 'PAYONEER' ? 'Initialize SEPA PIS Transfer' : 
+                           'Execute Sovereign Batch Payout'}
                         </Button>
                       </div>
 
@@ -253,33 +291,40 @@ export default function FinancialIntelligence() {
                       <div className="p-2 rounded bg-secondary/50 border border-white/5 space-y-1">
                         <p className="text-[9px] uppercase font-bold text-accent">Provider: Payoneer - EU</p>
                         <p className="text-[10px] text-white">BIC: PAYNUS33XXX</p>
-                        <p className="text-[10px] text-muted-foreground">Network: SEPA / PSD2 Live</p>
+                        <p className="text-[10px] text-muted-foreground">Status: Live (Open Banking)</p>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {['AT', 'BE', 'DE', 'FR', 'IT'].map(c => (
+                        {['AT', 'BE', 'DE', 'FR', 'IT', 'NL', 'ES', 'SE'].map(c => (
                           <Badge key={c} variant="outline" className="text-[8px] px-1">{c}</Badge>
                         ))}
-                        <span className="text-[8px] text-muted-foreground">+26 more</span>
+                        <span className="text-[8px] text-muted-foreground">+23 more</span>
                       </div>
                     </div>
-                  ) : (
+                  ) : gateway === 'PAYPAL' ? (
                     <div className="p-3 rounded bg-secondary/30 border border-white/5 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-[9px] uppercase font-bold text-muted-foreground">Anycast Cluster</span>
                         <Badge variant="outline" className="text-[8px] text-green-400 border-green-400/20">ACTIVE</Badge>
                       </div>
                       <div className="flex items-center gap-2 text-[10px] text-accent">
-                        <Globe className="h-3 w-3" /> Node: Knowledge-Node-01
+                        <Globe className="h-3 w-3" /> Node: Global-Proxy-01
                       </div>
+                      <p className="text-[10px] text-muted-foreground italic">Targeting PayPal REST Payouts API v1.</p>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded bg-secondary/30 border border-white/5 flex flex-col items-center justify-center text-center py-6">
+                      <Lock className="h-6 w-6 text-muted-foreground mb-2" />
+                      <p className="text-[10px] text-muted-foreground">Private Credentials Pending</p>
+                      <Button variant="link" className="text-[10px] h-auto p-0 mt-1">Contact Support</Button>
                     </div>
                   )}
                   <div className="space-y-2">
                     <div className="flex justify-between text-[10px] font-bold uppercase">
                       <span>Daily Limit Usage</span>
-                      <span>12%</span>
+                      <span>12.4%</span>
                     </div>
                     <div className="h-1 bg-secondary rounded-full overflow-hidden">
-                      <div className="h-full bg-accent" style={{ width: '12%' }} />
+                      <div className="h-full bg-accent" style={{ width: '12.4%' }} />
                     </div>
                   </div>
                 </CardContent>
@@ -294,9 +339,9 @@ export default function FinancialIntelligence() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                    {[
-                     { label: "Payoneer PIS Hub", addr: "Yapily Managed", type: "EU-SEPA", verified: true },
-                     { label: "Rubelpay Primary", addr: "0xaf3c...1207", type: "BNB", verified: true },
-                     { label: "Partner Escrow", addr: "0x742d...444e", type: "ETH", verified: true }
+                     { label: "Yapily PIS Hub", addr: "Frankfurt-Node-09", type: "SEPA", verified: true },
+                     { label: "Rubelpay Master", addr: "0xaf3c...1207", type: "BNB", verified: true },
+                     { label: "PayPal Webhook", addr: "SanJose-Proxy-01", type: "REST", verified: true }
                    ].map((w, i) => (
                      <div key={i} className="flex justify-between items-center p-2 rounded bg-secondary/20 border border-white/5">
                         <div className="flex flex-col">
