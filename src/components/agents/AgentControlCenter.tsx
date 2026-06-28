@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -136,6 +137,22 @@ export function AgentControlCenter() {
   const handleViewAnalytics = () => {
     emitEvent('SECURITY', 'ANALYTICS_DASHBOARD_ACCESS', 4, { source: 'AGENT_CONTROL_CENTER' });
     router.push('/analytics');
+  };
+
+  const handleHaltAll = () => {
+    setAgents(prev => prev.map(agent => ({ ...agent, status: 'Paused' })));
+    
+    emitEvent('SECURITY', 'CLUSTER_EMERGENCY_HALT', 1, { 
+      reason: 'MANUAL_OVERRIDE',
+      timestamp: Date.now(),
+      scope: 'GLOBAL'
+    });
+
+    toast({
+      variant: "destructive",
+      title: "EMERGENCY HALT EXECUTED",
+      description: "All cluster agents have been forcefully paused by direct directive.",
+    });
   };
 
   return (
@@ -303,7 +320,11 @@ export function AgentControlCenter() {
             <CardTitle className="text-sm text-red-400">Emergency Protocol</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button variant="destructive" className="w-full text-xs font-bold opacity-80 hover:opacity-100 h-9">
+            <Button 
+              variant="destructive" 
+              className="w-full text-xs font-bold opacity-80 hover:opacity-100 h-9"
+              onClick={handleHaltAll}
+            >
               Halt All Cluster Agents
             </Button>
           </CardContent>
