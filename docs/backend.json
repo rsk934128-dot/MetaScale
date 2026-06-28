@@ -26,6 +26,31 @@
       },
       "required": ["id", "plane", "type", "priority", "timestamp", "status"]
     },
+    "BankAccount": {
+      "title": "Simulated Bank Account",
+      "description": "Mock account data for Open Banking testing.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bankName": { "type": "string" },
+        "accountNumber": { "type": "string" },
+        "balance": { "type": "number" },
+        "currency": { "type": "string" },
+        "status": { "type": "string", "enum": ["CONNECTED", "DISCONNECTED"] }
+      }
+    },
+    "BankTransaction": {
+      "title": "Simulated Transaction",
+      "description": "Mock transaction record for Open Banking AIS tests.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "accountId": { "type": "string" },
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }
+      }
+    },
     "CommunicationMessage": {
       "title": "Communication Log",
       "description": "Metadata and intelligence derived from intercepted or synced communications.",
@@ -51,18 +76,6 @@
         "status": { "type": "string", "enum": ["DETECTED", "DISPATCHED", "RESOLVED"] },
         "timestamp": { "type": "string", "format": "date-time" }
       }
-    },
-    "NetworkNode": {
-      "title": "Infrastructure Mesh Node",
-      "description": "Data for one of the 42 distributed nodes in the anycast mesh.",
-      "type": "object",
-      "properties": {
-        "nodeId": { "type": "string" },
-        "status": { "type": "string", "enum": ["ONLINE", "OFFLINE", "DEGRADED", "ISOLATED"] },
-        "load": { "type": "number" },
-        "latency": { "type": "number" },
-        "region": { "type": "string" }
-      }
     }
   },
   "auth": {
@@ -72,7 +85,6 @@
     "/system/control": { "schema": "SystemControlState", "description": "Global OS mode state." },
     "/system/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." },
     "/civic/emergencies": { "schema": "CivicEmergency", "description": "Active SOS and disaster events." },
-    "/infrastructure/nodes": { "schema": "NetworkNode", "description": "Mesh network status logs." },
-    "/communications/logs": { "schema": "CommunicationMessage", "description": "Intelligence logs from synced communications." }
+    "/finance/accounts": { "schema": "BankAccount", "description": "Connected mock bank accounts." }
   }
 }

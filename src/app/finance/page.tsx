@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -21,7 +22,11 @@ import {
   ExternalLink,
   Terminal,
   FileCode,
-  ShieldAlert
+  ShieldAlert,
+  Plus,
+  ArrowUpRight,
+  TrendingDown,
+  Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +39,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { BankSandboxModal } from "@/components/finance/BankSandboxModal";
 
 export default function FinancialIntelligence() {
   const { mode, emitEvent } = useKernel();
@@ -47,7 +53,8 @@ export default function FinancialIntelligence() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [validationStep, setValidationProgress] = useState(0);
   const [lastPayout, setLastPayout] = useState<any>(null);
-  const [scaPending, setScaPending] = useState(false);
+  const [isSandboxOpen, setIsSandboxOpen] = useState(false);
+  const [connectedAccount, setConnectedAccount] = useState<any>(null);
 
   useEffect(() => {
     const scaStatus = searchParams.get('sca_status');
@@ -56,8 +63,6 @@ export default function FinancialIntelligence() {
         title: "SCA Verified",
         description: "Payoneer PIS consent granted. Executing settlement...",
       });
-      // Try to recover amount/recipient from local storage or keep it in state if possible
-      // For simulation, we just trigger again
       if (gateway === 'PAYONEER') {
         handlePayout();
       }
@@ -75,20 +80,6 @@ export default function FinancialIntelligence() {
        return;
     }
     
-    // Simulate SCA Redirect for Payoneer (EU PIS Rails)
-    if (gateway === 'PAYONEER' && !scaPending && searchParams.get('sca_status') !== 'success') {
-      setScaPending(true);
-      emitEvent('SECURITY', 'SCA_REDIRECT_INITIATED', 2, { provider: 'Payoneer EU', rail: 'PIS' });
-      toast({
-        title: "SCA Required",
-        description: "Redirecting to Institutional Auth Portal...",
-      });
-      setTimeout(() => {
-        window.location.href = `${window.location.pathname}?sca_status=success&gateway=PAYONEER&amount=${amount}&recipient=${recipient}`;
-      }, 1500);
-      return;
-    }
-
     setIsProcessing(true);
     setValidationProgress(10);
     setLastPayout(null);
@@ -131,9 +122,17 @@ export default function FinancialIntelligence() {
       setTimeout(() => {
         setIsProcessing(false);
         setValidationProgress(0);
-        setScaPending(false);
       }, 1000);
     }
+  };
+
+  const handleBankConnect = (account: any) => {
+    setConnectedAccount(account);
+    emitEvent('FINANCE', 'AIS_ACCOUNT_SYNCED', 4, { accountId: account.id, bank: account.bankName });
+    toast({
+      title: "Bank Linked",
+      description: "AIS synchronization complete. Ready for PIS testing.",
+    });
   };
 
   const isThrottled = mode === 'LOCKDOWN' || mode === 'EMERGENCY';
@@ -160,13 +159,72 @@ export default function FinancialIntelligence() {
         <main className="flex-1 p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6 md:space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
             <div className="lg:col-span-2 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 {/* AIS Module: Connected Accounts */}
+                 <Card className="glass-panel border-l-4 border-l-primary overflow-hidden h-full">
+                    <CardHeader className="pb-2 p-4">
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Linked Assets (AIS)</CardTitle>
+                        <Activity className="h-4 w-4 text-primary animate-pulse" />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4 flex flex-col justify-center min-h-[140px]">
+                       {connectedAccount ? (
+                         <div className="space-y-3 animate-fade-in">
+                            <div className="flex justify-between items-end">
+                               <div>
+                                  <p className="text-2xl font-headline font-bold text-white">${connectedAccount.balance.toLocaleString()}</p>
+                                  <p className="text-[10px] text-muted-foreground uppercase">{connectedAccount.bankName}</p>
+                               </div>
+                               <Badge variant="outline" className="text-[8px] border-green-500/20 text-green-400">ACTIVE</Badge>
+                            </div>
+                            <div className="p-2 rounded bg-secondary/30 border border-white/5 text-[9px] font-mono flex justify-between">
+                               <span className="opacity-50">ACCOUNT_ID:</span>
+                               <span>{connectedAccount.id}</span>
+                            </div>
+                         </div>
+                       ) : (
+                         <div className="text-center space-y-3">
+                            <div className="w-10 h-10 rounded-full bg-secondary/30 flex items-center justify-center mx-auto border border-dashed border-white/20">
+                               <Plus className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              className="text-[10px] font-bold text-primary hover:bg-primary/10 h-8"
+                              onClick={() => setIsSandboxOpen(true)}
+                            >
+                               Link Bank via Sandbox
+                            </Button>
+                         </div>
+                       )}
+                    </CardContent>
+                 </Card>
+
+                 {/* System Liquidity */}
+                 <Card className="glass-panel border-l-4 border-l-accent overflow-hidden h-full">
+                    <CardHeader className="pb-2 p-4">
+                      <CardTitle className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Node Liquidity</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 flex flex-col justify-center min-h-[140px] space-y-3">
+                       <div className="flex justify-between items-center">
+                          <p className="text-2xl font-headline font-bold">$1.24M</p>
+                          <div className="flex items-center gap-1 text-green-400 text-[10px] font-bold">
+                             <ArrowUpRight className="h-3 w-3" /> +12%
+                          </div>
+                       </div>
+                       <Progress value={64} className="h-1 bg-accent/10 [&>div]:bg-accent" />
+                       <p className="text-[9px] text-muted-foreground uppercase font-bold">Anycast Capacity: 64%</p>
+                    </CardContent>
+                 </Card>
+              </div>
+
               <Card className="glass-panel border-l-4 border-l-accent overflow-hidden">
                 <CardHeader className="p-4 md:p-6 bg-accent/5">
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-sm md:text-base flex items-center gap-2">
                         <Send className="h-4 w-4 text-accent" />
-                        Multi-Rail Settlement System
+                        Multi-Rail Settlement System (PIS)
                       </CardTitle>
                       <CardDescription className="text-[10px] uppercase font-bold tracking-widest mt-1">Bank Integration Testbed</CardDescription>
                     </div>
@@ -348,6 +406,12 @@ export default function FinancialIntelligence() {
           </div>
         </main>
       </SidebarInset>
+
+      <BankSandboxModal 
+        isOpen={isSandboxOpen} 
+        onClose={() => setIsSandboxOpen(false)} 
+        onSuccess={handleBankConnect}
+      />
     </div>
   );
 }
