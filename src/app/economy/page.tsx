@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -32,7 +33,7 @@ import {
   Tooltip,
   CartesianGrid
 } from "recharts";
-import { ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 const stabilityData = [
   { time: "00:00", micro: 88, meso: 82, macro: 90 },
@@ -42,6 +43,21 @@ const stabilityData = [
   { time: "16:00", micro: 94, meso: 88, macro: 92 },
   { time: "20:00", micro: 95, meso: 90, macro: 94 },
 ];
+
+const chartConfig = {
+  macro: {
+    label: "Macro Stability",
+    color: "hsl(var(--accent))",
+  },
+  meso: {
+    label: "Meso Stability",
+    color: "hsl(var(--primary))",
+  },
+  micro: {
+    label: "Micro Stability",
+    color: "#60a5fa",
+  },
+} satisfies ChartConfig;
 
 export default function CivilizationEconomyPage() {
   const [isSimulating, setIsSimulating] = useState(false);
@@ -127,7 +143,7 @@ export default function CivilizationEconomyPage() {
               </CardHeader>
               <CardContent>
                 <div className="h-[350px] w-full mt-4">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ChartContainer config={chartConfig}>
                     <AreaChart data={stabilityData}>
                       <defs>
                         <linearGradient id="macroGradient" x1="0" y1="0" x2="0" y2="1">
@@ -143,7 +159,7 @@ export default function CivilizationEconomyPage() {
                       <Area type="monotone" dataKey="meso" stroke="hsl(var(--primary))" strokeWidth={2} fill="transparent" name="Meso Stability" />
                       <Area type="monotone" dataKey="micro" stroke="#60a5fa" strokeWidth={2} fill="transparent" name="Micro Stability" />
                     </AreaChart>
-                  </ResponsiveContainer>
+                  </ChartContainer>
                 </div>
               </CardContent>
             </Card>

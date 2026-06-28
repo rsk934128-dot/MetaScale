@@ -34,7 +34,7 @@ import {
   Tooltip,
   CartesianGrid
 } from "recharts";
-import { ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 const trustTrendData = [
   { time: "09:00", score: 88, threats: 4 },
@@ -43,6 +43,17 @@ const trustTrendData = [
   { time: "12:00", score: 74, threats: 28 },
   { time: "13:00", score: 75, threats: 18 },
 ];
+
+const chartConfig = {
+  score: {
+    label: "Trust Score",
+    color: "hsl(var(--accent))",
+  },
+  threats: {
+    label: "Threats",
+    color: "hsl(var(--destructive))",
+  },
+} satisfies ChartConfig;
 
 export default function SecurityIntelligence() {
   return (
@@ -116,7 +127,7 @@ export default function SecurityIntelligence() {
                 </CardHeader>
                 <CardContent className="p-4 md:p-6 pt-0">
                   <div className="h-[250px] md:h-[350px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ChartContainer config={chartConfig}>
                       <AreaChart data={trustTrendData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                         <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fill: 'rgba(255,255,255,0.5)', fontSize: 10}} />
@@ -125,7 +136,7 @@ export default function SecurityIntelligence() {
                         <Area type="monotone" dataKey="score" stroke="hsl(var(--accent))" strokeWidth={2} fill="transparent" />
                         <Area type="monotone" dataKey="threats" stroke="hsl(var(--destructive))" strokeWidth={2} fill="transparent" />
                       </AreaChart>
-                    </ResponsiveContainer>
+                    </ChartContainer>
                   </div>
                 </CardContent>
               </Card>
