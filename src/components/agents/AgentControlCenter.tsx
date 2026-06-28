@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -77,18 +76,21 @@ export function AgentControlCenter() {
   const handleToggleAgent = (agentId: string) => {
     setAgents(prev => prev.map(agent => {
       if (agent.id === agentId) {
-        const isPausing = agent.status === 'Active';
-        const nextStatus = isPausing ? 'Paused' : 'Active';
+        const isCurrentlyActive = agent.status === 'Active';
+        const nextStatus = isCurrentlyActive ? 'Paused' : 'Active';
         
-        emitEvent('SECURITY', isPausing ? 'AGENT_PAUSED' : 'AGENT_RESUMED', 2, { 
+        // Emit high-clearance security event
+        emitEvent('SECURITY', isCurrentlyActive ? 'AGENT_HALTED' : 'AGENT_RESUMED', 2, { 
           agentId, 
           agentName: agent.name,
+          priority: 'CRITICAL',
           timestamp: Date.now()
         });
 
         toast({
-          title: `Agent ${nextStatus}`,
+          title: isCurrentlyActive ? "Agent Paused" : "Agent Resumed",
           description: `${agent.name} is now ${nextStatus.toLowerCase()}.`,
+          variant: isCurrentlyActive ? "destructive" : "default",
         });
 
         return { ...agent, status: nextStatus };
@@ -99,17 +101,16 @@ export function AgentControlCenter() {
 
   const handleViewLogs = (agentName: string) => {
     toast({
-      title: "Loading Agent Logs",
-      description: `Fetching detailed execution history for ${agentName}...`,
+      title: "Opening Knowledge Stream",
+      description: `Accessing decentralized logs for ${agentName}...`,
     });
     
-    // Smooth scroll to logs section
     const logsSection = document.getElementById('execution-logs');
     if (logsSection) {
       logsSection.scrollIntoView({ behavior: 'smooth' });
     }
 
-    emitEvent('SECURITY', 'AGENT_LOG_INSPECTION', 4, { agentName });
+    emitEvent('SECURITY', 'LOG_ACCESS_INITIATED', 4, { agentName });
   };
 
   return (
@@ -117,7 +118,7 @@ export function AgentControlCenter() {
       <div className="xl:col-span-2 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {agents.map((agent) => (
-            <Card key={agent.id} className="glass-panel group hover:border-accent/30 transition-all overflow-hidden">
+            <Card key={agent.id} className="glass-panel group hover:border-accent/30 transition-all overflow-hidden border-white/5">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div className="p-2 rounded-lg bg-accent/10 border border-accent/20">
@@ -138,14 +139,14 @@ export function AgentControlCenter() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground">
-                    <span>Agent Efficiency</span>
+                    <span>Performance Rating</span>
                     <span>{agent.efficiency}%</span>
                   </div>
-                  <Progress value={agent.efficiency} className="h-1" />
+                  <Progress value={agent.efficiency} className="h-1 bg-accent/10" />
                 </div>
                 
                 <div className="p-2 rounded bg-secondary/30 border border-white/5 space-y-1">
-                  <span className="text-[9px] uppercase font-bold text-accent">Last Autonomous Action</span>
+                  <span className="text-[9px] uppercase font-bold text-accent">Latest Directive Pulse</span>
                   <p className="text-[10px] text-white/80 italic">"{agent.lastAction}"</p>
                 </div>
 
@@ -153,14 +154,14 @@ export function AgentControlCenter() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="flex-1 text-[10px] font-bold"
+                    className="flex-1 text-[10px] font-bold h-9"
                     onClick={() => handleViewLogs(agent.name)}
                   >
                     View Logs
                   </Button>
                   <Button 
                     size="sm" 
-                    className={`flex-1 text-[10px] font-bold ${agent.status === 'Active' ? 'bg-secondary' : 'bg-accent'}`}
+                    className={`flex-1 text-[10px] font-bold h-9 transition-all ${agent.status === 'Active' ? 'bg-secondary hover:bg-secondary/80' : 'bg-accent text-background cyan-glow'}`}
                     onClick={() => handleToggleAgent(agent.id)}
                   >
                     {agent.status === 'Active' ? <Pause className="mr-1 h-3 w-3" /> : <Play className="mr-1 h-3 w-3" />}
@@ -176,7 +177,7 @@ export function AgentControlCenter() {
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
               <History className="h-4 w-4 text-accent" />
-              Global Agent Execution Logs
+              Global Execution Stream
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -220,19 +221,19 @@ export function AgentControlCenter() {
           <CardContent className="space-y-4">
             <div className="space-y-3">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-muted-foreground">Budget Execution Limit</span>
+                <span className="text-muted-foreground">Execution Threshold</span>
                 <span className="font-bold">$2,000 / Day</span>
               </div>
               <div className="flex justify-between items-center text-xs">
-                <span className="text-muted-foreground">Approval Mode</span>
+                <span className="text-muted-foreground">Operational Mode</span>
                 <Badge variant="outline" className="text-[9px] text-accent border-accent/20">Semi-Autonomous</Badge>
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground italic">
-              Agents require human confirmation for budget changes exceeding 15% or campaign deletion.
+              Agents require human confirmation for budget changes exceeding 15% or structural campaign deletion.
             </p>
-            <Button className="w-full text-xs font-bold cyan-glow bg-accent text-background">
-              Update Governance Policies
+            <Button className="w-full text-xs font-bold cyan-glow bg-accent text-background h-9">
+              Update Governance
             </Button>
           </CardContent>
         </Card>
@@ -241,13 +242,13 @@ export function AgentControlCenter() {
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2">
               <Rocket className="h-4 w-4 text-primary" />
-              Opportunity Forecast
+              Impact Projection
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {[
-              { label: "Predicted Scaling Lift", value: "+$12.4k", desc: "If budget reallocated to LAL" },
-              { label: "Est. Savings (Fatigue)", value: "$2.1k", desc: "By pausing low-CTR ads" },
+              { label: "Predicted Lift", value: "+$12.4k", desc: "If budget reallocated to LAL" },
+              { label: "Est. Savings", value: "$2.1k", desc: "By pausing low-CTR units" },
             ].map((forecast, i) => (
               <div key={i} className="p-3 rounded-lg bg-secondary/30 border border-white/5">
                 <div className="flex justify-between items-center">
@@ -258,18 +259,18 @@ export function AgentControlCenter() {
               </div>
             ))}
             <Button variant="ghost" className="w-full text-[10px] h-8 text-muted-foreground hover:text-white">
-              View Detailed Forecast <BarChart2 className="ml-2 h-3 w-3" />
+              View Analytics <BarChart2 className="ml-2 h-3 w-3" />
             </Button>
           </CardContent>
         </Card>
 
-        <Card className="glass-panel border-white/5">
+        <Card className="glass-panel border-red-500/20 bg-red-500/5">
           <CardHeader>
-            <CardTitle className="text-sm">Quick Action: Manual Override</CardTitle>
+            <CardTitle className="text-sm text-red-400">Emergency Protocol</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button variant="destructive" className="w-full text-xs font-bold opacity-70 hover:opacity-100">
-              Emergency Kill Switch (All Agents)
+            <Button variant="destructive" className="w-full text-xs font-bold opacity-80 hover:opacity-100 h-9">
+              Halt All Cluster Agents
             </Button>
           </CardContent>
         </Card>
