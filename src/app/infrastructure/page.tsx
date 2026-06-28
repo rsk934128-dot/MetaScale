@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const MOCK_NODES = Array.from({ length: 42 }, (_, i) => ({
   id: `NODE-${i + 1 < 10 ? '0' : ''}${i + 1}`,
