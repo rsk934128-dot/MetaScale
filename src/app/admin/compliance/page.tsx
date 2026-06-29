@@ -172,6 +172,7 @@ export default function AdminCompliancePage() {
                   <div className="text-3xl font-bold">{filteredDocs.filter(d => d.status === 'REJECTED').length}</div>
                   <p className="text-[9px] text-red-500 font-bold mt-1 uppercase">Isolation Potential</p>
                </CardContent>
+             </Card>
           </div>
 
           <Card className="glass-panel border-white/5">
@@ -451,4 +452,3 @@ export default function AdminCompliancePage() {
     </div>
   );
 }
-
