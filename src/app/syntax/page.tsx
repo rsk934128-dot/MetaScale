@@ -22,7 +22,9 @@ import {
   Info,
   ChevronRight,
   Monitor,
-  Lightbulb
+  Lightbulb,
+  Mail,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -73,7 +75,7 @@ export default function SyntaxArchitectPage() {
 
   const QUICK_EXAMPLES = [
     { label: "ISO 20022 Python", text: "Create a secure Python function for an ISO 20022 compliant payment initiation with HMAC-256 signing." },
-    { label: "Node.js Webhook", text: "Generate an Express.js middleware to validate Sovereign OS webhook signatures." },
+    { label: "B2B Outreach Script", text: "Generate a personalized technical sales outreach email for a European FinTech CEO, highlighting our Node-04 low-latency advantage and ISO 20022 compliance." },
     { label: "Security Lockdown", text: "Create a CLI command to isolate Node-04 and trigger emergency payout throttling." }
   ];
 
@@ -90,7 +92,7 @@ export default function SyntaxArchitectPage() {
             </h1>
           </div>
           <Badge variant="outline" className="border-primary/20 text-primary font-mono text-[10px]">
-            ARCHITECT_V1 • DPE_READY
+            ARCHITECT_V1 • EXECUTION_MODE
           </Badge>
         </header>
 
@@ -100,7 +102,7 @@ export default function SyntaxArchitectPage() {
             <div className="space-y-2">
               <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic">Syntax <span className="text-primary">Orchestration</span></h2>
               <p className="text-muted-foreground max-w-2xl italic">
-                "Converting human directives into deterministic Sovereign SDKs and Kernel commands using Project 43 logic."
+                "Converting human directives into deterministic Sovereign SDKs and commercial outreach sequences."
               </p>
             </div>
             <div className="flex gap-4">
@@ -144,7 +146,7 @@ export default function SyntaxArchitectPage() {
                       <label className="text-[10px] font-bold uppercase text-muted-foreground">User Intention</label>
                       <textarea 
                         className="w-full h-40 bg-black/40 border border-white/10 rounded-xl p-4 text-sm resize-none focus:outline-none focus:border-primary/50 transition-colors placeholder:text-muted-foreground/30"
-                        placeholder="e.g. Generate a Python script to initiate a $500 payout via Yapily with HMAC verification..."
+                        placeholder="e.g. Create a technical pitch for a bank..."
                         value={intention}
                         onChange={(e) => setIntention(e.target.value)}
                       />
@@ -153,7 +155,7 @@ export default function SyntaxArchitectPage() {
 
                   <div className="space-y-3">
                     <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest flex items-center gap-2">
-                       <Lightbulb className="h-3 w-3 text-accent" /> Quick Commands
+                       <Lightbulb className="h-3 w-3 text-accent" /> Growth Accelerator
                     </p>
                     <div className="flex flex-wrap gap-2">
                        {QUICK_EXAMPLES.map((ex, i) => (
@@ -178,26 +180,26 @@ export default function SyntaxArchitectPage() {
                     disabled={isArchitecting || !intention.trim()}
                   >
                     {isArchitecting ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Architect System Syntax
+                    Architect Execution Sequence
                   </Button>
                 </CardContent>
               </Card>
 
-              {/* Sovereign SDK Highlight */}
-              <Card className="glass-panel border-white/5 bg-secondary/10 overflow-hidden relative">
-                <div className="absolute top-0 right-0 p-4 opacity-10"><Code2 className="h-20 w-20 text-accent" /></div>
+              {/* B2B Scaling Card */}
+              <Card className="glass-panel border-accent/20 bg-accent/5 overflow-hidden relative">
+                <div className="absolute top-0 right-0 p-4 opacity-10"><Users className="h-20 w-20 text-accent" /></div>
                 <CardHeader>
-                   <CardTitle className="text-xs uppercase flex items-center gap-2">
-                     <ShieldCheck className="h-4 w-4 text-accent" />
-                     Sovereign SDK Advantage
+                   <CardTitle className="text-xs uppercase flex items-center gap-2 text-accent">
+                     <Zap className="h-4 w-4" />
+                     Commercial Scalability
                    </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                    {[
-                     "Auto-calculation of HMAC SHA-256",
-                     "Idempotency Key enforcement (T+0)",
-                     "Deterministic error mapping",
-                     "Knowledge Bank Indexing (L0 Link)"
+                     "Automated B2B Outreach Architecture",
+                     "Personalized Technical Pitch Generation",
+                     "Lead Qualification Logic (P43 Powered)",
+                     "Sales Velocity Optimization"
                    ].map((f, i) => (
                      <div key={i} className="flex items-center gap-2 text-[10px] text-white/80 italic">
                         <ChevronRight className="h-3 w-3 text-accent" />
@@ -217,7 +219,7 @@ export default function SyntaxArchitectPage() {
                       <Monitor className="h-4 w-4 text-accent" />
                       Syntax Output Terminal
                     </CardTitle>
-                    <CardDescription className="text-[10px]">Deterministic Code Generation • Forensic Validation</CardDescription>
+                    <CardDescription className="text-[10px]">Deterministic Output • B2B Strategic Sequence</CardDescription>
                   </div>
                   {result && (
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(result.syntax)}>
@@ -241,7 +243,7 @@ export default function SyntaxArchitectPage() {
                       
                       <TabsContent value="code" className="flex-1 p-0 m-0">
                         <ScrollArea className="h-[450px] bg-black/60 p-6">
-                          <pre className="text-[11px] font-mono text-primary-foreground/90 leading-relaxed">
+                          <pre className="text-[11px] font-mono text-primary-foreground/90 leading-relaxed whitespace-pre-wrap">
                             {result.syntax}
                           </pre>
                         </ScrollArea>
@@ -269,17 +271,17 @@ export default function SyntaxArchitectPage() {
                       </TabsContent>
 
                       <TabsContent value="forensics" className="flex-1 p-6 m-0 space-y-2">
-                        <p className="text-[10px] font-mono text-accent">>>> START_FORENSIC_DECODE</p>
+                        <p className="text-[10px] font-mono text-accent">>>> START_COMMERCIAL_TRACE</p>
                         <p className="text-[10px] font-mono text-white/60">>>> MAPPING_INTENT: {intention.substring(0, 50)}...</p>
                         <p className="text-[10px] font-mono text-white/60">>>> TARGET_PLANE: {targetPlane}</p>
-                        <p className="text-[10px] font-mono text-white/60">>>> SIGNATURE_VAL: VALID_DETERMINISTIC</p>
-                        <p className="text-[10px] font-mono text-green-400">>>> STATUS: OUTPUT_ISOLATION_CLEARED</p>
+                        <p className="text-[10px] font-mono text-white/60">>>> OUTREACH_QUALITY: HIGH_CONVERSION</p>
+                        <p className="text-[10px] font-mono text-green-400">>>> STATUS: EXECUTION_READY</p>
                       </TabsContent>
                     </Tabs>
                   ) : (
                     <div className="flex-1 flex flex-col items-center justify-center p-12 text-center opacity-30">
-                       <Braces className="h-16 w-16 mb-4" />
-                       <p className="text-xs uppercase font-bold tracking-widest">Select target and define intent to architect syntax</p>
+                       <Mail className="h-16 w-16 mb-4 text-primary" />
+                       <p className="text-xs uppercase font-bold tracking-widest">Select target and define commercial intent to architect syntax</p>
                     </div>
                   )}
                 </CardContent>
@@ -292,12 +294,12 @@ export default function SyntaxArchitectPage() {
              <div className="flex items-center justify-center gap-4">
                 <div className="h-0.5 w-20 bg-gradient-to-r from-transparent to-primary/50" />
                 <Badge variant="outline" className="border-primary/20 text-primary font-mono text-[10px] uppercase px-4">
-                   Syntax Architect v1.0 • Project 43
+                   Execution Architect v1.2 • Project 43
                 </Badge>
                 <div className="h-0.5 w-20 bg-gradient-to-l from-transparent to-accent/50" />
              </div>
              <p className="text-[9px] font-bold uppercase tracking-[0.5em] text-muted-foreground opacity-50 italic">
-                Knowledge Bank Indexing: ACTIVE • Synchronized with Project 44
+                Sales Velocity Monitoring: ACTIVE • Node-04 Priority Scaling
              </p>
           </footer>
       </SidebarInset>

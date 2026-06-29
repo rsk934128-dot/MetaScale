@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -42,7 +41,7 @@ export default function IntelligenceLayerPage() {
     if (chatHistory.length === 0) {
       setChatHistory([{
         role: 'model',
-        text: "EXECUTION MODE ACTIVE. I am the Sovereign Business Strategist. Beyond technical logging, I am now analyzing your ROI potential across Projects 42-45. Your infrastructure is institutional-ready. How shall we orchestrate your global launch today? I have drafted a Growth Roadmap and Prospectus for your review."
+        text: "EXECUTION MODE ACTIVE. Your current Gross Margin is 78.2%. I have identified the MQL Stall in the mid-market. I am ready to use Project 43: Syntax Architect to generate an 'Automated Outreach Campaign' for you. Shall we also initiate the 'Liquidity Reserve' shift from your 3.5% transaction yield?"
       }]);
     }
   }, []);
@@ -59,7 +58,7 @@ export default function IntelligenceLayerPage() {
       const result = await marketingCommandChat({
         query: userMsg,
         history: chatHistory,
-        context: "Sovereign OS context: Project 42-44 complete. Metadata density 92.4%. Focus: Commercial scaling and Revenue Ops. System mode: NORMAL. Anycast Node-04 is healthy. Strategy: Transition from system-building to commercial execution. Growth targets: 300% merchant increase by Q4. Prospectus v1.2 is live.",
+        context: "Sovereign OS context: Project 42-45 complete. Gross Margin 78.2%. CAC/LTV 1:4.8. Focus: B2B Outreach and Liquidity Reserve Strategy. Target: Mitigation of mid-market MQL stall. Strategy: Personalized P43 outreach and P45 yield allocation.",
       });
       
       setLastResult(result);
@@ -132,7 +131,7 @@ export default function IntelligenceLayerPage() {
                      <Briefcase className="h-3 w-3 text-accent" />
                   </div>
                   <Input 
-                    placeholder="Ask about scaling, ROI, or market expansion..." 
+                    placeholder="Authorize B2B Outreach or Reserve Shift..." 
                     className="flex-1 h-12 text-xs bg-secondary/30 border-white/10 pl-11 pr-12 rounded-xl focus:border-primary/50 transition-all"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -156,10 +155,10 @@ export default function IntelligenceLayerPage() {
               </CardHeader>
               <CardContent className="p-4 space-y-3">
                 {[
-                  { label: "Market Fit", val: "Optimal", color: "text-green-400" },
-                  { label: "Scaling Tier", val: "Enterprise", color: "text-primary" },
-                  { label: "Yield Target", val: "3.5%", color: "text-accent" },
-                  { label: "Risk Level", val: "Low", color: "text-green-400" }
+                  { label: "Gross Margin", val: "78.2%", color: "text-green-400" },
+                  { label: "CAC/LTV", val: "1:4.8", color: "text-primary" },
+                  { label: "Yield Reserve", val: "ACTIVE", color: "text-accent" },
+                  { label: "Sales Velocity", val: "OPTIMAL", color: "text-green-400" }
                 ].map((item, i) => (
                   <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-black/40 border border-white/5 group hover:border-accent/30 transition-all cursor-default">
                     <span className="text-[9px] text-muted-foreground font-bold uppercase">{item.label}</span>
@@ -172,15 +171,15 @@ export default function IntelligenceLayerPage() {
             <Card className="glass-panel border-white/5">
                <CardHeader className="p-4 border-b border-white/5">
                   <CardTitle className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-                     <Target className="h-3 w-3 text-primary" /> Growth Milestones
+                     <Target className="h-3 w-3 text-primary" /> Strategy Focus
                   </CardTitle>
                </CardHeader>
                <CardContent className="p-4 space-y-2">
                   {[
-                    "Stripe API bridge ready",
-                    "Elorus webhook mapped",
-                    "Node-04 traffic prioritized",
-                    "Prospectus v1.2 signed"
+                    "B2B Outreach sequence ready",
+                    "Reserve shift authorized",
+                    "Mid-market stall mitigation",
+                    "Global scaling handshake"
                   ].map((log, i) => (
                     <div key={i} className="flex items-center gap-2 text-[9px] text-white/60 italic">
                        <CheckCircle2 className="h-2.5 w-2.5 text-primary shrink-0" />
@@ -193,7 +192,7 @@ export default function IntelligenceLayerPage() {
             <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2 text-center shadow-inner">
                <Sparkles className="h-6 w-6 text-primary mx-auto opacity-50" />
                <p className="text-[9px] text-primary font-bold uppercase tracking-widest leading-relaxed">
-                  Execution Mode: The system is now optimized for institutional capital and global scaling.
+                  The system is now optimizing for B2B conversion and long-term liquidity reserves.
                </p>
             </div>
           </div>
