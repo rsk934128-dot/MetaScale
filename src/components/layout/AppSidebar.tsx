@@ -29,7 +29,8 @@ import {
   TrendingUp,
   Search,
   CreditCard,
-  ShoppingBag
+  ShoppingBag,
+  Unplug
 } from "lucide-react";
 import {
   Sidebar,
@@ -82,6 +83,7 @@ const securityNav = [
 
 const infraNav = [
   { icon: Network, label: "42-Node Mesh", href: "/infrastructure" },
+  { icon: Unplug, label: "UBIL Integration", href: "/ubil" },
   { icon: Cpu, label: "AI Council", href: "/agents" },
   { icon: Database, label: "Knowledge Bank", href: "/library" },
   { icon: Mail, label: "Communication Plane", href: "/communications" },

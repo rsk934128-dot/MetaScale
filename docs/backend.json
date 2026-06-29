@@ -23,17 +23,24 @@
       },
       "required": ["uid", "email", "kernelId", "accountNumber", "teamId"]
     },
-    "WatchlistItem": {
-      "title": "Watchlist Item",
-      "description": "A financial instrument tracked by the citizen.",
+    "UBILEvent": {
+      "title": "UBIL Webhook Event",
+      "description": "A secure banking event received via UBIL Webhook node.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "ticker": { "type": "string" },
-        "name": { "type": "string" },
-        "type": { "type": "string", "enum": ["STOCK", "CRYPTO", "COMMODITY"] },
-        "addedAt": { "type": "number" }
-      }
+        "type": { "type": "string", "enum": ["TXN_SUCCESS", "BAL_UPDATE", "AUTH_FAILED"] },
+        "amount": { "type": "number" },
+        "currency": { "type": "string" },
+        "senderBank": { "type": "string" },
+        "accountNumber": { "type": "string" },
+        "senderName": { "type": "string" },
+        "status": { "type": "string", "enum": ["SUCCESS", "BLOCKED"] },
+        "signatureStatus": { "type": "string", "enum": ["VALID", "INVALID"] },
+        "timestamp": { "type": "number" },
+        "payload": { "type": "object" }
+      },
+      "required": ["id", "type", "status", "timestamp"]
     },
     "VirtualCard": {
       "title": "Fusion Virtual Card",
@@ -65,67 +72,6 @@
         "timestamp": { "type": "number" }
       },
       "required": ["userId", "companyName", "estimatedMonthlyVolume"]
-    },
-    "LibraryAsset": {
-      "title": "Library Asset",
-      "description": "A media asset stored in the citizen's personal library.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "url": { "type": "string" },
-        "thumbnail": { "type": "string" },
-        "mimeType": { "type": "string" },
-        "source": { "type": "string", "enum": ["GOOGLE_DRIVE", "LOCAL_UPLOAD"] },
-        "createdAt": { "type": "number" }
-      }
-    },
-    "PaymentLink": {
-      "title": "Sovereign Payment Link",
-      "description": "A cryptographically signed link for requesting funds.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "creatorId": { "type": "string" },
-        "creatorName": { "type": "string" },
-        "amount": { "type": "number" },
-        "currency": { "type": "string" },
-        "description": { "type": "string" },
-        "status": { "type": "string", "enum": ["ACTIVE", "PAID", "EXPIRED"] },
-        "paymentMethod": { "type": "string", "description": "Method used for the settlement (Visa, Nagad, etc.)" },
-        "seal": { "type": "string" },
-        "createdAt": { "type": "number" },
-        "paidAt": { "type": "number" }
-      }
-    },
-    "KernelEvent": {
-      "title": "Kernel Event Log",
-      "description": "A persistent record of a deterministic event processed by the kernel.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "plane": { "type": "string", "enum": ["CIVIC", "FINANCE", "SECURITY", "INFRA", "COMMUNICATION", "MEDIA"] },
-        "type": { "type": "string" },
-        "priority": { "type": "number" },
-        "timestamp": { "type": "number" },
-        "status": { "type": "string" },
-        "payload": { "type": "object" }
-      },
-      "required": ["id", "plane", "type", "priority", "timestamp", "status"]
-    },
-    "Notification": {
-      "title": "System Notification",
-      "description": "A real-time alert delivered to a citizen node.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "message": { "type": "string" },
-        "type": { "type": "string", "enum": ["INFO", "WARNING", "CRITICAL", "DIRECTIVE"] },
-        "read": { "type": "boolean" },
-        "timestamp": { "type": "number" }
-      },
-      "required": ["id", "title", "message", "type", "read", "timestamp"]
     }
   },
   "auth": {
@@ -134,12 +80,7 @@
   "firestore": {
     "/users/{userId}": { "schema": "UserProfile", "description": "Extended user profile information." },
     "/users/{userId}/cards": { "schema": "VirtualCard", "description": "Issued virtual cards for the user." },
-    "/users/{userId}/notifications": { "schema": "Notification", "description": "User specific real-time alerts." },
-    "/users/{userId}/payment_links": { "schema": "PaymentLink", "description": "User generated payment request links." },
-    "/users/{userId}/assets": { "schema": "LibraryAsset", "description": "Citizen's media library assets." },
-    "/users/{userId}/watchlist": { "schema": "WatchlistItem", "description": "User's tracked financial instruments." },
-    "/inquiries/{inquiryId}": { "schema": "SalesInquiry", "description": "Registry of enterprise sales inquiries." },
-    "/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." },
-    "/payment_links/{linkId}": { "schema": "PaymentLink", "description": "Public registry of payment links." }
+    "/ubil_events": { "schema": "UBILEvent", "description": "Registry of all NoorNexus UBIL incoming events." },
+    "/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." }
   }
 }
