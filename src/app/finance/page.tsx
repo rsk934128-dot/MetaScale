@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -425,7 +424,7 @@ export default function FinancialIntelligence() {
                  </CardHeader>
                  <CardContent className="p-4 pt-0 space-y-3">
                     <div className="p-2 rounded bg-secondary/30 text-[9px] text-white/60 italic leading-relaxed">
-                      "Priyo Pay payouts are subject to Imperial Directive validation for amounts > $1,000."
+                      {"Priyo Pay payouts are subject to Imperial Directive validation for amounts > $1,000."}
                     </div>
                     <Progress value={92} className="h-1" />
                  </CardContent>
