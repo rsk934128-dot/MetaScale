@@ -21,6 +21,21 @@
       },
       "required": ["uid", "email", "kernelId", "accountNumber"]
     },
+    "VirtualCard": {
+      "title": "Fusion Virtual Card",
+      "description": "Company-issued virtual Mastercard/Visa for citizens.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "cardNumber": { "type": "string", "description": "Masked card number (e.g. 5412 **** **** 1234)" },
+        "expiry": { "type": "string" },
+        "brand": { "type": "string", "enum": ["MASTERCARD", "VISA"] },
+        "balance": { "type": "number" },
+        "status": { "type": "string", "enum": ["ACTIVE", "FROZEN", "TERMINATED"] },
+        "createdAt": { "type": "number" }
+      }
+    },
     "LibraryAsset": {
       "title": "Library Asset",
       "description": "A media asset stored in the citizen's personal library.",
@@ -53,82 +68,6 @@
         "paidAt": { "type": "number" }
       }
     },
-    "TINCertificate": {
-      "title": "TIN Certificate",
-      "description": "Taxpayer Identification Number data for civic compliance.",
-      "type": "object",
-      "properties": {
-        "tin": { "type": "string" },
-        "name": { "type": "string" },
-        "fatherName": { "type": "string" },
-        "address": { "type": "string" },
-        "issueDate": { "type": "string" },
-        "status": { "type": "string" }
-      }
-    },
-    "NIDCertificate": {
-      "title": "National ID Certificate",
-      "description": "Government-issued identity data for citizenship binding.",
-      "type": "object",
-      "properties": {
-        "nid": { "type": "string" },
-        "name": { "type": "string" },
-        "father": { "type": "string" },
-        "mother": { "type": "string" },
-        "dob": { "type": "string" },
-        "issueDate": { "type": "string" }
-      }
-    },
-    "VerificationDocument": {
-      "title": "Verification Document",
-      "description": "A document submitted for identity or compliance verification.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "userName": { "type": "string" },
-        "type": { "type": "string", "enum": ["TIN", "NID", "PASSPORT"] },
-        "fileUrl": { "type": "string" },
-        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
-        "metadata": { "type": "object" },
-        "submittedAt": { "type": "number" }
-      }
-    },
-    "MediaAsset": {
-      "title": "Media Asset",
-      "description": "Metadata for a media stream or file within the mesh.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "artist": { "type": "string" },
-        "thumbnail": { "type": "string" },
-        "duration": { "type": "number" },
-        "source": { "type": "string", "enum": ["MESH_LOCAL", "YOUTUBE_PIS", "STREAM_CORRIDOR"] }
-      }
-    },
-    "MediaTask": {
-      "title": "Media Extraction Task",
-      "description": "A background task for offline synchronization of media assets.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "assetId": { "type": "string" },
-        "status": { "type": "string", "enum": ["PENDING", "EXTRACTING", "COMPLETED", "FAILED"] },
-        "progress": { "type": "number" },
-        "bitrate": { "type": "string" }
-      }
-    },
-    "SystemControlState": {
-      "title": "System Control State",
-      "description": "Current operational mode and priority settings for the Sovereign OS.",
-      "type": "object",
-      "properties": {
-        "currentMode": { "type": "string", "enum": ["NORMAL", "EMERGENCY", "LOCKDOWN", "DISASTER"] },
-        "activePriority": { "type": "string", "enum": ["EFFICIENCY", "SECURITY", "SURVIVAL"] },
-        "lastModeChange": { "type": "string", "format": "date-time" }
-      }
-    },
     "KernelEvent": {
       "title": "Kernel Event Log",
       "description": "A persistent record of a deterministic event processed by the kernel.",
@@ -157,19 +96,6 @@
         "timestamp": { "type": "number" }
       },
       "required": ["id", "title", "message", "type", "read", "timestamp"]
-    },
-    "BankAccount": {
-      "title": "Simulated Bank Account",
-      "description": "Mock account data for Open Banking testing.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "bankName": { "type": "string" },
-        "accountNumber": { "type": "string" },
-        "balance": { "type": "number" },
-        "currency": { "type": "string" },
-        "status": { "type": "string", "enum": ["CONNECTED", "DISCONNECTED"] }
-      }
     }
   },
   "auth": {
@@ -177,12 +103,10 @@
   },
   "firestore": {
     "/users/{userId}": { "schema": "UserProfile", "description": "Extended user profile information." },
+    "/users/{userId}/cards": { "schema": "VirtualCard", "description": "Issued virtual cards for the user." },
     "/users/{userId}/notifications": { "schema": "Notification", "description": "User specific real-time alerts." },
     "/users/{userId}/payment_links": { "schema": "PaymentLink", "description": "User generated payment request links." },
-    "/users/{userId}/media_tasks": { "schema": "MediaTask", "description": "User specific media extraction tasks." },
     "/users/{userId}/assets": { "schema": "LibraryAsset", "description": "Citizen's media library assets." },
-    "/verification_docs/{docId}": { "schema": "VerificationDocument", "description": "Pending compliance documents." },
-    "/system/control": { "schema": "SystemControlState", "description": "Global OS mode state." },
     "/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." },
     "/payment_links/{linkId}": { "schema": "PaymentLink", "description": "Public registry of payment links." }
   }

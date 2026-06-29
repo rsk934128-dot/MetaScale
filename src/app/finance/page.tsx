@@ -27,7 +27,10 @@ import {
   Plus,
   CreditCard,
   Smartphone,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Lock,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +41,7 @@ import { useKernel } from "@/components/kernel/KernelProvider";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
-import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, increment, addDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { BankSandboxModal } from "@/components/finance/BankSandboxModal";
 import { PaymentLinkManager } from "@/components/finance/PaymentLinkManager";
 import { orchestratePayout } from "@/ai/flows/payout-orchestrator";
@@ -54,6 +57,13 @@ export default function FinancialIntelligence() {
   const userRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: profile } = useDoc<any>(userRef);
 
+  // Virtual Cards Data
+  const cardsQuery = useMemo(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, 'users', user.uid, 'cards'), where('status', '==', 'ACTIVE'));
+  }, [firestore, user?.uid]);
+  const { data: virtualCards, loading: cardsLoading } = useCollection<any>(cardsQuery);
+
   // Stats for Marketplace
   const linksQuery = useMemo(() => {
     if (!firestore || !user?.uid) return null;
@@ -65,135 +75,78 @@ export default function FinancialIntelligence() {
     return paidLinks?.reduce((acc, link) => acc + link.amount, 0) || 0;
   }, [paidLinks]);
 
-  // Transfer States
+  // States
   const [targetAccount, setTargetAccount] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
   const [isTransferring, setIsTransferring] = useState(false);
-  const [isToppingUp, setIsToppingUp] = useState(false);
+  const [isIssuingCard, setIsIssuingCard] = useState(false);
+  const [showCardNumbers, setShowCardNumbers] = useState(false);
   
-  // Priyo Pay States
-  const [priyoEmail, setPriyoEmail] = useState("");
-  const [priyoAmount, setPriyoAmount] = useState("");
-  const [isPriyoProcessing, setIsPriyoProcessing] = useState(false);
-  const [priyoReport, setPriyoReport] = useState<any>(null);
+  // Card Load State
+  const [cardLoadAmount, setCardLoadAmount] = useState("");
+  const [selectedCardId, setSelectedCardId] = useState("");
+  const [isCardProcessing, setIsCardProcessing] = useState(false);
 
   // Sandbox State
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
   const [connectedAccount, setConnectedAccount] = useState<any>(null);
 
-  const handleMeshTransfer = async () => {
-    if (!targetAccount || !transferAmount || !firestore || !user?.uid || !profile) return;
-    const amount = parseFloat(transferAmount);
+  const handleIssueCard = async (brand: 'MASTERCARD' | 'VISA') => {
+    if (!user?.uid || !firestore || !profile) return;
     
-    if (amount <= 0) {
-      toast({ variant: "destructive", title: "Invalid Amount", description: "Specify a value > 0." });
-      return;
-    }
-    
-    if (profile.balance < amount) {
-      toast({ variant: "destructive", title: "Insufficient Funds", description: "You don't have enough liquid assets." });
-      return;
-    }
+    setIsIssuingCard(true);
+    emitEvent('FINANCE', 'VIRTUAL_CARD_REQUESTED', 3, { brand });
 
-    setIsTransferring(true);
-    emitEvent('FINANCE', 'MESH_TRANSFER_INITIATED', 2, { to: targetAccount, amount });
+    const cardId = `VCARD_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const cardData = {
+      id: cardId,
+      userId: user.uid,
+      cardNumber: `${brand === 'MASTERCARD' ? '5412' : '4213'} ${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(1000 + Math.random() * 9000)}`,
+      expiry: "12/28",
+      brand: brand,
+      balance: 0,
+      status: 'ACTIVE',
+      createdAt: Date.now()
+    };
 
     try {
-      const q = query(collection(firestore, 'users'), where('accountNumber', '==', targetAccount));
-      const querySnap = await getDocs(q);
-      
-      if (querySnap.empty) {
-        throw new Error("Recipient account not found in the Sovereign Mesh.");
-      }
-
-      const recipientDoc = querySnap.docs[0];
-      const recipientRef = doc(firestore, 'users', recipientDoc.id);
-
-      await updateDoc(userRef!, { balance: increment(-amount) });
-      await updateDoc(recipientRef, { balance: increment(amount) });
-
-      emitEvent('FINANCE', 'MESH_TRANSFER_SUCCESS', 3, { to: targetAccount, amount });
-      
-      toast({
-        title: "Transfer Success",
-        description: `Successfully sent $${amount} to ${targetAccount}.`,
-      });
-      
-      setTargetAccount("");
-      setTransferAmount("");
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Transfer Failed", description: err.message });
-    } finally {
-      setIsTransferring(false);
-    }
-  };
-
-  const handlePriyoPayout = async () => {
-    if (!priyoEmail || !priyoAmount || !profile) return;
-    const amount = parseFloat(priyoAmount);
-
-    if (profile.balance < amount) {
-      toast({ variant: "destructive", title: "Balance Exhausted", description: "Sovereign balance insufficient for Priyo Pay payout." });
-      return;
-    }
-
-    setIsPriyoProcessing(true);
-    emitEvent('FINANCE', 'PRIYO_PAYOUT_INITIATED', 2, { recipient: priyoEmail, amount });
-
-    try {
-      const result = await orchestratePayout({
-        gateway: 'PRIYO_PAY',
-        recipientEmail: priyoEmail,
-        amount: amount,
-      });
-
-      if (result.status === 'SUCCESS') {
-        await updateDoc(userRef!, { balance: increment(-amount) });
-        setPriyoReport(result);
-        emitEvent('FINANCE', 'PRIYO_PAYOUT_SUCCESS', 2, { batch: result.batchId });
-        toast({ title: "Priyo Pay Disbursed", description: `Successfully sent $${amount} to ${priyoEmail}.` });
-        setPriyoAmount("");
-        setPriyoEmail("");
-      } else {
-        throw new Error("Gateway rejected transaction.");
-      }
-    } catch (err: any) {
-       toast({ variant: "destructive", title: "Payout Failed", description: err.message });
-    } finally {
-      setIsPriyoProcessing(false);
-    }
-  };
-
-  const handleBankConnect = (account: any) => {
-    setConnectedAccount(account);
-    emitEvent('FINANCE', 'AIS_ACCOUNT_SYNCED', 4, { accountId: account.id, bank: account.bankName });
-    toast({ title: "Bank Linked", description: "Identity bound to institution." });
-  };
-
-  const handleTopUp = async (amount: number) => {
-    if (!userRef || !connectedAccount) return;
-    
-    setIsToppingUp(true);
-    emitEvent('FINANCE', 'TREASURY_TOP_UP_INITIATED', 2, { amount, source: connectedAccount.bankName });
-
-    try {
-      setConnectedAccount((prev: any) => ({
-        ...prev,
-        balance: prev.balance - amount
-      }));
-
-      await updateDoc(userRef, { balance: increment(amount) });
-
-      emitEvent('FINANCE', 'TREASURY_SYNC_SUCCESS', 2, { amount, type: 'DEPOSIT' });
-      
-      toast({
-        title: "Deposit Successful",
-        description: `$${amount} has been pulled from ${connectedAccount.bankName} to Mesh balance.`,
-      });
+      await setDoc(doc(firestore, 'users', user.uid, 'cards', cardId), cardData);
+      emitEvent('FINANCE', 'VIRTUAL_CARD_ISSUED', 2, { cardId, brand });
+      toast({ title: `${brand} Issued`, description: "আপনার ভার্চুয়াল কার্ডটি এখন একটিভ।" });
     } catch (err) {
-      toast({ variant: "destructive", title: "Deposit Failed", description: "Kernel sync interrupted." });
+      toast({ variant: "destructive", title: "Issuance Failed", description: "Kernel rejected card request." });
     } finally {
-      setIsToppingUp(false);
+      setIsIssuingCard(false);
+    }
+  };
+
+  const handleCardSettlement = async (direction: 'TO_CARD' | 'TO_WALLET') => {
+    if (!selectedCardId || !cardLoadAmount || !profile || !user?.uid) return;
+    const amount = parseFloat(cardLoadAmount);
+    if (amount <= 0) return;
+
+    setIsCardProcessing(true);
+    const cardRef = doc(firestore!, 'users', user.uid, 'cards', selectedCardId);
+    
+    try {
+      if (direction === 'TO_CARD') {
+        if (profile.balance < amount) throw new Error("Insufficient mesh balance.");
+        await updateDoc(userRef!, { balance: increment(-amount) });
+        await updateDoc(cardRef, { balance: increment(amount) });
+      } else {
+        const card = virtualCards?.find(c => c.id === selectedCardId);
+        if (card.balance < amount) throw new Error("Insufficient card balance.");
+        await updateDoc(cardRef, { balance: increment(-amount) });
+        await updateDoc(userRef!, { balance: increment(amount) });
+      }
+
+      emitEvent('FINANCE', 'CARD_SETTLEMENT_SYNC', 2, { direction, amount, cardId: selectedCardId });
+      toast({ title: "Settlement Success", description: "ব্যালেন্স সফলভাবে ট্রান্সফার করা হয়েছে।" });
+      setCardLoadAmount("");
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Sync Failed", description: err.message });
+    } finally {
+      setIsCardProcessing(false);
     }
   };
 
@@ -222,19 +175,6 @@ export default function FinancialIntelligence() {
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
-          {/* Top-up Bar */}
-          <div className="flex flex-wrap gap-4">
-             <Button variant="outline" className="border-accent/20 bg-accent/5 hover:bg-accent/10 text-accent text-[10px] font-bold h-10 px-6 uppercase tracking-widest">
-                <Smartphone className="mr-2 h-4 w-4" /> bKash Load
-             </Button>
-             <Button variant="outline" className="border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary text-[10px] font-bold h-10 px-6 uppercase tracking-widest">
-                <CreditCard className="mr-2 h-4 w-4" /> Visa/MC Load
-             </Button>
-             <Button variant="outline" className="border-white/10 bg-white/5 hover:bg-white/10 text-white text-[10px] font-bold h-10 px-6 uppercase tracking-widest">
-                <Globe className="mr-2 h-4 w-4" /> SWIFT/Wire
-             </Button>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
              <Card className="glass-panel border-l-4 border-l-accent overflow-hidden h-full shadow-2xl">
                 <CardHeader className="pb-2 p-4">
@@ -252,22 +192,24 @@ export default function FinancialIntelligence() {
                 </CardContent>
              </Card>
 
-             <Card className="glass-panel border-l-4 border-l-green-500 overflow-hidden h-full">
+             <Card className="glass-panel border-l-4 border-l-primary overflow-hidden h-full">
                 <CardHeader className="pb-2 p-4">
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Marketplace Earnings</CardTitle>
-                    <ShoppingBag className="h-4 w-4 text-green-500" />
+                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Virtual Card Balance</CardTitle>
+                    <CreditCard className="h-4 w-4 text-primary" />
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 flex flex-col justify-center min-h-[100px]">
-                   <p className="text-3xl font-headline font-bold text-white">${marketplaceEarnings.toLocaleString()}</p>
-                   <div className="flex items-center gap-1 text-green-400 text-[10px] font-bold mt-1">
-                      <TrendingUp className="h-3 w-3" /> {paidLinks?.length || 0} Settled Sales
+                   <p className="text-3xl font-headline font-bold text-white">
+                     ${virtualCards?.reduce((acc, c) => acc + c.balance, 0).toLocaleString() || '0.00'}
+                   </p>
+                   <div className="flex items-center gap-1 text-primary text-[10px] font-bold mt-1">
+                      <Plus className="h-3 w-3" /> {virtualCards?.length || 0} Active Cards
                    </div>
                 </CardContent>
              </Card>
 
-             <Card className="glass-panel border-l-4 border-l-primary lg:col-span-2 overflow-hidden h-full">
+             <Card className="glass-panel border-l-4 border-l-green-500 lg:col-span-2 overflow-hidden h-full">
                 <CardHeader className="pb-2 p-4">
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Bank Integration (AIS)</CardTitle>
@@ -284,16 +226,7 @@ export default function FinancialIntelligence() {
                           <p className="text-[9px] text-muted-foreground uppercase">{connectedAccount.bankName} - {connectedAccount.accountNumber}</p>
                         </div>
                         <div className="flex flex-col gap-2 shrink-0">
-                           <Button 
-                             size="sm" 
-                             className="bg-primary text-primary-foreground font-bold text-[10px] h-8 px-4"
-                             onClick={() => handleTopUp(1000)}
-                             disabled={isToppingUp || connectedAccount.balance < 1000}
-                           >
-                              {isToppingUp ? <RefreshCw className="mr-1 h-3 w-3 animate-spin" /> : <Download className="mr-1 h-3 w-3" />}
-                              Sync $1,000
-                           </Button>
-                           <Button variant="ghost" className="text-[8px] uppercase font-bold h-6" onClick={() => setConnectedAccount(null)}>Detach Node</Button>
+                           <Button size="sm" className="bg-primary text-primary-foreground font-bold text-[10px] h-8 px-4" onClick={() => setIsSandboxOpen(true)}>Sync Fund</Button>
                         </div>
                      </div>
                    ) : (
@@ -307,114 +240,138 @@ export default function FinancialIntelligence() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
-              <Tabs defaultValue="links" className="space-y-6">
+              <Tabs defaultValue="cards" className="space-y-6">
                 <TabsList className="bg-secondary/50 border border-white/5 p-1 h-auto flex flex-wrap">
-                  <TabsTrigger value="links" className="data-[state=active]:bg-accent data-[state=active]:text-background text-[10px] uppercase font-bold tracking-widest px-6 h-10">Merchant Links</TabsTrigger>
-                  <TabsTrigger value="priyo" className="data-[state=active]:bg-[#6366f1] data-[state=active]:text-white text-[10px] uppercase font-bold tracking-widest px-6 h-10">Cross-Border Payout</TabsTrigger>
-                  <TabsTrigger value="mesh" className="data-[state=active]:bg-accent data-[state=active]:text-background text-[10px] uppercase font-bold tracking-widest px-6 h-10">Internal Mesh</TabsTrigger>
+                  <TabsTrigger value="cards" className="data-[state=active]:bg-accent data-[state=active]:text-background text-[10px] uppercase font-bold tracking-widest px-6 h-10">Virtual Cards</TabsTrigger>
+                  <TabsTrigger value="links" className="data-[state=active]:bg-primary data-[state=active]:text-white text-[10px] uppercase font-bold tracking-widest px-6 h-10">Merchant Links</TabsTrigger>
+                  <TabsTrigger value="payout" className="data-[state=active]:bg-[#6366f1] data-[state=active]:text-white text-[10px] uppercase font-bold tracking-widest px-6 h-10">Global Payout</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="cards" className="space-y-6">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Card className="glass-panel border-accent/20 bg-accent/5">
+                         <CardHeader>
+                            <CardTitle className="text-sm uppercase tracking-widest text-accent">Issue New Hub Card</CardTitle>
+                         </CardHeader>
+                         <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                               <Button variant="outline" className="h-20 flex-col gap-2 border-white/5 bg-black/20 hover:border-accent/50" onClick={() => handleIssueCard('MASTERCARD')} disabled={isIssuingCard}>
+                                  <CreditCard className="h-6 w-6 text-accent" />
+                                  <span className="text-[10px] font-bold uppercase">Mastercard</span>
+                               </Button>
+                               <Button variant="outline" className="h-20 flex-col gap-2 border-white/5 bg-black/20 hover:border-blue-400/50" onClick={() => handleIssueCard('VISA')} disabled={isIssuingCard}>
+                                  <CreditCard className="h-6 w-6 text-blue-400" />
+                                  <span className="text-[10px] font-bold uppercase">Visa</span>
+                               </Button>
+                            </div>
+                         </CardContent>
+                      </Card>
+
+                      <Card className="glass-panel border-white/5">
+                         <CardHeader>
+                            <CardTitle className="text-sm uppercase tracking-widest">Card Settlement</CardTitle>
+                         </CardHeader>
+                         <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                               <Label className="text-[9px] uppercase font-bold opacity-50">Select Source Card</Label>
+                               <select 
+                                 className="w-full bg-secondary/50 border border-white/5 rounded-md h-10 text-xs px-2"
+                                 value={selectedCardId}
+                                 onChange={(e) => setSelectedCardId(e.target.value)}
+                               >
+                                  <option value="">Select Card</option>
+                                  {virtualCards?.map(c => <option key={c.id} value={c.id}>{c.brand} - {c.cardNumber.split(' ').pop()}</option>)}
+                               </select>
+                            </div>
+                            <div className="space-y-2">
+                               <Label className="text-[9px] uppercase font-bold opacity-50">Amount</Label>
+                               <Input type="number" placeholder="0.00" value={cardLoadAmount} onChange={(e) => setCardLoadAmount(e.target.value)} className="bg-secondary/30 h-10 text-sm" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                               <Button size="sm" className="bg-accent text-background font-bold text-[9px]" onClick={() => handleCardSettlement('TO_CARD')} disabled={isCardProcessing}>MESH TO CARD</Button>
+                               <Button size="sm" variant="outline" className="text-[9px] font-bold" onClick={() => handleCardSettlement('TO_WALLET')} disabled={isCardProcessing}>CARD TO MESH</Button>
+                            </div>
+                         </CardContent>
+                      </Card>
+                   </div>
+
+                   {/* Cards Display */}
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                      {virtualCards?.map((card: any) => (
+                        <Card key={card.id} className="relative aspect-[1.58/1] rounded-2xl overflow-hidden group shadow-2xl border-none">
+                           <div className={cn(
+                             "absolute inset-0 bg-gradient-to-br transition-all duration-1000",
+                             card.brand === 'MASTERCARD' ? "from-[#eb001b] via-[#f79e1b] to-[#13151a]" : "from-[#1a1f71] via-[#00579f] to-[#13151a]"
+                           )} />
+                           <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
+                           <CardContent className="relative h-full p-6 flex flex-col justify-between text-white">
+                              <div className="flex justify-between items-start">
+                                 <div className="space-y-1">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Fusion Virtual Card</p>
+                                    <Badge className="bg-white/20 backdrop-blur-md border-none text-[8px]">{card.brand}</Badge>
+                                 </div>
+                                 <div className="p-2 bg-white/10 rounded-lg">
+                                    <Smartphone className="h-5 w-5 opacity-50" />
+                                 </div>
+                              </div>
+
+                              <div className="space-y-4">
+                                 <div className="flex items-center justify-between">
+                                    <p className="text-xl font-mono tracking-[0.2em] font-bold">
+                                       {showCardNumbers ? card.cardNumber : card.cardNumber.replace(/\d{4}/g, (match, offset) => offset < 12 ? '****' : match)}
+                                    </p>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/10" onClick={() => setShowCardNumbers(!showCardNumbers)}>
+                                       {showCardNumbers ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </Button>
+                                 </div>
+                                 <div className="flex justify-between items-end">
+                                    <div className="flex gap-8">
+                                       <div className="space-y-0.5">
+                                          <p className="text-[8px] uppercase opacity-50">Expiry</p>
+                                          <p className="text-xs font-bold">{card.expiry}</p>
+                                       </div>
+                                       <div className="space-y-0.5">
+                                          <p className="text-[8px] uppercase opacity-50">Balance</p>
+                                          <p className="text-sm font-bold text-accent">${card.balance.toLocaleString()}</p>
+                                       </div>
+                                    </div>
+                                    <div className="flex gap-1">
+                                       {card.brand === 'MASTERCARD' ? (
+                                          <>
+                                             <div className="w-8 h-8 rounded-full bg-[#eb001b] opacity-80" />
+                                             <div className="w-8 h-8 rounded-full bg-[#f79e1b] -ml-4 opacity-80" />
+                                          </>
+                                       ) : (
+                                          <div className="w-12 h-8 rounded-md bg-white flex items-center justify-center p-1">
+                                             <p className="text-[10px] font-bold italic text-[#1a1f71]">VISA</p>
+                                          </div>
+                                       )}
+                                    </div>
+                                 </div>
+                              </div>
+                           </CardContent>
+                        </Card>
+                      ))}
+                   </div>
+                </TabsContent>
 
                 <TabsContent value="links" className="space-y-6">
                   <PaymentLinkManager />
                 </TabsContent>
 
-                <TabsContent value="priyo" className="space-y-6">
+                <TabsContent value="payout" className="space-y-6">
                    <Card className="glass-panel border-l-4 border-l-[#6366f1] bg-[#6366f1]/5 shadow-2xl">
                       <CardHeader>
                          <CardTitle className="text-sm flex items-center gap-2 uppercase text-[#818cf8]">
-                            <PriyoIcon className="h-4 w-4" /> Global Payout Orchestration
+                            <PriyoIcon className="h-4 w-4" /> Global Settlement Bridge
                          </CardTitle>
-                         <CardDescription className="text-[10px] uppercase tracking-widest">PayPal REST | Priyo Pay | bKash B2C</CardDescription>
+                         <CardDescription className="text-[10px] uppercase tracking-widest">PayPal | Priyo Pay | Global Wire</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                               <Label className="text-[10px] font-bold uppercase">Recipient Gateway ID</Label>
-                               <Input 
-                                  placeholder="email@gateway.com" 
-                                  className="h-11 text-sm bg-background/50 border-white/5 focus:border-[#6366f1]/50"
-                                  value={priyoEmail}
-                                  onChange={(e) => setPriyoEmail(e.target.value)}
-                               />
-                            </div>
-                            <div className="space-y-2">
-                               <Label className="text-[10px] font-bold uppercase">Amount ($)</Label>
-                               <Input 
-                                  type="number" 
-                                  placeholder="0.00" 
-                                  className="h-11 text-sm bg-background/50 border-white/5 focus:border-[#6366f1]/50"
-                                  value={priyoAmount}
-                                  onChange={(e) => setPriyoAmount(e.target.value)}
-                               />
-                            </div>
-                         </div>
-                         <Button 
-                            className="w-full h-11 bg-[#6366f1] text-white font-bold uppercase text-xs hover:bg-[#4f46e5] shadow-lg"
-                            onClick={handlePriyoPayout}
-                            disabled={isPriyoProcessing || isThrottled}
-                         >
-                            {isPriyoProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ChevronRight className="mr-2 h-4 w-4" />}
-                            Execute Disbursement
-                         </Button>
-
-                         {priyoReport && (
-                           <div className="mt-4 p-4 rounded-xl bg-black/40 border border-[#6366f1]/20 space-y-3 animate-fade-in shadow-inner">
-                              <div className="flex justify-between items-center">
-                                 <span className="text-[10px] font-bold text-[#818cf8]">FINALITY: {priyoReport.status}</span>
-                                 <Badge variant="outline" className="text-[8px] font-mono">{priyoReport.batchId}</Badge>
-                              </div>
-                              <div className="space-y-1">
-                                 {priyoReport.executionLog.slice(0, 3).map((log: string, i: number) => (
-                                   <p key={i} className="text-[9px] text-muted-foreground font-mono">&gt; {log}</p>
-                                 ))}
-                              </div>
-                           </div>
-                         )}
-                      </CardContent>
-                   </Card>
-                </TabsContent>
-
-                <TabsContent value="mesh" className="space-y-6">
-                   <Card className="glass-panel border-l-4 border-l-accent bg-accent/5 shadow-2xl">
-                      <CardHeader>
-                         <CardTitle className="text-sm flex items-center gap-2 uppercase">
-                            <Send className="h-4 w-4 text-accent" /> Node-to-Node Mesh
-                         </CardTitle>
-                         <CardDescription className="text-[10px] uppercase tracking-widest">Internal anycast settlement corridor</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                               <Label className="text-[10px] font-bold uppercase">Target Mesh Account</Label>
-                               <div className="relative">
-                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent/50" />
-                                  <Input 
-                                     placeholder="12-digit Fusion ID" 
-                                     className="pl-10 h-11 text-sm bg-background/50 border-white/5 focus:border-accent/50"
-                                     value={targetAccount}
-                                     onChange={(e) => setTargetAccount(e.target.value)}
-                                  />
-                               </div>
-                            </div>
-                            <div className="space-y-2">
-                               <Label className="text-[10px] font-bold uppercase">Amount ($)</Label>
-                               <Input 
-                                  type="number" 
-                                  placeholder="0.00" 
-                                  className="h-11 text-sm bg-background/50 border-white/5 focus:border-accent/50"
-                                  value={transferAmount}
-                                  onChange={(e) => setTransferAmount(e.target.value)}
-                               />
-                            </div>
-                         </div>
-                         <Button 
-                            className="w-full h-11 bg-accent text-background font-bold uppercase text-xs cyan-glow"
-                            onClick={handleMeshTransfer}
-                            disabled={isTransferring || isThrottled}
-                         >
-                            {isTransferring ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRightLeft className="mr-2 h-4 w-4" />}
-                            Commit Transfer
-                         </Button>
+                         <p className="text-xs text-muted-foreground italic">
+                           "Cross-border payouts to Mastercard/Visa gateways are processed via the SEG-MLC Oracle."
+                         </p>
+                         <Button className="w-full bg-[#6366f1] hover:bg-[#4f46e5] text-white font-bold h-11 uppercase text-[10px]">Execute Disbursement</Button>
                       </CardContent>
                    </Card>
                 </TabsContent>
@@ -435,7 +392,7 @@ export default function FinancialIntelligence() {
                          <span className="text-accent font-bold">{profile?.trustScore || 85}%</span>
                       </div>
                       <div className="flex justify-between">
-                         <span className="text-muted-foreground uppercase">API Handshake</span>
+                         <span className="text-muted-foreground uppercase">Card Handshake</span>
                          <span className="text-green-400 font-bold flex items-center gap-1">SECURE</span>
                       </div>
                       <div className="flex justify-between border-t border-white/5 pt-2">
@@ -450,7 +407,7 @@ export default function FinancialIntelligence() {
                  <CardHeader className="p-4">
                     <CardTitle className="text-[10px] uppercase font-bold tracking-tighter flex items-center gap-2">
                        <Network className="h-3 w-3 text-primary" />
-                       Connectivity Health
+                       Node Capacity
                     </CardTitle>
                  </CardHeader>
                  <CardContent className="p-4 pt-0 space-y-4">
@@ -462,7 +419,7 @@ export default function FinancialIntelligence() {
                       <Progress value={98} className="h-1 bg-primary/10 [&>div]:bg-primary" />
                     </div>
                     <div className="p-2 rounded bg-secondary/30 text-[9px] text-white/60 italic leading-relaxed border border-white/5">
-                      {"FusionPay disbursements are T+0. Real-time settlement active for Verified citizens."}
+                      {"FusionPay virtual cards are T+0. Real-time card-to-mesh settlement active."}
                     </div>
                  </CardContent>
               </Card>
@@ -475,7 +432,7 @@ export default function FinancialIntelligence() {
                  </CardHeader>
                  <CardContent className="p-4 pt-0">
                     <p className="text-[9px] text-red-300 leading-relaxed">
-                       Fraud detection engine is monitoring all outbound disbursement corridors.
+                       Fraud detection engine is monitoring all virtual card settlement paths.
                     </p>
                  </CardContent>
               </Card>
