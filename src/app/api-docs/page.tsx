@@ -7,35 +7,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { 
   Code2, 
   Terminal, 
-  Cpu, 
   Globe, 
   Lock, 
   Zap, 
-  DollarSign, 
   ShieldCheck, 
   RefreshCw,
   Play,
-  Network,
-  CloudLightning,
-  Smartphone,
   CreditCard,
-  ArrowRightLeft,
-  Activity,
   History,
   Database,
   Check,
-  AlertTriangle,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  Box,
-  Fingerprint,
   ShieldAlert,
-  Unplug
+  Unplug,
+  Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -78,25 +67,6 @@ const API_ENDPOINTS = [
   "amount": 50.00,
   "routing_seal": "SIG_HMAC_SHA256_FUSION"
 }`
-  },
-  {
-    id: "payout-execute",
-    title: "Global Payout",
-    method: "POST",
-    path: "/api/v1/payouts/execute",
-    desc: "ফিউশন সিস্টেম থেকে বাইরের গেটওয়ে (PayPal, Priyo Pay, bKash) টাকা সফলভাবে আউটবাউন্ড করার লজিক।",
-    params: [
-      { name: "gateway", type: "enum", desc: "PAYPAL, PRIYO_PAY, BKASH_B2C" },
-      { name: "recipient_id", type: "string", desc: "Recipient identity (Email/Mobile)." },
-      { name: "amount", type: "number", desc: "Disbursement amount." },
-      { name: "directive", type: "string", desc: "L3_IMPERIAL_SETTLEMENT" }
-    ],
-    example: `{
-  "gateway": "PAYPAL",
-  "recipient_id": "vendor@global.com",
-  "amount": 1250.00,
-  "directive": "L3_IMPERIAL_SETTLEMENT"
-}`
   }
 ];
 
@@ -115,44 +85,46 @@ export default function APIDocsPage() {
   };
 
   const runSimulation = (
-    type: 'ISSUE' | 'SETTLE' | 'PAYOUT' | 'INBOUND', 
+    type: 'ISSUE' | 'SETTLE' | 'PAYOUT', 
     mode: 'SUCCESS' | 'OVERDRAFT' | 'BAD_SIG' | 'TIMEOUT' = 'SUCCESS'
   ) => {
     setIsTesting(true);
     setTestLogs([]);
     
     let steps: {msg: string, type: 'info' | 'success' | 'error' | 'warning'}[] = [
-      { msg: `Initializing ${type} request...`, type: 'info' },
-      { msg: "Validating Payload Integrity (SHA-256)...", type: 'info' },
+      { msg: `Initializing ${type} handshake protocol...`, type: 'info' },
+      { msg: "Validating X-Sovereign-Signature (SHA-256)...", type: 'info' },
     ];
 
-    // Edge Case: Bad Signature
     if (mode === 'BAD_SIG') {
-      steps.push({ msg: "X-Sovereign-Signature: MISMATCH DETECTED", type: 'warning' });
-      steps.push({ msg: "SHA_256_VERIFICATION_FAILED: Terminal Handshake Terminated.", type: 'error' });
+      steps.push({ msg: "Security Breach: Invalid HMAC Signature detected!", type: 'error' });
+      steps.push({ msg: "Handshake Terminated: ACCESS_DENIED_0x82", type: 'error' });
     } else {
-      steps.push({ msg: "X-Sovereign-Signature: VERIFIED", type: 'success' });
-      steps.push({ msg: "Check deterministic capacity...", type: 'info' });
+      steps.push({ msg: "Signature Verified: OK", type: 'success' });
+      steps.push({ msg: "Synchronizing with Anycast Node UK-01...", type: 'info' });
     }
 
     if (mode === 'SUCCESS') {
       if (type === 'ISSUE') {
-        steps.push({ msg: "Directive: L2_VIRTUAL_ASSET_CREATION confirmed.", type: 'success' });
-        steps.push({ msg: "Virtual Card Node v1.2 created successfully.", type: 'success' });
+        steps.push({ msg: "Provisioning Virtual Asset: MASTERCARD v1.2", type: 'info' });
+        steps.push({ msg: "Settlement Finality: $100.00 loaded from Mesh.", type: 'success' });
+        steps.push({ msg: "Virtual Card Node Activated Successfully.", type: 'success' });
       } else if (type === 'SETTLE') {
-        steps.push({ msg: "ISO 20022 Handshake: Bidirectional sync active.", type: 'info' });
-        steps.push({ msg: "Settlement: CARD_TO_MESH finality achieved.", type: 'success' });
+        steps.push({ msg: "Bidirectional Pulse: CARD_TO_MESH confirmed.", type: 'success' });
+        steps.push({ msg: "Mesh Balance Reconciled at Node 04.", type: 'success' });
       } else if (type === 'PAYOUT') {
-        steps.push({ msg: "Outbound Rail: PAYPAL_REST_V2 active.", type: 'info' });
-        steps.push({ msg: "Imperial Directive seal applied.", type: 'success' });
+        steps.push({ msg: "External Rail: PAYPAL_REST_V2 Handshake active.", type: 'info' });
+        steps.push({ msg: "Imperial Directive seal applied by Kernel.", type: 'success' });
+        steps.push({ msg: "Payout Batch Dispatched: FALLBACK_P180_SUCCESS", type: 'success' });
       }
     } else if (mode === 'OVERDRAFT') {
-      steps.push({ msg: "Validation Failure: Requested load exceeds mesh limit.", type: 'warning' });
-      steps.push({ msg: "ERR_INSUFFICIENT_MESH_BALANCE (ISO_ERR_204)", type: 'error' });
+      steps.push({ msg: "Checking deterministic capacity...", type: 'info' });
+      steps.push({ msg: "Critical Failure: ERR_INSUFFICIENT_MESH_BALANCE", type: 'error' });
+      steps.push({ msg: "Protocol Reverted: ISO_ERR_204", type: 'error' });
     } else if (mode === 'TIMEOUT') {
-      steps.push({ msg: "Handshaking with External Gateway...", type: 'info' });
-      steps.push({ msg: "Network Latency Peak: Retrying connection (1/3)...", type: 'warning' });
-      steps.push({ msg: "Upstream Node Unreachable: L3_IMPERIAL_SETTLEMENT_TIMEOUT", type: 'error' });
+      steps.push({ msg: "Connecting to External Gateway...", type: 'info' });
+      steps.push({ msg: "Latency Peak: 4500ms detected. Retrying (1/3)...", type: 'warning' });
+      steps.push({ msg: "Gateway Node Unreachable: L3_IMPERIAL_SETTLEMENT_TIMEOUT", type: 'error' });
     }
 
     let i = 0;
@@ -175,10 +147,10 @@ export default function APIDocsPage() {
           setLiveLedger(prev => [newEntry, ...prev].slice(0, 10));
           toast({ title: "Simulation Finalized", description: `Logic confirmed for ${type} flow.` });
         } else {
-          toast({ variant: "destructive", title: "Simulation Failed", description: "Edge case validation successful (Error trapped)." });
+          toast({ variant: "destructive", title: "Simulation Halted", description: "Validation failure (Targeted Edge Case)." });
         }
       }
-    }, 500);
+    }, 400);
   };
 
   return (
@@ -194,16 +166,16 @@ export default function APIDocsPage() {
             </h1>
           </div>
           <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
-            v1.2.0-stable • ISO_20022_ACTIVE
+            v1.2.0-stable • ISO_20022_READY
           </Badge>
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-12">
           <div className="flex flex-col xl:flex-row justify-between items-start gap-8">
             <div className="space-y-4 flex-1">
-              <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic">Simulation <span className="text-accent">Oracle</span></h2>
+              <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic">Handshake <span className="text-accent">Oracle</span></h2>
               <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed italic">
-                "FusionPay v1.2 provides a deterministic environment for two-way settlement and global payouts. Test your integrations below using our interactive handshake lab."
+                "FusionPay v1.2 provides a deterministic environment for two-way settlement and global payouts. Test your integrations below using our stateful handshake lab."
               </p>
               <div className="flex flex-wrap items-center gap-4 pt-2">
                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/5 border border-accent/20">
@@ -257,7 +229,7 @@ export default function APIDocsPage() {
                          onClick={() => runSimulation('ISSUE', 'OVERDRAFT')}
                          disabled={isTesting}
                        >
-                         Test Overdraft
+                         Overdraft
                        </Button>
                        <Button 
                          variant="ghost" 
@@ -265,7 +237,7 @@ export default function APIDocsPage() {
                          onClick={() => runSimulation('SETTLE', 'BAD_SIG')}
                          disabled={isTesting}
                        >
-                         Bad Signature
+                         Bad Hash
                        </Button>
                        <Button 
                          variant="ghost" 
@@ -273,23 +245,23 @@ export default function APIDocsPage() {
                          onClick={() => runSimulation('PAYOUT', 'TIMEOUT')}
                          disabled={isTesting}
                        >
-                         Node Timeout
+                         Gateway Timeout
                        </Button>
                     </div>
                   </div>
                </div>
 
                {testLogs.length > 0 && (
-                 <div className="mt-4 p-3 rounded bg-black/60 border border-white/5 font-mono text-[8px] space-y-1.5 animate-fade-in h-40 overflow-y-auto shadow-inner">
+                 <div className="mt-4 p-3 rounded bg-black/60 border border-white/5 font-mono text-[9px] space-y-1.5 h-48 overflow-y-auto shadow-inner scrollbar-hide">
                     {testLogs.map((log, i) => (
                       <p key={i} className={cn(
-                        "flex items-start gap-2",
-                        log.type === 'success' ? 'text-green-400 font-bold' : 
+                        "flex items-start gap-2 animate-fade-in",
+                        log.type === 'success' ? 'text-green-400' : 
                         log.type === 'error' ? 'text-red-400 font-bold' : 
                         log.type === 'warning' ? 'text-yellow-400 italic' :
                         'text-white/60'
                       )}>
-                        <span>{log.type === 'success' ? '✓' : log.type === 'error' ? '!' : log.type === 'warning' ? '?' : '>'}</span>
+                        <span className="shrink-0">{log.type === 'success' ? '✓' : log.type === 'error' ? '!' : log.type === 'warning' ? '?' : '>'}</span>
                         {log.msg}
                       </p>
                     ))}
@@ -317,7 +289,7 @@ export default function APIDocsPage() {
                                <span className="text-xs font-mono text-accent/80 tracking-tighter">{api.path}</span>
                             </div>
                             <CardTitle className="text-xl mt-2 flex items-center gap-2 text-white uppercase italic">
-                              {api.id.includes('card') ? <CreditCard className="h-5 w-5 text-accent" /> : <Globe className="h-5 w-5 text-primary" />}
+                              <CreditCard className="h-5 w-5 text-accent" />
                               {api.title}
                             </CardTitle>
                           </div>
@@ -383,15 +355,15 @@ export default function APIDocsPage() {
             </div>
 
             <div className="space-y-6">
-               <Card className="glass-panel border-accent/20 bg-accent/5 h-fit shadow-2xl">
+               <Card className="glass-panel border-accent/20 bg-accent/5 h-fit shadow-2xl overflow-hidden">
                   <CardHeader className="p-4 border-b border-white/5 flex items-center justify-between">
                      <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest">
                         <History className="h-4 w-4 text-accent" />
                         Live Card Ledger
                      </CardTitle>
-                     <div className="flex gap-1">
+                     <div className="flex gap-1 items-center">
                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-[8px] font-mono text-green-400">ACTIVE</span>
+                        <span className="text-[8px] font-mono text-green-400">SYNCED</span>
                      </div>
                   </CardHeader>
                   <CardContent className="p-0">
