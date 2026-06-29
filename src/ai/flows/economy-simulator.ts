@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Sovereign Economic Governance Simulator.
@@ -54,25 +53,27 @@ const EconomyOutputSchema = z.object({
 
 const economySimulatorPrompt = ai.definePrompt({
   name: 'economySimulatorPrompt',
-  input: { schema: EconomyInputSchema },
+  input: { schema: z.object({
+    marketTrend: z.string(),
+    nodeDetails: z.string(),
+    policyText: z.string(),
+  }) },
   output: { schema: EconomyOutputSchema },
   prompt: `You are the SEG-MLC Global Economic Governor.
-Analyze the current state of the Digital Economic Civilization.
+Analyze the state of the Digital Economic Civilization.
 
 MARKET CONDITION: {{{marketTrend}}}
 
 HIERARCHICAL NODES:
-{{#each networkNodes}}
-- {{id}} [Layer: {{layer}}]: Trust {{trustScore}}, Liquidity \${{{liquidityAvailable}}}
-{{/each}}
+{{{nodeDetails}}}
 
-PROPOSED POLICY:
-{{{json policyChanges}}}
+PROPOSED POLICY CHANGES:
+{{{policyText}}}
 
-1. Calculate a Civilization-Level Stability Index across Micro, Meso, and Macro layers.
-2. Forecast the impact of the proposed policy changes (e.g., will credit expansion cause trust inflation?).
-3. Detect "Economic Shocks" (e.g., liquidity bottlenecks) and recommend immediate response actions.
-4. Identify high-risk liquidity concentrations and determine the "Prime Path" for settlements.`,
+1. Calculate a Civilization-Level Stability Index.
+2. Forecast the impact of the proposed policy changes.
+3. Detect "Economic Shocks" and recommend response actions.
+4. Identify high-risk liquidity concentrations and Prime Paths.`,
 });
 
 const simulateTrustEconomyFlow = ai.defineFlow(
@@ -82,7 +83,14 @@ const simulateTrustEconomyFlow = ai.defineFlow(
     outputSchema: EconomyOutputSchema,
   },
   async (input) => {
-    const { output } = await economySimulatorPrompt(input);
+    const nodeDetails = input.networkNodes.map(n => `- ${n.id} [${n.layer}]: Trust ${n.trustScore}, Liquidity \$${n.liquidityAvailable}`).join('\n');
+    const policyText = input.policyChanges ? JSON.stringify(input.policyChanges, null, 2) : "None";
+
+    const { output } = await economySimulatorPrompt({
+      marketTrend: input.marketTrend,
+      nodeDetails,
+      policyText,
+    });
     return output!;
   }
 );

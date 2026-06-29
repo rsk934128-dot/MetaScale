@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow to simulate autonomous agent decision making.
@@ -26,13 +25,19 @@ export async function executeAgentLogic(input: z.infer<typeof AgentExecutionInpu
 
 const agentPrompt = ai.definePrompt({
   name: 'agentPrompt',
-  input: { schema: AgentExecutionInputSchema },
+  input: { schema: z.object({
+    agentRole: z.string(),
+    metricsText: z.string(),
+    governanceLimits: z.string(),
+  }) },
   output: { schema: AgentExecutionOutputSchema },
   prompt: `You are the AMOS Autonomous Agent (Role: {{{agentRole}}}).
-CURRENT METRICS: {{{json currentMetrics}}}
+CURRENT METRICS:
+{{{metricsText}}}
+
 GOVERNANCE: {{{governanceLimits}}}
 
-Decide on a high-impact marketing action. Determine if it requires human approval based on governance.`,
+Decide on a high-impact action. Determine if it requires human approval based on governance.`,
 });
 
 const agentExecutionFlow = ai.defineFlow(
@@ -42,7 +47,12 @@ const agentExecutionFlow = ai.defineFlow(
     outputSchema: AgentExecutionOutputSchema,
   },
   async (input) => {
-    const { output } = await agentPrompt(input);
+    const metricsText = JSON.stringify(input.currentMetrics, null, 2);
+    const { output } = await agentPrompt({
+      agentRole: input.agentRole,
+      metricsText,
+      governanceLimits: input.governanceLimits,
+    });
     return output!;
   }
 );

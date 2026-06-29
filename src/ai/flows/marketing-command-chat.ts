@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A RAG-powered chat flow for marketing intelligence.
@@ -40,8 +39,14 @@ const commandChatPrompt = ai.definePrompt({
   name: 'commandChatPrompt',
   input: { schema: CommandChatInputSchema },
   output: { schema: CommandChatOutputSchema },
-  prompt: `You are the AMOS Intelligence Engine, an expert marketing strategist and data analyst.
-Your goal is to provide precise, data-driven answers to marketing questions using the provided context.
+  system: "You are the Sovereign OS Intelligence Engine. You operate under Project 45 Eco Governance standards. Use the provided context and history to give deterministic, strategic advice.",
+  prompt: `
+{{#if history}}
+CHAT HISTORY:
+{{#each history}}
+- {{role}}: {{text}}
+{{/each}}
+{{/if}}
 
 {{#if context}}
 KNOWLEDGE CONTEXT:
@@ -50,7 +55,7 @@ KNOWLEDGE CONTEXT:
 
 USER QUERY: {{{query}}}
 
-Provide a detailed response, relevant data points if available in context, and 2-3 specific "suggestedActions" the user can take in the AMOS platform.`,
+Provide a detailed response, relevant data points if available in context, and 2-3 specific "suggestedActions" the user can take.`,
 });
 
 const marketingCommandChatFlow = ai.defineFlow(
@@ -60,7 +65,21 @@ const marketingCommandChatFlow = ai.defineFlow(
     outputSchema: CommandChatOutputSchema,
   },
   async (input) => {
-    const { output } = await commandChatPrompt(input);
-    return output!;
+    try {
+      const { output } = await commandChatPrompt(input);
+      if (!output) {
+        return {
+          response: "I'm sorry, I encountered a reasoning block. Please rephrase your query.",
+          suggestedActions: ["Retry Query", "Check System Status"]
+        };
+      }
+      return output;
+    } catch (err) {
+      console.error("Chat Flow Error:", err);
+      return {
+        response: "The Sovereign AI node is currently unreachable. Error tracing Node-04.",
+        suggestedActions: ["Check Connectivity", "Refresh Kernel"]
+      };
+    }
   }
 );
