@@ -6,21 +6,29 @@ import { getAuth } from 'firebase/auth';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { firebaseConfig } from './config';
 
+let firestoreInstance: any = null;
+let authInstance: any = null;
+
 export function initializeFirebase() {
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
-  let firestore;
-  try {
-    // Attempt to initialize with custom settings for better persistence in dev env
-    firestore = initializeFirestore(app, {
-      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-    });
-  } catch (e) {
-    // If already initialized (common during HMR), get the existing instance
-    firestore = getFirestore(app);
+  if (!firestoreInstance) {
+    try {
+      // Robust initialization with persistence and multi-tab support
+      firestoreInstance = initializeFirestore(app, {
+        localCache: persistentLocalCache({ 
+          tabManager: persistentMultipleTabManager() 
+        })
+      });
+    } catch (e) {
+      // Fallback if already initialized (common during HMR in development)
+      firestoreInstance = getFirestore(app);
+    }
   }
   
-  const auth = getAuth(app);
+  if (!authInstance) {
+    authInstance = getAuth(app);
+  }
 
   // Initialize App Check only on the client side if key is available
   if (typeof window !== 'undefined') {
@@ -37,7 +45,7 @@ export function initializeFirebase() {
     }
   }
 
-  return { app, firestore, auth };
+  return { app, firestore: firestoreInstance, auth: authInstance };
 }
 
 export * from './provider';
