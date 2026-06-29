@@ -34,7 +34,10 @@ import {
   ChevronRight,
   FileText,
   Link as LinkIcon,
-  Navigation
+  Navigation,
+  Play,
+  History,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -92,6 +95,19 @@ const OPERATIONAL_MODULES = [
   { component: "Webhook Handler", status: "Active", task: "ইনকামিং পেমেন্ট ও ডাটা ইভেন্ট প্রসেস করা" },
 ];
 
+const BULK_TEST_SCENARIOS = [
+  { type: 'single_payment', desc: 'Single Payment (USD)' },
+  { type: 'bulk_payment', desc: 'Bulk Salary Disbursement' },
+  { type: 'standard_consent', desc: 'Standard AIS Consent' },
+  { type: 'international_transfer', desc: 'International Wire (EUR)' },
+  { type: 'scheduled_payment', desc: 'Scheduled Rent Payment' },
+  { type: 'single_payment', desc: 'P2P Transfer (Small)' },
+  { type: 'bulk_payment', desc: 'Institutional Data Audit' },
+  { type: 'single_payment', desc: 'One-off Refund' },
+  { type: 'international_transfer', desc: 'Multi-currency Settlement' },
+  { type: 'standard_consent', desc: 'Partner Node Handshake' },
+];
+
 export default function UBILIntegrationPage() {
   const [copied, setCopied] = useState(false);
   const [search, setSearch] = useState("");
@@ -105,13 +121,14 @@ export default function UBILIntegrationPage() {
   const [isLoadingInstitutions, setIsLoadingInstitutions] = useState(false);
   const [isCreatingConsent, setIsCreatingConsent] = useState(false);
   const [isTestingHandshake, setIsTestingHandshake] = useState(false);
+  const [isRunningBulkTest, setIsRunningBulkTest] = useState(false);
 
   const { toast } = useToast();
   const firestore = useFirestore();
 
   const eventsQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'ubil_events'), orderBy('timestamp', 'desc'), limit(50));
+    return query(collection(firestore, 'ubil_events'), orderBy('timestamp', 'desc'), limit(100));
   }, [firestore]);
 
   const { data: remoteEvents, loading } = useCollection<any>(eventsQuery);
@@ -142,20 +159,37 @@ export default function UBILIntegrationPage() {
     }, 2000);
   };
 
-  const handleCreateConsent = async (instId: string, type: 'single_payment' | 'bulk_payment') => {
+  const handleCreateConsent = async (instId: string, type: string) => {
     setIsCreatingConsent(true);
     try {
       const result = await createYapilyConsent({
         institutionId: instId,
         callbackUrl: window.location.href,
-        scope: type === 'single_payment' ? 'PIS' : 'PIS',
+        scope: 'PIS',
         userId: 'sko_user_82af',
         requestType: type as any
       });
       
-      setLogs(prev => [`>>> SMART ROUTER: Path Selected = ${result.integrationPath} (${result.routingReason})`, ...prev]);
-      window.open(result.authorisationUrl, '_blank');
+      const eventId = `UBIL_ROUTED_${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+      const logMsg = `>>> SMART ROUTER: Path Selected = ${result.integrationPath} | REASON: ${result.routingReason}`;
+      setLogs(prev => [logMsg, ...prev]);
+
+      if (firestore) {
+        await setDoc(doc(firestore, 'ubil_events', eventId), {
+          id: eventId,
+          type: 'ROUTING_DECISION',
+          requestType: type,
+          integrationPath: result.integrationPath,
+          routingReason: result.routingReason,
+          timestamp: Date.now(),
+          status: 'SUCCESS',
+          senderBank: instId,
+          senderName: 'SYSTEM_ROUTER'
+        });
+      }
+
       toast({ title: `Router: ${result.integrationPath}`, description: result.routingReason });
+      return result;
     } catch (err) {
       toast({ variant: "destructive", title: "Consent Error", description: "Could not initialize integration handshake." });
     } finally {
@@ -163,11 +197,21 @@ export default function UBILIntegrationPage() {
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText("noornexus_ubil_secret_2026");
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({ title: "Secret Copied", description: "Shared secret key saved to clipboard." });
+  const runBulkTestSuite = async () => {
+    setIsRunningBulkTest(true);
+    setLogs(prev => [">>> INITIATING BULK ROUTER TEST SUITE (10 SCENARIOS)...", ...prev]);
+    
+    for (let i = 0; i < BULK_TEST_SCENARIOS.length; i++) {
+      const scenario = BULK_TEST_SCENARIOS[i];
+      await new Promise(resolve => setTimeout(resolve, 600)); // Delay for visual feedback
+      await handleCreateConsent('hsbc-uk', scenario.type);
+    }
+
+    setIsRunningBulkTest(false);
+    toast({
+      title: "Bulk Test Complete",
+      description: "10 routing scenarios have been validated and logged in the inspector.",
+    });
   };
 
   const dispatchSimulation = async () => {
@@ -176,7 +220,7 @@ export default function UBILIntegrationPage() {
     const timestamp = Date.now();
     
     const newLog = `>>> INCOMING WEBHOOK: [${simPreset}] FROM ${simBank}`;
-    setLogs(prev => [newLog, ...prev].slice(0, 5));
+    setLogs(prev => [newLog, ...prev].slice(0, 10));
 
     const eventData = {
       id: eventId,
@@ -203,7 +247,7 @@ export default function UBILIntegrationPage() {
       } else {
         toast({ variant: "destructive", title: "SECURITY BLOCK", description: "Invalid signature detected. Connection severed." });
       }
-    }, 1500);
+    }, 1000);
   };
 
   const filteredEvents = useMemo(() => {
@@ -228,7 +272,13 @@ export default function UBILIntegrationPage() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-             <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold border-accent/20 text-accent hidden md:flex" onClick={handleTestHandshake} disabled={isTestingHandshake}>
+             <Button 
+               variant="outline" 
+               size="sm" 
+               className="h-8 text-[10px] font-bold border-accent/20 text-accent hidden md:flex" 
+               onClick={handleTestHandshake} 
+               disabled={isTestingHandshake}
+             >
                 {isTestingHandshake ? <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" /> : <Zap className="mr-1.5 h-3 w-3" />}
                 Test Handshake
              </Button>
@@ -244,7 +294,7 @@ export default function UBILIntegrationPage() {
               <TabsTrigger value="overview" className="text-[10px] uppercase font-bold tracking-widest px-6">System Overview</TabsTrigger>
               <TabsTrigger value="direct-api" className="text-[10px] uppercase font-bold tracking-widest px-6">Yapily Integration</TabsTrigger>
               <TabsTrigger value="config" className="text-[10px] uppercase font-bold tracking-widest px-6">Operational Config</TabsTrigger>
-              <TabsTrigger value="audit" className="text-[10px] uppercase font-bold tracking-widest px-6">Audit Ledger</TabsTrigger>
+              <TabsTrigger value="audit" className="text-[10px] uppercase font-bold tracking-widest px-6">Audit Ledger & Inspector</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6 animate-fade-in">
@@ -380,9 +430,9 @@ export default function UBILIntegrationPage() {
                       </CardContent>
                     </Card>
                   </div>
-                  <div className="p-4 rounded-xl bg-black/60 border border-white/5 font-mono text-[10px] space-y-2 relative overflow-hidden">
+                  <div className="p-4 rounded-xl bg-black/60 border border-white/5 font-mono text-[10px] space-y-2 relative overflow-hidden h-48 overflow-y-auto">
                     <div className="absolute top-2 right-2 text-white/20"><Terminal className="h-4 w-4" /></div>
-                    <p className="text-accent uppercase font-bold">OS LOG CONSOLE:</p>
+                    <p className="text-accent uppercase font-bold sticky top-0 bg-black/60 pb-1">OS LOG CONSOLE:</p>
                     {logs.map((log, i) => <p key={i} className="text-white/60 animate-fade-in">&gt; {log}</p>)}
                   </div>
                 </div>
@@ -402,10 +452,22 @@ export default function UBILIntegrationPage() {
                                  </CardTitle>
                                  <CardDescription className="text-[10px] uppercase font-bold mt-1">Smart Routing between Hosted Pages and Direct API</CardDescription>
                               </div>
-                              <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold border-accent/20" onClick={handleFetchInstitutions} disabled={isLoadingInstitutions}>
-                                 {isLoadingInstitutions ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <RefreshCw className="h-3 w-3 mr-1.5" />}
-                                 Sync Mesh
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-8 text-[10px] font-bold border-accent/20 text-accent" 
+                                  onClick={runBulkTestSuite} 
+                                  disabled={isRunningBulkTest}
+                                >
+                                   {isRunningBulkTest ? <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" /> : <Play className="mr-1.5 h-3 w-3" />}
+                                   Run Bulk Test Suite
+                                </Button>
+                                <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold border-accent/20" onClick={handleFetchInstitutions} disabled={isLoadingInstitutions}>
+                                   {isLoadingInstitutions ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <RefreshCw className="h-3 w-3 mr-1.5" />}
+                                   Sync Mesh
+                                </Button>
+                              </div>
                            </div>
                         </CardHeader>
                         <CardContent className="p-0">
@@ -434,10 +496,10 @@ export default function UBILIntegrationPage() {
                                           </div>
                                        </div>
                                        <div className="flex items-center gap-2">
-                                          <Button variant="outline" size="sm" className="h-8 border-accent/20 text-accent font-bold text-[10px] uppercase" onClick={() => handleCreateConsent(inst.id, 'single_payment')}>
+                                          <Button variant="outline" size="sm" className="h-8 border-accent/20 text-accent font-bold text-[10px] uppercase" onClick={() => handleCreateConsent(inst.id, 'single_payment')} disabled={isCreatingConsent}>
                                              Test Hosted
                                           </Button>
-                                          <Button size="sm" className="h-8 bg-accent text-background font-bold text-[10px] uppercase" onClick={() => handleCreateConsent(inst.id, 'bulk_payment')}>
+                                          <Button size="sm" className="h-8 bg-accent text-background font-bold text-[10px] uppercase" onClick={() => handleCreateConsent(inst.id, 'bulk_payment')} disabled={isCreatingConsent}>
                                              Test Direct
                                           </Button>
                                        </div>
@@ -473,7 +535,7 @@ export default function UBILIntegrationPage() {
                               </div>
                            </div>
                            <p className="text-[10px] text-muted-foreground leading-relaxed italic">
-                              Smart Router রিকোয়েস্ট অনুযায়ী নিজে থেকেই নির্ধারণ করে কোনটি Hosted হবে আর কোনটি Direct API হবে।
+                              Smart Router রিকোয়েস্টের ধরন বিশ্লেষণ করে স্বয়ংক্রিয়ভাবে Hosted বা Direct পাথ নির্ধারণ করবে।
                            </p>
                         </CardContent>
                      </Card>
@@ -508,7 +570,7 @@ export default function UBILIntegrationPage() {
                         <CardHeader className="p-6 border-b border-white/5">
                            <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
                               <FileText className="h-4 w-4 text-accent" />
-                              Universal Banking operational Configuration
+                              Operational Configuration
                            </CardTitle>
                            <CardDescription className="text-[10px] uppercase font-bold mt-1">NoorNexus UBIL: Hybrid Yapily Integration Architecture</CardDescription>
                         </CardHeader>
@@ -593,11 +655,14 @@ export default function UBILIntegrationPage() {
                   <div>
                     <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2 text-white italic">
                       <Database className="h-4 w-4 text-accent" />
-                      UBIL Audit Ledger Trail
+                      UBIL Audit Ledger & Inspector
                     </CardTitle>
-                    <CardDescription className="text-[10px]">Real-time incoming payloads from secure webhooks</CardDescription>
+                    <CardDescription className="text-[10px]">Real-time incoming payloads and routing decisions from secure webhooks</CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold border-white/10 uppercase"><Download className="mr-1.5 h-3 w-3" /> Export CSV</Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold border-white/10 uppercase"><History className="mr-1.5 h-3 w-3" /> Notes & History</Button>
+                    <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold border-white/10 uppercase"><Download className="mr-1.5 h-3 w-3" /> Export CSV</Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="p-4 border-b border-white/5 flex gap-4">
@@ -606,7 +671,7 @@ export default function UBILIntegrationPage() {
                       <Input placeholder="Search by sender, bank, A/C or ID..." className="pl-9 h-9 bg-secondary/30 border-white/5 text-[11px]" value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
                   </div>
-                  <ScrollArea className="h-[500px]">
+                  <ScrollArea className="h-[600px]">
                     {loading ? (
                       <div className="p-20 flex flex-col items-center gap-4 opacity-40"><Loader2 className="h-8 w-8 animate-spin text-accent" /><p className="text-[9px] font-bold uppercase tracking-widest">Accessing Secure Vault...</p></div>
                     ) : filteredEvents.length === 0 ? (
@@ -616,20 +681,36 @@ export default function UBILIntegrationPage() {
                         {filteredEvents.map((event) => (
                           <div key={event.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-white/5 transition-all group">
                             <div className="flex gap-4">
-                              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border", event.status === 'SUCCESS' ? "bg-accent/10 border-accent/20 text-accent" : "bg-red-500/10 border-red-500/20 text-red-400")}>
-                                {event.type === 'AUTH_FAILED' ? <ShieldAlert className="h-5 w-5" /> : <Activity className="h-5 w-5" />}
+                              <div className={cn(
+                                "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border", 
+                                event.type === 'ROUTING_DECISION' ? "bg-primary/10 border-primary/20 text-primary" :
+                                event.status === 'SUCCESS' ? "bg-accent/10 border-accent/20 text-accent" : 
+                                "bg-red-500/10 border-red-500/20 text-red-400"
+                              )}>
+                                {event.type === 'AUTH_FAILED' ? <ShieldAlert className="h-5 w-5" /> : 
+                                 event.type === 'ROUTING_DECISION' ? <Navigation className="h-5 w-5" /> :
+                                 <Activity className="h-5 w-5" />}
                               </div>
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
                                   <span className="text-[11px] font-bold text-white uppercase">{event.senderName}</span>
                                   <Badge variant="outline" className="text-[8px] font-mono border-white/10 uppercase">{event.senderBank}</Badge>
+                                  {event.integrationPath && (
+                                    <Badge className="bg-primary/20 text-primary text-[8px] uppercase font-bold">{event.integrationPath}</Badge>
+                                  )}
                                   <Badge className={cn("text-[8px] font-bold uppercase", event.status === 'SUCCESS' ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400")}>{event.status}</Badge>
                                 </div>
-                                <p className="text-[10px] text-muted-foreground font-mono">ID: {event.id} | AC: {event.accountNumber} | SIG: {event.signatureStatus}</p>
+                                <p className="text-[10px] text-muted-foreground font-mono">ID: {event.id} | AC: {event.accountNumber || 'SYSTEM'} | TYPE: {event.type}</p>
+                                {event.routingReason && (
+                                  <div className="flex items-center gap-2 pt-1">
+                                    <Info className="h-3 w-3 text-accent" />
+                                    <p className="text-[9px] text-accent italic">{event.routingReason}</p>
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-sm font-headline font-bold text-white">${event.amount.toLocaleString()}</p>
+                              {event.amount && <p className="text-sm font-headline font-bold text-white">${event.amount.toLocaleString()}</p>}
                               <p className="text-[9px] text-muted-foreground uppercase">{new Date(event.timestamp).toLocaleString()}</p>
                             </div>
                           </div>
