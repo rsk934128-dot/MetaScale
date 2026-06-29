@@ -5,25 +5,22 @@
 
 ---
 
-## ✨ Strategic Operational Planes
+## ✨ Enterprise-Grade Operational Planes
 
 ### 🌍 Global Settlement Nodes
 *   **Multi-Network Top-up:** bKash, SSLCommerz (Visa/Mastercard), Stripe Global, US Bank (ACH), International Wire (SWIFT).
-*   **Cross-Border Payouts:** PayPal REST API, Priyo Pay, এবং bKash B2C সরাসরি ইন্টিগ্রেশন।
-*   **Oracle Handshake:** ২-স্টেপ (Check & Confirm) সেটেলমেন্ট ভেরিফিকেশন লজিক।
+*   **Bidirectional Card Mesh:** T+0 settlement between virtual cards and mesh wallets.
+*   **Idempotency Enforced:** `X-Idempotency-Key` headers ensure zero duplicate transactions on network failures.
 
 ### 🧠 Financial Intelligence (Insights Hub)
-*   **AI Stock Analyst:** রিয়েল-টাইম সেন্টিমেন্ট এবং রিস্ক স্কোর অ্যানালাইসিস (AAPL, BTC, etc.)।
-*   **AI Article Summarizer:** দীর্ঘ ফিন্যান্সিয়াল নিউজ বা রিপোর্ট থেকে দ্রুত এক্সিকিউটিভ সামারি তৈরি।
-*   **Citizen Watchlist:** আপনার পছন্দের অ্যাসেটগুলো ট্র্যাক করার জন্য পার্সোনালাইজড ড্যাশবোর্ড।
+*   **AI Stock Analyst:** Real-time sentiment and risk scoring for global tickers (AAPL, BTC, etc.).
+*   **AI News Summarizer:** Instant executive summaries from long financial reports using Gemini 2.5 Flash.
+*   **Citizen Watchlist:** Personalized dashboard for tracking core financial nodes.
 
-### 🤖 AI Intelligence (Genkit Powered)
-*   **Fraud Detection:** রিয়েল-টাইম ফ্রড স্কোরিং এবং অ্যানোমালি ডিটেকশন।
-*   **AI Decision Engine:** ডিটারমিনিস্টিক লিকুইডিটি ডেসপ্যাচ।
-
-### 🛠 Merchant & Developer Tools
-*   **SaaS Merchant Portal:** এপিআই কী ম্যানেজমেন্ট এবং ইনফ্রাস্ট্রাকচার কন্ট্রোল।
-*   **ISO 20022 Compliance:** প্রাতিষ্ঠানিক মেসেজিং স্ট্যান্ডার্ড অনুসরণকারী আর্কিটেকচার।
+### 🛡️ Security & Compliance (ISO 20022)
+*   **Deterministic Policy Engine:** Automated priority resolving based on kernel state (Normal/Lockdown).
+*   **SHA-256 Payload Verification:** Every API request is cryptographically signed for integrity.
+*   **SLA Guarantee:** 99.99% uptime for enterprise-tier nodes.
 
 ---
 
@@ -34,17 +31,18 @@
 | **Framework** | Next.js 15 (App Router), React 19 |
 | **AI Engine** | Genkit (Gemini 2.5 Flash) |
 | **Backend** | Firebase (Auth, Firestore, Cloud Functions) |
-| **Settlement** | PayPal REST, bKash v1.2, SSLCommerz, Stripe |
-| **Standards** | ISO 20022, SHA-256 Payload Verification |
+| **Standards** | ISO 20022, SHA-256 HMAC, Idempotency |
+| **Tenancy** | Team-Based Multi-Tenancy (team_UJR6KEPU...) |
 
 ---
 
-## 🔑 Administrative Access
+## 🔑 Infrastructure Access
 
-- **Root Administrator:** `rubels1k994@gmail.com`
+- **Active Team ID:** `team_UJR6KEPUrWUszD8jdhiyjQgV`
 - **Clearing House Keys:** Integrated via FusionPay Global Node.
+- **Base URL:** `http://localhost:9002`
 
 ---
 
-> **"Global Connectivity, Intelligent Trust."**  
+> **"Global Connectivity, Deterministic Trust."**  
 > *© 2024 FusionPay Global Node. Founded in London.*

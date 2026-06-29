@@ -23,7 +23,9 @@ import {
   Server,
   Wallet,
   CreditCard,
-  Smartphone
+  Smartphone,
+  BadgeCheck,
+  CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,7 +53,7 @@ const HERO_SLIDES = [
     badge: 'Deterministic Payouts active',
     title: 'CROSS-BORDER',
     titleItalic: 'SETTLEMENT',
-    desc: 'Automated T+0 liquidity dispatch via PayPal REST API and Priyo Pay. Direct disbursements to 190+ countries.',
+    desc: 'Automated T+0 liquidity dispatch via PayPal REST API and Priyo Pay. Direct disbursements to 190+ countries with Idempotency protection.',
     color: 'text-blue-400',
     glow: 'bg-blue-400/20',
     image: placeholderData.placeholderImages.find(img => img.id === 'ad-creative-4')?.imageUrl || 'https://picsum.photos/seed/payout/1200/800',
@@ -62,7 +64,7 @@ const HERO_SLIDES = [
     badge: 'Genkit AI Decision Engine',
     title: 'AI POWERED',
     titleItalic: 'INTELLIGENCE',
-    desc: 'Real-time fraud detection and predictive liquidity analysis. Get personalized financial insights for your team.',
+    desc: 'Real-time fraud detection and predictive liquidity analysis. Get personalized financial insights for your team with our AI Analyst.',
     color: 'text-primary',
     glow: 'bg-primary/20',
     image: placeholderData.placeholderImages.find(img => img.id === 'ad-creative-2')?.imageUrl || 'https://picsum.photos/seed/ai/1200/800',
@@ -184,6 +186,47 @@ export default function LandingPage() {
         </div>
       </header>
 
+      {/* Enterprise Trust Section */}
+      <section className="relative z-10 py-24 bg-secondary/10 border-y border-white/5">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+           <div className="space-y-6">
+              <Badge variant="outline" className="text-accent border-accent/20 uppercase tracking-widest text-[10px] font-bold">
+                 Institutional Reliability
+              </Badge>
+              <h2 className="text-4xl font-headline font-bold text-white uppercase italic tracking-tighter">
+                 THE GOLD STANDARD <br />
+                 <span className="text-accent">OF FISCAL SECURITY</span>
+              </h2>
+              <p className="text-muted-foreground leading-relaxed">
+                 FusionPay is designed for maximum fault tolerance. With <strong>99.99% SLA</strong> uptime and <strong>Idempotency Enforcement</strong>, we ensure your financial operations never miss a beat.
+              </p>
+              <div className="space-y-4 pt-4">
+                 {[
+                   { icon: BadgeCheck, title: "ISO 20022 Compliance", desc: "Global standard messaging for institutional interoperability." },
+                   { icon: Lock, title: "Idempotency (T+0)", desc: "Prevent duplicate transactions with X-Idempotency-Key headers." },
+                   { icon: Server, title: "Anycast Routing", desc: "Distributed across 42 nodes for sub-10ms global latency." }
+                 ].map((item, i) => (
+                   <div key={i} className="flex gap-4 items-start">
+                      <div className="p-2 rounded bg-accent/10 text-accent"><item.icon className="h-5 w-5" /></div>
+                      <div>
+                         <h4 className="text-sm font-bold text-white uppercase">{item.title}</h4>
+                         <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+           </div>
+           <div className="relative aspect-video rounded-3xl overflow-hidden border border-white/10 shadow-2xl group">
+              <Image src={placeholderData.placeholderImages.find(img => img.id === 'finance-preview')?.imageUrl || 'https://picsum.photos/seed/trust/800/450'} alt="Security Mesh" fill className="object-cover opacity-60 transition-transform duration-1000 group-hover:scale-110" />
+              <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-transparent pointer-events-none" />
+              <div className="absolute bottom-6 left-6 p-4 rounded-2xl bg-background/80 backdrop-blur-xl border border-white/10 space-y-2 animate-fade-in">
+                 <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /><span className="text-[10px] font-bold uppercase">Mesh Integrity: Optimal</span></div>
+                 <p className="text-[9px] text-muted-foreground font-mono">LATENCY: 8.4ms | NODES: 42/42</p>
+              </div>
+           </div>
+        </div>
+      </section>
+
       {/* Feature Mesh Section */}
       <section className="relative z-10 py-24 px-6 max-w-7xl mx-auto">
          <div className="text-center mb-16 space-y-4">
@@ -232,8 +275,8 @@ export default function LandingPage() {
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-white">Nodes</h4>
             <ul className="space-y-2 text-xs text-muted-foreground">
               <li><Link href="/finance" className="hover:text-accent">Financial Node</Link></li>
-              <li><Link href="/civic" className="hover:text-accent">Civic Intelligence</Link></li>
-              <li><Link href="/risk" className="hover:text-accent">Audit Oracle</Link></li>
+              <li><Link href="/insights" className="hover:text-accent">Intelligence Hub</Link></li>
+              <li><Link href="/compliance" className="hover:text-accent">Audit Oracle</Link></li>
             </ul>
           </div>
           <div className="space-y-4">
@@ -241,7 +284,7 @@ export default function LandingPage() {
             <ul className="space-y-2 text-xs text-muted-foreground">
               <li><Link href="/api-docs" className="hover:text-accent">API Keys</Link></li>
               <li><Link href="/prospectus" className="hover:text-accent">Pitch Deck</Link></li>
-              <li><Link href="/legal" className="hover:text-accent">Compliance</Link></li>
+              <li><Link href="/pricing" className="hover:text-accent">System Plans</Link></li>
             </ul>
           </div>
         </div>
