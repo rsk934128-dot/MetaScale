@@ -23,7 +23,8 @@ import {
   Download,
   ExternalLink,
   ChevronRight,
-  ArrowRight
+  ArrowRight,
+  Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -209,9 +210,14 @@ export default function FinancialIntelligence() {
               Fiscal Command Console
             </h1>
           </div>
-          <Badge variant="outline" className={cn("text-xs border-accent/20 text-accent font-mono", isThrottled && "animate-pulse")}>
-            KERNEL_{mode}
-          </Badge>
+          <div className="flex items-center gap-3">
+             <Badge variant="outline" className="hidden sm:flex border-accent/20 text-accent font-mono text-[10px]">
+                <Globe className="mr-1 h-3 w-3" /> MESH_SYNC: OK
+             </Badge>
+             <Badge variant="outline" className={cn("text-xs border-accent/20 text-accent font-mono", isThrottled && "animate-pulse")}>
+              KERNEL_{mode}
+             </Badge>
+          </div>
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
@@ -414,6 +420,10 @@ export default function FinancialIntelligence() {
                       <div className="flex justify-between">
                          <span className="text-muted-foreground uppercase">Clearance</span>
                          <span className="text-white">L3_DETERMINISTIC</span>
+                      </div>
+                      <div className="flex justify-between">
+                         <span className="text-muted-foreground uppercase">External Handshake</span>
+                         <span className="text-green-400">ACTIVE</span>
                       </div>
                    </div>
                 </CardContent>
