@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -33,6 +32,7 @@ import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
 import { BankSandboxModal } from "@/components/finance/BankSandboxModal";
 import { PaymentLinkManager } from "@/components/finance/PaymentLinkManager";
+import { cn } from "@/lib/utils";
 
 export default function FinancialIntelligence() {
   const { user } = useUser();
