@@ -28,7 +28,9 @@ import {
   Wallet,
   ShieldHalf,
   BarChart4,
-  HardDriveDownload
+  HardDriveDownload,
+  AlertTriangle,
+  BrainCircuit
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +47,7 @@ import {
 } from "recharts";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { simulateTrustEconomy } from "@/ai/flows/economy-simulator";
+import { analyzeLiquidityDrift } from "@/ai/flows/liquidity-drift-analysis";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -74,8 +77,10 @@ const chartConfig = {
 
 export default function Project45EconomyPage() {
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isAnalyzingDrift, setIsAnalyzingDrift] = useState(false);
   const [isAllocating, setIsAllocating] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [driftResult, setDriftResult] = useState<any>(null);
   const [reserveBalance, setReserveBalance] = useState(125000);
   const { toast } = useToast();
 
@@ -110,6 +115,32 @@ export default function Project45EconomyPage() {
       });
     } finally {
       setIsSimulating(false);
+    }
+  };
+
+  const handleDriftAnalysis = async () => {
+    setIsAnalyzingDrift(true);
+    try {
+      const output = await analyzeLiquidityDrift({
+        nodeId: 'NODE-04-UK',
+        currentLiquidity: 42000,
+        transactionVelocity: 142,
+        outboundPressure: 38000
+      });
+      setDriftResult(output);
+      toast({
+        title: "Drift Analysis Complete",
+        description: `Drift Score: ${output.driftScore}. Action: ${output.rebalancingProtocol}`,
+        variant: output.driftScore > 70 ? "destructive" : "default"
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Analysis Failed",
+        description: "Forensic nodes are unreachable."
+      });
+    } finally {
+      setIsAnalyzingDrift(false);
     }
   };
 
@@ -209,39 +240,98 @@ export default function Project45EconomyPage() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <Card className="xl:col-span-2 glass-panel border-white/5 shadow-2xl">
-              <CardHeader className="border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-widest">
-                    <Activity className="h-5 w-5 text-accent" />
-                    Resource Allocation Intelligence
-                  </CardTitle>
-                  <CardDescription className="text-[10px]">Real-time compute shift based on node-level profitability and latency.</CardDescription>
-                </div>
-                <Badge variant="outline" className="text-[8px] font-mono border-blue-400/30 text-blue-400">P45_DYNAMIC_MODE</Badge>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="h-[350px] w-full">
-                  <ChartContainer config={chartConfig}>
-                    <AreaChart data={stabilityData}>
-                      <defs>
-                        <linearGradient id="macroGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fill: 'rgba(255,255,255,0.5)', fontSize: 10}} />
-                      <YAxis hide domain={[0, 100]} />
-                      <Tooltip content={<ChartTooltipContent />} />
-                      <Area type="monotone" dataKey="macro" stroke="hsl(var(--accent))" strokeWidth={3} fill="url(#macroGradient)" name="Macro Stability" />
-                      <Area type="monotone" dataKey="meso" stroke="hsl(var(--primary))" strokeWidth={2} fill="transparent" name="Meso Stability" />
-                      <Area type="monotone" dataKey="micro" stroke="#60a5fa" strokeWidth={2} fill="transparent" name="Micro Stability" />
-                    </AreaChart>
-                  </ChartContainer>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="xl:col-span-2 space-y-6">
+              <Card className="glass-panel border-white/5 shadow-2xl">
+                <CardHeader className="border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-widest">
+                      <Activity className="h-5 w-5 text-accent" />
+                      Resource Allocation Intelligence
+                    </CardTitle>
+                    <CardDescription className="text-[10px]">Real-time compute shift based on node-level profitability and latency.</CardDescription>
+                  </div>
+                  <Badge variant="outline" className="text-[8px] font-mono border-blue-400/30 text-blue-400">P45_DYNAMIC_MODE</Badge>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="h-[350px] w-full">
+                    <ChartContainer config={chartConfig}>
+                      <AreaChart data={stabilityData}>
+                        <defs>
+                          <linearGradient id="macroGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                        <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fill: 'rgba(255,255,255,0.5)', fontSize: 10}} />
+                        <YAxis hide domain={[0, 100]} />
+                        <Tooltip content={<ChartTooltipContent />} />
+                        <Area type="monotone" dataKey="macro" stroke="hsl(var(--accent))" strokeWidth={3} fill="url(#macroGradient)" name="Macro Stability" />
+                        <Area type="monotone" dataKey="meso" stroke="hsl(var(--primary))" strokeWidth={2} fill="transparent" name="Meso Stability" />
+                        <Area type="monotone" dataKey="micro" stroke="#60a5fa" strokeWidth={2} fill="transparent" name="Micro Stability" />
+                      </AreaChart>
+                    </ChartContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Forensic Liquidity Drift Analysis UI */}
+              <Card className="glass-panel border-accent/20 bg-accent/5 overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between border-b border-white/10">
+                   <div>
+                      <CardTitle className="text-sm flex items-center gap-2 uppercase">
+                        <BrainCircuit className="h-5 w-5 text-accent" />
+                        Forensic Drift Analysis
+                      </CardTitle>
+                      <CardDescription className="text-[10px]">Real-time imbalance detection via Anycast Node-04</CardDescription>
+                   </div>
+                   <Button size="sm" className="h-8 bg-accent text-background font-bold text-[10px]" onClick={handleDriftAnalysis} disabled={isAnalyzingDrift}>
+                      {isAnalyzingDrift ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <Zap className="h-3 w-3 mr-1.5" />}
+                      {isAnalyzingDrift ? 'Detecting...' : 'Scan Drift'}
+                   </Button>
+                </CardHeader>
+                <CardContent className="p-6">
+                   {driftResult ? (
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
+                        <div className="space-y-4">
+                           <div className="flex justify-between items-end">
+                              <p className="text-[10px] font-bold text-white uppercase tracking-widest">Mesh Drift Index</p>
+                              <span className={cn("text-2xl font-headline font-bold", driftResult.driftScore > 50 ? 'text-red-400' : 'text-green-400')}>
+                                {driftResult.driftScore}%
+                              </span>
+                           </div>
+                           <Progress value={driftResult.driftScore} className={cn("h-1.5", driftResult.driftScore > 50 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500')} />
+                           <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-2">
+                              <p className="text-[9px] uppercase font-bold text-muted-foreground">AI Protocol Recommendation</p>
+                              <p className="text-[11px] text-white italic leading-relaxed border-l-2 border-accent/30 pl-3">
+                                 "{driftResult.recommendation}"
+                              </p>
+                           </div>
+                        </div>
+                        <div className="space-y-4">
+                           <div className="grid grid-cols-2 gap-4">
+                              <div className="p-3 rounded-lg bg-secondary/30 border border-white/5 text-center">
+                                 <p className="text-[9px] uppercase font-bold text-muted-foreground">Action Mode</p>
+                                 <Badge className="bg-accent/20 text-accent text-[8px] mt-1 uppercase">{driftResult.rebalancingProtocol}</Badge>
+                              </div>
+                              <div className="p-3 rounded-lg bg-secondary/30 border border-white/5 text-center">
+                                 <p className="text-[9px] uppercase font-bold text-muted-foreground">Impact ETA</p>
+                                 <p className="text-xs font-bold text-white mt-1 uppercase">{driftResult.estimatedImpactTime}</p>
+                              </div>
+                           </div>
+                           <Button className="w-full h-10 bg-accent text-background font-bold text-[10px] uppercase tracking-widest cyan-glow">
+                              Authorize AI Rebalancing
+                           </Button>
+                        </div>
+                     </div>
+                   ) : (
+                     <div className="h-32 flex flex-col items-center justify-center opacity-30 italic text-xs">
+                        Awaiting Forensic Scan Trigger...
+                     </div>
+                   )}
+                </CardContent>
+              </Card>
+            </div>
 
             <div className="space-y-6">
               <Card className="glass-panel border-accent/20 bg-accent/5">

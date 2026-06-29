@@ -20,3 +20,4 @@ import '@/ai/flows/analyze-stock-ticker.ts';
 import '@/ai/flows/summarize-finance-article.ts';
 import '@/ai/flows/yapily-banking-flow.ts';
 import '@/ai/flows/ai-syntax-architect.ts';
+import '@/ai/flows/liquidity-drift-analysis.ts';
