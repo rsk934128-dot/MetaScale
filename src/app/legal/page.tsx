@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -14,13 +15,59 @@ import {
   Cpu,
   ArrowRight,
   ShieldAlert,
-  History
+  History,
+  RefreshCw
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useKernel } from "@/components/kernel/KernelProvider";
+import { useUser, useFirestore } from "@/firebase";
+import { doc, updateDoc, increment } from "firebase/firestore";
 
 export default function LegalBoundPage() {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { toast } = useToast();
+  const { emitEvent } = useKernel();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const handleRefreshBinding = async () => {
+    if (!firestore || !user?.uid) return;
+    
+    setIsRefreshing(true);
+    
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      // Update trust score and refresh timestamp in the mesh
+      await updateDoc(userRef, { 
+        trustScore: increment(0.2), // Micro-adjustment to trust on verification
+        lastBindingRefresh: Date.now()
+      });
+
+      emitEvent('SECURITY', 'LEGAL_BINDING_REFRESHED', 2, { 
+        userId: user.uid,
+        mode: 'CRYPTOGRAPHIC_HANDSHAKE',
+        node: 'NODE-04-UK'
+      });
+
+      toast({
+        title: "Binding Refreshed",
+        description: "Your legal and cryptographic identity has been re-validated with the Sovereign Mesh.",
+      });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Handshake Failed",
+        description: "Failed to establish a fresh legal corridor. Try again."
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen">
       <AppSidebar />
@@ -72,7 +119,7 @@ export default function LegalBoundPage() {
                 <CardTitle className="text-sm font-bold uppercase tracking-tight">Algorithmic Law</CardTitle>
                 <CardDescription className="text-[10px]">Smart-contract enforcement.</CardDescription>
               </CardHeader>
-            </Card>
+            </div>
           </div>
 
           <Accordion type="single" collapsible className="w-full space-y-4">
@@ -158,8 +205,16 @@ export default function LegalBoundPage() {
                   Your legal binding status expires in 24 hours. A fresh cryptographic handshake is necessary to maintain mesh access.
                 </p>
               </div>
-              <Button className="cyan-glow bg-accent text-background font-bold h-12 px-8 uppercase tracking-widest text-[10px]">
-                Refresh Binding <ArrowRight className="ml-2 h-4 w-4" />
+              <Button 
+                className="cyan-glow bg-accent text-background font-bold h-12 px-8 uppercase tracking-widest text-[10px]"
+                onClick={handleRefreshBinding}
+                disabled={isRefreshing}
+              >
+                {isRefreshing ? (
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                {isRefreshing ? "Refreshing..." : "Refresh Binding"}
+                {!isRefreshing && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </CardContent>
           </Card>
