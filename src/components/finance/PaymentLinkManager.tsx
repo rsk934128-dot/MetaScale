@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -13,7 +14,8 @@ import {
   RefreshCw,
   Loader2,
   PackageCheck,
-  ShoppingBag
+  ShoppingBag,
+  ExternalLink
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,7 +55,7 @@ export function PaymentLinkManager() {
 
   const handleCreateLink = () => {
     if (!amount || parseFloat(amount) <= 0 || !firestore || !user?.uid) {
-      toast({ variant: "destructive", title: "Invalid Data", description: "সঠিক মূল্য এবং বিবরণ প্রদান করুন।" });
+      toast({ variant: "destructive", title: "Invalid Data", description: "Provide price and product name." });
       return;
     }
 
@@ -66,7 +68,7 @@ export function PaymentLinkManager() {
       creatorName: user.displayName || 'Sovereign Citizen',
       amount: parseFloat(amount),
       currency: 'USD',
-      description: desc || "Marketplace Product",
+      description: desc || "Digital Asset",
       status: 'ACTIVE',
       seal: seal,
       createdAt: Date.now(),
@@ -75,13 +77,12 @@ export function PaymentLinkManager() {
     const publicLinkRef = doc(firestore, 'payment_links', seal);
     const userLinkRef = doc(firestore, 'users', user.uid, 'payment_links', seal);
 
-    // Faster sequential writes without unnecessary blocking
     setDoc(publicLinkRef, linkData)
       .then(() => {
         setDoc(userLinkRef, linkData)
           .then(() => {
             emitEvent('FINANCE', 'MARKETPLACE_LINK_GENERATED', 4, { seal, amount });
-            toast({ title: "Link Activated", description: "পেমেন্ট লিঙ্কটি এখন গ্লোবাল রেজিস্ট্রিতে লাইভ।" });
+            toast({ title: "Live Corridor Active", description: "Payment link established on the mesh." });
             setAmount("");
             setDesc("");
           })
@@ -110,7 +111,7 @@ export function PaymentLinkManager() {
     const url = `${window.location.origin}/checkout/${seal}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopiedId(id);
-      toast({ title: "URL Copied", description: "চেকআউট লিঙ্কটি কপি করা হয়েছে।" });
+      toast({ title: "Production URL Copied", description: "Ready for live deployment." });
       setTimeout(() => setCopiedId(null), 2000);
     });
   };
@@ -119,18 +120,19 @@ export function PaymentLinkManager() {
     if (!firestore || !user?.uid) return;
     deleteDoc(doc(firestore, 'users', user.uid, 'payment_links', id));
     deleteDoc(doc(firestore, 'payment_links', seal));
-    toast({ title: "Link Deactivated", description: "করিডোরটি সফলভাবে বন্ধ করা হয়েছে।" });
+    toast({ title: "Corridor Isolated", description: "Link removed from global registry." });
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-1 space-y-6">
-        <Card className="glass-panel border-accent/20">
+        <Card className="glass-panel border-accent/20 bg-accent/5">
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest text-accent">
               <ShoppingBag className="h-4 w-4" />
-              Quick Generate
+              Generate Corridor
             </CardTitle>
+            <CardDescription className="text-[10px] italic">Live Production Endpoint</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -138,15 +140,15 @@ export function PaymentLinkManager() {
               <Input 
                 type="number" 
                 placeholder="0.00" 
-                className="bg-secondary/30 border-white/5 h-11 text-sm"
+                className="bg-secondary/30 border-white/5 h-11 text-sm font-headline"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Product Name</Label>
+              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Product Detail</Label>
               <Input 
-                placeholder="e.g. Digital Asset" 
+                placeholder="e.g. Enterprise License" 
                 className="bg-secondary/30 border-white/5 h-11 text-sm"
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
@@ -157,8 +159,8 @@ export function PaymentLinkManager() {
               onClick={handleCreateLink}
               disabled={isCreating}
             >
-              {isCreating ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-              {isCreating ? "Deploying..." : "Generate Link"}
+              {isCreating ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Zap className="h-4 w-4 mr-2" />}
+              {isCreating ? "Establishing..." : "Deploy Live Link"}
             </Button>
           </CardContent>
         </Card>
@@ -169,7 +171,7 @@ export function PaymentLinkManager() {
           <CardHeader className="border-b border-white/5">
             <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest">
               <LinkIcon className="h-4 w-4 text-primary" />
-              Marketplace Routes
+              Active Production Routes
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0 flex-1">
@@ -191,20 +193,22 @@ export function PaymentLinkManager() {
                             </div>
                             <div className="space-y-0.5">
                                <p className="text-sm font-bold text-white">${link.amount}</p>
-                               <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">{link.description}</p>
+                               <p className="text-[10px] text-muted-foreground truncate max-w-[150px] italic">{link.description}</p>
                             </div>
                          </div>
                          <div className="flex items-center gap-2">
-                            {link.status === 'ACTIVE' && (
+                            {link.status === 'ACTIVE' ? (
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="h-8 text-[9px] uppercase font-bold"
+                                className="h-8 text-[9px] uppercase font-bold text-accent border-accent/20 hover:bg-accent/10"
                                 onClick={() => copyToClipboard(link.id, link.seal)}
                               >
                                  {copiedId === link.id ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
-                                 Copy
+                                 Copy Live URL
                               </Button>
+                            ) : (
+                               <Badge className="bg-green-500/20 text-green-400 text-[8px] uppercase px-3 py-1">Paid_Mesh_Sync</Badge>
                             )}
                             <Button 
                               variant="ghost" 
@@ -220,7 +224,7 @@ export function PaymentLinkManager() {
                  </div>
                ) : (
                  <div className="h-40 flex items-center justify-center text-[10px] uppercase font-bold text-muted-foreground opacity-20">
-                    No active routes.
+                    No active production corridors.
                  </div>
                )}
             </ScrollArea>
