@@ -19,21 +19,23 @@ import {
   Gem,
   Award,
   Terminal,
-  Server
+  Server,
+  Info,
+  BadgeCheck
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const FEATURES = [
   { name: "Global Edge Network", hobby: true, pro: true, enterprise: true },
   { name: "Automatic CI/CD", hobby: true, pro: true, enterprise: true },
+  { name: "API Rate Limiting", hobby: "1M / mo", pro: "10M / mo", enterprise: "Unlimited" },
   { name: "WAF Protection", hobby: "Basic", pro: "Advanced", enterprise: "Managed" },
-  { name: "DDoS Mitigation", hobby: true, pro: true, enterprise: true },
-  { name: "Fluid Compute (Active CPU)", hobby: "4 hrs/mo", pro: "Unlimited*", enterprise: "Unlimited" },
-  { name: "Team Collaboration", hobby: false, pro: true, enterprise: true },
-  { name: "SLA Guarantee", hobby: false, pro: false, enterprise: "99.99%" },
+  { name: "ISO 20022 Messaging", hobby: false, pro: true, enterprise: "Dedicated Audit" },
+  { name: "White-label Gateway", hobby: false, pro: false, enterprise: "Active" },
+  { name: "SLA Guarantee", hobby: "Best Effort", pro: "99.9%", enterprise: "99.99%" },
   { name: "Advanced Support", hobby: false, pro: "Email", enterprise: "24/7 Dedicated" },
 ];
 
@@ -58,12 +60,15 @@ export default function PricingPage() {
         <main className="flex-1 p-8 max-w-[1200px] mx-auto w-full space-y-20">
           {/* Hero Section */}
           <div className="text-center space-y-6">
+            <Badge variant="outline" className="border-accent/30 text-accent uppercase tracking-[0.4em] px-6 py-1.5 text-[10px] font-bold">
+              Scale your app. Control your costs.
+            </Badge>
             <h2 className="text-4xl md:text-6xl font-headline font-bold text-white tracking-tighter uppercase">
-              Scale your app. <br />
-              <span className="text-accent italic font-light">Control your costs.</span>
+              Predictable Pricing <br />
+              <span className="text-accent italic font-light">For Global Settlement</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto italic">
-              "Start free. Upgrade to Pro for $20/month. Pay only for active compute and set your own spend limits."
+              "Start free. Upgrade to Pro for $20/month. Pay only for actual compute and enjoy institutional-grade reliability."
             </p>
           </div>
 
@@ -73,7 +78,7 @@ export default function PricingPage() {
              <Card className="glass-panel border-white/5 flex flex-col group hover:border-white/20 transition-all">
                 <CardHeader className="p-8">
                    <CardTitle className="text-2xl font-headline italic uppercase">Hobby</CardTitle>
-                   <CardDescription className="text-xs">The perfect starting place for your web app or personal project.</CardDescription>
+                   <CardDescription className="text-xs italic">Ideal for personal financial nodes and testing.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-8 pt-0 flex-1 space-y-6">
                    <div className="space-y-1">
@@ -81,7 +86,12 @@ export default function PricingPage() {
                       <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Forever</p>
                    </div>
                    <ul className="space-y-3">
-                      {["Import repo, deploy in seconds", "Automatic CI/CD", "Web Application Firewall", "Global, automated CDN"].map((f, i) => (
+                      {[
+                        "1M API Requests / mo",
+                        "Standard Anycast Routing",
+                        "Shared Compliance Node",
+                        "DDoS Mitigation"
+                      ].map((f, i) => (
                         <li key={i} className="flex items-center gap-3 text-xs text-muted-foreground">
                            <Check className="h-4 w-4 text-accent" /> {f}
                         </li>
@@ -101,15 +111,21 @@ export default function PricingPage() {
                 </div>
                 <CardHeader className="p-8">
                    <CardTitle className="text-2xl font-headline italic uppercase">Pro</CardTitle>
-                   <CardDescription className="text-xs">Everything you need to build and scale your app professionally.</CardDescription>
+                   <CardDescription className="text-xs italic">For growing businesses scaling cross-border payouts.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-8 pt-0 flex-1 space-y-6">
                    <div className="space-y-1">
                       <p className="text-4xl font-headline font-bold">$20<span className="text-lg">/mo</span></p>
-                      <p className="text-[10px] uppercase font-bold text-accent tracking-widest">+ additional usage</p>
+                      <p className="text-[10px] uppercase font-bold text-accent tracking-widest">99.9% Uptime SLA</p>
                    </div>
                    <ul className="space-y-3">
-                      {["$20 of included usage credit", "Advanced spend management", "Team collaboration & seats", "Faster builds + no queues", "Cold start prevention"].map((f, i) => (
+                      {[
+                        "10M API Requests included",
+                        "ISO 20022 Standard Compliance",
+                        "Advanced WAF & Rate Limiting",
+                        "Priority Anycast (Node-04)",
+                        "Email Support (4h Response)"
+                      ].map((f, i) => (
                         <li key={i} className="flex items-center gap-3 text-xs text-white/90">
                            <Check className="h-4 w-4 text-accent" /> {f}
                         </li>
@@ -117,7 +133,7 @@ export default function PricingPage() {
                    </ul>
                 </CardContent>
                 <CardFooter className="p-8">
-                   <Button className="w-full h-12 bg-accent text-background font-bold uppercase text-[10px] tracking-widest cyan-glow">Start Pro Trial</Button>
+                   <Button className="w-full h-12 bg-accent text-background font-bold uppercase text-[10px] tracking-widest cyan-glow">Upgrade to Pro</Button>
                 </CardFooter>
              </Card>
 
@@ -125,15 +141,21 @@ export default function PricingPage() {
              <Card className="glass-panel border-white/5 flex flex-col group hover:border-white/20 transition-all">
                 <CardHeader className="p-8">
                    <CardTitle className="text-2xl font-headline italic uppercase">Enterprise</CardTitle>
-                   <CardDescription className="text-xs">Critical security, performance, and platform SLAs for global organizations.</CardDescription>
+                   <CardDescription className="text-xs italic">Custom infrastructure for global financial institutions.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-8 pt-0 flex-1 space-y-6">
                    <div className="space-y-1">
                       <p className="text-4xl font-headline font-bold">Custom</p>
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Contact Sales</p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">99.99% Uptime Guarantee</p>
                    </div>
                    <ul className="space-y-3">
-                      {["Guest & Team access controls", "Managed WAF Rulesets", "Multi-region failover", "99.99% SLA", "Advanced 24/7 Support"].map((f, i) => (
+                      {[
+                        "Unlimited API Throughput",
+                        "White-label Gateway Node",
+                        "Dedicated Compliance Audit",
+                        "Direct Bank Settlement Rails",
+                        "24/7 PagerDuty Support"
+                      ].map((f, i) => (
                         <li key={i} className="flex items-center gap-3 text-xs text-muted-foreground">
                            <Check className="h-4 w-4 text-white/40" /> {f}
                         </li>
@@ -141,21 +163,25 @@ export default function PricingPage() {
                    </ul>
                 </CardContent>
                 <CardFooter className="p-8">
-                   <Button variant="outline" className="w-full h-12 uppercase text-[10px] font-bold tracking-widest border-white/10">Book a Demo</Button>
+                   <Button variant="outline" className="w-full h-12 uppercase text-[10px] font-bold tracking-widest border-white/10">Talk to Sales</Button>
                 </CardFooter>
              </Card>
           </div>
 
           {/* Detailed Features Table */}
           <div className="space-y-8 pt-10">
-             <div className="border-b border-white/5 pb-4">
-                <h3 className="text-xl font-headline font-bold uppercase tracking-widest">Compare Plans</h3>
+             <div className="flex justify-between items-end border-b border-white/5 pb-4">
+                <h3 className="text-xl font-headline font-bold uppercase tracking-widest">Full Feature Mesh</h3>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground">
+                   <Info className="h-3.5 w-3.5" />
+                   Overage rates apply after plan limits.
+                </div>
              </div>
              <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                    <thead>
                       <tr className="border-b border-white/5">
-                         <th className="py-4 text-[10px] font-bold uppercase text-muted-foreground">Feature</th>
+                         <th className="py-4 text-[10px] font-bold uppercase text-muted-foreground">Operational Parameter</th>
                          <th className="py-4 text-[10px] font-bold uppercase text-muted-foreground text-center">Hobby</th>
                          <th className="py-4 text-[10px] font-bold uppercase text-muted-foreground text-center">Pro</th>
                          <th className="py-4 text-[10px] font-bold uppercase text-muted-foreground text-center">Enterprise</th>
@@ -166,28 +192,44 @@ export default function PricingPage() {
                         <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                            <td className="py-6 text-sm font-medium text-white/80">{f.name}</td>
                            <td className="py-6 text-center">
-                              {typeof f.hobby === 'boolean' ? (f.hobby ? <Check className="mx-auto h-4 w-4 text-accent" /> : <X className="mx-auto h-4 w-4 text-white/20" />) : <span className="text-xs font-bold">{f.hobby}</span>}
+                              {typeof f.hobby === 'boolean' ? (f.hobby ? <Check className="mx-auto h-4 w-4 text-accent" /> : <X className="mx-auto h-4 w-4 text-white/20" />) : <span className="text-xs font-bold font-mono">{f.hobby}</span>}
                            </td>
                            <td className="py-6 text-center">
-                              {typeof f.pro === 'boolean' ? (f.pro ? <Check className="mx-auto h-4 w-4 text-accent" /> : <X className="mx-auto h-4 w-4 text-white/20" />) : <span className="text-xs font-bold text-accent">{f.pro}</span>}
+                              {typeof f.pro === 'boolean' ? (f.pro ? <Check className="mx-auto h-4 w-4 text-accent" /> : <X className="mx-auto h-4 w-4 text-white/20" />) : <span className="text-xs font-bold text-accent font-mono">{f.pro}</span>}
                            </td>
                            <td className="py-6 text-center">
-                              {typeof f.enterprise === 'boolean' ? (f.enterprise ? <Check className="mx-auto h-4 w-4 text-accent" /> : <X className="mx-auto h-4 w-4 text-white/20" />) : <span className="text-xs font-bold">{f.enterprise}</span>}
+                              {typeof f.enterprise === 'boolean' ? (f.enterprise ? <Check className="mx-auto h-4 w-4 text-accent" /> : <X className="mx-auto h-4 w-4 text-white/20" />) : <span className="text-xs font-bold text-white font-mono">{f.enterprise}</span>}
                            </td>
                         </tr>
                       ))}
                    </tbody>
                 </table>
              </div>
+
+             {/* Overage and Billing Notes */}
+             <div className="p-6 rounded-2xl bg-secondary/20 border border-white/5 space-y-4">
+                <h4 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
+                   <BadgeCheck className="h-4 w-4 text-accent" />
+                   Overage & Settlement Billing
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-[11px] text-muted-foreground leading-relaxed italic">
+                   <p>
+                      * <strong>Overage Rates:</strong> Pro টিয়ারে নির্ধারিত ১০ মিলিয়ন এপিআই রিকোয়েস্ট পার হলে প্রতি অতিরিক্ত ১ মিলিয়ন রিকোয়েস্টের জন্য $২ চার্জ করা হবে। অতিরিক্ত ডাটা ট্রান্সফারের ক্ষেত্রে প্রতি ১ জিবি-র জন্য $০.১৫ প্রযোজ্য।
+                   </p>
+                   <p>
+                      * <strong>SLA Monitoring:</strong> আমাদের প্রাতিষ্ঠানিক ক্লায়েন্টদের জন্য রিয়েল-টাইম SLA ড্যাশবোর্ড প্রদান করা হয়। কোনো মাসে আপটাইম গ্যারান্টি (৯৯.৯৯%) পূরণ না হলে লিকুইডিটি ক্রেডিট রিফান্ড পলিসি কার্যকর হবে।
+                   </p>
+                </div>
+             </div>
           </div>
 
           {/* Infrastructure Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
              {[
-                { icon: Server, title: "Managed Infrastructure", desc: "Ultra-fast, secure by default global application delivery." },
-                { icon: Lock, title: "Customizable Security", desc: "Protect your applications with customizable WAF rules." },
-                { icon: Activity, title: "Observability", desc: "Real-time metrics to monitor, analyze, and manage usage." },
-                { icon: Terminal, title: "DX Platform", desc: "Mission-critical developer workflows from code to production." }
+                { icon: ShieldAlert, title: "ISO 20022 Ready", desc: "Institutional-grade financial messaging standard for global interoperability." },
+                { icon: Lock, title: "Managed WAF", desc: "Enterprise-grade firewall with custom rulesets to block zero-day exploits." },
+                { icon: Activity, title: "99.99% Reliability", desc: "Distributed infrastructure across 42 anycast nodes ensuring maximum uptime." },
+                { icon: Award, title: "Dedicated Compliance", desc: "Annual security audits and KYB re-verification managed by Fusion Oracle." }
              ].map((box, i) => (
                <Card key={i} className="glass-panel border-white/5 p-6 space-y-4">
                   <div className="p-3 rounded-xl bg-accent/10 border border-accent/20 w-fit text-accent">
