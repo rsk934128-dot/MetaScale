@@ -50,6 +50,22 @@
         "createdAt": { "type": "number" }
       }
     },
+    "SalesInquiry": {
+      "title": "Institutional Sales Inquiry",
+      "description": "Enterprise-tier intake data for global settlement nodes.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "companyName": { "type": "string" },
+        "estimatedMonthlyVolume": { "type": "string" },
+        "useCase": { "type": "string" },
+        "status": { "type": "string", "enum": ["NEW", "REVIEWING", "CONTACTED", "CLOSED"] },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["userId", "companyName", "estimatedMonthlyVolume"]
+    },
     "LibraryAsset": {
       "title": "Library Asset",
       "description": "A media asset stored in the citizen's personal library.",
@@ -122,6 +138,7 @@
     "/users/{userId}/payment_links": { "schema": "PaymentLink", "description": "User generated payment request links." },
     "/users/{userId}/assets": { "schema": "LibraryAsset", "description": "Citizen's media library assets." },
     "/users/{userId}/watchlist": { "schema": "WatchlistItem", "description": "User's tracked financial instruments." },
+    "/inquiries/{inquiryId}": { "schema": "SalesInquiry", "description": "Registry of enterprise sales inquiries." },
     "/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." },
     "/payment_links/{linkId}": { "schema": "PaymentLink", "description": "Public registry of payment links." }
   }

@@ -23,17 +23,31 @@ import {
   Info,
   BadgeCheck,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Building2,
+  Mail,
+  Send
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useUser, useFirestore, useDoc } from "@/firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, collection, addDoc } from "firebase/firestore";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useKernel } from "@/components/kernel/KernelProvider";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const FEATURES = [
   { name: "Global Edge Network", hobby: true, pro: true, enterprise: true },
@@ -52,6 +66,14 @@ export default function PricingPage() {
   const { toast } = useToast();
   const { emitEvent } = useKernel();
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [isSalesOpen, setIsSalesOpen] = useState(false);
+  const [isSubmittingInquiry, setIsSubmittingInquiry] = useState(false);
+  
+  const [inquiryData, setInquiryData] = useState({
+    companyName: "",
+    monthlyVolume: "",
+    useCase: ""
+  });
 
   const userRef = useMemo(() => {
     if (!firestore || !user?.uid) return null;
@@ -85,6 +107,47 @@ export default function PricingPage() {
       });
     } finally {
       setIsUpgrading(false);
+    }
+  };
+
+  const handleSalesInquiry = async () => {
+    if (!firestore || !user?.uid || !inquiryData.companyName || !inquiryData.monthlyVolume) {
+      toast({ variant: "destructive", title: "Missing Information", description: "সবগুলো ঘর পূরণ করুন।" });
+      return;
+    }
+
+    setIsSubmittingInquiry(true);
+    try {
+      const inquiryRef = collection(firestore, 'inquiries');
+      await addDoc(inquiryRef, {
+        userId: user.uid,
+        userEmail: user.email,
+        companyName: inquiryData.companyName,
+        estimatedMonthlyVolume: inquiryData.monthlyVolume,
+        useCase: inquiryData.useCase,
+        status: "NEW",
+        timestamp: Date.now()
+      });
+
+      emitEvent('FINANCE', 'ENTERPRISE_SALES_INQUIRY', 2, { 
+        userId: user.uid, 
+        company: inquiryData.companyName 
+      });
+
+      toast({
+        title: "Inquiry Sent",
+        description: "আমাদের সেলস নোড আপনার সাথে ২৪ ঘণ্টার মধ্যে যোগাযোগ করবে।",
+      });
+      setIsSalesOpen(false);
+      setInquiryData({ companyName: "", monthlyVolume: "", useCase: "" });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Submission Error",
+        description: "ব্যর্থ হয়েছে। আবার চেষ্টা করুন।"
+      });
+    } finally {
+      setIsSubmittingInquiry(false);
     }
   };
 
@@ -227,7 +290,7 @@ export default function PricingPage() {
                    <Button 
                     variant="outline" 
                     className="w-full h-12 uppercase text-[10px] font-bold tracking-widest border-white/10"
-                    onClick={() => handleUpgrade('ENTERPRISE')}
+                    onClick={() => setIsSalesOpen(true)}
                     disabled={profile?.plan === 'ENTERPRISE' || isUpgrading}
                    >
                      {profile?.plan === 'ENTERPRISE' ? "Current Plan" : "Talk to Sales"}
@@ -323,6 +386,78 @@ export default function PricingPage() {
              </p>
           </footer>
         </main>
+
+        {/* Sales Inquiry Dialog */}
+        <Dialog open={isSalesOpen} onOpenChange={setIsSalesOpen}>
+          <DialogContent className="max-w-md glass-panel border-accent/20 bg-background/95 p-0 overflow-hidden">
+             <div className="bg-accent/10 p-6 border-b border-white/10 text-center">
+                <div className="mx-auto w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center mb-4">
+                   <Building2 className="h-6 w-6 text-accent" />
+                </div>
+                <DialogTitle className="text-xl font-headline italic uppercase italic">Institutional Intake</DialogTitle>
+                <DialogDescription className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Global Settlement Node Provisioning</DialogDescription>
+             </div>
+             
+             <div className="p-8 space-y-6">
+                <div className="space-y-4">
+                   <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">Company Name</Label>
+                      <div className="relative">
+                         <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent/50" />
+                         <Input 
+                            placeholder="Acme Corp Global" 
+                            className="pl-10 bg-secondary/30 border-white/5 h-11 text-sm"
+                            value={inquiryData.companyName}
+                            onChange={(e) => setInquiryData({...inquiryData, companyName: e.target.value})}
+                         />
+                      </div>
+                   </div>
+                   <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">Estimated Monthly Volume (USD)</Label>
+                      <div className="relative">
+                         <RefreshCw className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent/50" />
+                         <select 
+                            className="w-full bg-secondary/30 border border-white/5 rounded-md h-11 text-sm pl-10 pr-4 text-white focus:outline-none"
+                            value={inquiryData.monthlyVolume}
+                            onChange={(e) => setInquiryData({...inquiryData, monthlyVolume: e.target.value})}
+                         >
+                            <option value="" disabled>Select Volume</option>
+                            <option value="$100k - $500k">$100k - $500k</option>
+                            <option value="$500k - $1M">$500k - $1M</option>
+                            <option value="$1M - $5M">$1M - $5M</option>
+                            <option value="$5M+">$5M+</option>
+                         </select>
+                      </div>
+                   </div>
+                   <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">Business Use Case</Label>
+                      <Textarea 
+                         placeholder="e.g. Cross-border B2B settlement for EU-BD corridors..." 
+                         className="bg-secondary/30 border-white/5 min-h-[100px] text-xs resize-none"
+                         value={inquiryData.useCase}
+                         onChange={(e) => setInquiryData({...inquiryData, useCase: e.target.value})}
+                      />
+                   </div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-black/40 border border-white/5 flex gap-3">
+                   <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
+                   <p className="text-[9px] text-muted-foreground leading-relaxed italic">
+                      Your inquiry will be processed via Anycast Node Node-04 (UK). A dedicated node manager will contact you at {user?.email}.
+                   </p>
+                </div>
+
+                <Button 
+                   className="w-full h-12 bg-accent text-background font-bold uppercase tracking-widest text-xs cyan-glow"
+                   onClick={handleSalesInquiry}
+                   disabled={isSubmittingInquiry}
+                >
+                   {isSubmittingInquiry ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                   Request Institutional Access
+                </Button>
+             </div>
+          </DialogContent>
+        </Dialog>
       </SidebarInset>
     </div>
   );
