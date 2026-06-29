@@ -11,7 +11,7 @@ export function initializeFirebase() {
   
   let firestore;
   try {
-    // Attempt to initialize with custom settings
+    // Attempt to initialize with custom settings for better persistence in dev env
     firestore = initializeFirestore(app, {
       localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
     });
@@ -22,9 +22,8 @@ export function initializeFirebase() {
   
   const auth = getAuth(app);
 
-  // Initialize App Check only on the client side
+  // Initialize App Check only on the client side if key is available
   if (typeof window !== 'undefined') {
-    // App Check
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
     if (siteKey && siteKey !== 'YOUR_RECAPTCHA_ENTERPRISE_SITE_KEY') {
       try {

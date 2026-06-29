@@ -6,6 +6,7 @@ import {
   onSnapshot,
   QuerySnapshot,
   DocumentData,
+  FirestoreError,
 } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
@@ -24,16 +25,24 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
     const unsubscribe = onSnapshot(
       query,
       (snapshot: QuerySnapshot<T>) => {
-        setData(snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+        setData(snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id } as T)));
         setLoading(false);
+        setError(null);
       },
-      async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: (query as any)._query?.path?.segments?.join('/') || 'unknown',
-          operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        setError(permissionError);
+      async (serverError: FirestoreError) => {
+        // Only report as permission error if the code matches
+        if (serverError.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: (query as any)._query?.path?.segments?.join('/') || 'unknown',
+            operation: 'list',
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          setError(permissionError);
+        } else {
+          // Other errors (like network/unreachable) are just logged or set locally
+          // We don't trigger the global permission error listener for these
+          setError(serverError);
+        }
         setLoading(false);
       }
     );
