@@ -82,14 +82,18 @@ export default function ProfilePage() {
         issueDate: "June 03, 2024"
       };
     } else {
-      // Data from Sheikh Farid NID image
+      // Data from Sheikh Farid NID image (Front & Back)
       docData.metadata = {
          nid: "596 298 3689",
          name: "SHEIKH FARID",
          father: "MD. ABDUL BARIK SHEIKH",
          mother: "MST. FARIDA BEGUM",
          dob: "15 Jun 1994",
-         issueDate: "Oct 22, 2023"
+         issueDate: "21 Dec 2017",
+         placeOfBirth: "SIRAJGANJ",
+         address: "Haji Ahmed Ali Road, Mashumpur, Sirajganj Sadar, Sirajganj - 6700",
+         bloodGroup: "O+",
+         mrz: "I<BGD596298368<97<<<<<<<<<<<<<<< 9406155M3212208BGD<<<<<<<<<<<2 FARID<<SHEIKH<<<<<<<<<<<<<<<<<<"
       };
     }
 

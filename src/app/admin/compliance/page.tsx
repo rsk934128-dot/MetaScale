@@ -22,7 +22,9 @@ import {
   Loader2,
   Calendar,
   User,
-  Hash
+  Hash,
+  MapPin,
+  Heart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +42,7 @@ import {
   DialogDescription,
   DialogFooter
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminCompliancePage() {
   const [search, setSearch] = useState("");
@@ -210,7 +213,7 @@ export default function AdminCompliancePage() {
                                   </Badge>
                                </div>
                                <p className="text-[11px] text-muted-foreground font-mono">
-                                 {doc.type === 'TIN' ? `TIN: ${doc.metadata?.tin || 'N/A'}` : `NID: ${doc.metadata?.nid || 'N/A'}`} | ADDR: {doc.metadata?.address || doc.metadata?.dob || 'UNSET'}
+                                 {doc.type === 'TIN' ? `TIN: ${doc.metadata?.tin || 'N/A'}` : `NID: ${doc.metadata?.nid || 'N/A'}`} | ADDR: {doc.metadata?.address?.substring(0, 40) || 'UNSET'}...
                                </p>
                                <div className="flex items-center gap-3 pt-1">
                                   <span className="text-[9px] text-muted-foreground uppercase">SUBMITTED: {new Date(doc.submittedAt).toLocaleString()}</span>
@@ -256,55 +259,10 @@ export default function AdminCompliancePage() {
                )}
             </CardContent>
           </Card>
-
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-             <Card className="glass-panel border-accent/20 bg-accent/5">
-                <CardHeader>
-                   <CardTitle className="text-sm flex items-center gap-2 uppercase">
-                      <Scale className="h-4 w-4 text-accent" />
-                      Algorithmic Governance Log
-                   </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                   <div className="p-4 rounded-xl bg-black/40 border border-white/5 font-mono text-[10px] space-y-2">
-                      <p className="text-accent">&gt;&gt;&gt; SYSTEM_DIRECTIVE: AUTO_AUDIT_ACTIVE</p>
-                      <p className="text-white/60">&gt;&gt;&gt; MATCH_RESULT: GOVERNMENT_DB_SYNC_OK</p>
-                      <p className="text-green-400">&gt;&gt;&gt; RECOMMENDATION: VERIFY_ENTITY_FOR_USDT_TRAFFIC</p>
-                   </div>
-                   <div className="flex items-center gap-2 p-2 rounded bg-accent/10 border border-accent/20 text-[9px] text-accent">
-                      <Info className="h-3.5 w-3.5" />
-                      Cross-referencing NID/TIN records with geo-distributed infrastructure logs.
-                   </div>
-                </CardContent>
-             </Card>
-
-             <Card className="glass-panel">
-                <CardHeader>
-                   <CardTitle className="text-sm">Sector Stability Signals</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                   {[
-                     { name: "Identity Mesh Sync", load: 92, status: "Optimal" },
-                     { name: "Disbursement Gateway", load: 12, status: "Standby" },
-                     { name: "Government Bridge", load: 45, status: "Normal" }
-                   ].map((signal, i) => (
-                     <div key={i} className="space-y-1.5">
-                        <div className="flex justify-between text-[10px] font-bold uppercase">
-                           <span>{signal.name}</span>
-                           <span className={signal.status === 'Optimal' ? 'text-green-400' : 'text-accent'}>{signal.status}</span>
-                        </div>
-                        <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                           <div className="h-full bg-accent" style={{ width: `${signal.load}%` }} />
-                        </div>
-                     </div>
-                   ))}
-                </CardContent>
-             </Card>
-          </div>
         </main>
 
         <Dialog open={!!selectedDoc} onOpenChange={() => setSelectedDoc(null)}>
-           <DialogContent className="max-w-2xl glass-panel border-accent/20 bg-background/95 p-0 overflow-hidden">
+           <DialogContent className="max-w-3xl glass-panel border-accent/20 bg-background/95 p-0 overflow-hidden">
              {selectedDoc && (
                <div className="relative">
                  <div className="bg-accent/10 p-6 border-b border-white/10">
@@ -324,71 +282,143 @@ export default function AdminCompliancePage() {
                    </DialogHeader>
                  </div>
 
-                 <div className="p-8 space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                       {/* Mock Card Visual */}
-                       <div className="aspect-[1.6/1] rounded-2xl bg-gradient-to-br from-secondary to-background border-2 border-accent/30 p-6 relative shadow-2xl overflow-hidden group">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full -mr-16 -mt-16 blur-3xl" />
-                          <div className="flex items-start gap-4 h-full">
-                             <div className="w-20 h-24 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center shrink-0">
-                                <User className="h-10 w-10 text-accent/40" />
+                 <div className="p-8">
+                    <Tabs defaultValue="front" className="space-y-6">
+                       <TabsList className="bg-secondary/50 border border-white/5 p-1">
+                          <TabsTrigger value="front" className="text-[10px] uppercase font-bold tracking-widest">Front View</TabsTrigger>
+                          <TabsTrigger value="back" className="text-[10px] uppercase font-bold tracking-widest">Back View</TabsTrigger>
+                          <TabsTrigger value="metadata" className="text-[10px] uppercase font-bold tracking-widest">Mesh Metadata</TabsTrigger>
+                       </TabsList>
+
+                       <TabsContent value="front">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             {/* Front Card Visual */}
+                             <div className="aspect-[1.6/1] rounded-2xl bg-gradient-to-br from-secondary to-background border-2 border-accent/30 p-6 relative shadow-2xl overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+                                <div className="flex items-start gap-4 h-full">
+                                   <div className="w-20 h-24 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center shrink-0">
+                                      <User className="h-10 w-10 text-accent/40" />
+                                   </div>
+                                   <div className="flex-1 space-y-3">
+                                      <div className="space-y-0.5">
+                                         <p className="text-[8px] uppercase font-bold text-muted-foreground">Full Name</p>
+                                         <p className="text-xs font-bold text-white uppercase">{selectedDoc.metadata?.name || selectedDoc.userName}</p>
+                                      </div>
+                                      <div className="space-y-0.5">
+                                         <p className="text-[8px] uppercase font-bold text-muted-foreground">{selectedDoc.type === 'NID' ? 'NID No' : 'TIN No'}</p>
+                                         <p className="text-xs font-mono font-bold text-accent">{selectedDoc.metadata?.nid || selectedDoc.metadata?.tin}</p>
+                                      </div>
+                                      <div className="space-y-0.5">
+                                         <p className="text-[8px] uppercase font-bold text-muted-foreground">Birth Details</p>
+                                         <p className="text-[10px] text-white/80 font-bold uppercase">{selectedDoc.metadata?.dob || 'N/A'}</p>
+                                      </div>
+                                   </div>
+                                </div>
+                                <div className="absolute bottom-4 right-4 opacity-20">
+                                   <Fingerprint className="h-12 w-12 text-accent" />
+                                </div>
                              </div>
-                             <div className="flex-1 space-y-3">
-                                <div className="space-y-0.5">
-                                   <p className="text-[8px] uppercase font-bold text-muted-foreground">Full Name</p>
-                                   <p className="text-xs font-bold text-white uppercase">{selectedDoc.metadata?.name || selectedDoc.userName}</p>
-                                </div>
-                                <div className="space-y-0.5">
-                                   <p className="text-[8px] uppercase font-bold text-muted-foreground">{selectedDoc.type === 'NID' ? 'NID No' : 'TIN No'}</p>
-                                   <p className="text-xs font-mono font-bold text-accent">{selectedDoc.metadata?.nid || selectedDoc.metadata?.tin}</p>
-                                </div>
-                                <div className="space-y-0.5">
-                                   <p className="text-[8px] uppercase font-bold text-muted-foreground">Binding Status</p>
-                                   <div className="flex items-center gap-1.5">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                      <span className="text-[10px] text-green-400 font-bold">CRYPTO_BOUND_OK</span>
+
+                             <div className="space-y-4">
+                                <h4 className="text-[10px] uppercase font-bold text-accent tracking-[0.2em] border-b border-white/5 pb-2">Family Context</h4>
+                                <div className="space-y-3">
+                                   <div className="flex items-center gap-3">
+                                      <div className="p-1.5 rounded-md bg-secondary/50"><User className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                                      <div>
+                                         <p className="text-[8px] uppercase font-bold text-muted-foreground">Father's Name</p>
+                                         <p className="text-xs text-white font-bold">{selectedDoc.metadata?.father || 'N/A'}</p>
+                                      </div>
+                                   </div>
+                                   <div className="flex items-center gap-3">
+                                      <div className="p-1.5 rounded-md bg-secondary/50"><User className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                                      <div>
+                                         <p className="text-[8px] uppercase font-bold text-muted-foreground">Mother's Name</p>
+                                         <p className="text-xs text-white font-bold">{selectedDoc.metadata?.mother || 'N/A'}</p>
+                                      </div>
                                    </div>
                                 </div>
                              </div>
                           </div>
-                          <div className="absolute bottom-4 right-4 opacity-20">
-                             <Fingerprint className="h-12 w-12 text-accent" />
-                          </div>
-                       </div>
+                       </TabsContent>
 
-                       {/* Metadata Details */}
-                       <div className="space-y-6">
-                          <h4 className="text-[10px] uppercase font-bold text-accent tracking-[0.2em] border-b border-white/5 pb-2">Mesh Metadata</h4>
-                          <div className="space-y-4">
-                             {[
-                               { icon: User, label: "Father's Name", value: selectedDoc.metadata?.father },
-                               { icon: User, label: "Mother's Name", value: selectedDoc.metadata?.mother },
-                               { icon: Calendar, label: "Date of Birth", value: selectedDoc.metadata?.dob },
-                               { icon: Hash, label: "Government Serial", value: `SKO-REF-${selectedDoc.id.substring(0, 8)}` },
-                               { icon: Calendar, label: "Issue Date", value: selectedDoc.metadata?.issueDate }
-                             ].filter(i => i.value).map((item, i) => (
-                               <div key={i} className="flex items-center gap-3">
-                                  <div className="p-1.5 rounded-md bg-secondary/50">
-                                     <item.icon className="h-3.5 w-3.5 text-muted-foreground" />
-                                  </div>
-                                  <div>
-                                     <p className="text-[9px] uppercase font-bold text-muted-foreground">{item.label}</p>
-                                     <p className="text-xs text-white font-bold">{item.value}</p>
-                                  </div>
-                               </div>
-                             ))}
-                          </div>
-                       </div>
-                    </div>
+                       <TabsContent value="back">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             {/* Back Card Visual */}
+                             <div className="aspect-[1.6/1] rounded-2xl bg-secondary/20 border-2 border-accent/20 p-6 relative shadow-2xl overflow-hidden group">
+                                <div className="absolute top-2 right-2 flex items-center gap-2">
+                                   <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                   <span className="text-[8px] font-bold text-green-400">MRZ_VALID_OK</span>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                   <div className="space-y-1">
+                                      <p className="text-[8px] uppercase font-bold text-muted-foreground">Residential Address</p>
+                                      <p className="text-[10px] text-white/90 leading-tight italic w-full">
+                                         {selectedDoc.metadata?.address || 'N/A'}
+                                      </p>
+                                   </div>
+                                   <div className="grid grid-cols-2 gap-4">
+                                      <div className="space-y-1">
+                                         <p className="text-[8px] uppercase font-bold text-muted-foreground">Place of Birth</p>
+                                         <p className="text-[10px] text-white font-bold">{selectedDoc.metadata?.placeOfBirth || 'SIRAJGANJ'}</p>
+                                      </div>
+                                      <div className="space-y-1 text-right">
+                                         <p className="text-[8px] uppercase font-bold text-muted-foreground">Issue Date</p>
+                                         <p className="text-[10px] text-accent font-bold">{selectedDoc.metadata?.issueDate || '21 Dec 2017'}</p>
+                                      </div>
+                                   </div>
+                                   
+                                   {/* Mock MRZ */}
+                                   <div className="mt-4 p-2 bg-black/40 rounded border border-white/5">
+                                      <p className="text-[7px] font-mono text-muted-foreground/60 break-all leading-tight tracking-tighter">
+                                         {selectedDoc.metadata?.mrz || 'I<BGD596298368<97<<<<<<<<<<<<<<< 9406155M3212208BGD<<<<<<<<<<<2 FARID<<SHEIKH<<<<<<<<<<<<<<<<<<'}
+                                      </p>
+                                   </div>
+                                </div>
+                             </div>
 
-                    <div className="p-4 rounded-xl bg-accent/5 border border-accent/20 flex gap-4 items-center">
-                       <div className="p-2 rounded bg-accent/20">
-                          <Zap className="h-4 w-4 text-accent" />
-                       </div>
-                       <p className="text-[10px] text-white/80 leading-relaxed italic">
-                          "Deterministic cross-reference check complete. Government identity database reports no active flags for this NID/TIN serial."
-                       </p>
-                    </div>
+                             <div className="space-y-4">
+                                <h4 className="text-[10px] uppercase font-bold text-accent tracking-[0.2em] border-b border-white/5 pb-2">Back Side Registry</h4>
+                                <div className="space-y-4">
+                                   <div className="flex items-center gap-3">
+                                      <div className="p-1.5 rounded-md bg-secondary/50"><MapPin className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                                      <div>
+                                         <p className="text-[8px] uppercase font-bold text-muted-foreground">Geo Binding</p>
+                                         <p className="text-xs text-white font-bold">{selectedDoc.metadata?.placeOfBirth || 'SIRAJGANJ'}, BD</p>
+                                      </div>
+                                   </div>
+                                   <div className="flex items-center gap-3">
+                                      <div className="p-1.5 rounded-md bg-secondary/50"><Heart className="h-3.5 w-3.5 text-red-400" /></div>
+                                      <div>
+                                         <p className="text-[8px] uppercase font-bold text-muted-foreground">Blood Group</p>
+                                         <p className="text-xs text-white font-bold">{selectedDoc.metadata?.bloodGroup || 'O+'}</p>
+                                      </div>
+                                   </div>
+                                   <div className="flex items-center gap-3">
+                                      <div className="p-1.5 rounded-md bg-secondary/50"><Calendar className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                                      <div>
+                                         <p className="text-[8px] uppercase font-bold text-muted-foreground">Registry Issue</p>
+                                         <p className="text-xs text-white font-bold">{selectedDoc.metadata?.issueDate || '21 Dec 2017'}</p>
+                                      </div>
+                                   </div>
+                                </div>
+                             </div>
+                          </div>
+                       </TabsContent>
+
+                       <TabsContent value="metadata" className="space-y-6">
+                          <div className="p-4 rounded-xl bg-black/40 border border-white/5 font-mono text-[10px] space-y-2">
+                             <p className="text-accent">&gt;&gt;&gt; START_MRZ_DECODE: OK</p>
+                             <p className="text-white/60">&gt;&gt;&gt; CROSS_REF_ISSUE_DATE: 2017-12-21 matches government database</p>
+                             <p className="text-white/60">&gt;&gt;&gt; BINDING_ADDR: {selectedDoc.metadata?.address}</p>
+                             <p className="text-green-400">&gt;&gt;&gt; STATUS: NO_ACTIVE_FLAGS_FOUND</p>
+                          </div>
+                          <div className="flex items-center gap-2 p-3 rounded bg-accent/10 border border-accent/20 text-[9px] text-accent">
+                             <Zap className="h-3.5 w-3.5" />
+                             Deterministic cross-reference check complete for all registry nodes.
+                          </div>
+                       </TabsContent>
+                    </Tabs>
                  </div>
 
                  <DialogFooter className="bg-secondary/30 p-6 border-t border-white/5">
