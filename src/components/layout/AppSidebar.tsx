@@ -65,7 +65,7 @@ import { doc } from "firebase/firestore";
 import { useMemo } from "react";
 
 const civicNav = [
-  { icon: Globe, label: "Control Plane", href: "/dashboard" },
+  { icon: Globe, label: "Mission Control", href: "/dashboard" },
   { icon: TrendingUp, label: "Insights Hub", href: "/insights" },
   { icon: Waves, label: "Civic Intelligence", href: "/civic" },
   { icon: Music2, label: "Media Intelligence", href: "/media" },
@@ -361,3 +361,4 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+

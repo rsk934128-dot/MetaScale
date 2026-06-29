@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 export default function RevenuePage() {
   const { emitEvent } = useKernel();
@@ -72,8 +73,10 @@ export default function RevenuePage() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-             <Button variant="outline" size="sm" className="border-accent/20 text-accent font-bold text-[10px]">
-                <Rocket className="mr-1.5 h-3.5 w-3.5" /> Launch Dashboard
+             <Button asChild variant="outline" size="sm" className="border-accent/20 text-accent font-bold text-[10px]">
+                <Link href="/dashboard">
+                  <Rocket className="mr-1.5 h-3.5 w-3.5" /> Launch Dashboard
+                </Link>
              </Button>
              <Button size="sm" className="bg-accent text-background font-bold text-[10px] cyan-glow" onClick={handleExport} disabled={isExporting}>
                 {isExporting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-1.5 h-3.5 w-3.5" />}
@@ -244,3 +247,4 @@ export default function RevenuePage() {
     </div>
   );
 }
+
