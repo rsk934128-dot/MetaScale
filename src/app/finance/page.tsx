@@ -10,6 +10,7 @@ import {
   Wallet, 
   RefreshCw, 
   Zap,
+  Zap as PriyoIcon,
   Loader2,
   Activity,
   Link as LinkIcon,
