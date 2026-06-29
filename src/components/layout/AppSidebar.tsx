@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -30,7 +29,9 @@ import {
   Search,
   CreditCard,
   ShoppingBag,
-  Unplug
+  Unplug,
+  Sparkles,
+  Braces
 } from "lucide-react";
 import {
   Sidebar,
@@ -73,6 +74,12 @@ const financialNav = [
   { icon: Scale, label: "Eco Governance", href: "/economy" },
   { icon: Gavel, label: "Compliance & KYB", href: "/compliance" },
   { icon: Activity, label: "Revenue Ops", href: "/revenue" },
+];
+
+const projectNav = [
+  { icon: Braces, label: "P43: Syntax Architect", href: "/syntax" },
+  { icon: Database, label: "P44: Data Enrichment", href: "/enrichment" },
+  { icon: Milestone, label: "System Roadmap", href: "/roadmap" },
 ];
 
 const securityNav = [
@@ -151,6 +158,28 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-primary">Successive Projects</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {projectNav.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
+                    <Link 
+                      href={item.href} 
+                      className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-primary/80"
+                      onClick={handleLinkClick}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel>Civic Intelligence</SidebarGroupLabel>

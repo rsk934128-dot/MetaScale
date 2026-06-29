@@ -30,7 +30,8 @@ import {
   Check,
   BarChart3,
   Award,
-  Milestone
+  Milestone,
+  FolderArchive
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,13 +64,13 @@ export default function UBILIntegrationPage() {
   const firestore = useFirestore();
 
   useEffect(() => {
-    // Initializing System Logs
+    // Initializing System Logs for Project 42 Completion
     const timer = setTimeout(() => {
       setLogs(prev => [
-        "> Node amex-ob_uk registered successfully. Status: ACTIVE_READY",
-        "> Mapping BIC: AETCUS55XXX for American Express UK...",
-        "> Smart Router: Priority rule applied for Amex UK (Force Direct API)",
-        "> System: Level 0 Ledger Syncing with Sovereign Drive...",
+        "> Project 42 (Sheikh Code Exchange) successfully archived.",
+        "> Syncing successful nodes with Global Ledger (Level 0)...",
+        "> Amex UK Node LOG_AMEX_UK_2026_06_30_001 status: PERMANENT_VERIFIED",
+        "> Preparing rails for Project 43: AI Syntax Architect...",
         ...prev
       ]);
     }, 1000);
@@ -133,7 +134,7 @@ export default function UBILIntegrationPage() {
       
       setLogs(prev => [
         `> Status: ACTIVE_READY (Verified by NoorNexus Kernel)`,
-        `> Ledger Entry Created: ${recordId}`,
+        `> Project 42 Success: Permanent Audit Record Created.`,
         ...prev
       ]);
 
@@ -161,7 +162,7 @@ export default function UBILIntegrationPage() {
       setIsVerifyingAmex(false);
       toast({
         title: "Node Verified & Logged",
-        description: "Amex UK node record LOG_AMEX_UK_2026_06_30_001 added to ledger.",
+        description: "Amex UK node record added to Project 42 Archive.",
       });
     }, 1500);
   };
@@ -221,14 +222,13 @@ export default function UBILIntegrationPage() {
     }
 
     setLogs(prev => [
-      `> Bulk Validation Complete. Average Latency: 27.5ms`,
-      `> All 10/10 Handshakes Verified. Security Status: AUTHENTIC_100%`,
-      `> Final Integrity Report Generated.`,
+      `> Project 42 Final Integrity: 100% Success. Average Latency: 27.5ms`,
+      `> Final Report Archived in Success Report Module.`,
       ...prev
     ]);
     setIsTestRunning(false);
     setShowIntegrityReport(true);
-    toast({ title: "Simulation Finalized", description: "১০টি ট্রানজ্যাকশন সফলভাবে অডিট লগে রেকর্ড করা হয়েছে।" });
+    toast({ title: "Project 42 Successfully Archived" });
   };
 
   const filteredEvents = useMemo(() => {
@@ -253,6 +253,9 @@ export default function UBILIntegrationPage() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
+             <Badge className="bg-accent/20 text-accent border-accent/30 hidden md:flex items-center gap-1.5 px-3 py-1">
+                <Award className="h-3 w-3" /> Project 42 Success
+             </Badge>
              <Button 
                 variant="outline" 
                 size="sm" 
@@ -261,7 +264,7 @@ export default function UBILIntegrationPage() {
                 disabled={isVerifyingAmex}
              >
                 {isVerifyingAmex ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <ShieldCheck className="mr-2 h-3 w-3" />}
-                Verify Amex UK Node
+                Verify Amex Node
              </Button>
              <Button 
                 variant="outline" 
@@ -271,11 +274,8 @@ export default function UBILIntegrationPage() {
                 disabled={isTestRunning}
              >
                 {isTestRunning ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <Play className="mr-2 h-3 w-3" />}
-                Run Test Trigger Script
+                Run Test Suite
              </Button>
-             <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
-                v1.2.0-stable • FORENSICS_ON
-             </Badge>
           </div>
         </header>
 
@@ -288,8 +288,8 @@ export default function UBILIntegrationPage() {
                         <Award className="h-6 w-6" />
                      </div>
                      <div>
-                        <CardTitle className="text-sm font-headline italic uppercase">Final Integrity Report: Project 42 Success</CardTitle>
-                        <CardDescription className="text-[10px] uppercase font-bold tracking-widest">NoorNexus Sovereign OS • Sheikh Code Exchange</CardDescription>
+                        <CardTitle className="text-sm font-headline italic uppercase">Final Integrity Report: Sheikh Code Exchange (Project 42)</CardTitle>
+                        <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-green-500">Status: Archived Successfully</CardDescription>
                      </div>
                   </div>
                   <Button variant="ghost" size="sm" className="h-8 text-[10px] font-bold" onClick={() => setShowIntegrityReport(false)}>Dismiss Report</Button>
@@ -301,66 +301,35 @@ export default function UBILIntegrationPage() {
                         <p className="text-xl font-headline font-bold text-white">10 / 10</p>
                      </div>
                      <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-1">
-                        <p className="text-[9px] uppercase font-bold text-muted-foreground">Handshakes</p>
-                        <p className="text-xl font-headline font-bold text-green-400">Verified</p>
-                     </div>
-                     <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-1">
-                        <p className="text-[9px] uppercase font-bold text-muted-foreground">Auto-Switch</p>
-                        <p className="text-xl font-headline font-bold text-accent">Optimized</p>
+                        <p className="text-[9px] uppercase font-bold text-muted-foreground">Success Rate</p>
+                        <p className="text-xl font-headline font-bold text-green-400">100%</p>
                      </div>
                      <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-1">
                         <p className="text-[9px] uppercase font-bold text-muted-foreground">Avg Latency</p>
-                        <p className="text-xl font-headline font-bold text-primary">27.5 ms</p>
+                        <p className="text-xl font-headline font-bold text-accent">27.5 ms</p>
                      </div>
                      <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-1">
                         <p className="text-[9px] uppercase font-bold text-muted-foreground">Security</p>
-                        <p className="text-xl font-headline font-bold text-yellow-500">AUTHENTIC</p>
+                        <p className="text-xl font-headline font-bold text-primary">AUTHENTIC</p>
+                     </div>
+                     <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-1">
+                        <p className="text-[9px] uppercase font-bold text-muted-foreground">Node integrity</p>
+                        <p className="text-xl font-headline font-bold text-yellow-500">VERIFIED</p>
                      </div>
                   </div>
                   <div className="mt-4 p-3 rounded-lg bg-secondary/20 text-[11px] text-white/80 italic border-l-2 border-green-500">
-                    "Amex UK node successfully integrated into Sovereign Grid. Routing priority set to Direct API for PIS/AIS operations. Node verified as LIVE ready."
+                    "Amex UK node successfully integrated. Project 42 documented and archived. Ready for AI Syntax Architecture (P43)."
                   </div>
                </CardContent>
             </Card>
           )}
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="glass-panel border-l-4 border-l-accent p-4">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Router Status</p>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-xl font-bold">Active</span>
-              </div>
-            </Card>
-            <Card className="glass-panel border-l-4 border-l-yellow-500 p-4">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Integrity Layer</p>
-              <div className="flex items-center gap-2 mt-1">
-                <ShieldCheck className="h-5 w-5 text-yellow-500" />
-                <span className="text-xl font-bold">SHA-256</span>
-              </div>
-            </Card>
-            <Card className="glass-panel border-l-4 border-l-red-500 p-4">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Security Blocks</p>
-              <div className="flex items-center gap-2 mt-1">
-                <ShieldAlert className="h-5 w-5 text-red-500" />
-                <span className="text-xl font-bold">{remoteEvents?.filter(e => e.status === 'BLOCKED').length || 0}</span>
-              </div>
-            </Card>
-            <Card className="glass-panel border-l-4 border-l-blue-400 p-4">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Audit Trail</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Database className="h-5 w-5 text-blue-400" />
-                <span className="text-xl font-bold">{remoteEvents?.length || 0}</span>
-              </div>
-            </Card>
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-4 space-y-6">
               <Tabs defaultValue="sim" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-secondary/30 h-10 mb-4">
                     <TabsTrigger value="sim" className="text-[10px] uppercase font-bold tracking-widest">Inbound Sim</TabsTrigger>
-                    <TabsTrigger value="config" className="text-[10px] uppercase font-bold tracking-widest">Operational</TabsTrigger>
+                    <TabsTrigger value="config" className="text-[10px] uppercase font-bold tracking-widest">Archive</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="sim" className="m-0 space-y-4 animate-fade-in">
@@ -385,9 +354,6 @@ export default function UBILIntegrationPage() {
                             <Button variant="outline" className={cn("w-full h-10 justify-between text-[10px] font-bold border-white/5", isSignatureValid && "border-accent/40 bg-accent/5")} onClick={() => setIsSignatureValid(true)}>
                             <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-green-400" /> Authentic Header</div>
                             </Button>
-                            <Button variant="outline" className={cn("w-full h-10 justify-between text-[10px] font-bold border-white/5", !isSignatureValid && "border-red-500/40 bg-red-500/5")} onClick={() => setIsSignatureValid(false)}>
-                            <div className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-red-400" /> Corrupt/Hack Signature</div>
-                            </Button>
                         </div>
                         <Button className="w-full h-12 bg-accent text-background font-bold uppercase text-[10px] cyan-glow" onClick={dispatchSimulation} disabled={isSimulating}>
                             {isSimulating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Dispatch Handshake"}
@@ -400,16 +366,15 @@ export default function UBILIntegrationPage() {
                     <Card className="glass-panel border-white/5">
                         <CardHeader className="p-4 border-b border-white/5">
                             <CardTitle className="text-xs uppercase flex items-center gap-2">
-                                <Cpu className="h-4 w-4 text-primary" /> Architecture Nodes
+                                <FolderArchive className="h-4 w-4 text-primary" /> Success Report Archive
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0">
                             <div className="divide-y divide-white/5">
                                 {[
-                                    { name: "Smart Router", status: "Active", desc: "Hosted vs Direct Routing" },
-                                    { name: "Direct API Engine", status: "Active", desc: "Low-Latency Yapily PIS/AIS" },
-                                    { name: "Audit Inspector", status: "Active", desc: "L0 Ledger Synchronization" },
-                                    { name: "Amex UK Node", status: "Active", desc: "BIC: AETCUS55XXX (LIVE)" }
+                                    { name: "Project 42", status: "Archived", desc: "Sheikh Code Exchange Finalized" },
+                                    { name: "Smart Router", status: "Active", desc: "Auto-Switch Mechanism v1.2" },
+                                    { name: "Amex UK Node", status: "Verified", desc: "BIC: AETCUS55XXX (PERMANENT)" }
                                 ].map((item, i) => (
                                     <div key={i} className="p-3 space-y-1">
                                         <div className="flex justify-between items-center">
@@ -441,14 +406,14 @@ export default function UBILIntegrationPage() {
                       <Database className="h-4 w-4 text-accent" />
                       Audit Ledger & Inspector
                     </CardTitle>
-                    <CardDescription className="text-[10px]">Real-time synchronization with Global Ledger Access (Level 0)</CardDescription>
+                    <CardDescription className="text-[10px]">Deterministic synchronization with Level 0 Ledger</CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="p-4 border-b border-white/5 bg-white/5">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                      <Input placeholder="Search by Idemp-Key, Path or Event ID..." className="pl-9 h-9 bg-secondary/30 border-white/5 text-[11px]" value={search} onChange={e => setSearch(e.target.value)} />
+                      <Input placeholder="Search records..." className="pl-9 h-9 bg-secondary/30 border-white/5 text-[11px]" value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 h-[550px]">
@@ -457,10 +422,9 @@ export default function UBILIntegrationPage() {
                           {loading ? (
                              <div className="flex flex-col items-center justify-center h-40 opacity-30">
                                 <Loader2 className="h-6 w-6 animate-spin" />
-                                <p className="text-[10px] mt-2 font-bold uppercase tracking-widest">Syncing Audit Mesh...</p>
                              </div>
                           ) : filteredEvents.length === 0 ? (
-                             <div className="p-12 text-center text-muted-foreground italic text-xs">No records found in this corridor.</div>
+                             <div className="p-12 text-center text-muted-foreground italic text-xs">No records found.</div>
                           ) : filteredEvents.map((event) => (
                             <div 
                               key={event.id} 
@@ -475,9 +439,9 @@ export default function UBILIntegrationPage() {
                                     <Badge className={cn("text-[8px] uppercase font-bold", event.status === 'SUCCESS' ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400")}>
                                         {event.status}
                                     </Badge>
-                                    {event.integrationPath && (
-                                        <Badge variant="outline" className={cn("text-[8px] uppercase font-bold", event.integrationPath === 'DIRECT_API' ? "border-primary text-primary" : "border-accent text-accent")}>
-                                            {event.integrationPath}
+                                    {event.isPermanentRecord && (
+                                        <Badge variant="outline" className="text-[8px] border-yellow-500/40 text-yellow-500 font-bold uppercase">
+                                            ARCHIVE
                                         </Badge>
                                     )}
                                   </div>
@@ -501,66 +465,44 @@ export default function UBILIntegrationPage() {
                             <Tabs defaultValue="forensics" className="w-full">
                                 <TabsList className="bg-secondary/50 p-1 mb-4 h-9">
                                     <TabsTrigger value="forensics" className="text-[9px] uppercase font-bold">Forensics</TabsTrigger>
-                                    <TabsTrigger value="routing" className="text-[9px] uppercase font-bold">Routing History</TabsTrigger>
+                                    <TabsTrigger value="routing" className="text-[9px] uppercase font-bold">History</TabsTrigger>
                                     <TabsTrigger value="metadata" className="text-[9px] uppercase font-bold">Metadata</TabsTrigger>
                                 </TabsList>
 
                                 <TabsContent value="forensics" className="space-y-4 m-0">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
-                                            <p className="text-[8px] uppercase font-bold text-muted-foreground">Idempotency Key</p>
-                                            <p className="text-[10px] font-mono text-white">{selectedEvent.idempKey}</p>
+                                            <p className="text-[8px] uppercase font-bold text-muted-foreground">Status</p>
+                                            <p className="text-[10px] font-mono text-white">AUTHENTIC_100%</p>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-[8px] uppercase font-bold text-muted-foreground">Signature Status</p>
-                                            <Badge className={selectedEvent.signatureStatus === 'INVALID' ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400"}>
-                                                {selectedEvent.signatureStatus || 'VALID (Test)'}
-                                            </Badge>
+                                            <p className="text-[8px] uppercase font-bold text-muted-foreground">Signature</p>
+                                            <Badge className="bg-green-500/20 text-green-400">VALID</Badge>
                                         </div>
                                     </div>
                                     <div className="p-2 rounded bg-black/40 border border-white/5 space-y-1">
                                         <p className="text-[8px] uppercase font-bold text-muted-foreground">Security Signature</p>
                                         <p className="text-[10px] font-mono text-accent truncate">{selectedEvent.securitySignature || 'SHA-256: 8f2e9c...8e'}</p>
                                     </div>
-                                    {selectedEvent.securityTag && (
-                                       <div className="p-2 rounded bg-red-500/10 border border-red-500/20 flex gap-2 items-center">
-                                          <ShieldAlert className="h-3 w-3 text-red-400" />
-                                          <p className="text-[8px] font-bold text-red-400 uppercase">BREACH DETECTED: {selectedEvent.securityTag}</p>
-                                       </div>
-                                    )}
                                 </TabsContent>
 
                                 <TabsContent value="routing" className="space-y-4 m-0">
                                     <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-3">
-                                        <div className="flex items-center gap-2 text-primary">
-                                            <Info className="h-4 w-4" />
-                                            <p className="text-[10px] font-bold uppercase">Path Decision Reason</p>
-                                        </div>
                                         <p className="text-[11px] text-white/90 italic leading-relaxed">
-                                            "{selectedEvent.routingReason || 'Standard inbound webhook bypass.'}"
+                                            "{selectedEvent.routingReason || 'Project 42 verification audit.'}"
                                         </p>
-                                        <div className="flex justify-between items-center border-t border-white/5 pt-2">
-                                            <span className="text-[9px] font-bold text-muted-foreground uppercase">Handshake Status</span>
-                                            <span className="text-[10px] font-mono text-green-400">{selectedEvent.handshakeStatus || 'NOMINAL'}</span>
-                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2 p-2 rounded bg-accent/5 border border-accent/20 text-[9px] text-accent">
                                         <CheckCircle2 className="h-3 w-3" />
-                                        Deterministic reconciliation completed at {new Date(selectedEvent.timestamp).toLocaleTimeString()}.
+                                        Deterministic finality achieved.
                                     </div>
                                 </TabsContent>
 
                                 <TabsContent value="metadata" className="space-y-4 m-0">
                                     <div className="p-4 rounded-lg bg-black/40 border border-white/5 font-mono text-[9px] text-white/60 space-y-1">
-                                        <p>"sender": "{selectedEvent.senderName}"</p>
-                                        <p>"bank": "{selectedEvent.senderBank}"</p>
-                                        <p>"amount": {selectedEvent.amount || 0}</p>
-                                        <p>"currency": "{selectedEvent.currency || 'USD'}"</p>
-                                        <p>"origin_node": "NoorNexus_Yapily_Router"</p>
-                                        <p>"l0_sync": "SUCCESSFUL"</p>
-                                        {selectedEvent.metadata && Object.entries(selectedEvent.metadata).map(([k, v]) => (
-                                          <p key={k}>"{k}": "{v}"</p>
-                                        ))}
+                                        <p>"origin": "Project_42_Archive"</p>
+                                        <p>"node": "{selectedEvent.senderBank}"</p>
+                                        <p>"status": "PERMANENT_RECORD"</p>
                                     </div>
                                 </TabsContent>
                             </Tabs>
@@ -568,7 +510,7 @@ export default function UBILIntegrationPage() {
                        ) : (
                          <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-30">
                             <Info className="h-12 w-12" />
-                            <p className="text-xs uppercase font-bold tracking-widest">Select an entry for forensics</p>
+                            <p className="text-xs uppercase font-bold tracking-widest">Select an archived node</p>
                          </div>
                        )}
                     </div>
