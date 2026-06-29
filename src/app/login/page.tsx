@@ -22,7 +22,8 @@ import {
   Mail, 
   Phone, 
   Key,
-  Loader2
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -42,7 +43,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState('');
   const [activeTab, setActiveTab] = useState('login');
 
   // Form States
@@ -51,12 +51,33 @@ export default function LoginPage() {
   const [name, setName] = useState('');
   const [mobile, setPhone] = useState('');
 
-  useEffect(() => {
-    setSessionId(Math.random().toString(36).substring(2, 8).toUpperCase());
-  }, []);
-
   const generateAccountNumber = () => {
     return Math.floor(100000000000 + Math.random() * 900000000000).toString();
+  };
+
+  const getAuthErrorMessage = (errorCode: string) => {
+    switch (errorCode) {
+      case 'auth/invalid-email':
+        return 'ইমেইল অ্যাড্রেসটি সঠিক নয়।';
+      case 'auth/user-disabled':
+        return 'এই ইউজার একাউন্টটি বর্তমানে বন্ধ আছে।';
+      case 'auth/user-not-found':
+        return 'এই ইমেইল দিয়ে কোনো একাউন্ট পাওয়া যায়নি। দয়া করে রেজিস্টার করুন।';
+      case 'auth/wrong-password':
+        return 'ভুল পাসওয়ার্ড দেওয়া হয়েছে। আবার চেষ্টা করুন।';
+      case 'auth/email-already-in-use':
+        return 'এই ইমেইলটি অলরেডি অন্য একটি একাউন্টে ব্যবহার করা হয়েছে।';
+      case 'auth/weak-password':
+        return 'পাসওয়ার্ডটি অন্তত ৬ অক্ষরের হতে হবে।';
+      case 'auth/popup-closed-by-user':
+        return 'লগইন উইন্ডোটি বন্ধ করা হয়েছে। আবার চেষ্টা করুন।';
+      case 'auth/operation-not-allowed':
+        return 'এই লগইন পদ্ধতিটি বর্তমানে অনুমোদিত নয়।';
+      case 'auth/invalid-credential':
+        return 'ভুল লগইন তথ্য। ইমেইল এবং পাসওয়ার্ড চেক করুন।';
+      default:
+        return 'একটি অজানা সমস্যা হয়েছে। দয়া করে ইন্টারনেট কানেকশন চেক করে আবার চেষ্টা করুন।';
+    }
   };
 
   const handleGoogleLogin = async () => {
@@ -71,7 +92,6 @@ export default function LoginPage() {
         const isAdmin = result.user.email === ADMIN_EMAIL;
         const userRef = doc(firestore, 'users', result.user.uid);
         
-        // Check if user already exists to preserve balance
         const userSnap = await getDoc(userRef);
         
         const userData = {
@@ -88,14 +108,7 @@ export default function LoginPage() {
           })
         };
 
-        setDoc(userRef, userData, { merge: true }).catch(async (err) => {
-          const pErr = new FirestorePermissionError({
-            path: userRef.path,
-            operation: 'update',
-            requestResourceData: userData
-          });
-          errorEmitter.emit('permission-error', pErr);
-        });
+        await setDoc(userRef, userData, { merge: true });
 
         toast({ 
           title: isAdmin ? "Admin Handshake Success" : "Identity Bound", 
@@ -105,14 +118,10 @@ export default function LoginPage() {
         router.replace('/dashboard');
       }
     } catch (error: any) {
-      let errorDesc = "Authentication sequence interrupted.";
-      if (error.code === 'auth/operation-not-allowed') errorDesc = "Google login is not enabled in Firebase console.";
-      else if (error.code === 'auth/popup-closed-by-user') errorDesc = "Login popup was closed.";
-
       toast({ 
         variant: "destructive", 
-        title: "Handshake Failed", 
-        description: errorDesc 
+        title: "Google Auth Failed", 
+        description: getAuthErrorMessage(error.code) 
       });
     } finally {
       setIsLoading(false);
@@ -122,7 +131,7 @@ export default function LoginPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !name) {
-      toast({ variant: "destructive", title: "Incomplete Data", description: "All fields are required." });
+      toast({ variant: "destructive", title: "Incomplete Data", description: "সবগুলো ঘর পূরণ করা আবশ্যক।" });
       return;
     }
     setIsLoading(true);
@@ -139,27 +148,22 @@ export default function LoginPage() {
         mobile: mobile,
         kernelId: `SKO-${userCredential.user.uid.substring(0, 6).toUpperCase()}`,
         accountNumber: generateAccountNumber(),
-        balance: 1000.00, // Starting balance
+        balance: 1000.00,
         role: isAdmin ? 'ADMIN' : 'CITIZEN',
         trustScore: 85.0,
         createdAt: serverTimestamp(),
       };
 
-      setDoc(userRef, userData).catch(async (err) => {
-        const pErr = new FirestorePermissionError({
-          path: userRef.path,
-          operation: 'create',
-          requestResourceData: userData
-        });
-        errorEmitter.emit('permission-error', pErr);
-      });
+      await setDoc(userRef, userData);
 
-      toast({ title: isAdmin ? "Admin Protocol Active" : "Protocol Established", description: "Kernel identity created with $1,000 starting balance." });
+      toast({ title: isAdmin ? "Admin Protocol Active" : "Protocol Established", description: "কার্নেল আইডেন্টিটি তৈরি হয়েছে এবং $১,০০০ ব্যালেন্স দেওয়া হয়েছে।" });
       router.replace('/dashboard');
     } catch (error: any) {
-      let msg = "Registration failed.";
-      if (error.code === 'auth/email-already-in-use') msg = "Email already registered.";
-      toast({ variant: "destructive", title: "Registration Blocked", description: msg });
+      toast({ 
+        variant: "destructive", 
+        title: "Registration Failed", 
+        description: getAuthErrorMessage(error.code) 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -168,16 +172,20 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast({ variant: "destructive", title: "Missing Fields", description: "Email and access key required." });
+      toast({ variant: "destructive", title: "Missing Fields", description: "ইমেইল এবং এক্সেস কি প্রদান করুন।" });
       return;
     }
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      toast({ title: "Access Granted", description: "Deterministic link established." });
+      toast({ title: "Access Granted", description: "ডিটারমিনিস্টিক লিঙ্ক সফলভাবে তৈরি হয়েছে।" });
       router.replace('/dashboard');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Auth Failure", description: "Incorrect credentials or account not found." });
+      toast({ 
+        variant: "destructive", 
+        title: "Login Failed", 
+        description: getAuthErrorMessage(error.code) 
+      });
     } finally {
       setIsLoading(false);
     }
