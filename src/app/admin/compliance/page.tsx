@@ -247,9 +247,9 @@ export default function AdminCompliancePage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <div className="p-4 rounded-xl bg-black/40 border border-white/5 font-mono text-[10px] space-y-2">
-                      <p className="text-accent">>>> SYSTEM_DIRECTIVE: AUTO_AUDIT_ACTIVE</p>
-                      <p className="text-white/60">>>> MATCH_RESULT: NBR_DATABASE_SYNC_OK</p>
-                      <p className="text-green-400">>>> RECOMMENDATION: VERIFY_ENTITY_FOR_USDT_TRAFFIC</p>
+                      <p className="text-accent">&gt;&gt;&gt; SYSTEM_DIRECTIVE: AUTO_AUDIT_ACTIVE</p>
+                      <p className="text-white/60">&gt;&gt;&gt; MATCH_RESULT: NBR_DATABASE_SYNC_OK</p>
+                      <p className="text-green-400">&gt;&gt;&gt; RECOMMENDATION: VERIFY_ENTITY_FOR_USDT_TRAFFIC</p>
                    </div>
                    <div className="flex items-center gap-2 p-2 rounded bg-accent/10 border border-accent/20 text-[9px] text-accent">
                       <Info className="h-3.5 w-3.5" />

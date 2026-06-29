@@ -160,9 +160,9 @@ export function BankSandboxModal({ isOpen, onClose, onSuccess }: BankSandboxModa
                 <p className="text-xs text-muted-foreground italic">Your bank account is now synced with the Sovereign Finance Plane.</p>
               </div>
               <div className="p-4 rounded-xl bg-black/40 border border-white/5 font-mono text-[10px] space-y-1">
-                 <p className="text-accent">>>> STATUS: LINKED</p>
-                 <p className="text-white/80">>>> SCOPE: AIS, PIS</p>
-                 <p className="text-white/80">>>> PROVIDER: TRUELAYER_SANDBOX</p>
+                 <p className="text-accent">&gt;&gt;&gt; STATUS: LINKED</p>
+                 <p className="text-white/80">&gt;&gt;&gt; SCOPE: AIS, PIS</p>
+                 <p className="text-white/80">&gt;&gt;&gt; PROVIDER: TRUELAYER_SANDBOX</p>
               </div>
               <Button 
                 className="w-full bg-white text-background font-bold h-12"
