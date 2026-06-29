@@ -26,7 +26,10 @@ import {
   Building2,
   AlertTriangle,
   RotateCw,
-  ShieldX
+  ShieldX,
+  BookOpen,
+  FileCode,
+  Milestone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,7 +82,6 @@ export default function APIDocsPage() {
   const [isTesting, setIsTesting] = useState(false);
   const [isBreachDetected, setIsBreachDetected] = useState(false);
   const [testLogs, setTestLogs] = useState<{msg: string, type: 'info' | 'success' | 'error' | 'warning'}[]>([]);
-  const [liveLedger, setLiveLedger] = useState<any[]>([]);
   const { toast } = useToast();
 
   const handleCopy = (text: string, id: string) => {
@@ -106,7 +108,7 @@ export default function APIDocsPage() {
     
     let steps: {msg: string, type: 'info' | 'success' | 'error' | 'warning'}[] = [
       { msg: `Initializing ${type} handshake protocol...`, type: 'info' },
-      { msg: `Binding Team Context: team_UJR6KEPUrWUszD8jdhiyjQgV...`, type: 'info' },
+      { msg: `Binding Team Context: team_UJR6KEPU...`, type: 'info' },
     ];
 
     if (mode === 'DUPLICATE') {
@@ -120,18 +122,16 @@ export default function APIDocsPage() {
 
     if (mode === 'BAD_SIG') {
       steps.push({ msg: "Security Breach: Invalid HMAC Signature detected!", type: 'error' });
-      steps.push({ msg: "Error Trace: ACCESS_DENIED_0x82 - Signature Mismatch at offset 42.", type: 'error' });
-      steps.push({ msg: "Handshake Terminated: Terminating corridor to preserve node integrity.", type: 'error' });
+      steps.push({ msg: "Error Trace: ACCESS_DENIED_0x82 - Signature Mismatch.", type: 'error' });
     } else if (mode !== 'DUPLICATE') {
       steps.push({ msg: "Signature Verified: OK", type: 'success' });
-      steps.push({ msg: "Synchronizing with Anycast Node UK-01...", type: 'info' });
+      steps.push({ msg: "Synchronizing with Anycast Node UK-01 (Priority)...", type: 'info' });
     }
 
     if (mode === 'SUCCESS') {
       if (type === 'DIRECT_API') {
          steps.push({ msg: "Yapily Mesh Access: Handshake established.", type: 'info' });
-         steps.push({ msg: "Fetching 14,000 global institution nodes...", type: 'info' });
-         steps.push({ msg: "Protocol Finalized: Institutions Map Updated.", type: 'success' });
+         steps.push({ msg: "Protocol Finalized: Node-04 Response 8.4ms", type: 'success' });
       }
     }
 
@@ -162,11 +162,11 @@ export default function APIDocsPage() {
           <div className="flex-1">
             <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-accent">
               <Code2 className="h-5 w-5 text-accent" />
-              Sovereign API & Recovery Console
+              Sovereign API & Integration Guide
             </h1>
           </div>
           <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
-            v1.2.0-stable • FORENSICS_ENABLED
+            ISO 20022 READY • FORENSICS_V1
           </Badge>
         </header>
 
@@ -196,15 +196,19 @@ export default function APIDocsPage() {
 
           <div className="flex flex-col xl:flex-row justify-between items-start gap-8">
             <div className="space-y-4 flex-1">
-              <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic text-white">API <span className="text-accent">Oracle</span></h2>
+              <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic text-white">Integration <span className="text-accent">Oracle</span></h2>
               <div className="flex flex-wrap gap-3">
                  <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20 w-fit">
-                    <Users className="h-4 w-4 text-primary" />
-                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">Active Team ID: team_UJR6KEPUrWUszD8jdhiyjQgV</span>
+                    <Globe className="h-4 w-4 text-primary" />
+                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">Global Endpoint: https://api.fusionpay.mesh/v1</span>
+                 </div>
+                 <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/10 border border-accent/20 w-fit">
+                    <ShieldCheck className="h-4 w-4 text-accent" />
+                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">ISO 20022 Compliant</span>
                  </div>
               </div>
               <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed italic">
-                "FusionPay v1.2 integrates forensic auditing. Every request is verified via SHA-256 HMAC and protected by Idempotency Keys."
+                "FusionPay v1.2 is a developer-first infrastructure. Use our HMAC-signed rales to connect your apps to 14,000+ banks with sub-10ms latency."
               </p>
             </div>
 
@@ -220,13 +224,13 @@ export default function APIDocsPage() {
                
                <div className="space-y-4 relative z-10">
                   <div className="grid grid-cols-2 gap-2">
-                    <Button className="text-[9px] font-bold h-10 bg-accent text-background cyan-glow uppercase" onClick={() => runSimulation('DIRECT_API')} disabled={isTesting}>Yapily Sync</Button>
-                    <Button variant="ghost" className="text-[9px] font-bold h-10 border border-red-500/20 text-red-400 hover:bg-red-500/10 uppercase" onClick={() => runSimulation('DIRECT_API', 'BAD_SIG')} disabled={isTesting}>Test Breach</Button>
+                    <Button className="text-[9px] font-bold h-10 bg-accent text-background cyan-glow uppercase" onClick={() => runSimulation('DIRECT_API')} disabled={isTesting}>Test Node-04 Sync</Button>
+                    <Button variant="ghost" className="text-[9px] font-bold h-10 border border-red-500/20 text-red-400 hover:bg-red-500/10 uppercase" onClick={() => runSimulation('DIRECT_API', 'BAD_SIG')} disabled={isTesting}>Simulate Breach</Button>
                   </div>
                   <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-2">
                     <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2"><ShieldAlert className="h-3 w-3 text-red-400" /> Validation Options</p>
                     <div className="grid grid-cols-2 gap-2">
-                       <Button variant="ghost" className="text-[8px] h-8 border border-purple-500/20 text-purple-400 hover:bg-purple-500/10 uppercase" onClick={() => runSimulation('DIRECT_API', 'DUPLICATE')} disabled={isTesting}>Test Duplicate</Button>
+                       <Button variant="ghost" className="text-[8px] h-8 border border-purple-500/20 text-purple-400 hover:bg-purple-500/10 uppercase" onClick={() => runSimulation('DIRECT_API', 'DUPLICATE')} disabled={isTesting}>Idempotency Test</Button>
                     </div>
                   </div>
                </div>
@@ -244,11 +248,72 @@ export default function APIDocsPage() {
             </Card>
           </div>
 
-          <Tabs defaultValue="endpoints" className="space-y-8">
+          <Tabs defaultValue="guide" className="space-y-8">
             <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1">
+              <TabsTrigger value="guide" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Integration Guide</TabsTrigger>
               <TabsTrigger value="endpoints" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full data-[state=active]:bg-accent data-[state=active]:text-background">API Endpoints</TabsTrigger>
-              <TabsTrigger value="security" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Forensic Config</TabsTrigger>
+              <TabsTrigger value="security" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Security Spec</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="guide" className="space-y-8">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <Card className="glass-panel border-white/5">
+                     <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2 uppercase tracking-tighter">
+                           <BookOpen className="h-5 w-5 text-accent" />
+                           Quick Start: ISO 20022
+                        </CardTitle>
+                     </CardHeader>
+                     <CardContent className="space-y-4">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                           Sovereign OS uses **ISO 20022** standard for all financial messaging. To initiate a connection, follow these deterministic steps:
+                        </p>
+                        <div className="space-y-3">
+                           {[
+                             { step: "1", title: "Obtain API Keys", desc: "Generate your Team Secret in Settings." },
+                             { step: "2", title: "Calculate HMAC", desc: "Every request must include a SHA-256 signature of the body." },
+                             { step: "3", title: "Idempotency", desc: "Use X-Idempotency-Key for T+0 settlement safety." },
+                             { step: "4", title: "Webhook Config", desc: "Subscribe to 'payment.status' for real-time finality." }
+                           ].map((item, i) => (
+                             <div key={i} className="flex gap-4 p-3 rounded-lg bg-secondary/20 border border-white/5 items-start">
+                                <div className="w-6 h-6 rounded bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent shrink-0">{item.step}</div>
+                                <div>
+                                   <p className="text-xs font-bold text-white">{item.title}</p>
+                                   <p className="text-[10px] text-muted-foreground">{item.desc}</p>
+                                </div>
+                             </div>
+                           ))}
+                        </div>
+                     </CardContent>
+                  </Card>
+
+                  <Card className="glass-panel border-white/5">
+                     <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2 uppercase tracking-tighter">
+                           <FileCode className="h-5 w-5 text-primary" />
+                           Signature Algorithm (Node.js)
+                        </CardTitle>
+                     </CardHeader>
+                     <CardContent className="space-y-4">
+                        <div className="p-4 rounded-xl bg-black/40 border border-white/5 font-mono text-[11px] leading-relaxed text-white/70 overflow-x-auto">
+                           <p className="text-primary">// Example: Generate Sovereign Signature</p>
+                           <p>const crypto = require(&apos;crypto&apos;);</p>
+                           <p>const secret = &apos;your_shared_secret&apos;;</p>
+                           <p>const body = JSON.stringify(payload);</p>
+                           <p className="mt-2 text-accent">const signature = crypto</p>
+                           <p className="text-accent">  .createHmac(&apos;sha256&apos;, secret)</p>
+                           <p className="text-accent">  .update(body)</p>
+                           <p className="text-accent">  .digest(&apos;hex&apos;);</p>
+                           <p className="mt-4 text-primary">// Header: X-Sovereign-Signature</p>
+                        </div>
+                        <div className="p-3 rounded bg-accent/10 border border-accent/20 flex gap-2">
+                           <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
+                           <p className="text-[10px] text-muted-foreground italic">"Always keep your secret key in an encrypted environment variable. Never commit it to git."</p>
+                        </div>
+                     </CardContent>
+                  </Card>
+               </div>
+            </TabsContent>
 
             <TabsContent value="endpoints" className="space-y-8">
               {API_ENDPOINTS.map((api) => (
@@ -289,18 +354,47 @@ export default function APIDocsPage() {
                <Card className="glass-panel border-white/5">
                   <CardHeader><CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest"><ShieldCheck className="h-4 w-4 text-accent" /> Forensic Handshake Config</CardTitle></CardHeader>
                   <CardContent className="space-y-4">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-2">
+                           <p className="text-[10px] font-bold text-accent uppercase">Security Level</p>
+                           <p className="text-2xl font-headline font-bold">MIL-SPEC</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-2">
+                           <p className="text-[10px] font-bold text-accent uppercase">Rotation</p>
+                           <p className="text-2xl font-headline font-bold">30 DAYS</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-2">
+                           <p className="text-[10px] font-bold text-accent uppercase">Algorithm</p>
+                           <p className="text-2xl font-headline font-bold">HMAC-256</p>
+                        </div>
+                     </div>
                      <div className="p-4 rounded-xl bg-black/40 border border-white/5 font-mono text-[11px] space-y-2 text-white/70">
-                        <p className="text-accent">// Encryption Layer</p>
+                        <p className="text-accent">// Encryption Layer Protocol</p>
                         <p>ALGORITHM: HMAC_SHA256</p>
                         <p>KEY_EXPIRY: 30D (Deterministic)</p>
                         <p className="text-accent mt-4">// Error Thresholds</p>
                         <p>MAX_SIGNATURE_ATTEMPTS: 3</p>
                         <p>AUTO_BLOCK_LATENCY_SPIKE: TRUE</p>
+                        <p>FORFEIT_MODE: ISOLATION</p>
                      </div>
                   </CardContent>
                </Card>
             </TabsContent>
           </Tabs>
+
+          {/* Integration Roadmap Footer */}
+          <footer className="pt-20 border-t border-white/5 text-center space-y-6 pb-12">
+             <div className="flex items-center justify-center gap-4">
+                <div className="h-0.5 w-20 bg-gradient-to-r from-transparent to-accent/50" />
+                <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px] uppercase px-4 flex gap-2">
+                   <Milestone className="h-3 w-3" /> Technical Specs v1.2.0-stable
+                </Badge>
+                <div className="h-0.5 w-20 bg-gradient-to-l from-transparent to-accent/50" />
+             </div>
+             <p className="text-[9px] font-bold uppercase tracking-[0.5em] text-muted-foreground opacity-50">
+                Founded in London. Distributed Globally via Anycast Node-04.
+             </p>
+          </footer>
         </main>
       </SidebarInset>
     </div>
