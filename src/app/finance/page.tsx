@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -30,7 +29,8 @@ import {
   ArrowRightLeft,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -265,9 +265,9 @@ export default function FinancialIntelligence() {
                    <Card className="glass-panel border-l-4 border-l-[#6366f1] bg-[#6366f1]/5 shadow-2xl">
                       <CardHeader>
                          <CardTitle className="text-sm flex items-center gap-2 uppercase text-[#818cf8]">
-                            <PriyoIcon className="h-4 w-4" /> Global Settlement Payout
+                            <Building2 className="h-4 w-4" /> Global Settlement Payout
                          </CardTitle>
-                         <CardDescription className="text-[10px] uppercase tracking-widest">PayPal | Priyo Pay | Global ACH</CardDescription>
+                         <CardDescription className="text-[10px] uppercase tracking-widest">PayPal | Priyo Pay | Open Banking (Yapily)</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-6">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -280,7 +280,7 @@ export default function FinancialIntelligence() {
                                >
                                   <option value="PRIYO_PAY">Priyo Pay (USD)</option>
                                   <option value="PAYPAL">PayPal Batch</option>
-                                  <option value="PAYONEER">Payoneer (PIS)</option>
+                                  <option value="PAYONEER">Yapily / Payoneer (PIS)</option>
                                </select>
                             </div>
                             <div className="space-y-2">
@@ -317,11 +317,11 @@ export default function FinancialIntelligence() {
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <Card className="glass-panel border-white/5">
                          <CardHeader className="p-4">
-                            <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Compliance Radar</CardTitle>
+                            <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Open Banking Status</CardTitle>
                          </CardHeader>
                          <CardContent className="p-4 pt-0 space-y-3">
                             <div className="p-2 rounded bg-secondary/30 text-[9px] text-white/60 italic leading-relaxed">
-                              {"Priyo Pay payouts are subject to Imperial Directive validation for amounts {'>'} $1,000."}
+                              {"PSD2/SCA check active for European PIS rails via Yapily Connect."}
                             </div>
                             <Progress value={92} className="h-1" />
                          </CardContent>
@@ -483,4 +483,3 @@ export default function FinancialIntelligence() {
     </div>
   );
 }
-
