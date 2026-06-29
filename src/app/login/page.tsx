@@ -31,8 +31,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { Logo } from '@/components/ui/logo';
 
 const ADMIN_EMAIL = 'rubels1k994@gmail.com';
@@ -62,7 +60,7 @@ export default function LoginPage() {
       case 'auth/user-disabled':
         return 'এই ইউজার একাউন্টটি বর্তমানে বন্ধ আছে।';
       case 'auth/user-not-found':
-        return 'এই ইমেইল দিয়ে কোনো একাউন্ট পাওয়া যায়নি। দয়া করে রেজিস্টার করুন।';
+        return 'এই ইমেইল দিয়ে কোনো একাউন্ট পাওয়া যায়নি। দয়া করে রেজিস্ট্রেশন করুন।';
       case 'auth/wrong-password':
         return 'ভুল পাসওয়ার্ড দেওয়া হয়েছে। আবার চেষ্টা করুন।';
       case 'auth/email-already-in-use':
@@ -74,7 +72,9 @@ export default function LoginPage() {
       case 'auth/operation-not-allowed':
         return 'এই লগইন পদ্ধতিটি বর্তমানে অনুমোদিত নয়।';
       case 'auth/invalid-credential':
-        return 'ভুল লগইন তথ্য। ইমেইল এবং পাসওয়ার্ড চেক করুন।';
+        return 'ভুল লগইন তথ্য। ইমেইল এবং পাসওয়ার্ড চেক করুন অথবা রেজিস্ট্রেশন করুন।';
+      case 'auth/too-many-requests':
+        return 'অনেকবার ভুল চেষ্টা করা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।';
       default:
         return 'একটি অজানা সমস্যা হয়েছে। দয়া করে ইন্টারনেট কানেকশন চেক করে আবার চেষ্টা করুন।';
     }
@@ -104,7 +104,8 @@ export default function LoginPage() {
           ...(userSnap.exists() ? {} : { 
             accountNumber: generateAccountNumber(), 
             balance: 1000,
-            trustScore: 85.0
+            trustScore: 85.0,
+            verificationStatus: 'UNVERIFIED'
           })
         };
 
@@ -120,7 +121,7 @@ export default function LoginPage() {
     } catch (error: any) {
       toast({ 
         variant: "destructive", 
-        title: "Google Auth Failed", 
+        title: "Authentication Failed", 
         description: getAuthErrorMessage(error.code) 
       });
     } finally {
@@ -131,7 +132,7 @@ export default function LoginPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !name) {
-      toast({ variant: "destructive", title: "Incomplete Data", description: "সবগুলো ঘর পূরণ করা আবশ্যক।" });
+      toast({ variant: "destructive", title: "তথ্য অসম্পূর্ণ", description: "সবগুলো ঘর পূরণ করা আবশ্যক।" });
       return;
     }
     setIsLoading(true);
@@ -151,12 +152,13 @@ export default function LoginPage() {
         balance: 1000.00,
         role: isAdmin ? 'ADMIN' : 'CITIZEN',
         trustScore: 85.0,
+        verificationStatus: 'UNVERIFIED',
         createdAt: serverTimestamp(),
       };
 
       await setDoc(userRef, userData);
 
-      toast({ title: isAdmin ? "Admin Protocol Active" : "Protocol Established", description: "কার্নেল আইডেন্টিটি তৈরি হয়েছে এবং $১,০০০ ব্যালেন্স দেওয়া হয়েছে।" });
+      toast({ title: isAdmin ? "Admin Protocol Active" : "Protocol Established", description: "কার্নেল আইডেন্টিটি তৈরি হয়েছে এবং $১,০০০ বোনাস ব্যালেন্স দেওয়া হয়েছে।" });
       router.replace('/dashboard');
     } catch (error: any) {
       toast({ 
