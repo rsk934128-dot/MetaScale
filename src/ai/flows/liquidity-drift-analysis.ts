@@ -33,9 +33,9 @@ const driftPrompt = ai.definePrompt({
 Analyze the liquidity state for Node: {{{nodeId}}}.
 
 METRICS:
-- Liquidity: ${{{currentLiquidity}}}
+- Liquidity: \${{{currentLiquidity}}}
 - Velocity: {{{transactionVelocity}}} tps
-- Pressure: ${{{outboundPressure}}}
+- Pressure: \${{{outboundPressure}}}
 
 1. Calculate a Drift Score based on velocity and pressure vs current liquidity.
 2. If pressure exceeds 80% of liquidity, suggest EMERGENCY_INJECTION.

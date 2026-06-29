@@ -66,7 +66,7 @@ MARKET CONDITION: {{{marketTrend}}}
 
 HIERARCHICAL NODES:
 {{#each networkNodes}}
-- {{id}} [Layer: {{layer}}]: Trust {{trustScore}}, Liquidity ${{liquidityAvailable}}
+- {{id}} [Layer: {{layer}}]: Trust {{trustScore}}, Liquidity \${{liquidityAvailable}}
 {{/each}}
 
 PROPOSED POLICY:
