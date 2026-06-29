@@ -28,12 +28,14 @@
       "properties": {
         "id": { "type": "string" },
         "creatorId": { "type": "string" },
+        "creatorName": { "type": "string" },
         "amount": { "type": "number" },
         "currency": { "type": "string" },
         "description": { "type": "string" },
         "status": { "type": "string", "enum": ["ACTIVE", "PAID", "EXPIRED"] },
         "seal": { "type": "string" },
-        "createdAt": { "type": "number" }
+        "createdAt": { "type": "number" },
+        "paidAt": { "type": "number" }
       }
     },
     "TINCertificate": {
