@@ -16,7 +16,9 @@ import {
   ArrowRight,
   ShieldAlert,
   History,
-  RefreshCw
+  RefreshCw,
+  Copy,
+  Check
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -119,7 +121,7 @@ export default function LegalBoundPage() {
                 <CardTitle className="text-sm font-bold uppercase tracking-tight">Algorithmic Law</CardTitle>
                 <CardDescription className="text-[10px]">Smart-contract enforcement.</CardDescription>
               </CardHeader>
-            </div>
+            </Card>
           </div>
 
           <Accordion type="single" collapsible className="w-full space-y-4">
