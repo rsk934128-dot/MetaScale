@@ -15,7 +15,7 @@ const EconomicLayerSchema = z.object({
 
 const EconomyInputSchema = z.object({
   networkNodes: z.array(z.object({
-    id: Genkit,
+    id: z.string().describe('Unique identifier for the node.'),
     trustScore: z.number(),
     liquidityAvailable: z.number(),
     layer: z.enum(['micro', 'meso', 'macro']).default('micro'),
