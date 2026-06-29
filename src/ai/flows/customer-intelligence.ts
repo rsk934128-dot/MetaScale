@@ -42,7 +42,7 @@ Analyze the provided customer behavioral data to identify churn risks and high-g
 
 Customer Profiles:
 {{#each customerData}}
-- ID: {{id}}, Last Interaction: {{lastInteractionDays}} days, Spent: ${{totalSpent}}, Tickets: {{supportTickets}}
+- ID: {{id}}, Last Interaction: {{lastInteractionDays}} days, Spent: \${{totalSpent}}, Tickets: {{supportTickets}}
 {{/each}}
 
 Identify the top 3 churn risks and 2 major growth opportunities in the existing base.`,
