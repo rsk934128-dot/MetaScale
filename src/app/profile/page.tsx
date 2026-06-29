@@ -40,7 +40,7 @@ export default function ProfilePage() {
   const { emitEvent } = useKernel();
   const [copiedId, setCopiedId] = useState(false);
   const [copiedAcc, setCopiedAcc] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploading, setIsUploading] = useState<string | null>(null);
 
   const userRef = useMemo(() => {
     if (!firestore || !user?.uid) return null;
@@ -61,35 +61,48 @@ export default function ProfilePage() {
     toast({ title: "Copied", description: `${type} saved to clipboard.` });
   };
 
-  const handleLinkTIN = async () => {
+  const handleLinkDocument = async (type: 'TIN' | 'NID') => {
     if (!user?.uid || !firestore) return;
-    setIsUploading(true);
+    setIsUploading(type);
     
-    const docData = {
+    let docData: any = {
       userId: user.uid,
       userName: profile?.displayName || user.displayName || 'Citizen',
-      type: 'TIN',
+      type: type,
       status: 'PENDING',
       submittedAt: Date.now(),
-      metadata: {
+    };
+
+    if (type === 'TIN') {
+      docData.metadata = {
         tin: "742322402703",
         name: profile?.displayName || user.displayName,
         father: "md.abdul barik sheikh",
         address: "Sirajganj, PO: 6700",
         issueDate: "June 03, 2024"
-      }
-    };
+      };
+    } else {
+      // Data from Sheikh Farid NID image
+      docData.metadata = {
+         nid: "596 298 3689",
+         name: "SHEIKH FARID",
+         father: "MD. ABDUL BARIK SHEIKH",
+         mother: "MST. FARIDA BEGUM",
+         dob: "15 Jun 1994",
+         issueDate: "Oct 22, 2023"
+      };
+    }
 
     try {
       const collRef = collection(firestore, 'verification_docs');
       await addDoc(collRef, docData);
       await updateDoc(userRef!, { verificationStatus: 'PENDING' });
-      emitEvent('SECURITY', 'CITIZEN_TIN_SUBMITTED', 3, { userId: user.uid, tin: "742322402703" });
-      toast({ title: "TIN Submitted", description: "Audit In Progress." });
+      emitEvent('SECURITY', `CITIZEN_${type}_SUBMITTED`, 3, { userId: user.uid, idValue: docData.metadata.nid || docData.metadata.tin });
+      toast({ title: `${type} Submitted`, description: "Kernel audit in progress." });
     } catch (err) {
        toast({ variant: "destructive", title: "Submission Failed", description: "Check mesh connection." });
     } finally {
-      setIsUploading(false);
+      setIsUploading(null);
     }
   };
 
@@ -246,16 +259,27 @@ export default function ProfilePage() {
                    </CardHeader>
                    <CardContent className="p-4 pt-0 space-y-4">
                       <p className="text-[11px] text-muted-foreground italic">
-                         Link your TIN to enable high-value financial corridors.
+                         Link your government documents to enable high-value financial corridors.
                       </p>
-                      <Button 
-                        className="w-full text-[10px] font-bold h-9 bg-accent text-background cyan-glow"
-                        onClick={handleLinkTIN}
-                        disabled={isUploading || profile?.verificationStatus === 'PENDING' || profile?.verificationStatus === 'VERIFIED'}
-                      >
-                         {isUploading ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <Upload className="mr-2 h-3 w-3" />}
-                         {profile?.verificationStatus === 'VERIFIED' ? 'Binding Active' : profile?.verificationStatus === 'PENDING' ? 'Awaiting Audit' : 'Link TIN Certificate'}
-                      </Button>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Button 
+                          className="w-full text-[10px] font-bold h-9 bg-accent text-background cyan-glow"
+                          onClick={() => handleLinkDocument('TIN')}
+                          disabled={!!isUploading || profile?.verificationStatus === 'PENDING' || profile?.verificationStatus === 'VERIFIED'}
+                        >
+                           {isUploading === 'TIN' ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <Upload className="mr-2 h-3 w-3" />}
+                           {profile?.verificationStatus === 'VERIFIED' ? 'TIN Active' : 'Link TIN'}
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          className="w-full text-[10px] font-bold h-9 border-accent/20 text-accent hover:bg-accent/10"
+                          onClick={() => handleLinkDocument('NID')}
+                          disabled={!!isUploading || profile?.verificationStatus === 'PENDING' || profile?.verificationStatus === 'VERIFIED'}
+                        >
+                           {isUploading === 'NID' ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <Fingerprint className="mr-2 h-3 w-3" />}
+                           {profile?.verificationStatus === 'VERIFIED' ? 'NID Bound' : 'Link NID Card'}
+                        </Button>
+                      </div>
                    </CardContent>
                 </Card>
              </div>

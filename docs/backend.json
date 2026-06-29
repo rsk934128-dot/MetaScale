@@ -48,6 +48,19 @@
         "status": { "type": "string" }
       }
     },
+    "NIDCertificate": {
+      "title": "National ID Certificate",
+      "description": "Government-issued identity data for citizenship binding.",
+      "type": "object",
+      "properties": {
+        "nid": { "type": "string" },
+        "name": { "type": "string" },
+        "father": { "type": "string" },
+        "mother": { "type": "string" },
+        "dob": { "type": "string" },
+        "issueDate": { "type": "string" }
+      }
+    },
     "VerificationDocument": {
       "title": "Verification Document",
       "description": "A document submitted for identity or compliance verification.",
@@ -55,10 +68,11 @@
       "properties": {
         "id": { "type": "string" },
         "userId": { "type": "string" },
+        "userName": { "type": "string" },
         "type": { "type": "string", "enum": ["TIN", "NID", "PASSPORT"] },
         "fileUrl": { "type": "string" },
         "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
-        "metadata": { "$ref": "#/backend/entities/TINCertificate" },
+        "metadata": { "type": "object" },
         "submittedAt": { "type": "number" }
       }
     },
