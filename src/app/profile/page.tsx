@@ -26,7 +26,8 @@ import {
   CreditCard,
   Save,
   Camera,
-  Image as ImageIcon
+  Users,
+  Building
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -57,12 +58,11 @@ export default function ProfilePage() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [copiedId, setCopiedId] = useState(false);
-  const [copiedAcc, setCopiedAcc] = useState(false);
+  const [copiedTeam, setCopiedTeam] = useState(false);
   const [isUploading, setIsUploading] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   
-  // Edit States
   const [editMobile, setEditMobile] = useState('');
   const [editName, setEditName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -74,14 +74,14 @@ export default function ProfilePage() {
 
   const { data: profile, loading } = useDoc<any>(userRef);
 
-  const handleCopy = (text: string, type: 'ID' | 'ACC') => {
+  const handleCopy = (text: string, type: 'ID' | 'TEAM') => {
     navigator.clipboard.writeText(text);
     if (type === 'ID') {
       setCopiedId(true);
       setTimeout(() => setCopiedId(false), 2000);
     } else {
-      setCopiedAcc(true);
-      setTimeout(() => setCopiedAcc(false), 2000);
+      setCopiedTeam(true);
+      setTimeout(() => setCopiedTeam(false), 2000);
     }
     toast({ title: "Copied", description: `${type} saved to clipboard.` });
   };
@@ -94,13 +94,11 @@ export default function ProfilePage() {
         displayName: editName || profile?.displayName,
         mobile: editMobile || profile?.mobile
       });
-      
       if (auth.currentUser) {
         await updateProfile(auth.currentUser, {
           displayName: editName || profile?.displayName
         });
       }
-
       emitEvent('SECURITY', 'PROFILE_INFO_UPDATED', 3, { userId: user?.uid });
       toast({ title: "Profile Updated", description: "Identity parameters reconciled." });
       setIsEditing(false);
@@ -114,27 +112,13 @@ export default function ProfilePage() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !userRef || !auth.currentUser) return;
-
-    // Simulation of upload. In a real app, you'd upload to Firebase Storage.
-    // We will use a temporary URL and update the profile for demo purposes.
     setIsUploadingImage(true);
-    
     try {
-      // Create a local preview
       const previewUrl = URL.createObjectURL(file);
-      
-      // Update Firestore
-      await updateDoc(userRef, {
-        photoURL: previewUrl // In production, this would be the Storage URL
-      });
-
-      // Update Auth Profile
-      await updateProfile(auth.currentUser, {
-        photoURL: previewUrl
-      });
-
+      await updateDoc(userRef, { photoURL: previewUrl });
+      await updateProfile(auth.currentUser, { photoURL: previewUrl });
       emitEvent('SECURITY', 'PROFILE_IMAGE_UPDATED', 3, { userId: user?.uid });
-      toast({ title: "Image Uploaded", description: "Your profile picture has been updated in the mesh." });
+      toast({ title: "Image Uploaded", description: "Profile picture updated." });
     } catch (err) {
       toast({ variant: "destructive", title: "Upload Failed", description: "Mesh storage link interrupted." });
     } finally {
@@ -142,75 +126,15 @@ export default function ProfilePage() {
     }
   };
 
-  const handleLinkDocument = async (type: 'TIN' | 'NID') => {
-    if (!user?.uid || !firestore) return;
-    setIsUploading(type);
-    
-    let docData: any = {
-      userId: user.uid,
-      userName: profile?.displayName || user.displayName || 'Citizen',
-      type: type,
-      status: 'PENDING',
-      submittedAt: Date.now(),
-    };
-
-    if (type === 'TIN') {
-      docData.metadata = {
-        tin: "742322402703",
-        name: profile?.displayName || user.displayName,
-        father: "md.abdul barik sheikh",
-        address: "Sirajganj, PO: 6700",
-        issueDate: "June 03, 2024"
-      };
-    } else {
-      docData.metadata = {
-         nid: "596 298 3689",
-         name: "SHEIKH FARID",
-         father: "MD. ABDUL BARIK SHEIKH",
-         mother: "MST. FARIDA BEGUM",
-         dob: "15 Jun 1994",
-         issueDate: "21 Dec 2017",
-         placeOfBirth: "SIRAJGANJ",
-         address: "Haji Ahmed Ali Road, Mashumpur, Sirajganj Sadar, Sirajganj - 6700",
-         bloodGroup: "O+",
-         mrz: "I<BGD596298368<97<<<<<<<<<<<<<<< 9406155M3212208BGD<<<<<<<<<<<2 FARID<<SHEIKH<<<<<<<<<<<<<<<<<<"
-      };
-    }
-
-    try {
-      const collRef = collection(firestore, 'verification_docs');
-      await addDoc(collRef, docData);
-      await updateDoc(userRef!, { verificationStatus: 'PENDING' });
-      emitEvent('SECURITY', `CITIZEN_${type}_SUBMITTED`, 3, { userId: user.uid });
-      toast({ title: `${type} Submitted`, description: "Kernel audit in progress." });
-    } catch (err) {
-       toast({ variant: "destructive", title: "Submission Failed", description: "Check mesh connection." });
-    } finally {
-      setIsUploading(null);
-    }
-  };
-
   const getStatusBadge = () => {
     const status = profile?.verificationStatus || 'UNVERIFIED';
     switch (status) {
       case 'VERIFIED':
-        return (
-          <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[9px] uppercase">
-            <BadgeCheck className="mr-1 h-3 w-3" /> Verified Citizen
-          </Badge>
-        );
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[9px] uppercase"><BadgeCheck className="mr-1 h-3 w-3" /> Verified Citizen</Badge>;
       case 'PENDING':
-        return (
-          <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[9px] uppercase animate-pulse">
-            <RefreshCw className="mr-1 h-3 w-3 animate-spin" /> Audit In Progress
-          </Badge>
-        );
+        return <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[9px] uppercase animate-pulse"><RefreshCw className="mr-1 h-3 w-3 animate-spin" /> Audit In Progress</Badge>;
       default:
-        return (
-          <Badge variant="outline" className="text-muted-foreground border-white/10 text-[9px] uppercase">
-            <AlertCircle className="mr-1 h-3 w-3" /> Unverified
-          </Badge>
-        );
+        return <Badge variant="outline" className="text-muted-foreground border-white/10 text-[9px] uppercase"><AlertCircle className="mr-1 h-3 w-3" /> Unverified</Badge>;
     }
   };
 
@@ -234,45 +158,25 @@ export default function ProfilePage() {
         <main className="flex-1 p-8 max-w-[1000px] mx-auto w-full space-y-12">
           <div className="flex flex-col md:flex-row items-center gap-8 animate-fade-in">
              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                <div className="absolute inset-0 bg-accent/20 rounded-full blur-[40px] opacity-50 transition-opacity group-hover:opacity-80" />
+                <div className="absolute inset-0 bg-accent/20 rounded-full blur-[40px] opacity-50 group-hover:opacity-80" />
                 <div className="relative w-32 h-32 rounded-full border-2 border-accent/30 p-1 bg-background overflow-hidden transition-transform group-hover:scale-105">
-                   <div className="w-full h-full rounded-full bg-secondary/50 flex items-center justify-center overflow-hidden border border-white/5 relative">
-                      <Avatar className="w-full h-full">
-                        <AvatarImage src={profile?.photoURL || user?.photoURL || ''} className="object-cover" />
-                        <AvatarFallback className="bg-accent/10 text-3xl text-accent font-bold uppercase">
-                          {user?.displayName?.[0] || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      {/* Overlay on hover */}
-                      <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                         {isUploadingImage ? (
-                           <RefreshCw className="h-6 w-6 text-accent animate-spin" />
-                         ) : (
-                           <>
-                             <Camera className="h-6 w-6 text-accent mb-1" />
-                             <span className="text-[8px] font-bold uppercase text-accent">Update Photo</span>
-                           </>
-                         )}
-                      </div>
+                   <Avatar className="w-full h-full">
+                     <AvatarImage src={profile?.photoURL || user?.photoURL || ''} className="object-cover" />
+                     <AvatarFallback className="bg-accent/10 text-3xl text-accent font-bold uppercase">
+                       {user?.displayName?.[0] || 'U'}
+                     </AvatarFallback>
+                   </Avatar>
+                   <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      {isUploadingImage ? <RefreshCw className="h-6 w-6 text-accent animate-spin" /> : <Camera className="h-6 w-6 text-accent" />}
                    </div>
                 </div>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  className="hidden" 
-                  accept="image/*" 
-                  onChange={handleImageUpload}
-                  disabled={isUploadingImage}
-                />
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploadingImage} />
              </div>
 
              <div className="text-center md:text-left space-y-2 flex-1">
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                    <h2 className="text-3xl font-headline font-bold text-white">{profile?.displayName || user?.displayName || 'Citizen'}</h2>
-                   <Badge className="bg-accent text-background font-bold uppercase text-[9px] tracking-widest">
-                      {profile?.role || 'CITIZEN'}
-                   </Badge>
+                   <Badge className="bg-accent text-background font-bold uppercase text-[9px] tracking-widest">{profile?.role || 'CITIZEN'}</Badge>
                    {getStatusBadge()}
                 </div>
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-muted-foreground mt-2">
@@ -287,31 +191,19 @@ export default function ProfilePage() {
                          <Button variant="ghost" size="sm" className="h-8 text-[10px] uppercase font-bold text-accent" onClick={() => {
                             setEditName(profile?.displayName || '');
                             setEditMobile(profile?.mobile || '');
-                         }}>
-                            <Edit2 className="h-3 w-3 mr-1.5" /> Edit Profile
-                         </Button>
+                         }}><Edit2 className="h-3 w-3 mr-1.5" /> Edit Profile</Button>
                       </DialogTrigger>
                       <DialogContent className="glass-panel border-accent/20 bg-background/95">
                          <DialogHeader>
-                            <DialogTitle className="uppercase font-headline italic">Edit Citizen Profile</DialogTitle>
-                            <DialogDescription className="text-xs">Update your identity parameters in the Sovereign Mesh.</DialogDescription>
+                            <DialogTitle className="uppercase font-headline italic">Edit Profile</DialogTitle>
                          </DialogHeader>
                          <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                               <Label className="text-[10px] uppercase font-bold text-muted-foreground">Display Name</Label>
-                               <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="bg-secondary/30 border-white/5" />
-                            </div>
-                            <div className="space-y-2">
-                               <Label className="text-[10px] uppercase font-bold text-muted-foreground">Mobile Node</Label>
-                               <Input value={editMobile} onChange={(e) => setEditMobile(e.target.value)} placeholder="+880..." className="bg-secondary/30 border-white/5" />
-                            </div>
+                            <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-muted-foreground">Display Name</Label><Input value={editName} onChange={(e) => setEditName(e.target.value)} className="bg-secondary/30 border-white/5" /></div>
+                            <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-muted-foreground">Mobile Node</Label><Input value={editMobile} onChange={(e) => setEditMobile(e.target.value)} placeholder="+880..." className="bg-secondary/30 border-white/5" /></div>
                          </div>
                          <DialogFooter>
                             <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>Cancel</Button>
-                            <Button size="sm" className="bg-accent text-background font-bold cyan-glow" onClick={handleUpdateProfile} disabled={isSaving}>
-                               {isSaving ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                               Save Parameters
-                            </Button>
+                            <Button size="sm" className="bg-accent text-background font-bold cyan-glow" onClick={handleUpdateProfile} disabled={isSaving}>{isSaving ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />} Save</Button>
                          </DialogFooter>
                       </DialogContent>
                    </Dialog>
@@ -319,133 +211,58 @@ export default function ProfilePage() {
              </div>
           </div>
 
+          <Card className="glass-panel border-l-4 border-l-primary bg-primary/5">
+            <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-primary/20 text-primary">
+                  <Users className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Active Team Context</p>
+                  <p className="text-sm font-bold text-white uppercase">{profile?.teamId || 'NOT_ASSIGNED'}</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" className="h-9 text-[10px] uppercase font-bold border-white/10" onClick={() => handleCopy(profile?.teamId || '', 'TEAM')}>
+                {copiedTeam ? <Check className="mr-1.5 h-3 w-3 text-green-400" /> : <Copy className="mr-1.5 h-3 w-3" />}
+                Copy Team ID
+              </Button>
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
              <Card className="glass-panel border-l-4 border-l-accent bg-accent/5">
-                <CardHeader className="p-4 pb-2">
-                   <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest flex items-center gap-2">
-                      <Wallet className="h-3 w-3" /> Liquid Assets
-                   </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                   <div className="text-3xl font-bold text-white">${profile?.balance?.toLocaleString() || '0.00'}</div>
-                   <p className="text-[9px] text-accent font-bold uppercase mt-1">Status: Accessible</p>
-                </CardContent>
+                <CardHeader className="p-4 pb-2"><CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest flex items-center gap-2"><Wallet className="h-3 w-3" /> Liquid Assets</CardTitle></CardHeader>
+                <CardContent className="p-4 pt-0"><div className="text-3xl font-bold text-white">${profile?.balance?.toLocaleString() || '0.00'}</div><p className="text-[9px] text-accent font-bold uppercase mt-1">Status: Accessible</p></CardContent>
              </Card>
              <Card className="glass-panel border-l-4 border-l-primary bg-primary/5">
-                <CardHeader className="p-4 pb-2">
-                   <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest flex items-center gap-2">
-                      <CreditCard className="h-3 w-3" /> Account Number
-                   </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                   <button onClick={() => handleCopy(profile?.accountNumber || '', 'ACC')} className="group text-xl font-mono font-bold text-white flex items-center gap-2">
-                      {profile?.accountNumber || 'NOT_GEN'}
-                      {copiedAcc ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100" />}
-                   </button>
-                   <p className="text-[9px] text-primary font-bold uppercase mt-1">Mesh-Bound Protocol</p>
-                </CardContent>
+                <CardHeader className="p-4 pb-2"><CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest flex items-center gap-2"><CreditCard className="h-3 w-3" /> Account Number</CardTitle></CardHeader>
+                <CardContent className="p-4 pt-0"><div className="text-xl font-mono font-bold text-white">{profile?.accountNumber || 'NOT_GEN'}</div><p className="text-[9px] text-primary font-bold uppercase mt-1">Mesh-Bound Protocol</p></CardContent>
              </Card>
              <Card className="glass-panel border-l-4 border-l-green-500">
-                <CardHeader className="p-4 pb-2">
-                   <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Trust Score</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                   <div className="text-3xl font-bold">{profile?.trustScore || '85'}%</div>
-                   <div className="h-1 w-full bg-white/5 rounded-full mt-2 overflow-hidden">
-                      <div className="h-full bg-green-500" style={{ width: `${profile?.trustScore || 85}%` }} />
-                   </div>
-                </CardContent>
+                <CardHeader className="p-4 pb-2"><CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Trust Score</CardTitle></CardHeader>
+                <CardContent className="p-4 pt-0"><div className="text-3xl font-bold">{profile?.trustScore || '85'}%</div><div className="h-1 w-full bg-white/5 rounded-full mt-2 overflow-hidden"><div className="h-full bg-green-500" style={{ width: `${profile?.trustScore || 85}%` }} /></div></CardContent>
              </Card>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-             <div className="space-y-6">
-                <Card className="glass-panel border-white/5">
-                   <CardHeader className="p-4 border-b border-white/5 bg-white/5">
-                      <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
-                         <Lock className="h-4 w-4 text-accent" /> Vault Context
-                      </CardTitle>
-                   </CardHeader>
-                   <CardContent className="p-6 space-y-6">
-                      <div className="space-y-4">
-                         <div className="flex items-start gap-4">
-                            <div className="p-2 rounded-lg bg-secondary/50 text-muted-foreground">
-                               <Mail className="h-4 w-4" />
-                            </div>
-                            <div>
-                               <p className="text-[10px] font-bold text-muted-foreground uppercase">Linked Email</p>
-                               <p className="text-sm text-white/90">{profile?.email || user?.email}</p>
-                            </div>
-                         </div>
-                         <div className="flex items-start gap-4">
-                            <div className="p-2 rounded-lg bg-secondary/50 text-muted-foreground">
-                               <Phone className="h-4 w-4" />
-                            </div>
-                            <div>
-                               <p className="text-[10px] font-bold text-muted-foreground uppercase">Mobile Node</p>
-                               <p className="text-sm text-white/90">{profile?.mobile || 'Not Linked'}</p>
-                            </div>
-                         </div>
-                      </div>
-                   </CardContent>
-                </Card>
+             <Card className="glass-panel border-white/5">
+                <CardHeader className="p-4 border-b border-white/5 bg-white/5"><CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2"><Lock className="h-4 w-4 text-accent" /> Vault Context</CardTitle></CardHeader>
+                <CardContent className="p-6 space-y-4">
+                   <div className="flex items-start gap-4"><div className="p-2 rounded-lg bg-secondary/50 text-muted-foreground"><Mail className="h-4 w-4" /></div><div><p className="text-[10px] font-bold text-muted-foreground uppercase">Linked Email</p><p className="text-sm text-white/90">{profile?.email || user?.email}</p></div></div>
+                   <div className="flex items-start gap-4"><div className="p-2 rounded-lg bg-secondary/50 text-muted-foreground"><Phone className="h-4 w-4" /></div><div><p className="text-[10px] font-bold text-muted-foreground uppercase">Mobile Node</p><p className="text-sm text-white/90">{profile?.mobile || 'Not Linked'}</p></div></div>
+                </CardContent>
+             </Card>
 
-                <Card className="glass-panel border-accent/20 bg-accent/5">
-                   <CardHeader className="p-4">
-                      <CardTitle className="text-xs uppercase flex items-center gap-2">
-                         <FileText className="h-4 w-4 text-accent" /> Compliance Binding
-                      </CardTitle>
-                   </CardHeader>
-                   <CardContent className="p-4 pt-0 space-y-4">
-                      <p className="text-[11px] text-muted-foreground italic">
-                         Link your government documents to enable high-value financial corridors.
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Button 
-                          className="w-full text-[10px] font-bold h-9 bg-accent text-background cyan-glow"
-                          onClick={() => handleLinkDocument('TIN')}
-                          disabled={!!isUploading || profile?.verificationStatus === 'PENDING' || profile?.verificationStatus === 'VERIFIED'}
-                        >
-                           {isUploading === 'TIN' ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <Upload className="mr-2 h-3 w-3" />}
-                           {profile?.verificationStatus === 'VERIFIED' ? 'TIN Active' : 'Link TIN'}
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          className="w-full text-[10px] font-bold h-9 border-accent/20 text-accent hover:bg-accent/10"
-                          onClick={() => handleLinkDocument('NID')}
-                          disabled={!!isUploading || profile?.verificationStatus === 'PENDING' || profile?.verificationStatus === 'VERIFIED'}
-                        >
-                           {isUploading === 'NID' ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <Fingerprint className="mr-2 h-3 w-3" />}
-                           {profile?.verificationStatus === 'VERIFIED' ? 'NID Bound' : 'Link NID Card'}
-                        </Button>
-                      </div>
-                   </CardContent>
-                </Card>
-             </div>
-
-             <div className="space-y-6">
-                <Card className="glass-panel border-accent/20 bg-accent/5">
-                   <CardHeader className="p-4">
-                      <CardTitle className="text-xs uppercase flex items-center gap-2">
-                         <Activity className="h-4 w-4 text-accent" /> System Telemetry
-                      </CardTitle>
-                   </CardHeader>
-                   <CardContent className="p-4 pt-0 space-y-4">
-                      <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-3">
-                         <div className="flex justify-between items-center text-[10px] font-bold">
-                            <span className="text-muted-foreground uppercase">Sync Status</span>
-                            <span className="text-green-400">NOMINAL</span>
-                         </div>
-                         <p className="text-[9px] text-muted-foreground italic">
-                            Your account is cryptographically signed and bound to the Sovereign Mesh.
-                         </p>
-                      </div>
-                      <div className="flex items-center gap-3 p-2 text-[10px] font-bold text-green-400">
-                         <ShieldCheck className="h-4 w-4" /> 2FA ENFORCED BY KERNEL
-                      </div>
-                   </CardContent>
-                </Card>
-             </div>
+             <Card className="glass-panel border-accent/20 bg-accent/5">
+                <CardHeader className="p-4"><CardTitle className="text-xs uppercase flex items-center gap-2"><Activity className="h-4 w-4 text-accent" /> System Telemetry</CardTitle></CardHeader>
+                <CardContent className="p-4 pt-0 space-y-4">
+                   <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-3">
+                      <div className="flex justify-between items-center text-[10px] font-bold"><span className="text-muted-foreground uppercase">Sync Status</span><span className="text-green-400">NOMINAL</span></div>
+                      <p className="text-[9px] text-muted-foreground italic">Account is cryptographically bound to Team ID: {profile?.teamId?.substring(0, 12)}...</p>
+                   </div>
+                   <div className="flex items-center gap-3 p-2 text-[10px] font-bold text-green-400"><ShieldCheck className="h-4 w-4" /> 2FA ENFORCED BY KERNEL</div>
+                </CardContent>
+             </Card>
           </div>
         </main>
       </SidebarInset>

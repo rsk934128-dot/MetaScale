@@ -12,6 +12,7 @@
         "mobile": { "type": "string" },
         "photoURL": { "type": "string", "description": "URL to the citizen's profile image." },
         "kernelId": { "type": "string" },
+        "teamId": { "type": "string", "description": "The unique identifier of the team/organization the user belongs to." },
         "accountNumber": { "type": "string", "description": "Unique 12-digit mesh account number." },
         "balance": { "type": "number", "description": "Current liquid assets in the system." },
         "role": { "type": "string", "enum": ["ADMIN", "OPERATOR", "CITIZEN"] },
@@ -19,7 +20,7 @@
         "trustScore": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["uid", "email", "kernelId", "accountNumber"]
+      "required": ["uid", "email", "kernelId", "accountNumber", "teamId"]
     },
     "WatchlistItem": {
       "title": "Watchlist Item",

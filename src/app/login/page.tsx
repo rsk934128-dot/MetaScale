@@ -23,10 +23,11 @@ import {
   Phone, 
   Key,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Users
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -34,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/ui/logo';
 
 const ADMIN_EMAIL = 'rubels1k994@gmail.com';
+const DEFAULT_TEAM_ID = 'team_UJR6KEPUrWUszD8jdhiyjQgV';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -43,7 +45,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
 
-  // Form States
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -55,28 +56,12 @@ export default function LoginPage() {
 
   const getAuthErrorMessage = (errorCode: string) => {
     switch (errorCode) {
-      case 'auth/invalid-email':
-        return 'ইমেইল অ্যাড্রেসটি সঠিক নয়।';
-      case 'auth/user-disabled':
-        return 'এই ইউজার একাউন্টটি বর্তমানে বন্ধ আছে।';
-      case 'auth/user-not-found':
-        return 'এই ইমেইল দিয়ে কোনো একাউন্ট পাওয়া যায়নি। দয়া করে রেজিস্ট্রেশন করুন।';
-      case 'auth/wrong-password':
-        return 'ভুল পাসওয়ার্ড দেওয়া হয়েছে। আবার চেষ্টা করুন।';
-      case 'auth/email-already-in-use':
-        return 'এই ইমেইলটি অলরেডি অন্য একটি একাউন্টে ব্যবহার করা হয়েছে।';
-      case 'auth/weak-password':
-        return 'পাসওয়ার্ডটি অন্তত ৬ অক্ষরের হতে হবে।';
-      case 'auth/popup-closed-by-user':
-        return 'লগইন উইন্ডোটি বন্ধ করা হয়েছে। আবার চেষ্টা করুন।';
-      case 'auth/operation-not-allowed':
-        return 'এই লগইন পদ্ধতিটি বর্তমানে অনুমোদিত নয়।';
-      case 'auth/invalid-credential':
-        return 'ভুল লগইন তথ্য। ইমেইল এবং পাসওয়ার্ড চেক করুন অথবা রেজিস্ট্রেশন করুন।';
-      case 'auth/too-many-requests':
-        return 'অনেকবার ভুল চেষ্টা করা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।';
-      default:
-        return 'একটি অজানা সমস্যা হয়েছে। দয়া করে ইন্টারনেট কানেকশন চেক করে আবার চেষ্টা করুন।';
+      case 'auth/invalid-email': return 'ইমেইল অ্যাড্রেসটি সঠিক নয়।';
+      case 'auth/wrong-password': return 'ভুল পাসওয়ার্ড দেওয়া হয়েছে।';
+      case 'auth/user-not-found': return 'এই ইমেইল দিয়ে কোনো একাউন্ট পাওয়া যায়নি।';
+      case 'auth/email-already-in-use': return 'এই ইমেইলটি অলরেডি অন্য একটি একাউন্টে ব্যবহার করা হয়েছে।';
+      case 'auth/weak-password': return 'পাসওয়ার্ডটি অন্তত ৬ অক্ষরের হতে হবে।';
+      default: return 'একটি অজানা সমস্যা হয়েছে। আবার চেষ্টা করুন।';
     }
   };
 
@@ -87,11 +72,9 @@ export default function LoginPage() {
 
     try {
       const result = await signInWithPopup(auth, provider);
-      
       if (result.user) {
         const isAdmin = result.user.email === ADMIN_EMAIL;
         const userRef = doc(firestore, 'users', result.user.uid);
-        
         const userSnap = await getDoc(userRef);
         
         const userData = {
@@ -99,6 +82,7 @@ export default function LoginPage() {
           displayName: result.user.displayName,
           email: result.user.email,
           kernelId: `SKO-${result.user.uid.substring(0, 6).toUpperCase()}`,
+          teamId: DEFAULT_TEAM_ID,
           lastLogin: serverTimestamp(),
           role: isAdmin ? 'ADMIN' : 'CITIZEN',
           ...(userSnap.exists() ? {} : { 
@@ -110,20 +94,11 @@ export default function LoginPage() {
         };
 
         await setDoc(userRef, userData, { merge: true });
-
-        toast({ 
-          title: isAdmin ? "Admin Handshake Success" : "Identity Bound", 
-          description: isAdmin ? "Welcome back, System Administrator." : "Sovereign Mesh link established successfully." 
-        });
-        
+        toast({ title: "Identity Bound", description: "Sovereign Mesh link established successfully." });
         router.replace('/dashboard');
       }
     } catch (error: any) {
-      toast({ 
-        variant: "destructive", 
-        title: "Authentication Failed", 
-        description: getAuthErrorMessage(error.code) 
-      });
+      toast({ variant: "destructive", title: "Auth Failed", description: getAuthErrorMessage(error.code) });
     } finally {
       setIsLoading(false);
     }
@@ -131,10 +106,7 @@ export default function LoginPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !name) {
-      toast({ variant: "destructive", title: "তথ্য অসম্পূর্ণ", description: "সবগুলো ঘর পূরণ করা আবশ্যক।" });
-      return;
-    }
+    if (!email || !password || !name) return;
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -148,6 +120,7 @@ export default function LoginPage() {
         email: email,
         mobile: mobile,
         kernelId: `SKO-${userCredential.user.uid.substring(0, 6).toUpperCase()}`,
+        teamId: DEFAULT_TEAM_ID,
         accountNumber: generateAccountNumber(),
         balance: 1000.00,
         role: isAdmin ? 'ADMIN' : 'CITIZEN',
@@ -157,15 +130,10 @@ export default function LoginPage() {
       };
 
       await setDoc(userRef, userData);
-
-      toast({ title: isAdmin ? "Admin Protocol Active" : "Protocol Established", description: "কার্নেল আইডেন্টিটি তৈরি হয়েছে এবং $১,০০০ বোনাস ব্যালেন্স দেওয়া হয়েছে।" });
+      toast({ title: "Protocol Established", description: "কার্নেল আইডেন্টিটি তৈরি হয়েছে।" });
       router.replace('/dashboard');
     } catch (error: any) {
-      toast({ 
-        variant: "destructive", 
-        title: "Registration Failed", 
-        description: getAuthErrorMessage(error.code) 
-      });
+      toast({ variant: "destructive", title: "Registration Failed", description: getAuthErrorMessage(error.code) });
     } finally {
       setIsLoading(false);
     }
@@ -173,21 +141,14 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast({ variant: "destructive", title: "Missing Fields", description: "ইমেইল এবং এক্সেস কি প্রদান করুন।" });
-      return;
-    }
+    if (!email || !password) return;
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: "Access Granted", description: "ডিটারমিনিস্টিক লিঙ্ক সফলভাবে তৈরি হয়েছে।" });
       router.replace('/dashboard');
     } catch (error: any) {
-      toast({ 
-        variant: "destructive", 
-        title: "Login Failed", 
-        description: getAuthErrorMessage(error.code) 
-      });
+      toast({ variant: "destructive", title: "Login Failed", description: getAuthErrorMessage(error.code) });
     } finally {
       setIsLoading(false);
     }
@@ -195,21 +156,17 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full bg-background flex items-center justify-center p-4 md:p-10 relative overflow-hidden">
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #00f2ff 1.5px, transparent 1.5px)', backgroundSize: '48px 48px' }} />
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
-      </div>
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #00f2ff 1.5px, transparent 1.5px)', backgroundSize: '48px 48px' }} />
 
       <div className="relative z-10 w-full max-w-6xl flex flex-col items-center gap-8">
         <div className="text-center space-y-4 max-w-2xl flex flex-col items-center">
           <Logo size="xl" className="mb-2" />
-          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent mx-auto">
-            <Zap className="h-4 w-4" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Sovereign OS v1.2</span>
+          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent">
+            <Users className="h-4 w-4" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em]">FusionPay Organization Mesh</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-headline font-bold text-white tracking-tighter uppercase">
-            ESTABLISH <span className="text-accent italic">KERNEL</span> IDENTITY
+            ESTABLISH <span className="text-accent italic">TEAM</span> IDENTITY
           </h1>
         </div>
 
@@ -229,33 +186,17 @@ export default function LoginPage() {
                     <Label className="text-[10px] uppercase font-bold text-muted-foreground">Gateway Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent/50" />
-                      <Input 
-                        type="email" 
-                        placeholder="identity@mesh.gov" 
-                        className="pl-10 bg-secondary/30 border-white/5 h-12 text-sm"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
+                      <Input type="email" placeholder="identity@mesh.gov" className="pl-10 bg-secondary/30 border-white/5 h-12 text-sm" value={email} onChange={(e) => setEmail(e.target.value)} />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold text-muted-foreground">Access Key</Label>
                     <div className="relative">
                       <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent/50" />
-                      <Input 
-                        type="password" 
-                        placeholder="••••••••" 
-                        className="pl-10 bg-secondary/30 border-white/5 h-12 text-sm"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
+                      <Input type="password" placeholder="••••••••" className="pl-10 bg-secondary/30 border-white/5 h-12 text-sm" value={password} onChange={(e) => setPassword(e.target.value)} />
                     </div>
                   </div>
-                  <Button 
-                    className="w-full h-12 cyan-glow bg-accent text-background font-bold uppercase tracking-widest text-xs"
-                    disabled={isLoading}
-                    type="submit"
-                  >
+                  <Button className="w-full h-12 cyan-glow bg-accent text-background font-bold uppercase tracking-widest text-xs" disabled={isLoading} type="submit">
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Authorize Access"}
                   </Button>
                 </form>
@@ -266,60 +207,22 @@ export default function LoginPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">Full Name</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent/50" />
-                        <Input 
-                          placeholder="Citizen Name" 
-                          className="pl-10 bg-secondary/30 border-white/5 h-11 text-xs"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                        />
-                      </div>
+                      <Input placeholder="Citizen Name" className="bg-secondary/30 border-white/5 h-11 text-xs" value={name} onChange={(e) => setName(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">Mobile Node</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent/50" />
-                        <Input 
-                          placeholder="+880..." 
-                          className="pl-10 bg-secondary/30 border-white/5 h-11 text-xs"
-                          value={mobile}
-                          onChange={(e) => setPhone(e.target.value)}
-                        />
-                      </div>
+                      <Input placeholder="+880..." className="bg-secondary/30 border-white/5 h-11 text-xs" value={mobile} onChange={(e) => setPhone(e.target.value)} />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold text-muted-foreground">System Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent/50" />
-                      <Input 
-                        type="email" 
-                        placeholder="new_identity@mesh.gov" 
-                        className="pl-10 bg-secondary/30 border-white/5 h-11 text-xs"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
-                    </div>
+                    <Input type="email" placeholder="new_identity@mesh.gov" className="bg-secondary/30 border-white/5 h-11 text-xs" value={email} onChange={(e) => setEmail(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold text-muted-foreground">Define Access Key</Label>
-                    <div className="relative">
-                      <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent/50" />
-                      <Input 
-                        type="password" 
-                        placeholder="Min 6 characters" 
-                        className="pl-10 bg-secondary/30 border-white/5 h-11 text-xs"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                    </div>
+                    <Input type="password" placeholder="Min 6 characters" className="bg-secondary/30 border-white/5 h-11 text-xs" value={password} onChange={(e) => setPassword(e.target.value)} />
                   </div>
-                  <Button 
-                    className="w-full h-12 cyan-glow bg-accent text-background font-bold uppercase tracking-widest text-xs"
-                    disabled={isLoading}
-                    type="submit"
-                  >
+                  <Button className="w-full h-12 cyan-glow bg-accent text-background font-bold uppercase tracking-widest text-xs" disabled={isLoading} type="submit">
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Initialize Kernel Link"}
                   </Button>
                 </form>
@@ -334,12 +237,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button 
-                variant="outline"
-                className="w-full h-12 border-white/10 bg-white/5 hover:bg-white/10 transition-all group"
-                onClick={handleGoogleLogin}
-                disabled={isLoading}
-              >
+              <Button variant="outline" className="w-full h-12 border-white/10 bg-white/5 hover:bg-white/10 transition-all group" onClick={handleGoogleLogin} disabled={isLoading}>
                 <Globe className="mr-2 h-4 w-4 text-accent group-hover:animate-spin" />
                 <span className="text-[10px] font-bold uppercase tracking-widest">Sign in with Google</span>
               </Button>
@@ -348,8 +246,8 @@ export default function LoginPage() {
         </Card>
 
         <div className="flex justify-between w-full max-w-lg text-[8px] font-bold uppercase tracking-widest text-muted-foreground/40">
-           <span>Sovereign Security v1.2</span>
-           <span>Deterministic Execution Path</span>
+           <span>FusionPay Security v1.2</span>
+           <span>Team: {DEFAULT_TEAM_ID}</span>
            <span>© 2024 S.K.O.</span>
         </div>
       </div>
