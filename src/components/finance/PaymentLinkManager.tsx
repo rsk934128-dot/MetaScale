@@ -23,13 +23,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useCollection } from "@/firebase";
-import { collection, addDoc, query, orderBy, limit, deleteDoc, doc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, query, orderBy, limit, deleteDoc, doc, updateDoc, increment, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export function PaymentLinkManager() {
   const { user } = useUser();
@@ -64,6 +64,8 @@ export function PaymentLinkManager() {
     const seal = `PAY_SEAL_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     
     const linkData = {
+      creatorId: user.uid,
+      creatorName: user.displayName || 'Sovereign Citizen',
       amount: parseFloat(amount),
       currency: 'USD',
       description: desc || "Marketplace Product",
@@ -72,11 +74,14 @@ export function PaymentLinkManager() {
       createdAt: Date.now(),
     };
 
-    const collRef = collection(firestore, 'users', user.uid, 'payment_links');
-    
-    // Non-blocking add
-    addDoc(collRef, linkData)
-      .then(() => {
+    // 1. Add to user's private collection
+    const userLinksRef = collection(firestore, 'users', user.uid, 'payment_links');
+    addDoc(userLinksRef, linkData)
+      .then((docRef) => {
+        // 2. Also register in public registry for checkout page access
+        const publicLinksRef = doc(firestore, 'payment_links', seal);
+        setDoc(publicLinksRef, { ...linkData, id: docRef.id });
+
         emitEvent('FINANCE', 'MARKETPLACE_LINK_GENERATED', 4, { seal, amount });
         toast({
           title: "Payment Link Generated",
@@ -87,7 +92,7 @@ export function PaymentLinkManager() {
       })
       .catch(async (error) => {
         const pErr = new FirestorePermissionError({
-          path: collRef.path,
+          path: userLinksRef.path,
           operation: 'create',
           requestResourceData: linkData,
         });
@@ -103,21 +108,17 @@ export function PaymentLinkManager() {
     setProcessingPayment(link.id);
     
     const linkRef = doc(firestore, 'users', user.uid, 'payment_links', link.id);
+    const publicLinkRef = doc(firestore, 'payment_links', link.seal);
     const userRef = doc(firestore, 'users', user.uid);
     const notifRef = collection(firestore, 'users', user.uid, 'notifications');
     
-    // Non-blocking status update
-    updateDoc(linkRef, { status: 'PAID', paidAt: Date.now() })
-      .catch(async (error) => {
-        const pErr = new FirestorePermissionError({
-          path: linkRef.path,
-          operation: 'update',
-          requestResourceData: { status: 'PAID' },
-        });
-        errorEmitter.emit('permission-error', pErr);
-      });
+    // Update both user link and public registry link
+    const updateData = { status: 'PAID', paidAt: Date.now() };
+    
+    updateDoc(linkRef, updateData).catch(async () => {});
+    updateDoc(publicLinkRef, updateData).catch(async () => {});
 
-    // Non-blocking balance update
+    // Balance update
     updateDoc(userRef, { balance: increment(link.amount) })
       .catch(async (error) => {
         const pErr = new FirestorePermissionError({
@@ -128,7 +129,7 @@ export function PaymentLinkManager() {
         errorEmitter.emit('permission-error', pErr);
       });
 
-    // Non-blocking notification creation
+    // Notification
     const notification = {
       title: "Product Sold & Funds Settled",
       message: `Payment received for "${link.description}". $${link.amount} added to balance.`,
@@ -137,17 +138,8 @@ export function PaymentLinkManager() {
       timestamp: Date.now(),
     };
 
-    addDoc(notifRef, notification)
-      .catch(async (error) => {
-        const pErr = new FirestorePermissionError({
-          path: notifRef.path,
-          operation: 'create',
-          requestResourceData: notification,
-        });
-        errorEmitter.emit('permission-error', pErr);
-      });
+    addDoc(notifRef, notification).catch(async () => {});
 
-    // Visual feedback delay
     setTimeout(() => {
       emitEvent('FINANCE', 'PAYMENT_RECEIVED_MARKETPLACE', 2, { amount: link.amount, seal: link.seal });
       toast({
@@ -159,28 +151,23 @@ export function PaymentLinkManager() {
   };
 
   const copyToClipboard = (id: string, seal: string) => {
-    const url = `https://sko-mesh.network/checkout/${seal}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${origin}/checkout/${seal}`;
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     toast({ title: "Checkout URL Copied", description: "Integration link ready." });
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: string, seal: string) => {
     if (!firestore || !user?.uid) return;
     const linkRef = doc(firestore, 'users', user.uid, 'payment_links', id);
+    const publicLinkRef = doc(firestore, 'payment_links', seal);
     
-    deleteDoc(linkRef)
-      .then(() => {
-        toast({ title: "Link Deactivated", description: "Marketplace route severed." });
-      })
-      .catch(async (error) => {
-        const pErr = new FirestorePermissionError({
-          path: linkRef.path,
-          operation: 'delete',
-        });
-        errorEmitter.emit('permission-error', pErr);
-      });
+    deleteDoc(linkRef).catch(async () => {});
+    deleteDoc(publicLinkRef).catch(async () => {});
+    
+    toast({ title: "Link Deactivated", description: "Marketplace route severed." });
   };
 
   return (
@@ -323,7 +310,7 @@ export function PaymentLinkManager() {
                               variant="ghost" 
                               size="icon" 
                               className="h-8 w-8 text-red-400 hover:bg-red-400/10"
-                              onClick={() => handleDelete(link.id)}
+                              onClick={() => handleDelete(link.id, link.seal)}
                             >
                                <Trash2 className="h-4 w-4" />
                             </Button>

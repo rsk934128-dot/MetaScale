@@ -165,6 +165,7 @@
     "/users/{userId}/media_tasks": { "schema": "MediaTask", "description": "User specific media extraction tasks." },
     "/verification_docs/{docId}": { "schema": "VerificationDocument", "description": "Pending compliance documents." },
     "/system/control": { "schema": "SystemControlState", "description": "Global OS mode state." },
-    "/system/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." }
+    "/system/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." },
+    "/payment_links/{linkId}": { "schema": "PaymentLink", "description": "Public registry of payment links." }
   }
 }
