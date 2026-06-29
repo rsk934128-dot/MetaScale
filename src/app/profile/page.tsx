@@ -21,20 +21,23 @@ import {
   Check,
   FileText,
   Upload,
-  BadgeCheck
+  BadgeCheck,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useState, useMemo } from 'react';
-import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, addDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useKernel } from '@/components/kernel/KernelProvider';
 
 export default function ProfilePage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { emitEvent } = useKernel();
   const [copied, setCopied] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -59,7 +62,7 @@ export default function ProfilePage() {
     
     const docData = {
       userId: user.uid,
-      userName: profile?.displayName || user.displayName,
+      userName: profile?.displayName || user.displayName || 'Citizen',
       type: 'TIN',
       status: 'PENDING',
       submittedAt: Date.now(),
@@ -72,22 +75,53 @@ export default function ProfilePage() {
       }
     };
 
-    const collRef = collection(firestore, 'verification_docs');
-    addDoc(collRef, docData).then(() => {
+    try {
+      const collRef = collection(firestore, 'verification_docs');
+      await addDoc(collRef, docData);
+      
+      // Update local profile status to PENDING
+      await updateDoc(userRef!, { verificationStatus: 'PENDING' });
+      
+      emitEvent('SECURITY', 'CITIZEN_TIN_SUBMITTED', 3, { userId: user.uid, tin: "742322402703" });
+
       toast({
         title: "TIN Submitted",
-        description: "Certificate 74232... is now pending admin review.",
+        description: "Certificate 74232... is now pending admin audit.",
       });
-    }).catch(err => {
-       const pErr = new FirestorePermissionError({
-         path: collRef.path,
-         operation: 'create',
-         requestResourceData: docData
+    } catch (err) {
+       console.error(err);
+       toast({
+         variant: "destructive",
+         title: "Submission Failed",
+         description: "Check your mesh connection and try again."
        });
-       errorEmitter.emit('permission-error', pErr);
-    }).finally(() => {
+    } finally {
       setIsUploading(false);
-    });
+    }
+  };
+
+  const getStatusBadge = () => {
+    const status = profile?.verificationStatus || 'UNVERIFIED';
+    switch (status) {
+      case 'VERIFIED':
+        return (
+          <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[9px] uppercase">
+            <BadgeCheck className="mr-1 h-3 w-3" /> Verified Citizen
+          </Badge>
+        );
+      case 'PENDING':
+        return (
+          <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[9px] uppercase animate-pulse">
+            <RefreshCw className="mr-1 h-3 w-3 animate-spin" /> Audit In Progress
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="text-muted-foreground border-white/10 text-[9px] uppercase">
+            <AlertCircle className="mr-1 h-3 w-3" /> Unverified
+          </Badge>
+        );
+    }
   };
 
   return (
@@ -131,11 +165,7 @@ export default function ProfilePage() {
                    <Badge className="bg-accent text-background font-bold uppercase text-[9px] tracking-widest">
                       {profile?.role || 'OPERATOR'}
                    </Badge>
-                   {profile?.verificationStatus === 'VERIFIED' && (
-                     <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[9px] uppercase">
-                       <BadgeCheck className="mr-1 h-3 w-3" /> Verified
-                     </Badge>
-                   )}
+                   {getStatusBadge()}
                 </div>
                 <div className="flex items-center justify-center md:justify-start gap-2 text-muted-foreground">
                    <span className="text-xs font-mono uppercase tracking-tighter opacity-70">Sovereign Mesh ID:</span>
@@ -212,10 +242,10 @@ export default function ProfilePage() {
                       <Button 
                         className="w-full text-[10px] font-bold h-9 bg-accent text-background cyan-glow"
                         onClick={handleLinkTIN}
-                        disabled={isUploading || profile?.verificationStatus === 'PENDING'}
+                        disabled={isUploading || profile?.verificationStatus === 'PENDING' || profile?.verificationStatus === 'VERIFIED'}
                       >
                          {isUploading ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <Upload className="mr-2 h-3 w-3" />}
-                         {profile?.verificationStatus === 'PENDING' ? 'Awaiting Audit' : 'Link TIN Certificate'}
+                         {profile?.verificationStatus === 'VERIFIED' ? 'Binding Active' : profile?.verificationStatus === 'PENDING' ? 'Awaiting Audit' : 'Link TIN Certificate'}
                       </Button>
                    </CardContent>
                 </Card>
