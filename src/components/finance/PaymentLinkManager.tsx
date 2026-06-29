@@ -10,8 +10,6 @@ import {
   Trash2, 
   Zap, 
   DollarSign, 
-  QrCode, 
-  Share2,
   Clock,
   RefreshCw,
   Loader2,
@@ -30,6 +28,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 export function PaymentLinkManager() {
   const { user } = useUser();
@@ -54,9 +54,9 @@ export function PaymentLinkManager() {
 
   const { data: links, loading } = useCollection<any>(linksQuery);
 
-  const handleCreateLink = async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      toast({ variant: "destructive", title: "Invalid Amount", description: "Please specify a value greater than 0." });
+  const handleCreateLink = () => {
+    if (!amount || parseFloat(amount) <= 0 || !firestore || !user?.uid) {
+      toast({ variant: "destructive", title: "Invalid Data", description: "Please provide a valid amount and description." });
       return;
     }
 
@@ -72,63 +72,89 @@ export function PaymentLinkManager() {
       createdAt: Date.now(),
     };
 
-    try {
-      if (firestore && user?.uid) {
-        await addDoc(collection(firestore, 'users', user.uid, 'payment_links'), linkData);
+    const collRef = collection(firestore, 'users', user.uid, 'payment_links');
+    
+    // Non-blocking add
+    addDoc(collRef, linkData)
+      .then(() => {
         emitEvent('FINANCE', 'MARKETPLACE_LINK_GENERATED', 4, { seal, amount });
-        
         toast({
           title: "Payment Link Generated",
           description: `Product checkout link ready for integration.`,
         });
-        
         setAmount("");
         setDesc("");
-      }
-    } catch (err) {
-      toast({ variant: "destructive", title: "Kernel Rejection", description: "Failed to anchor link." });
-    } finally {
-      setIsCreating(false);
-    }
+      })
+      .catch(async (error) => {
+        const pErr = new FirestorePermissionError({
+          path: collRef.path,
+          operation: 'create',
+          requestResourceData: linkData,
+        });
+        errorEmitter.emit('permission-error', pErr);
+      })
+      .finally(() => {
+        setIsCreating(false);
+      });
   };
 
-  const simulateCustomerPayment = async (link: any) => {
+  const simulateCustomerPayment = (link: any) => {
     if (!firestore || !user?.uid) return;
     setProcessingPayment(link.id);
     
-    // Simulation delay for payment processing
-    setTimeout(async () => {
-      try {
-        const linkRef = doc(firestore, 'users', user.uid, 'payment_links', link.id);
-        const userRef = doc(firestore, 'users', user.uid);
-        
-        // 1. Update Link Status
-        await updateDoc(linkRef, { status: 'PAID', paidAt: Date.now() });
-        
-        // 2. Add Funds to Seller Account
-        await updateDoc(userRef, { balance: increment(link.amount) });
-        
-        // 3. Create Notification for Delivery/Unlock
-        const notifRef = collection(firestore, 'users', user.uid, 'notifications');
-        await addDoc(notifRef, {
-          title: "Product Sold & Funds Settled",
-          message: `Payment received for "${link.description}". $${link.amount} added to balance. Content unlocked.`,
-          type: 'DIRECTIVE',
-          read: false,
-          timestamp: Date.now(),
+    const linkRef = doc(firestore, 'users', user.uid, 'payment_links', link.id);
+    const userRef = doc(firestore, 'users', user.uid);
+    const notifRef = collection(firestore, 'users', user.uid, 'notifications');
+    
+    // Non-blocking status update
+    updateDoc(linkRef, { status: 'PAID', paidAt: Date.now() })
+      .catch(async (error) => {
+        const pErr = new FirestorePermissionError({
+          path: linkRef.path,
+          operation: 'update',
+          requestResourceData: { status: 'PAID' },
         });
+        errorEmitter.emit('permission-error', pErr);
+      });
 
-        emitEvent('FINANCE', 'PAYMENT_RECEIVED_MARKETPLACE', 2, { amount: link.amount, seal: link.seal });
-
-        toast({
-          title: "Payment Successful",
-          description: `Funds received! Product "${link.description}" is now marked for delivery.`,
+    // Non-blocking balance update
+    updateDoc(userRef, { balance: increment(link.amount) })
+      .catch(async (error) => {
+        const pErr = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'update',
+          requestResourceData: { balance: `increment(${link.amount})` },
         });
-      } catch (err) {
-        toast({ variant: "destructive", title: "Settlement Error", description: "Kernel failed to reconcile payment." });
-      } finally {
-        setProcessingPayment(null);
-      }
+        errorEmitter.emit('permission-error', pErr);
+      });
+
+    // Non-blocking notification creation
+    const notification = {
+      title: "Product Sold & Funds Settled",
+      message: `Payment received for "${link.description}". $${link.amount} added to balance.`,
+      type: 'DIRECTIVE',
+      read: false,
+      timestamp: Date.now(),
+    };
+
+    addDoc(notifRef, notification)
+      .catch(async (error) => {
+        const pErr = new FirestorePermissionError({
+          path: notifRef.path,
+          operation: 'create',
+          requestResourceData: notification,
+        });
+        errorEmitter.emit('permission-error', pErr);
+      });
+
+    // Visual feedback delay
+    setTimeout(() => {
+      emitEvent('FINANCE', 'PAYMENT_RECEIVED_MARKETPLACE', 2, { amount: link.amount, seal: link.seal });
+      toast({
+        title: "Payment Successful",
+        description: `Funds received! Product "${link.description}" is now settled.`,
+      });
+      setProcessingPayment(null);
     }, 1500);
   };
 
@@ -140,11 +166,21 @@ export function PaymentLinkManager() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleDelete = async (id: string) => {
-    if (firestore && user?.uid) {
-      await deleteDoc(doc(firestore, 'users', user.uid, 'payment_links', id));
-      toast({ title: "Link Deactivated", description: "Marketplace route severed." });
-    }
+  const handleDelete = (id: string) => {
+    if (!firestore || !user?.uid) return;
+    const linkRef = doc(firestore, 'users', user.uid, 'payment_links', id);
+    
+    deleteDoc(linkRef)
+      .then(() => {
+        toast({ title: "Link Deactivated", description: "Marketplace route severed." });
+      })
+      .catch(async (error) => {
+        const pErr = new FirestorePermissionError({
+          path: linkRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', pErr);
+      });
   };
 
   return (
@@ -152,9 +188,9 @@ export function PaymentLinkManager() {
       <div className="lg:col-span-1 space-y-6">
         <Card className="glass-panel border-accent/20">
           <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest">
-              <ShoppingBag className="h-4 w-4 text-accent" />
-              Marketplace Checkout
+            <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest text-accent">
+              <ShoppingBag className="h-4 w-4" />
+              Generate Checkout Link
             </CardTitle>
             <CardDescription className="text-[10px]">Create an integration link for your product or service.</CardDescription>
           </CardHeader>
@@ -202,7 +238,7 @@ export function PaymentLinkManager() {
                  <p>Authorization: Bearer SKO_KEY_...</p>
               </div>
               <p className="text-[9px] text-white/50 italic">
-                Use these links on your website or social media. Payments are instantly settled via the Sovereign Mesh.
+                Use these links on your website. Payments are instantly settled via the Sovereign Mesh.
               </p>
            </CardContent>
         </Card>
