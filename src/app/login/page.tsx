@@ -9,7 +9,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
@@ -18,15 +18,11 @@ import {
   ShieldCheck, 
   Zap, 
   Activity, 
-  Network, 
-  Cpu, 
   User, 
   Mail, 
   Phone, 
   Key,
-  ArrowRight,
-  Loader2,
-  AlertCircle
+  Loader2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -59,6 +55,10 @@ export default function LoginPage() {
     setSessionId(Math.random().toString(36).substring(2, 8).toUpperCase());
   }, []);
 
+  const generateAccountNumber = () => {
+    return Math.floor(100000000000 + Math.random() * 900000000000).toString();
+  };
+
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
@@ -71,6 +71,9 @@ export default function LoginPage() {
         const isAdmin = result.user.email === ADMIN_EMAIL;
         const userRef = doc(firestore, 'users', result.user.uid);
         
+        // Check if user already exists to preserve balance
+        const userSnap = await getDoc(userRef);
+        
         const userData = {
           uid: result.user.uid,
           displayName: result.user.displayName,
@@ -78,6 +81,11 @@ export default function LoginPage() {
           kernelId: `SKO-${result.user.uid.substring(0, 6).toUpperCase()}`,
           lastLogin: serverTimestamp(),
           role: isAdmin ? 'ADMIN' : 'CITIZEN',
+          ...(userSnap.exists() ? {} : { 
+            accountNumber: generateAccountNumber(), 
+            balance: 1000,
+            trustScore: 85.0
+          })
         };
 
         setDoc(userRef, userData, { merge: true }).catch(async (err) => {
@@ -98,14 +106,8 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       let errorDesc = "Authentication sequence interrupted.";
-      
-      if (error.code === 'auth/operation-not-allowed') {
-        errorDesc = "গুগল লগইন এখনো সক্রিয় করা হয়নি। দয়া করে ফায়ারবেস কনসোল থেকে এটি এনাবল করুন।";
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        errorDesc = "পপ-আপ উইন্ডোটি বন্ধ করে দেওয়া হয়েছে। আবার চেষ্টা করুন।";
-      } else if (error.code === 'auth/unauthorized-domain') {
-        errorDesc = "এই ডোমেইনটি অথেনটিকেশনের জন্য অনুমোদিত নয়।";
-      }
+      if (error.code === 'auth/operation-not-allowed') errorDesc = "Google login is not enabled in Firebase console.";
+      else if (error.code === 'auth/popup-closed-by-user') errorDesc = "Login popup was closed.";
 
       toast({ 
         variant: "destructive", 
@@ -120,7 +122,7 @@ export default function LoginPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !name) {
-      toast({ variant: "destructive", title: "Incomplete Data", description: "সবগুলো ঘর সঠিকভাবে পূরণ করুন।" });
+      toast({ variant: "destructive", title: "Incomplete Data", description: "All fields are required." });
       return;
     }
     setIsLoading(true);
@@ -136,7 +138,10 @@ export default function LoginPage() {
         email: email,
         mobile: mobile,
         kernelId: `SKO-${userCredential.user.uid.substring(0, 6).toUpperCase()}`,
+        accountNumber: generateAccountNumber(),
+        balance: 1000.00, // Starting balance
         role: isAdmin ? 'ADMIN' : 'CITIZEN',
+        trustScore: 85.0,
         createdAt: serverTimestamp(),
       };
 
@@ -149,13 +154,11 @@ export default function LoginPage() {
         errorEmitter.emit('permission-error', pErr);
       });
 
-      toast({ title: isAdmin ? "Admin Protocol Active" : "Protocol Established", description: isAdmin ? "Root privileges granted." : "Kernel identity created successfully." });
+      toast({ title: isAdmin ? "Admin Protocol Active" : "Protocol Established", description: "Kernel identity created with $1,000 starting balance." });
       router.replace('/dashboard');
     } catch (error: any) {
-      let msg = "রেজিস্ট্রেশন ব্যর্থ হয়েছে।";
-      if (error.code === 'auth/email-already-in-use') msg = "এই ইমেইলটি অলরেডি ব্যবহার করা হয়েছে। লগইন করার চেষ্টা করুন।";
-      else if (error.code === 'auth/weak-password') msg = "পাসওয়ার্ডটি অন্তত ৬ অক্ষরের হতে হবে।";
-      
+      let msg = "Registration failed.";
+      if (error.code === 'auth/email-already-in-use') msg = "Email already registered.";
       toast({ variant: "destructive", title: "Registration Blocked", description: msg });
     } finally {
       setIsLoading(false);
@@ -165,7 +168,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast({ variant: "destructive", title: "Missing Fields", description: "ইমেইল এবং পাসওয়ার্ড প্রদান করুন।" });
+      toast({ variant: "destructive", title: "Missing Fields", description: "Email and access key required." });
       return;
     }
     setIsLoading(true);
@@ -174,20 +177,7 @@ export default function LoginPage() {
       toast({ title: "Access Granted", description: "Deterministic link established." });
       router.replace('/dashboard');
     } catch (error: any) {
-      let msg = "লগইন করা সম্ভব হয়নি।";
-      let title = "Auth Failure";
-
-      if (error.code === 'auth/user-not-found') {
-        msg = "এই ইমেইলে কোনো একাউন্ট পাওয়া যায়নি। দয়া করে রেজিস্ট্রেশন করুন।";
-        title = "User Not Found";
-      } else if (error.code === 'auth/wrong-password') {
-        msg = "ভুল পাসওয়ার্ড দিয়েছেন। আবার চেষ্টা করুন।";
-        title = "Incorrect Password";
-      } else if (error.code === 'auth/invalid-credential') {
-        msg = "আপনার দেওয়া ইমেইল বা পাসওয়ার্ড সঠিক নয়।";
-      }
-
-      toast({ variant: "destructive", title, description: msg });
+      toast({ variant: "destructive", title: "Auth Failure", description: "Incorrect credentials or account not found." });
     } finally {
       setIsLoading(false);
     }
@@ -195,43 +185,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full bg-background flex items-center justify-center p-4 md:p-10 relative overflow-hidden">
-      {/* Immersive Background */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #00f2ff 1.5px, transparent 1.5px)', backgroundSize: '48px 48px' }} />
         <div className="absolute top-1/4 -left-20 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse" />
         <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
-        
-        {/* Floating System Badges */}
-        <div className="hidden xl:flex absolute top-20 left-20 flex-col gap-4 animate-fade-in">
-           <div className="p-4 rounded-xl glass-panel border-accent/20 flex items-center gap-3">
-              <Activity className="h-5 w-5 text-accent" />
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase">Kernel Status</p>
-                <p className="text-xs font-bold text-white">NOMINAL // STABLE</p>
-              </div>
-           </div>
-        </div>
-
-        <div className="hidden xl:flex absolute bottom-20 right-20 flex-col gap-4 items-end animate-fade-in" style={{ animationDelay: '0.5s' }}>
-           <div className="p-4 rounded-xl glass-panel border-white/5 flex items-center gap-3 text-right">
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase">Encryption</p>
-                <p className="text-xs font-bold text-white">AES-256-GCM</p>
-              </div>
-              <Lock className="h-5 w-5 text-green-400" />
-           </div>
-        </div>
       </div>
 
       <div className="relative z-10 w-full max-w-6xl flex flex-col items-center gap-8">
-        {/* Brand Header */}
         <div className="text-center space-y-4 max-w-2xl flex flex-col items-center">
           <Logo size="xl" className="mb-2" />
           <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent mx-auto">
             <Zap className="h-4 w-4" />
             <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Sovereign OS v1.2</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-headline font-bold text-white tracking-tighter">
+          <h1 className="text-4xl md:text-5xl font-headline font-bold text-white tracking-tighter uppercase">
             ESTABLISH <span className="text-accent italic">KERNEL</span> IDENTITY
           </h1>
         </div>
@@ -292,7 +259,7 @@ export default function LoginPage() {
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent/50" />
                         <Input 
-                          placeholder="Command Name" 
+                          placeholder="Citizen Name" 
                           className="pl-10 bg-secondary/30 border-white/5 h-11 text-xs"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
@@ -364,25 +331,12 @@ export default function LoginPage() {
                 disabled={isLoading}
               >
                 <Globe className="mr-2 h-4 w-4 text-accent group-hover:animate-spin" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Sign in with Google Workspace</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Sign in with Google</span>
               </Button>
-
-              <div className="pt-4 flex flex-col items-center gap-2">
-                 <p className="text-[9px] text-center text-muted-foreground font-mono uppercase opacity-50 tracking-wider">
-                    Session ID: <span className="text-accent">{sessionId}</span> // Identity Mesh-Bound
-                 </p>
-                 <div className="flex items-center gap-4">
-                    <ShieldCheck className="h-4 w-4 text-green-500/50" />
-                    <div className="h-1 w-24 bg-white/5 rounded-full overflow-hidden">
-                       <div className="h-full bg-accent w-3/4 animate-pulse" />
-                    </div>
-                 </div>
-              </div>
             </CardContent>
           </Tabs>
         </Card>
 
-        {/* Footer info */}
         <div className="flex justify-between w-full max-w-lg text-[8px] font-bold uppercase tracking-widest text-muted-foreground/40">
            <span>Sovereign Security v1.2</span>
            <span>Deterministic Execution Path</span>
