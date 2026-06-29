@@ -6,9 +6,9 @@ import { KernelState, SovereignEvent, SystemMode, PlaneType, PlaneState } from '
 import { resolveEventPriority, isTransitionAllowed } from '@/lib/kernel/priority-engine';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useUser } from '@/firebase';
-import { collection, doc, setDoc, query, orderBy, limit, Firestore, addDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, query, orderBy, limit, addDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface KernelContextType extends KernelState {
   emitEvent: (plane: PlaneType, type: string, priority: number, payload: any) => void;
@@ -38,10 +38,10 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
   const [localMode, setLocalMode] = useState<SystemMode>('NORMAL');
   const [uptime, setUptime] = useState(0);
 
-  // Firestore sync for events
+  // Firestore sync for events - path mapped to root 'events' collection
   const eventsQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'system', 'events', 'logs'), orderBy('timestamp', 'desc'), limit(50));
+    return query(collection(firestore, 'events'), orderBy('timestamp', 'desc'), limit(50));
   }, [firestore]);
 
   const { data: remoteEvents } = useCollection<SovereignEvent>(eventsQuery);
@@ -68,7 +68,8 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     };
 
     if (firestore) {
-      const eventRef = doc(firestore, 'system', 'events', 'logs', systemSeal);
+      // Writing to 'events' as per backend.json
+      const eventRef = doc(firestore, 'events', systemSeal);
       setDoc(eventRef, newEvent).catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: eventRef.path,
@@ -78,7 +79,6 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
         errorEmitter.emit('permission-error', permissionError);
       });
 
-      // Also create a notification for high priority events
       if (user?.uid && (resolvedPriority <= 2 || type.includes('EMERGENCY'))) {
         const notifRef = collection(firestore, 'users', user.uid, 'notifications');
         const notification = {
@@ -90,7 +90,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
           timestamp: Date.now(),
         };
         addDoc(notifRef, notification).catch(async (err) => {
-          // contextual error handled silently for background tasks
+          // contextual error handled silently
         });
       }
     }
@@ -124,7 +124,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     const nextQueued = remoteEvents.find(e => e.status === 'QUEUED');
     if (!nextQueued) return;
 
-    const eventRef = doc(firestore, 'system', 'events', 'logs', nextQueued.id);
+    const eventRef = doc(firestore, 'events', nextQueued.id);
     setDoc(eventRef, { ...nextQueued, status: 'COMPLETED' }, { merge: true }).catch(async (error) => {
       const permissionError = new FirestorePermissionError({
         path: eventRef.path,
@@ -137,7 +137,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
 
   const rollbackEvent = useCallback((eventId: string) => {
     if (!firestore) return;
-    const eventRef = doc(firestore, 'system', 'events', 'logs', eventId);
+    const eventRef = doc(firestore, 'events', eventId);
     setDoc(eventRef, { status: 'ROLLED_BACK' }, { merge: true }).catch(async (error) => {
       const permissionError = new FirestorePermissionError({
         path: eventRef.path,
