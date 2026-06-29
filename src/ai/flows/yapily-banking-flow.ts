@@ -1,8 +1,7 @@
 'use server';
 /**
- * @fileOverview Yapily Direct API Orchestrator for NoorNexus UBIL.
- * Handles institution discovery, consent lifecycle, and direct PIS/AIS rails.
- * Integrates with config/yapily_config.json structure logic.
+ * @fileOverview Yapily Direct API Orchestrator & Smart Router for NoorNexus UBIL.
+ * Handles institution discovery, consent lifecycle, and intelligent integration path switching.
  */
 
 import { ai } from '@/ai/genkit';
@@ -21,6 +20,7 @@ const YapilyConsentInputSchema = z.object({
   callbackUrl: z.string(),
   scope: z.enum(['AIS', 'PIS']),
   userId: z.string(),
+  requestType: z.enum(['single_payment', 'bulk_payment', 'scheduled_payment', 'international_transfer', 'standard_consent']).default('standard_consent'),
 });
 
 const YapilyConsentOutputSchema = z.object({
@@ -28,19 +28,40 @@ const YapilyConsentOutputSchema = z.object({
   authorisationUrl: z.string(),
   status: z.string(),
   expiresAt: z.string(),
+  integrationPath: z.enum(['HOSTED', 'DIRECT_API']),
+  routingReason: z.string(),
 });
 
 /**
+ * Smart Router Logic for Integration Path selection.
+ * Determines whether to use Hosted Pages or Direct API based on request complexity.
+ */
+function determineIntegrationPath(requestType: string): { path: 'HOSTED' | 'DIRECT_API', reason: string } {
+  const hostedTypes = ['single_payment', 'standard_consent'];
+  const directTypes = ['bulk_payment', 'scheduled_payment', 'international_transfer'];
+
+  if (directTypes.includes(requestType)) {
+    return { 
+      path: 'DIRECT_API', 
+      reason: 'Complex transaction type detected. Direct API required for granular control.' 
+    };
+  }
+  
+  return { 
+    path: 'HOSTED', 
+    reason: 'Standard request detected. Hosted Page prioritized for rapid scaling and SCA management.' 
+  };
+}
+
+/**
  * Bank Discovery logic for NoorNexus UBIL Core.
- * Matches Yapily institutions with NoorNexus global mapping.
  */
 export async function getYapilyInstitutions(countryCode: string = 'GB') {
   return yapilyInstitutionsFlow({ countryCode });
 }
 
 /**
- * Secure Handshake & Consent Management.
- * Implements PSD2/SCA flow for direct PIS/AIS access.
+ * Intelligent Handshake & Consent Management with Auto-Switch.
  */
 export async function createYapilyConsent(input: z.infer<typeof YapilyConsentInputSchema>) {
   return yapilyConsentFlow(input);
@@ -53,8 +74,7 @@ const yapilyInstitutionsFlow = ai.defineFlow(
     outputSchema: z.array(YapilyInstitutionSchema),
   },
   async (input) => {
-    // In production, this would call Yapily GET /institutions
-    // Using নূর নেক্সাস (NoorNexus) mapping logic
+    // Simulated mapping of 14,000 banks
     return [
       { id: 'barclays', name: 'Barclays', countries: ['GB'], features: ['INITIATE_DOMESTIC_PERIODIC_PAYMENT', 'READ_ACCOUNTS'] },
       { id: 'hsbc-uk', name: 'HSBC UK', countries: ['GB'], features: ['INITIATE_DOMESTIC_SINGLE_PAYMENT', 'READ_ACCOUNTS'] },
@@ -71,13 +91,21 @@ const yapilyConsentFlow = ai.defineFlow(
     outputSchema: YapilyConsentOutputSchema,
   },
   async (input) => {
-    // Secure Handshake simulation as per NoorNexus operational guidelines
+    const routing = determineIntegrationPath(input.requestType);
     const consentId = `CON_YAP_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    
+    // Simulate different URLs based on path
+    const authUrl = routing.path === 'HOSTED' 
+      ? `https://auth.yapily.com/hosted?consent=${consentId}`
+      : `https://auth.yapily.com/direct?consent=${consentId}&institution=${input.institutionId}`;
+
     return {
       consentId,
-      authorisationUrl: `https://auth.yapily.com/direct?consent=${consentId}&institution=${input.institutionId}`,
+      authorisationUrl: authUrl,
       status: 'AWAITING_AUTHORISATION',
       expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+      integrationPath: routing.path,
+      routingReason: routing.reason
     };
   }
 );

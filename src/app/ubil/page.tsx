@@ -33,7 +33,8 @@ import {
   ExternalLink,
   ChevronRight,
   FileText,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Navigation
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -83,6 +84,9 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 const OPERATIONAL_MODULES = [
+  { component: "Smart Router", status: "Active", task: "রিকোয়েস্ট অনুযায়ী রুট (Hosted/Direct) নির্ধারণ করা" },
+  { component: "Hosted Handler", status: "Active", task: "দ্রুত পেমেন্ট ও অথরাইজেশন নিশ্চিত করা" },
+  { component: "Direct API Engine", status: "Active", task: "কাস্টম ও জটিল ট্রানজেকশন প্রসেস করা" },
   { component: "Yapily Connector", status: "Active", task: "Yapily API-এর সাথে কানেক্টিভিটি নিয়ন্ত্রণ" },
   { component: "Consent Manager", status: "Enabled", task: "ব্যাংকিং ডেটা অ্যাক্সেসের অনুমতি পরিচালনা" },
   { component: "Webhook Handler", status: "Active", task: "ইনকামিং পেমেন্ট ও ডাটা ইভেন্ট প্রসেস করা" },
@@ -138,19 +142,22 @@ export default function UBILIntegrationPage() {
     }, 2000);
   };
 
-  const handleCreateConsent = async (instId: string) => {
+  const handleCreateConsent = async (instId: string, type: 'single_payment' | 'bulk_payment') => {
     setIsCreatingConsent(true);
     try {
       const result = await createYapilyConsent({
         institutionId: instId,
         callbackUrl: window.location.href,
-        scope: 'AIS',
-        userId: 'sko_user_82af'
+        scope: type === 'single_payment' ? 'PIS' : 'PIS',
+        userId: 'sko_user_82af',
+        requestType: type as any
       });
+      
+      setLogs(prev => [`>>> SMART ROUTER: Path Selected = ${result.integrationPath} (${result.routingReason})`, ...prev]);
       window.open(result.authorisationUrl, '_blank');
-      toast({ title: "Consent Initiated", description: "Redirecting to bank authorization portal..." });
+      toast({ title: `Router: ${result.integrationPath}`, description: result.routingReason });
     } catch (err) {
-      toast({ variant: "destructive", title: "Consent Error", description: "Could not initialize Direct API handshake." });
+      toast({ variant: "destructive", title: "Consent Error", description: "Could not initialize integration handshake." });
     } finally {
       setIsCreatingConsent(false);
     }
@@ -226,7 +233,7 @@ export default function UBILIntegrationPage() {
                 Test Handshake
              </Button>
              <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px] uppercase">
-               v1.2.0-stable • YAPILY_READY
+               v1.2.0-stable • SMART_ROUTER_ACTIVE
              </Badge>
           </div>
         </header>
@@ -235,7 +242,7 @@ export default function UBILIntegrationPage() {
           <Tabs defaultValue="overview" className="space-y-6">
             <TabsList className="bg-secondary/50 border border-white/5 p-1">
               <TabsTrigger value="overview" className="text-[10px] uppercase font-bold tracking-widest px-6">System Overview</TabsTrigger>
-              <TabsTrigger value="direct-api" className="text-[10px] uppercase font-bold tracking-widest px-6">Yapily Direct API</TabsTrigger>
+              <TabsTrigger value="direct-api" className="text-[10px] uppercase font-bold tracking-widest px-6">Yapily Integration</TabsTrigger>
               <TabsTrigger value="config" className="text-[10px] uppercase font-bold tracking-widest px-6">Operational Config</TabsTrigger>
               <TabsTrigger value="audit" className="text-[10px] uppercase font-bold tracking-widest px-6">Audit Ledger</TabsTrigger>
             </TabsList>
@@ -243,12 +250,12 @@ export default function UBILIntegrationPage() {
             <TabsContent value="overview" className="space-y-6 animate-fade-in">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="glass-panel border-l-4 border-l-accent p-4">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Listener Status</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Router Status</p>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     <span className="text-xl font-bold">Active</span>
                   </div>
-                  <p className="text-[9px] text-muted-foreground mt-1">Port 3000 | NoorNexus Protocol</p>
+                  <p className="text-[9px] text-muted-foreground mt-1">AI-Powered Path Selection</p>
                 </Card>
                 <Card className="glass-panel border-l-4 border-l-primary p-4">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Global Coverage</p>
@@ -256,7 +263,7 @@ export default function UBILIntegrationPage() {
                     <Globe className="h-5 w-5 text-primary" />
                     <span className="text-xl font-bold">14k+ Banks</span>
                   </div>
-                  <p className="text-[9px] text-muted-foreground mt-1">Yapily Connect Ready</p>
+                  <p className="text-[9px] text-muted-foreground mt-1">Yapily Hybrid Mesh</p>
                 </Card>
                 <Card className="glass-panel border-l-4 border-l-yellow-500 p-4">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Security Layer</p>
@@ -281,19 +288,23 @@ export default function UBILIntegrationPage() {
                   <Card className="glass-panel border-accent/20">
                     <CardHeader className="p-4">
                       <CardTitle className="text-xs uppercase flex items-center gap-2">
-                        <Lock className="h-4 w-4 text-accent" />
-                        Shared Secret Mesh
+                        <Navigation className="h-4 w-4 text-accent" />
+                        Smart Router Rules
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0 space-y-4">
-                      <div className="p-3 rounded-lg bg-black/40 border border-white/5 flex items-center justify-between">
-                        <span className="text-xs font-mono text-accent">noornexus_ubil_secret_2026</span>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopy}>
-                          {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
-                        </Button>
+                      <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-3">
+                        <div>
+                          <p className="text-[9px] font-bold text-accent uppercase mb-1">Priority: Hosted</p>
+                          <p className="text-[10px] text-white/60">Single Payment, Standard Consent</p>
+                        </div>
+                        <div className="border-t border-white/5 pt-2">
+                          <p className="text-[9px] font-bold text-primary uppercase mb-1">Priority: Direct API</p>
+                          <p className="text-[10px] text-white/60">Bulk, Scheduled, International</p>
+                        </div>
                       </div>
                       <p className="text-[9px] text-muted-foreground italic leading-relaxed">
-                        Calculate the HMAC SHA-256 hash of JSON payloads using this key for NoorNexus-to-Bank handshakes.
+                        Router analyzes metadata to choose the most efficient path for SCA and performance.
                       </p>
                     </CardContent>
                   </Card>
@@ -387,9 +398,9 @@ export default function UBILIntegrationPage() {
                               <div>
                                  <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
                                     <Building2 className="h-4 w-4 text-accent" />
-                                    Yapily Direct Institutions
+                                    Yapily Hybrid Integration
                                  </CardTitle>
-                                 <CardDescription className="text-[10px] uppercase font-bold mt-1">14,000+ Banks Available via Direct API</CardDescription>
+                                 <CardDescription className="text-[10px] uppercase font-bold mt-1">Smart Routing between Hosted Pages and Direct API</CardDescription>
                               </div>
                               <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold border-accent/20" onClick={handleFetchInstitutions} disabled={isLoadingInstitutions}>
                                  {isLoadingInstitutions ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <RefreshCw className="h-3 w-3 mr-1.5" />}
@@ -419,22 +430,15 @@ export default function UBILIntegrationPage() {
                                              <p className="text-sm font-bold text-white uppercase">{inst.name}</p>
                                              <div className="flex items-center gap-2">
                                                 <Badge variant="ghost" className="text-[8px] p-0 font-mono opacity-50 uppercase">{inst.id}</Badge>
-                                                <div className="flex gap-1">
-                                                   {inst.countries.map((c: string) => <span key={c} className="text-[8px] font-bold opacity-40">{c}</span>)}
-                                                </div>
                                              </div>
                                           </div>
                                        </div>
-                                       <div className="flex items-center gap-3">
-                                          <div className="flex -space-x-2">
-                                             {inst.features.slice(0, 3).map((f: string, i: number) => (
-                                                <div key={i} className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center" title={f}>
-                                                   <Zap className="h-2 w-2 text-accent" />
-                                                </div>
-                                             ))}
-                                          </div>
-                                          <Button size="sm" className="h-8 bg-accent text-background font-bold text-[10px] uppercase" onClick={() => handleCreateConsent(inst.id)}>
-                                             Authorize Direct
+                                       <div className="flex items-center gap-2">
+                                          <Button variant="outline" size="sm" className="h-8 border-accent/20 text-accent font-bold text-[10px] uppercase" onClick={() => handleCreateConsent(inst.id, 'single_payment')}>
+                                             Test Hosted
+                                          </Button>
+                                          <Button size="sm" className="h-8 bg-accent text-background font-bold text-[10px] uppercase" onClick={() => handleCreateConsent(inst.id, 'bulk_payment')}>
+                                             Test Direct
                                           </Button>
                                        </div>
                                     </div>
@@ -450,18 +454,18 @@ export default function UBILIntegrationPage() {
                         <CardHeader>
                            <CardTitle className="text-xs uppercase flex items-center gap-2">
                               <ShieldCheck className="h-4 w-4 text-accent" />
-                              Direct API Handshake
+                              Auto-Switch Protocol
                            </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                            <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-3">
                               <div className="flex justify-between items-center text-[10px]">
-                                 <span className="text-muted-foreground uppercase">Integration Path</span>
-                                 <span className="text-white font-bold">DIRECT_API</span>
+                                 <span className="text-muted-foreground uppercase">Smart Router</span>
+                                 <span className="text-green-400 font-bold uppercase">Active</span>
                               </div>
                               <div className="flex justify-between items-center text-[10px]">
-                                 <span className="text-muted-foreground uppercase">Consent Protocol</span>
-                                 <span className="text-white font-bold">PSD2 / SCA</span>
+                                 <span className="text-muted-foreground uppercase">Hybrid Mode</span>
+                                 <span className="text-white font-bold">ENABLED</span>
                               </div>
                               <div className="flex justify-between items-center text-[10px]">
                                  <span className="text-muted-foreground uppercase">Sovereign Seal</span>
@@ -469,7 +473,7 @@ export default function UBILIntegrationPage() {
                               </div>
                            </div>
                            <p className="text-[10px] text-muted-foreground leading-relaxed italic">
-                              Yapily Direct API নূর নেক্সাস ওএস-এর মাধ্যমে সরাসরি ব্যাংকিং রেইল অ্যাক্সেস করে। এটি AIS/PIS-এর জন্য অত্যন্ত সুরক্ষিত।
+                              Smart Router রিকোয়েস্ট অনুযায়ী নিজে থেকেই নির্ধারণ করে কোনটি Hosted হবে আর কোনটি Direct API হবে।
                            </p>
                         </CardContent>
                      </Card>
@@ -504,9 +508,9 @@ export default function UBILIntegrationPage() {
                         <CardHeader className="p-6 border-b border-white/5">
                            <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
                               <FileText className="h-4 w-4 text-accent" />
-                              Operational Configuration Module
+                              Universal Banking operational Configuration
                            </CardTitle>
-                           <CardDescription className="text-[10px] uppercase font-bold mt-1">NoorNexus UBIL: Yapily Direct API Integration Module</CardDescription>
+                           <CardDescription className="text-[10px] uppercase font-bold mt-1">NoorNexus UBIL: Hybrid Yapily Integration Architecture</CardDescription>
                         </CardHeader>
                         <CardContent className="p-0">
                            <table className="w-full text-left border-collapse">
@@ -567,7 +571,7 @@ export default function UBILIntegrationPage() {
                         <CardContent className="space-y-4">
                            <div className="space-y-3">
                               {[
-                                 { title: "Bank Discovery", desc: "GET /institutions ম্যাপিং যাচাই সক্রিয়।" },
+                                 { title: "Smart Router", desc: "রিকোয়েস্টের ধরণ বিশ্লেষণ করে Hosted/Direct নির্বাচন সক্রিয়।" },
                                  { title: "Secure Handshake", desc: "OAuth 2.0 টোকেন জেনারেট হচ্ছে।" },
                                  { title: "Webhook Listener", desc: "Payment status আপডেট গ্রহণে প্রস্তুত।" }
                               ].map((item, i) => (
