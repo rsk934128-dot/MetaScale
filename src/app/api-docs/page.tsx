@@ -24,7 +24,11 @@ import {
   RefreshCw,
   Play,
   Network,
-  CloudLightning
+  CloudLightning,
+  Mail,
+  MessageSquare,
+  Smartphone,
+  Server
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -70,23 +74,47 @@ const API_ENDPOINTS = [
   "amount": 1250.00,
   "directive": "L3_IMPERIAL"
 }`
+  }
+];
+
+const COMMUNICATION_ENDPOINTS = [
+  {
+    id: "gmail-relay",
+    title: "Gmail Anycast Relay",
+    method: "POST",
+    path: "/api/v1/notify/gmail",
+    desc: "সার্ভারলেস মেকানিজম ব্যবহার করে গুরুত্বপূর্ণ ট্রানজ্যাকশন বা সিকিউরিটি অ্যালার্ট সরাসরি ইউজারের জিমেইলে পাঠানো হয়।",
+    params: [
+      { name: "to_email", type: "string", desc: "প্রাপকের জিমেইল অ্যাড্রেস।" },
+      { name: "subject", type: "string", desc: "ইমেইল এর বিষয়বস্তু।" },
+      { name: "template_id", type: "string", desc: "পেমেন্ট বা সিকিউরিটি টেমপ্লেট আইডি।" },
+      { name: "context_data", type: "object", desc: "ডাইনামিক ডাটা (যেমন: Amount, Date)।" }
+    ],
+    example: `{
+  "to_email": "citizen@mesh.com",
+  "subject": "Settlement Successful",
+  "template_id": "payout_success_v1",
+  "context_data": {
+    "amount": "1250.00",
+    "seal": "SIG_92X...P1"
+  }
+}`
   },
   {
-    id: "entity-verification",
-    title: "Entity Verification (AIS)",
-    method: "GET",
-    path: "/api/v1/entity/verify/{account_number}",
-    desc: "কোনো একাউন্ট নম্বর ভ্যালিড কিনা এবং তার ট্রাস্ট স্কোর চেক করার জন্য। কানেকশন সচল রাখতে এটি জরুরি।",
+    id: "sms-gateway",
+    title: "Sovereign SMS Node",
+    method: "POST",
+    path: "/api/v1/notify/sms",
+    desc: "লোকাল বা ইন্টারন্যাশনাল গেটওয়ে ব্যবহার করে ওটিপি (OTP) বা ডিরেক্টিভ নোটিফিকেশন এসএমএস হিসেবে পাঠানো হয়।",
     params: [
-      { name: "account_number", type: "path", desc: "১২-ডিজিট আইডেন্টিটি নম্বর।" },
-      { name: "api_key", type: "header", desc: "আপনার অ্যাপের সিক্রেট কি।" }
+      { name: "mobile_node", type: "string", desc: "ইউজারের মোবাইল নম্বর (+880...)।" },
+      { name: "message", type: "string", desc: "এসএমএস বডি (Max 160 chars)।" },
+      { name: "priority", type: "number", desc: "1 (High/OTP) - 3 (Low/Promo)।" }
     ],
-    example: `// Response 200 OK
-{
-  "status": "VERIFIED",
-  "trust_score": 98.4,
-  "connection_integrity": "STABLE",
-  "clearance": "L3_DETERMINISTIC"
+    example: `{
+  "mobile_node": "+8801700000000",
+  "message": "Sovereign Alert: $500 received in your mesh wallet. Seal: SKO-921",
+  "priority": 1
 }`
   }
 ];
@@ -140,7 +168,7 @@ export default function APIDocsPage() {
             <div className="space-y-4 flex-1">
               <h2 className="text-4xl font-headline font-bold tracking-tighter">Global <span className="text-accent italic">Interoperability</span></h2>
               <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed">
-                আপনার ব্যাংক বা পেমেন্ট অ্যাপকে Sovereign Mesh-এর সাথে যুক্ত করুন। আমাদের ডকুমেন্টেশন ব্যবহার করে যে কেউ, যেকোনো সময়, যেকোনো জায়গা থেকে কানেক্ট করতে পারবে। টাকা পাঠানো এবং গ্রহণ করার প্রক্রিয়া এখন পুরোপুরি অটোমেটেড।
+                আপনার ব্যাংক বা পেমেন্ট অ্যাপকে Sovereign Mesh-এর সাথে যুক্ত করুন। আমাদের ডকুমেন্টেশন ব্যবহার করে যে কেউ, যেকোনো সময়, যেকোনো জায়গা থেকে কানেক্ট করতে পারবে। ইমেইল এবং এসএমএস নোটিফিকেশন এখন পুরোপুরি অটোমেটেড।
               </p>
             </div>
             <Card className="glass-panel border-accent/20 bg-accent/5 p-6 w-full md:w-80 shrink-0 shadow-2xl">
@@ -176,8 +204,8 @@ export default function APIDocsPage() {
           <Tabs defaultValue="financial" className="space-y-8">
             <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1">
               <TabsTrigger value="financial" className="text-[10px] uppercase font-bold tracking-widest px-6 data-[state=active]:bg-accent data-[state=active]:text-background">Receive & Send (PIS)</TabsTrigger>
+              <TabsTrigger value="communication" className="text-[10px] uppercase font-bold tracking-widest px-6 data-[state=active]:bg-accent data-[state=active]:text-background">Gmail & SMS (Relay)</TabsTrigger>
               <TabsTrigger value="intelligence" className="text-[10px] uppercase font-bold tracking-widest px-6 data-[state=active]:bg-accent data-[state=active]:text-background">Intelligence Plane</TabsTrigger>
-              <TabsTrigger value="mesh" className="text-[10px] uppercase font-bold tracking-widest px-6 data-[state=active]:bg-accent data-[state=active]:text-background">Data Registry</TabsTrigger>
             </TabsList>
 
             <TabsContent value="financial" className="space-y-8">
@@ -229,6 +257,82 @@ export default function APIDocsPage() {
               ))}
             </TabsContent>
 
+            <TabsContent value="communication" className="space-y-8">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  <Card className="glass-panel border-l-4 border-l-primary bg-primary/5">
+                     <CardHeader>
+                        <CardTitle className="text-sm flex items-center gap-2">
+                           <Mail className="h-4 w-4 text-primary" />
+                           Serverless Gmail Node
+                        </CardTitle>
+                        <CardDescription className="text-[10px] uppercase">Anycast SMTP Relay</CardDescription>
+                     </CardHeader>
+                     <CardContent className="text-xs text-muted-foreground leading-relaxed">
+                        আমাদের ব্যাকএন্ড ফায়ারবেস ক্লাউড ফাংশনের মাধ্যমে সার্ভারলেস ইমেইল ডেলিভারি নিশ্চিত করে। এটি সরাসরি জিমেইল এপিআই এর সাথে এনক্রিপ্টেড উপায়ে হ্যান্ডশেক করে।
+                     </CardContent>
+                  </Card>
+                  <Card className="glass-panel border-l-4 border-l-accent bg-accent/5">
+                     <CardHeader>
+                        <CardTitle className="text-sm flex items-center gap-2">
+                           <MessageSquare className="h-4 w-4 text-accent" />
+                           Direct SMS Gateway
+                        </CardTitle>
+                        <CardDescription className="text-[10px] uppercase">Deterministic OTP Routing</CardDescription>
+                     </CardHeader>
+                     <CardContent className="text-xs text-muted-foreground leading-relaxed">
+                        পেমেন্ট কনফার্মেশন এবং ওটিপি এর জন্য লোকাল গেটওয়ে (যেমন: bKash SMS) এবং গ্লোবাল গেটওয়ে এর ইন্টেলিজেন্ট সিলেকশন লজিক ব্যবহার করা হয়।
+                     </CardContent>
+                  </Card>
+               </div>
+
+              {COMMUNICATION_ENDPOINTS.map((api) => (
+                <Card key={api.id} className="glass-panel border-white/5 overflow-hidden group hover:border-accent/30 transition-all shadow-xl">
+                  <CardHeader className="p-6 border-b border-white/5 bg-white/5">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                           <Badge className="bg-primary text-white font-bold px-3">{api.method}</Badge>
+                           <span className="text-xs font-mono text-primary/80 tracking-tighter">{api.path}</span>
+                        </div>
+                        <CardTitle className="text-xl mt-2 flex items-center gap-2">
+                          {api.id === 'gmail-relay' ? <Mail className="h-5 w-5 text-blue-400" /> : <Smartphone className="h-5 w-5 text-accent" />}
+                          {api.title}
+                        </CardTitle>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => handleCopy(api.example, api.id)} className="hover:bg-accent/10">
+                        {copiedId === api.id ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <CardDescription className="text-xs mt-2 italic text-muted-foreground">{api.desc}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2">
+                      <div className="p-6 space-y-4 border-r border-white/5">
+                         <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Request Parameters</h4>
+                         <div className="space-y-3">
+                           {api.params.map((p, i) => (
+                             <div key={i} className="flex flex-col gap-1">
+                               <div className="flex items-center gap-2">
+                                 <span className="text-xs font-bold text-white">{p.name}</span>
+                                 <span className="text-[10px] font-mono text-primary">[{p.type}]</span>
+                               </div>
+                               <p className="text-[10px] text-muted-foreground">{p.desc}</p>
+                             </div>
+                           ))}
+                         </div>
+                      </div>
+                      <div className="p-6 bg-black/40">
+                         <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-4">Payload Example</h4>
+                         <pre className="text-[11px] font-mono text-white/80 leading-relaxed overflow-x-auto p-4 rounded bg-black/20 border border-white/5 group-hover:border-primary/20 transition-colors">
+                           {api.example}
+                         </pre>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </TabsContent>
+
             <TabsContent value="intelligence" className="space-y-6">
               <Card className="glass-panel border-l-4 border-l-accent shadow-2xl">
                 <CardHeader>
@@ -244,7 +348,7 @@ export default function APIDocsPage() {
                         <span className="text-xs font-mono text-accent">/ai/flows/civicIncidentAnalysis</span>
                       </div>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        ইমারজেন্সি ডিটেকশন এবং অটোমেটেড ডিসপ্যাচ লজিক বাইরের সেন্সর থেকে এই এপিআই-তে হিট করলে কার্নেল সরাসরি রেসপন্স করবে।
+                        ইমারজেন্সি ডিটেকশন এবং অটোমেটেড ডিসপ্যাচ লজিক বাইরের সেন্সর থেকে এই এপিআই-তে হিট করলে কার্নেল সরাসরি রেসপন্স করবে এবং সাথে সাথে জিমেইল/এসএমএস এ অ্যালার্ট পাঠাবে।
                       </p>
                       <div className="p-4 rounded bg-black/40 border border-white/5">
                         <pre className="text-[10px] font-mono text-accent">
@@ -260,57 +364,29 @@ export default function APIDocsPage() {
                 </CardContent>
               </Card>
             </TabsContent>
-
-            <TabsContent value="mesh" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[
-                  { title: "System Ledger", path: "/system/events/logs/{id}", entity: "KernelEvent" },
-                  { title: "Financial Identity", path: "/users/{userId}", entity: "UserProfile" },
-                  { title: "Public Payments", path: "/payment_links/{linkId}", entity: "PaymentLink" },
-                  { title: "Mode Registry", path: "/system/control", entity: "SystemControlState" }
-                ].map((mesh, i) => (
-                  <Card key={i} className="glass-panel group hover:border-accent/30 transition-all cursor-pointer">
-                    <CardHeader className="p-4">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded bg-accent/10 group-hover:bg-accent/20 transition-colors">
-                            <Database className="h-4 w-4 text-accent" />
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-bold text-white group-hover:text-accent transition-colors">{mesh.title}</h4>
-                            <p className="text-[10px] font-mono text-muted-foreground">{mesh.path}</p>
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="text-[8px] border-white/10 uppercase">{mesh.entity}</Badge>
-                      </div>
-                    </CardHeader>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
           </Tabs>
 
           <section className="p-8 rounded-2xl bg-secondary/20 border border-white/5 space-y-6 relative overflow-hidden shadow-2xl">
              <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-[100px] -mr-32 -mt-32" />
              <div className="flex items-center gap-3 relative z-10">
-                <Building2 className="h-6 w-6 text-primary" />
-                <h3 className="text-xl font-headline font-bold uppercase tracking-tight">External Node Onboarding</h3>
+                <Server className="h-6 w-6 text-primary" />
+                <h3 className="text-xl font-headline font-bold uppercase tracking-tight">Firebase Serverless Integration</h3>
              </div>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
                 <div className="space-y-2">
                    <Badge className="bg-primary/20 text-primary text-[8px] mb-2 uppercase">Step 1</Badge>
-                   <p className="text-xs font-bold text-white uppercase">Auth Link & DNS</p>
-                   <p className="text-[10px] text-muted-foreground leading-relaxed">আপনার সিস্টেমের পাবলিক আইপি এবং ডোমেইন আমাদের সিকিউরিটি প্যানেলে রেজিস্টার করুন।</p>
+                   <p className="text-xs font-bold text-white uppercase">Cloud Triggers</p>
+                   <p className="text-[10px] text-muted-foreground leading-relaxed">ফায়ারস্টোরে কোনো নতুন ট্রানজ্যাকশন ডাটা এলেই সার্ভারলেস ফাংশন অটোমেটিক ট্রিগার হয়।</p>
                 </div>
                 <div className="space-y-2">
                    <Badge className="bg-primary/20 text-primary text-[8px] mb-2 uppercase">Step 2</Badge>
-                   <p className="text-xs font-bold text-white uppercase">Symmetric Key Exchange</p>
-                   <p className="text-[10px] text-muted-foreground leading-relaxed">OAuth2 হ্যান্ডশেকের মাধ্যমে আপনার সিস্টেমের জন্য একটি ডেডিকেটেড গ্র্যান্ট টোকেন তৈরি করুন।</p>
+                   <p className="text-xs font-bold text-white uppercase">AI Analysis</p>
+                   <p className="text-[10px] text-muted-foreground leading-relaxed">Genkit ফ্লো ব্যবহার করে নোটিফিকেশনের ভাষা এবং গুরুত্ব এআই দিয়ে যাচাই করা হয়।</p>
                 </div>
                 <div className="space-y-2">
                    <Badge className="bg-primary/20 text-primary text-[8px] mb-2 uppercase">Step 3</Badge>
-                   <p className="text-xs font-bold text-white uppercase">Webhook Tunneling</p>
-                   <p className="text-[10px] text-muted-foreground leading-relaxed">রিয়েল-টাইম পেমেন্ট নোটিফিকেশন পাওয়ার জন্য আপনার Webhook URL কনফিগার করুন।</p>
+                   <p className="text-xs font-bold text-white uppercase">Relay Delivery</p>
+                   <p className="text-[10px] text-muted-foreground leading-relaxed">জিমেইল বা এসএমএস গেটওয়ের মাধ্যমে সেকেন্ডের মধ্যে সিটিজেন নোড-এ মেসেজ পৌঁছে যায়।</p>
                 </div>
              </div>
           </section>
