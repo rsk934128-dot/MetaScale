@@ -1,7 +1,13 @@
+
 'use client';
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { 
+  getFirestore, 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager 
+} from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { firebaseConfig } from './config';
 
@@ -13,11 +19,12 @@ export function initializeFirebase() {
   
   if (!firestoreInstance) {
     try {
-      // Optimized for reliable multi-tab and offline access
+      // Optimized for reliable multi-tab and bypasses potential firewall issues with long polling
       firestoreInstance = initializeFirestore(app, {
         localCache: persistentLocalCache({ 
           tabManager: persistentMultipleTabManager() 
-        })
+        }),
+        experimentalForceLongPolling: true // Ensures stability in restricted networks
       });
     } catch (e) {
       firestoreInstance = getFirestore(app);
