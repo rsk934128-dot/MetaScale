@@ -10,8 +10,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Allow public access to the landing page (/) and login page (/login)
-  const isPublicPath = pathname === '/' || pathname === '/login';
+  // Allow public access to landing, login, and checkout pages
+  const isPublicPath = 
+    pathname === '/' || 
+    pathname === '/login' || 
+    pathname.startsWith('/checkout/');
 
   useEffect(() => {
     if (!loading && !user && !isPublicPath) {

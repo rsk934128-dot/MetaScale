@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -103,6 +102,16 @@ export function PaymentLinkManager() {
       });
   };
 
+  const copyToClipboard = (id: string, seal: string) => {
+    if (typeof window === 'undefined') return;
+    const origin = window.location.origin;
+    const url = `${origin}/checkout/${seal}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(id);
+    toast({ title: "Checkout URL Copied", description: "Integration link ready." });
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   const simulateCustomerPayment = (link: any) => {
     if (!firestore || !user?.uid) return;
     setProcessingPayment(link.id);
@@ -112,13 +121,11 @@ export function PaymentLinkManager() {
     const userRef = doc(firestore, 'users', user.uid);
     const notifRef = collection(firestore, 'users', user.uid, 'notifications');
     
-    // Update both user link and public registry link
     const updateData = { status: 'PAID', paidAt: Date.now() };
     
     updateDoc(linkRef, updateData).catch(async () => {});
     updateDoc(publicLinkRef, updateData).catch(async () => {});
 
-    // Balance update
     updateDoc(userRef, { balance: increment(link.amount) })
       .catch(async (error) => {
         const pErr = new FirestorePermissionError({
@@ -129,16 +136,13 @@ export function PaymentLinkManager() {
         errorEmitter.emit('permission-error', pErr);
       });
 
-    // Notification
-    const notification = {
+    addDoc(notifRef, {
       title: "Product Sold & Funds Settled",
       message: `Payment received for "${link.description}". $${link.amount} added to balance.`,
       type: 'DIRECTIVE',
       read: false,
       timestamp: Date.now(),
-    };
-
-    addDoc(notifRef, notification).catch(async () => {});
+    }).catch(async () => {});
 
     setTimeout(() => {
       emitEvent('FINANCE', 'PAYMENT_RECEIVED_MARKETPLACE', 2, { amount: link.amount, seal: link.seal });
@@ -148,15 +152,6 @@ export function PaymentLinkManager() {
       });
       setProcessingPayment(null);
     }, 1500);
-  };
-
-  const copyToClipboard = (id: string, seal: string) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const url = `${origin}/checkout/${seal}`;
-    navigator.clipboard.writeText(url);
-    setCopiedId(id);
-    toast({ title: "Checkout URL Copied", description: "Integration link ready." });
-    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handleDelete = (id: string, seal: string) => {
@@ -213,21 +208,6 @@ export function PaymentLinkManager() {
               Generate Checkout Link
             </Button>
           </CardContent>
-        </Card>
-
-        <Card className="glass-panel border-white/5 bg-white/5">
-           <CardHeader className="p-4">
-              <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-tighter">API Integration</CardTitle>
-           </CardHeader>
-           <CardContent className="p-4 pt-0 space-y-3">
-              <div className="p-2 rounded bg-black/40 border border-white/5 font-mono text-[9px] text-accent/70 space-y-1">
-                 <p>POST /v1/marketplace/link</p>
-                 <p>Authorization: Bearer SKO_KEY_...</p>
-              </div>
-              <p className="text-[9px] text-white/50 italic">
-                Use these links on your website. Payments are instantly settled via the Sovereign Mesh.
-              </p>
-           </CardContent>
         </Card>
       </div>
 
@@ -289,7 +269,7 @@ export function PaymentLinkManager() {
                                   disabled={processingPayment === link.id}
                                 >
                                    {processingPayment === link.id ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <ExternalLink className="h-3 w-3 mr-1.5" />}
-                                   Test Payment
+                                   Test Local
                                 </Button>
                                 <Button 
                                   variant="ghost" 
@@ -303,7 +283,7 @@ export function PaymentLinkManager() {
                               </>
                             ) : (
                               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-[9px] font-bold text-green-400 uppercase">
-                                <PackageCheck className="h-3 w-3" /> Settlement Complete
+                                <PackageCheck className="h-3 w-3" /> Settled
                               </div>
                             )}
                             <Button 
