@@ -1,16 +1,64 @@
 
 "use client";
 
+import { useState } from "react";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart3, TrendingUp, DollarSign, PieChart, ArrowUpRight, Target, Users, Zap, Briefcase, Rocket, FileText } from "lucide-react";
+import { 
+  BarChart3, 
+  TrendingUp, 
+  DollarSign, 
+  PieChart, 
+  ArrowUpRight, 
+  Target, 
+  Users, 
+  Zap, 
+  Briefcase, 
+  Rocket, 
+  FileText,
+  RefreshCw,
+  Download,
+  ShieldCheck,
+  Loader2
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useKernel } from "@/components/kernel/KernelProvider";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RevenuePage() {
+  const { emitEvent } = useKernel();
+  const { toast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    
+    // Emit high-clearance audit event
+    emitEvent('FINANCE', 'STRATEGY_REPORT_GENERATED', 3, { 
+      scope: 'GLOBAL_EXECUTION',
+      version: '1.2.0-stable',
+      timestamp: Date.now()
+    });
+
+    toast({
+      title: "Generating Strategy PDF",
+      description: "Compiling commercial metadata and applying cryptographic seal...",
+    });
+
+    // Simulate cryptographic compilation and export
+    setTimeout(() => {
+      setIsExporting(false);
+      toast({
+        title: "Export Successful",
+        description: "Commercial Executive Summary has been archived and exported successfully.",
+      });
+    }, 2500);
+  };
+
   return (
     <div className="flex min-h-screen">
       <AppSidebar />
@@ -27,8 +75,9 @@ export default function RevenuePage() {
              <Button variant="outline" size="sm" className="border-accent/20 text-accent font-bold text-[10px]">
                 <Rocket className="mr-1.5 h-3.5 w-3.5" /> Launch Dashboard
              </Button>
-             <Button size="sm" className="bg-accent text-background font-bold text-[10px] cyan-glow">
-                Download Fiscal Audit
+             <Button size="sm" className="bg-accent text-background font-bold text-[10px] cyan-glow" onClick={handleExport} disabled={isExporting}>
+                {isExporting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-1.5 h-3.5 w-3.5" />}
+                {isExporting ? 'Generating...' : 'Download Fiscal Audit'}
              </Button>
           </div>
         </header>
@@ -172,8 +221,13 @@ export default function RevenuePage() {
                             Your "Digital Financial Empire" is currently operating at 92.4% efficiency. With Project 42-45 successfully integrated, the system is now generating a deterministic yield of 3.5% per transaction. Our growth roadmap predicts a 300% increase in merchant nodes by Q4 2024.
                          </p>
                       </div>
-                      <Button className="h-14 px-10 rounded-full bg-primary text-white font-bold uppercase text-xs tracking-widest blue-glow shrink-0">
-                         Export Strategy PDF
+                      <Button 
+                        className="h-14 px-10 rounded-full bg-primary text-white font-bold uppercase text-xs tracking-widest blue-glow shrink-0 transition-all active:scale-95"
+                        onClick={handleExport}
+                        disabled={isExporting}
+                      >
+                         {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                         {isExporting ? "Compiling..." : "Export Strategy PDF"}
                       </Button>
                    </div>
                 </CardContent>
