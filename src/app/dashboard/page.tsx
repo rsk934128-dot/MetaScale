@@ -41,6 +41,10 @@ export default function SovereignControlPlane() {
   const { mode, setSystemMode, events, planes, emitEvent, processNextEvent, uptime } = useKernel();
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const isLive = useMemo(() => {
+    return events.some(e => e.type === 'COMMERCIAL_CHANNELS_OPEN' && e.status === 'COMPLETED');
+  }, [events]);
+
   const handleModeChange = (newMode: SystemMode) => {
     setSystemMode(newMode);
     emitEvent('SECURITY', 'MODE_TRANSITION', 1, { from: mode, to: newMode });
@@ -74,8 +78,11 @@ export default function SovereignControlPlane() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="outline" className="hidden sm:flex border-accent/20 text-accent font-mono text-[10px]">
-              EXECUTION_MODE: ACTIVE
+            <Badge variant="outline" className={cn(
+              "hidden sm:flex border-accent/20 text-accent font-mono text-[10px]",
+              isLive && "border-green-500 text-green-400"
+            )}>
+              {isLive ? "SYSTEM_LIVE: PROTOCOL_STABLE" : "EXECUTION_MODE: ACTIVE"}
             </Badge>
             <div className="hidden md:flex bg-secondary/50 p-1 rounded-lg border border-white/5">
               {(['NORMAL', 'EMERGENCY', 'LOCKDOWN'] as SystemMode[]).map((m) => (
@@ -162,7 +169,12 @@ export default function SovereignControlPlane() {
                            <Globe className="h-4 w-4 text-accent" />
                            Global Anycast Grid (Project 42)
                         </CardTitle>
-                        <Badge variant="outline" className="text-[8px] font-mono border-green-500/30 text-green-400">STATUS: NOMINAL</Badge>
+                        <Badge variant="outline" className={cn(
+                          "text-[8px] font-mono border-green-500/30 text-green-400",
+                          isLive && "animate-pulse"
+                        )}>
+                          {isLive ? "STATUS: LIVE_OPERATION" : "STATUS: NOMINAL"}
+                        </Badge>
                      </div>
                   </CardHeader>
                   <CardContent className="flex-1 relative z-10 flex items-center justify-center">
@@ -219,8 +231,8 @@ export default function SovereignControlPlane() {
                               "B2B Outreach sequence for European corridor is architected and signed via ISO 20022 protocol."
                            </p>
                         </div>
-                        <Button variant="outline" className="w-full h-8 text-[9px] font-bold uppercase border-primary/20 text-primary hover:bg-primary/10">
-                           Open Architect <ChevronRight className="ml-1 h-3 w-3" />
+                        <Button variant="outline" asChild className="w-full h-8 text-[9px] font-bold uppercase border-primary/20 text-primary hover:bg-primary/10">
+                           <a href="/syntax">Open Architect <ChevronRight className="ml-1 h-3 w-3" /></a>
                         </Button>
                      </CardContent>
                   </Card>
@@ -282,8 +294,8 @@ export default function SovereignControlPlane() {
                               <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest italic">Current Goal</p>
                               <p className="text-sm font-headline font-bold text-white uppercase italic">Digital Financial Empire Q4</p>
                            </div>
-                           <Button className="w-full h-10 bg-accent text-background font-bold uppercase tracking-widest text-[10px] cyan-glow">
-                              Authorize Scalability Shift
+                           <Button className="w-full h-10 bg-accent text-background font-bold uppercase tracking-widest text-[10px] cyan-glow" asChild>
+                              <a href="/roadmap">Authorize Scalability Shift</a>
                            </Button>
                         </div>
                      </div>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -20,12 +21,17 @@ import {
   ShieldAlert,
   ArrowRight,
   TrendingUp,
-  Users
+  Users,
+  RefreshCw,
+  Loader2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { useKernel } from "@/components/kernel/KernelProvider";
+import { useToast } from "@/hooks/use-toast";
 
 const ROADMAP_PHASES = [
   {
@@ -94,6 +100,39 @@ const EXECUTION_METRICS = [
 ];
 
 export default function RoadmapPage() {
+  const [isLaunching, setIsLaunching] = useState(false);
+  const { emitEvent, setSystemMode } = useKernel();
+  const { toast } = useToast();
+
+  const handleLaunchProtocol = async () => {
+    setIsLaunching(true);
+    
+    // Step 1: Initialize Security Plane
+    emitEvent('SECURITY', 'LAUNCH_PROTOCOL_INITIATED', 1, { 
+      trigger: 'MANUAL_AUTHORIZATION',
+      sequence: 'S-LEVEL-0'
+    });
+
+    // Step 2: Simulate network handshake
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    emitEvent('INFRA', 'GLOBAL_MESH_SYNC_FINAL', 2, { 
+      nodes: 42,
+      protocol: 'ANYCAST_STABLE'
+    });
+
+    // Step 3: Transition to NORMAL stable mode
+    setTimeout(() => {
+      setSystemMode('NORMAL');
+      setIsLaunching(false);
+      toast({
+        title: "SYSTEM LIVE",
+        description: "NoorNexus Sovereign OS has been deployed to all 42 anycast nodes.",
+        variant: "default",
+      });
+      emitEvent('FINANCE', 'COMMERCIAL_CHANNELS_OPEN', 1, { status: 'LIVE' });
+    }, 2000);
+  };
+
   return (
     <div className="flex min-h-screen">
       <AppSidebar />
@@ -235,8 +274,21 @@ export default function RoadmapPage() {
                   Sovereign OS is now transitioning to global execution. High-throughput rails are active in the Finance Plane.
                 </p>
               </div>
-              <Button className="cyan-glow bg-accent text-background font-bold h-12 px-8 uppercase tracking-widest text-[10px] shrink-0">
-                Execute Launch Protocol <ArrowRight className="ml-2 h-4 w-4" />
+              <Button 
+                onClick={handleLaunchProtocol}
+                disabled={isLaunching}
+                className="cyan-glow bg-accent text-background font-bold h-12 px-8 uppercase tracking-widest text-[10px] shrink-0"
+              >
+                {isLaunching ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Synchronizing Grid...
+                  </>
+                ) : (
+                  <>
+                    Execute Launch Protocol <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
               </Button>
             </div>
           </footer>
