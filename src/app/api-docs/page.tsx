@@ -28,7 +28,9 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Box,
-  Fingerprint
+  Fingerprint,
+  ShieldAlert,
+  Unplug
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,7 +81,7 @@ const API_ENDPOINTS = [
   },
   {
     id: "payout-execute",
-    title: "Global Global Payout",
+    title: "Global Payout",
     method: "POST",
     path: "/api/v1/payouts/execute",
     desc: "ফিউশন সিস্টেম থেকে বাইরের গেটওয়ে (PayPal, Priyo Pay, bKash) টাকা সফলভাবে আউটবাউন্ড করার লজিক।",
@@ -95,32 +97,13 @@ const API_ENDPOINTS = [
   "amount": 1250.00,
   "directive": "L3_IMPERIAL_SETTLEMENT"
 }`
-  },
-  {
-    id: "inbound-settlement",
-    title: "Inbound Bank Settlement",
-    method: "POST",
-    path: "/api/v1/settlement/inbound",
-    desc: "অন্যান্য ব্যাংক থেকে আমাদের সিস্টেমে টাকা পাঠানোর জন্য এপিআই। এটি T+0 সেটেলমেন্ট নিশ্চিত করে।",
-    params: [
-      { name: "account_number", type: "string", desc: "Recipient FusionPay mesh account number." },
-      { name: "amount", type: "number", desc: "Settlement amount." },
-      { name: "routing_seal", type: "string", desc: "HMAC-SHA256 signature." }
-    ],
-    example: `{
-  "account_number": "481290310221",
-  "amount": 500.00,
-  "currency": "USD",
-  "origin_node": "HSBC_UK_04",
-  "routing_seal": "SIG_HMAC_72AF..."
-}`
   }
 ];
 
 export default function APIDocsPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
-  const [testLogs, setTestLogs] = useState<{msg: string, type: 'info' | 'success' | 'error'}[]>([]);
+  const [testLogs, setTestLogs] = useState<{msg: string, type: 'info' | 'success' | 'error' | 'warning'}[]>([]);
   const [liveLedger, setLiveLedger] = useState<any[]>([]);
   const { toast } = useToast();
 
@@ -131,29 +114,45 @@ export default function APIDocsPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const runSimulation = (type: 'ISSUE' | 'SETTLE' | 'PAYOUT' | 'INBOUND') => {
+  const runSimulation = (
+    type: 'ISSUE' | 'SETTLE' | 'PAYOUT' | 'INBOUND', 
+    mode: 'SUCCESS' | 'OVERDRAFT' | 'BAD_SIG' | 'TIMEOUT' = 'SUCCESS'
+  ) => {
     setIsTesting(true);
     setTestLogs([]);
     
-    let steps = [
-      { msg: `Initializing ${type} request...`, type: 'info' as const },
-      { msg: "Validating Payload Integrity (SHA-256)...", type: 'info' as const },
-      { msg: "X-Sovereign-Signature: VERIFIED", type: 'success' as const },
-      { msg: "Check deterministic capacity...", type: 'info' as const },
+    let steps: {msg: string, type: 'info' | 'success' | 'error' | 'warning'}[] = [
+      { msg: `Initializing ${type} request...`, type: 'info' },
+      { msg: "Validating Payload Integrity (SHA-256)...", type: 'info' },
     ];
 
-    if (type === 'ISSUE') {
-      steps.push({ msg: "Directive: L2_VIRTUAL_ASSET_CREATION confirmed.", type: 'success' as const });
-      steps.push({ msg: "Virtual Card Node v1.2 created successfully.", type: 'success' as const });
-    } else if (type === 'SETTLE') {
-      steps.push({ msg: "ISO 20022 Handshake: Bidirectional sync active.", type: 'info' as const });
-      steps.push({ msg: "Settlement: CARD_TO_MESH finality achieved.", type: 'success' as const });
-    } else if (type === 'PAYOUT') {
-      steps.push({ msg: "Outbound Rail: PAYPAL_REST_V2 active.", type: 'info' as const });
-      steps.push({ msg: "Imperial Directive seal applied.", type: 'success' as const });
+    // Edge Case: Bad Signature
+    if (mode === 'BAD_SIG') {
+      steps.push({ msg: "X-Sovereign-Signature: MISMATCH DETECTED", type: 'warning' });
+      steps.push({ msg: "SHA_256_VERIFICATION_FAILED: Terminal Handshake Terminated.", type: 'error' });
     } else {
-      steps.push({ msg: "Origin Node: Validated via Clearing House.", type: 'success' as const });
-      steps.push({ msg: "Mesh Balance synchronized.", type: 'success' as const });
+      steps.push({ msg: "X-Sovereign-Signature: VERIFIED", type: 'success' });
+      steps.push({ msg: "Check deterministic capacity...", type: 'info' });
+    }
+
+    if (mode === 'SUCCESS') {
+      if (type === 'ISSUE') {
+        steps.push({ msg: "Directive: L2_VIRTUAL_ASSET_CREATION confirmed.", type: 'success' });
+        steps.push({ msg: "Virtual Card Node v1.2 created successfully.", type: 'success' });
+      } else if (type === 'SETTLE') {
+        steps.push({ msg: "ISO 20022 Handshake: Bidirectional sync active.", type: 'info' });
+        steps.push({ msg: "Settlement: CARD_TO_MESH finality achieved.", type: 'success' });
+      } else if (type === 'PAYOUT') {
+        steps.push({ msg: "Outbound Rail: PAYPAL_REST_V2 active.", type: 'info' });
+        steps.push({ msg: "Imperial Directive seal applied.", type: 'success' });
+      }
+    } else if (mode === 'OVERDRAFT') {
+      steps.push({ msg: "Validation Failure: Requested load exceeds mesh limit.", type: 'warning' });
+      steps.push({ msg: "ERR_INSUFFICIENT_MESH_BALANCE (ISO_ERR_204)", type: 'error' });
+    } else if (mode === 'TIMEOUT') {
+      steps.push({ msg: "Handshaking with External Gateway...", type: 'info' });
+      steps.push({ msg: "Network Latency Peak: Retrying connection (1/3)...", type: 'warning' });
+      steps.push({ msg: "Upstream Node Unreachable: L3_IMPERIAL_SETTLEMENT_TIMEOUT", type: 'error' });
     }
 
     let i = 0;
@@ -165,19 +164,19 @@ export default function APIDocsPage() {
         clearInterval(interval);
         setIsTesting(false);
         
-        const newEntry = {
-          id: type === 'ISSUE' ? `vcard_${Math.floor(100000 + Math.random() * 900000)}` : `TX_${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-          status: 'SUCCESS',
-          type: type === 'SETTLE' ? 'CARD_TO_MESH' : type === 'ISSUE' ? 'ISSUE_CARD' : type === 'PAYOUT' ? 'GLOBAL_PAYOUT' : 'INBOUND_BANK',
-          amount: type === 'PAYOUT' ? '1250.00' : (Math.random() * 1000).toFixed(2),
-          ts: new Date().toLocaleTimeString()
-        };
-        setLiveLedger(prev => [newEntry, ...prev].slice(0, 10));
-        
-        toast({
-          title: "Simulation Finalized",
-          description: `Logic confirmed for ${type} flow.`,
-        });
+        if (mode === 'SUCCESS') {
+          const newEntry = {
+            id: type === 'ISSUE' ? `vcard_${Math.floor(100000 + Math.random() * 900000)}` : `TX_${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+            status: 'SUCCESS',
+            type: type === 'SETTLE' ? 'CARD_TO_MESH' : type === 'ISSUE' ? 'ISSUE_CARD' : 'GLOBAL_PAYOUT',
+            amount: type === 'PAYOUT' ? '1250.00' : (Math.random() * 1000).toFixed(2),
+            ts: new Date().toLocaleTimeString()
+          };
+          setLiveLedger(prev => [newEntry, ...prev].slice(0, 10));
+          toast({ title: "Simulation Finalized", description: `Logic confirmed for ${type} flow.` });
+        } else {
+          toast({ variant: "destructive", title: "Simulation Failed", description: "Edge case validation successful (Error trapped)." });
+        }
       }
     }, 500);
   };
@@ -218,54 +217,79 @@ export default function APIDocsPage() {
               </div>
             </div>
 
-            <Card className="glass-panel border-accent/20 bg-accent/5 p-6 w-full xl:w-[450px] shrink-0 shadow-2xl relative overflow-hidden">
+            <Card className="glass-panel border-accent/20 bg-accent/5 p-6 w-full xl:w-[480px] shrink-0 shadow-2xl relative overflow-hidden">
                <div className="absolute top-0 right-0 p-2 opacity-10"><Terminal className="h-20 w-20 text-accent" /></div>
-               <div className="flex items-center gap-3 mb-4">
-                  <Play className="h-5 w-5 text-accent" />
-                  <p className="text-xs font-bold uppercase text-white tracking-widest">Interactive Handshake Lab</p>
+               <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Play className="h-5 w-5 text-accent" />
+                    <p className="text-xs font-bold uppercase text-white tracking-widest">Interactive Handshake Lab</p>
+                  </div>
+                  <Badge variant="outline" className="text-[8px] animate-pulse border-green-500/50 text-green-400">STATEFUL_SIM_v1</Badge>
                </div>
-               <div className="grid grid-cols-2 gap-2 relative z-10">
-                  <Button 
-                    className="text-[9px] font-bold h-10 bg-accent text-background cyan-glow uppercase"
-                    onClick={() => runSimulation('ISSUE')}
-                    disabled={isTesting}
-                  >
-                    Issue Virtual Card
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    className="text-[9px] font-bold h-10 border-blue-400/30 text-blue-400 uppercase"
-                    onClick={() => runSimulation('SETTLE')}
-                    disabled={isTesting}
-                  >
-                    Test 2-Way Settle
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    className="text-[9px] font-bold h-10 border-green-500/30 text-green-400 uppercase"
-                    onClick={() => runSimulation('PAYOUT')}
-                    disabled={isTesting}
-                  >
-                    Global Payout
-                  </Button>
-                  <Button 
-                    variant="ghost"
-                    className="text-[9px] font-bold h-10 text-muted-foreground uppercase"
-                    onClick={() => runSimulation('INBOUND')}
-                    disabled={isTesting}
-                  >
-                    Inbound Bank
-                  </Button>
+               
+               <div className="space-y-4 relative z-10">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      className="text-[9px] font-bold h-10 bg-accent text-background cyan-glow uppercase"
+                      onClick={() => runSimulation('ISSUE')}
+                      disabled={isTesting}
+                    >
+                      Issue Virtual Card
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      className="text-[9px] font-bold h-10 border-blue-400/30 text-blue-400 uppercase"
+                      onClick={() => runSimulation('SETTLE')}
+                      disabled={isTesting}
+                    >
+                      Test 2-Way Settle
+                    </Button>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-3">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                      <ShieldAlert className="h-3 w-3 text-red-400" /> Validation Edge Cases
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                       <Button 
+                         variant="ghost" 
+                         className="text-[8px] h-8 border border-red-500/20 text-red-400 hover:bg-red-500/10 uppercase"
+                         onClick={() => runSimulation('ISSUE', 'OVERDRAFT')}
+                         disabled={isTesting}
+                       >
+                         Test Overdraft
+                       </Button>
+                       <Button 
+                         variant="ghost" 
+                         className="text-[8px] h-8 border border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10 uppercase"
+                         onClick={() => runSimulation('SETTLE', 'BAD_SIG')}
+                         disabled={isTesting}
+                       >
+                         Bad Signature
+                       </Button>
+                       <Button 
+                         variant="ghost" 
+                         className="text-[8px] h-8 border border-orange-500/20 text-orange-400 hover:bg-orange-500/10 uppercase"
+                         onClick={() => runSimulation('PAYOUT', 'TIMEOUT')}
+                         disabled={isTesting}
+                       >
+                         Node Timeout
+                       </Button>
+                    </div>
+                  </div>
                </div>
+
                {testLogs.length > 0 && (
-                 <div className="mt-4 p-3 rounded bg-black/40 border border-white/5 font-mono text-[8px] space-y-1.5 animate-fade-in h-32 overflow-y-auto">
+                 <div className="mt-4 p-3 rounded bg-black/60 border border-white/5 font-mono text-[8px] space-y-1.5 animate-fade-in h-40 overflow-y-auto shadow-inner">
                     {testLogs.map((log, i) => (
                       <p key={i} className={cn(
                         "flex items-start gap-2",
                         log.type === 'success' ? 'text-green-400 font-bold' : 
-                        log.type === 'error' ? 'text-red-400' : 'text-white/60'
+                        log.type === 'error' ? 'text-red-400 font-bold' : 
+                        log.type === 'warning' ? 'text-yellow-400 italic' :
+                        'text-white/60'
                       )}>
-                        <span>{log.type === 'success' ? '✓' : '>'}</span>
+                        <span>{log.type === 'success' ? '✓' : log.type === 'error' ? '!' : log.type === 'warning' ? '?' : '>'}</span>
                         {log.msg}
                       </p>
                     ))}
@@ -360,22 +384,27 @@ export default function APIDocsPage() {
 
             <div className="space-y-6">
                <Card className="glass-panel border-accent/20 bg-accent/5 h-fit shadow-2xl">
-                  <CardHeader className="p-4 border-b border-white/5">
+                  <CardHeader className="p-4 border-b border-white/5 flex items-center justify-between">
                      <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest">
                         <History className="h-4 w-4 text-accent" />
                         Live Card Ledger
                      </CardTitle>
+                     <div className="flex gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-[8px] font-mono text-green-400">ACTIVE</span>
+                     </div>
                   </CardHeader>
                   <CardContent className="p-0">
-                     <ScrollArea className="h-[450px]">
+                     <ScrollArea className="h-[480px]">
                         {liveLedger.length === 0 ? (
-                          <div className="p-20 text-center text-muted-foreground italic text-[10px]">
-                             No active card interactions. Run a test to see live updates.
+                          <div className="p-20 text-center text-muted-foreground italic text-[10px] space-y-4">
+                             <Unplug className="h-8 w-8 mx-auto opacity-20" />
+                             <p>No active card interactions.<br/>Run a handshake test above.</p>
                           </div>
                         ) : (
                           <div className="divide-y divide-white/5">
                              {liveLedger.map((tx, i) => (
-                               <div key={i} className="p-4 space-y-2 hover:bg-white/5 transition-all animate-fade-in">
+                               <div key={i} className="p-4 space-y-2 hover:bg-white/5 transition-all animate-fade-in border-l-2 border-l-transparent hover:border-l-accent">
                                   <div className="flex justify-between items-center">
                                      <span className="text-[10px] font-mono text-accent font-bold">{tx.id}</span>
                                      <Badge className="bg-green-500/20 text-green-400 text-[8px] border-green-500/20">SUCCESS</Badge>
@@ -383,7 +412,7 @@ export default function APIDocsPage() {
                                   <div className="flex justify-between items-end">
                                      <div>
                                         <p className="text-[9px] uppercase font-bold text-white">{tx.type.replace(/_/g, ' ')}</p>
-                                        <p className="text-[8px] text-muted-foreground">{tx.ts}</p>
+                                        <p className="text-[8px] text-muted-foreground font-mono">{tx.ts}</p>
                                      </div>
                                      <p className="text-sm font-headline font-bold text-white">${tx.amount}</p>
                                   </div>
@@ -398,12 +427,12 @@ export default function APIDocsPage() {
                <Card className="glass-panel border-white/5 bg-secondary/10">
                   <CardHeader className="p-4">
                      <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2">
-                        <ShieldCheck className="h-3 w-3 text-accent" /> Audit Protocol
+                        <ShieldCheck className="h-3 w-3 text-accent" /> Simulation Protocol
                      </CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
                      <p className="text-[9px] text-muted-foreground leading-relaxed italic">
-                        All simulations are executed within the Sovereign Sandbox. SHA-256 payloads are logged for deterministic compliance.
+                        All tests execute against a stateful frontend mock. Production calls require a valid <span className="text-accent">X-Sovereign-Signature</span> and ISO 20022 compliance.
                      </p>
                   </CardContent>
                </Card>
