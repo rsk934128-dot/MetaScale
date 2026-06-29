@@ -61,6 +61,7 @@ export function PaymentLinkManager() {
     }
 
     setIsCreating(true);
+    // Generate a clean deterministic seal ID
     const seal = `PAY_SEAL_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     
     const linkData = {
@@ -71,38 +72,39 @@ export function PaymentLinkManager() {
       currency: 'USD',
       description: desc || "Marketplace Product",
       status: 'ACTIVE',
-      seal,
+      seal: seal,
       createdAt: Date.now(),
     };
 
-    // 1. Register in root public registry (Source of Truth for Checkout)
+    // References
     const publicLinkRef = doc(firestore, 'payment_links', seal);
-    
-    // 2. Add to user's private collection for management
     const userLinkRef = doc(firestore, 'users', user.uid, 'payment_links', seal);
 
-    // Write to both places for redundancy and access
-    Promise.all([
-      setDoc(publicLinkRef, linkData),
-      setDoc(userLinkRef, linkData)
-    ]).then(() => {
-      emitEvent('FINANCE', 'MARKETPLACE_LINK_GENERATED', 4, { seal, amount });
-      toast({
-        title: "Payment Link Generated",
-        description: `পেমেন্ট লিঙ্ক তৈরি হয়েছে এবং মার্কেটপ্লেসে ব্যবহারের জন্য প্রস্তুত।`,
+    // Atomic-like write simulation
+    setDoc(publicLinkRef, linkData)
+      .then(() => {
+        return setDoc(userLinkRef, linkData);
+      })
+      .then(() => {
+        emitEvent('FINANCE', 'MARKETPLACE_LINK_GENERATED', 4, { seal, amount });
+        toast({
+          title: "Payment Link Generated",
+          description: "পেমেন্ট লিঙ্কটি পাবলিক রেজিস্ট্রিতে সক্রিয় করা হয়েছে।",
+        });
+        setAmount("");
+        setDesc("");
+      })
+      .catch(async (error) => {
+        const pErr = new FirestorePermissionError({
+          path: publicLinkRef.path,
+          operation: 'create',
+          requestResourceData: linkData,
+        });
+        errorEmitter.emit('permission-error', pErr);
+      })
+      .finally(() => {
+        setIsCreating(false);
       });
-      setAmount("");
-      setDesc("");
-    }).catch(async (error) => {
-      const pErr = new FirestorePermissionError({
-        path: publicLinkRef.path,
-        operation: 'create',
-        requestResourceData: linkData,
-      });
-      errorEmitter.emit('permission-error', pErr);
-    }).finally(() => {
-      setIsCreating(false);
-    });
   };
 
   const copyToClipboard = (id: string, seal: string) => {
@@ -247,7 +249,7 @@ export function PaymentLinkManager() {
                             </div>
                             <div className="space-y-1">
                                <div className="flex items-center gap-2">
-                                  <span className="text-base font-bold text-white">${link.amount.toLocaleString()}</span>
+                                  <span className="text-base font-bold text-white">${link.amount?.toLocaleString() || '0.00'}</span>
                                   <Badge className={cn(
                                     "text-[8px] uppercase font-bold",
                                     link.status === 'PAID' ? "bg-green-500 text-background" : "bg-accent text-background"

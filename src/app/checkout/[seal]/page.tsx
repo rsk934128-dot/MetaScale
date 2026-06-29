@@ -33,7 +33,8 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export default function CheckoutPage() {
-  const { seal } = useParams();
+  const params = useParams();
+  const sealId = params?.seal as string;
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -41,11 +42,15 @@ export default function CheckoutPage() {
   const [selectedMethod, setSelectedMethod] = useState<string>("card");
 
   // Read directly from the public registry for global availability
-  const linkRef = useMemo(() => firestore ? doc(firestore, 'payment_links', seal as string) : null, [firestore, seal]);
+  const linkRef = useMemo(() => {
+    if (!firestore || !sealId) return null;
+    return doc(firestore, 'payment_links', sealId);
+  }, [firestore, sealId]);
+
   const { data: link, loading } = useDoc<any>(linkRef);
 
   const handlePay = async () => {
-    if (!firestore || !link || link.status === 'PAID') return;
+    if (!firestore || !link || link.status === 'PAID' || !sealId) return;
 
     setIsProcessing(true);
     try {
@@ -57,10 +62,10 @@ export default function CheckoutPage() {
       };
 
       // 1. Update public link status
-      await updateDoc(linkRef!, updateData);
+      await updateDoc(doc(firestore, 'payment_links', sealId), updateData);
 
       // 2. Update seller's private link status
-      const userLinkRef = doc(firestore, 'users', link.creatorId, 'payment_links', link.id);
+      const userLinkRef = doc(firestore, 'users', link.creatorId, 'payment_links', sealId);
       await updateDoc(userLinkRef, updateData);
 
       // 3. Increment seller's balance
@@ -150,7 +155,7 @@ export default function CheckoutPage() {
                   {isPaid ? "Settlement Complete" : "Checkout Hub"}
                 </CardTitle>
                 <CardDescription className="text-[9px] uppercase tracking-widest font-bold opacity-60">
-                  {isPaid ? "Transaction Hash: " + seal : "Secure Payment Pipeline"}
+                  {isPaid ? "Transaction Hash: " + sealId : "Secure Payment Pipeline"}
                 </CardDescription>
              </div>
           </CardHeader>
@@ -163,7 +168,7 @@ export default function CheckoutPage() {
                    <p className="text-lg font-bold text-white uppercase italic truncate">"{link.description}"</p>
                    <div className="flex items-center justify-center text-3xl font-headline font-bold text-accent">
                       <DollarSign className="h-5 w-5 -mr-1" />
-                      {link.amount.toLocaleString()}
+                      {link.amount?.toLocaleString() || '0.00'}
                    </div>
                 </div>
 
@@ -269,7 +274,7 @@ export default function CheckoutPage() {
                   <div className="p-3 rounded-xl bg-black/40 border border-white/5 font-mono text-[9px] space-y-1">
                      <p className="text-accent">&gt;&gt;&gt; STATUS: SETTLED</p>
                      <p className="text-white/80">&gt;&gt;&gt; METHOD: {selectedMethod.toUpperCase()}</p>
-                     <p className="text-white/80">&gt;&gt;&gt; SEAL: {seal}</p>
+                     <p className="text-white/80">&gt;&gt;&gt; SEAL: {sealId}</p>
                   </div>
                   <Button asChild className="w-full h-11 bg-white text-background font-bold uppercase text-[10px] tracking-widest">
                      <Link href="/">Launch Sovereign Mesh</Link>
