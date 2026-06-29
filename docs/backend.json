@@ -33,6 +33,7 @@
         "currency": { "type": "string" },
         "description": { "type": "string" },
         "status": { "type": "string", "enum": ["ACTIVE", "PAID", "EXPIRED"] },
+        "paymentMethod": { "type": "string", "description": "Method used for the settlement (Visa, Nagad, etc.)" },
         "seal": { "type": "string" },
         "createdAt": { "type": "number" },
         "paidAt": { "type": "number" }
