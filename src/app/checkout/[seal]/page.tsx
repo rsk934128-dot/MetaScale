@@ -21,7 +21,8 @@ import {
   CreditCard,
   Smartphone,
   Building2,
-  Wallet
+  Wallet,
+  Zap as PriyoIcon
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -175,11 +176,12 @@ export default function CheckoutPage() {
                 <div className="space-y-4">
                   <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest ml-1">Select Rail</Label>
                   <Tabs value={selectedMethod} onValueChange={setSelectedMethod} className="w-full">
-                    <TabsList className="grid grid-cols-4 bg-secondary/50 p-1 h-12 rounded-xl">
-                      <TabsTrigger value="card" className="rounded-lg"><CreditCard className="h-4 w-4" /></TabsTrigger>
-                      <TabsTrigger value="nagad" className="text-orange-500 font-bold rounded-lg">Nagad</TabsTrigger>
-                      <TabsTrigger value="mesh" className="rounded-lg"><Building2 className="h-4 w-4" /></TabsTrigger>
-                      <TabsTrigger value="wallet" className="rounded-lg"><Wallet className="h-4 w-4" /></TabsTrigger>
+                    <TabsList className="grid grid-cols-5 bg-secondary/50 p-1 h-12 rounded-xl gap-1">
+                      <TabsTrigger value="card" className="rounded-lg"><CreditCard className="h-3 w-3" /></TabsTrigger>
+                      <TabsTrigger value="priyopay" className="rounded-lg text-[#6366f1] font-bold text-[8px] uppercase">Priyo</TabsTrigger>
+                      <TabsTrigger value="nagad" className="text-orange-500 font-bold rounded-lg text-[8px] uppercase">Nagad</TabsTrigger>
+                      <TabsTrigger value="mesh" className="rounded-lg"><Building2 className="h-3 w-3" /></TabsTrigger>
+                      <TabsTrigger value="wallet" className="rounded-lg"><Wallet className="h-3 w-3" /></TabsTrigger>
                     </TabsList>
 
                     <div className="mt-4 p-5 rounded-2xl border border-white/5 bg-black/20 min-h-[140px] flex flex-col justify-center">
@@ -188,6 +190,12 @@ export default function CheckoutPage() {
                         <div className="grid grid-cols-2 gap-3">
                           <Input placeholder="MM/YY" className="h-11 bg-background/50 border-white/10 rounded-lg text-sm" />
                           <Input placeholder="CVC" type="password" className="h-11 bg-background/50 border-white/10 rounded-lg text-sm" />
+                        </div>
+                      </TabsContent>
+                      <TabsContent value="priyopay" className="space-y-4 m-0">
+                        <div className="text-center space-y-2">
+                           <p className="text-[10px] text-[#818cf8] font-bold uppercase tracking-widest">Priyo Pay Account</p>
+                           <Input placeholder="yourname@priyo.com" className="h-12 bg-background/50 border-white/10 rounded-lg text-sm text-center font-mono" />
                         </div>
                       </TabsContent>
                       <TabsContent value="nagad" className="space-y-4 m-0">

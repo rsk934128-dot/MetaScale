@@ -20,7 +20,10 @@ import {
   Search,
   ShoppingBag,
   TrendingUp,
-  Download
+  Download,
+  ExternalLink,
+  ChevronRight,
+  ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +37,7 @@ import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
 import { BankSandboxModal } from "@/components/finance/BankSandboxModal";
 import { PaymentLinkManager } from "@/components/finance/PaymentLinkManager";
+import { orchestratePayout } from "@/ai/flows/payout-orchestrator";
 import { cn } from "@/lib/utils";
 
 export default function FinancialIntelligence() {
@@ -63,6 +67,12 @@ export default function FinancialIntelligence() {
   const [isTransferring, setIsTransferring] = useState(false);
   const [isToppingUp, setIsToppingUp] = useState(false);
   
+  // Priyo Pay States
+  const [priyoEmail, setPriyoEmail] = useState("");
+  const [priyoAmount, setPriyoAmount] = useState("");
+  const [isPriyoProcessing, setIsPriyoProcessing] = useState(false);
+  const [priyoReport, setPriyoReport] = useState<any>(null);
+
   // Sandbox State
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
   const [connectedAccount, setConnectedAccount] = useState<any>(null);
@@ -111,6 +121,42 @@ export default function FinancialIntelligence() {
       toast({ variant: "destructive", title: "Transfer Failed", description: err.message });
     } finally {
       setIsTransferring(false);
+    }
+  };
+
+  const handlePriyoPayout = async () => {
+    if (!priyoEmail || !priyoAmount || !profile) return;
+    const amount = parseFloat(priyoAmount);
+
+    if (profile.balance < amount) {
+      toast({ variant: "destructive", title: "Balance Exhausted", description: "Sovereign balance insufficient for Priyo Pay payout." });
+      return;
+    }
+
+    setIsPriyoProcessing(true);
+    emitEvent('FINANCE', 'PRIYO_PAYOUT_INITIATED', 2, { recipient: priyoEmail, amount });
+
+    try {
+      const result = await orchestratePayout({
+        gateway: 'PRIYO_PAY',
+        recipientEmail: priyoEmail,
+        amount: amount,
+      });
+
+      if (result.status === 'SUCCESS') {
+        await updateDoc(userRef!, { balance: increment(-amount) });
+        setPriyoReport(result);
+        emitEvent('FINANCE', 'PRIYO_PAYOUT_SUCCESS', 2, { batch: result.batchId });
+        toast({ title: "Priyo Pay Disbursed", description: `Successfully sent $${amount} to ${priyoEmail}.` });
+        setPriyoAmount("");
+        setPriyoEmail("");
+      } else {
+        throw new Error("Gateway rejected transaction.");
+      }
+    } catch (err: any) {
+       toast({ variant: "destructive", title: "Payout Failed", description: err.message });
+    } finally {
+      setIsPriyoProcessing(false);
     }
   };
 
@@ -241,12 +287,68 @@ export default function FinancialIntelligence() {
               <Tabs defaultValue="links" className="space-y-6">
                 <TabsList className="bg-secondary/50 border border-white/5 p-1 h-auto flex flex-wrap">
                   <TabsTrigger value="links" className="data-[state=active]:bg-accent data-[state=active]:text-background text-[10px] uppercase font-bold tracking-widest px-6 h-10">Marketplace Links</TabsTrigger>
+                  <TabsTrigger value="priyo" className="data-[state=active]:bg-[#6366f1] data-[state=active]:text-white text-[10px] uppercase font-bold tracking-widest px-6 h-10">Priyo Pay Payouts</TabsTrigger>
                   <TabsTrigger value="mesh" className="data-[state=active]:bg-accent data-[state=active]:text-background text-[10px] uppercase font-bold tracking-widest px-6 h-10">Mesh Transfer</TabsTrigger>
-                  <TabsTrigger value="pis" className="data-[state=active]:bg-accent data-[state=active]:text-background text-[10px] uppercase font-bold tracking-widest px-6 h-10">External PIS</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="links" className="space-y-6">
                   <PaymentLinkManager />
+                </TabsContent>
+
+                <TabsContent value="priyo" className="space-y-6">
+                   <Card className="glass-panel border-l-4 border-l-[#6366f1] bg-[#6366f1]/5">
+                      <CardHeader>
+                         <CardTitle className="text-sm flex items-center gap-2 uppercase text-[#818cf8]">
+                            <PriyoIcon className="h-4 w-4" /> Priyo Pay Disbursement
+                         </CardTitle>
+                         <CardDescription className="text-[10px] uppercase tracking-widest">Global USD disbursement gateway</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                               <Label className="text-[10px] font-bold uppercase">Recipient Email</Label>
+                               <Input 
+                                  placeholder="user@priyo.com" 
+                                  className="h-11 text-sm bg-background/50 border-white/5"
+                                  value={priyoEmail}
+                                  onChange={(e) => setPriyoEmail(e.target.value)}
+                               />
+                            </div>
+                            <div className="space-y-2">
+                               <Label className="text-[10px] font-bold uppercase">Amount ($)</Label>
+                               <Input 
+                                  type="number" 
+                                  placeholder="0.00" 
+                                  className="h-11 text-sm bg-background/50 border-white/5"
+                                  value={priyoAmount}
+                                  onChange={(e) => setPriyoAmount(e.target.value)}
+                               />
+                            </div>
+                         </div>
+                         <Button 
+                            className="w-full h-11 bg-[#6366f1] text-white font-bold uppercase text-xs hover:bg-[#4f46e5]"
+                            onClick={handlePriyoPayout}
+                            disabled={isPriyoProcessing || isThrottled}
+                         >
+                            {isPriyoProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ChevronRight className="mr-2 h-4 w-4" />}
+                            Execute Priyo Payout
+                         </Button>
+
+                         {priyoReport && (
+                           <div className="mt-4 p-4 rounded-xl bg-black/40 border border-[#6366f1]/20 space-y-3 animate-fade-in">
+                              <div className="flex justify-between items-center">
+                                 <span className="text-[10px] font-bold text-[#818cf8]">STATUS: {priyoReport.status}</span>
+                                 <Badge variant="outline" className="text-[8px] font-mono">{priyoReport.batchId}</Badge>
+                              </div>
+                              <div className="space-y-1">
+                                 {priyoReport.executionLog.slice(0, 3).map((log: string, i: number) => (
+                                   <p key={i} className="text-[9px] text-muted-foreground font-mono">&gt; {log}</p>
+                                 ))}
+                              </div>
+                           </div>
+                         )}
+                      </CardContent>
+                   </Card>
                 </TabsContent>
 
                 <TabsContent value="mesh" className="space-y-6">
@@ -293,15 +395,6 @@ export default function FinancialIntelligence() {
                       </CardContent>
                    </Card>
                 </TabsContent>
-
-                <TabsContent value="pis">
-                   <Card className="glass-panel">
-                      <CardHeader className="text-center py-12 opacity-50">
-                         <Activity className="h-12 w-12 mx-auto mb-4 text-primary animate-pulse" />
-                         <p className="text-xs uppercase font-bold tracking-[0.2em]">External PIS Rails in Standby</p>
-                      </CardHeader>
-                   </Card>
-                </TabsContent>
               </Tabs>
             </div>
 
@@ -332,7 +425,7 @@ export default function FinancialIntelligence() {
                  </CardHeader>
                  <CardContent className="p-4 pt-0 space-y-3">
                     <div className="p-2 rounded bg-secondary/30 text-[9px] text-white/60 italic leading-relaxed">
-                      "Marketplace links are monitored by the Priority Resolver. Illegal product flags result in node isolation."
+                      "Priyo Pay payouts are subject to Imperial Directive validation for amounts > $1,000."
                     </div>
                     <Progress value={92} className="h-1" />
                  </CardContent>
