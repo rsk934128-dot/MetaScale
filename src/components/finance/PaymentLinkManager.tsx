@@ -41,7 +41,6 @@ export function PaymentLinkManager() {
   const [desc, setDesc] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [processingPayment, setProcessingPayment] = useState<string | null>(null);
 
   const linksQuery = useMemo(() => {
     if (!firestore || !user?.uid) return null;
@@ -80,19 +79,27 @@ export function PaymentLinkManager() {
     const publicLinkRef = doc(firestore, 'payment_links', seal);
     const userLinkRef = doc(firestore, 'users', user.uid, 'payment_links', seal);
 
-    // Atomic-like write simulation
+    // Robust dual-write with error handling
     setDoc(publicLinkRef, linkData)
       .then(() => {
-        return setDoc(userLinkRef, linkData);
-      })
-      .then(() => {
-        emitEvent('FINANCE', 'MARKETPLACE_LINK_GENERATED', 4, { seal, amount });
-        toast({
-          title: "Payment Link Generated",
-          description: "পেমেন্ট লিঙ্কটি পাবলিক রেজিস্ট্রিতে সক্রিয় করা হয়েছে।",
-        });
-        setAmount("");
-        setDesc("");
+        setDoc(userLinkRef, linkData)
+          .then(() => {
+            emitEvent('FINANCE', 'MARKETPLACE_LINK_GENERATED', 4, { seal, amount });
+            toast({
+              title: "Payment Link Generated",
+              description: "পেমেন্ট লিঙ্কটি পাবলিক রেজিস্ট্রিতে সক্রিয় করা হয়েছে।",
+            });
+            setAmount("");
+            setDesc("");
+          })
+          .catch(async (error) => {
+             const pErr = new FirestorePermissionError({
+               path: userLinkRef.path,
+               operation: 'create',
+               requestResourceData: linkData,
+             });
+             errorEmitter.emit('permission-error', pErr);
+          });
       })
       .catch(async (error) => {
         const pErr = new FirestorePermissionError({
@@ -115,50 +122,6 @@ export function PaymentLinkManager() {
     setCopiedId(id);
     toast({ title: "Checkout URL Copied", description: "লিঙ্কটি কপি করা হয়েছে। আপনার কাস্টমারকে এটি পাঠান।" });
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const simulateCustomerPayment = (link: any) => {
-    if (!firestore || !user?.uid) return;
-    setProcessingPayment(link.id);
-    
-    const linkRef = doc(firestore, 'users', user.uid, 'payment_links', link.id);
-    const publicLinkRef = doc(firestore, 'payment_links', link.seal);
-    const userRef = doc(firestore, 'users', user.uid);
-    const notifRef = collection(firestore, 'users', user.uid, 'notifications');
-    
-    const updateData = { status: 'PAID', paidAt: Date.now() };
-    
-    updateDoc(linkRef, updateData).catch(() => {});
-    updateDoc(publicLinkRef, updateData).catch(() => {});
-
-    updateDoc(userRef, { balance: increment(link.amount) })
-      .catch(async (error) => {
-        const pErr = new FirestorePermissionError({
-          path: userRef.path,
-          operation: 'update',
-          requestResourceData: { balance: `increment(${link.amount})` },
-        });
-        errorEmitter.emit('permission-error', pErr);
-      });
-
-    const notification = {
-      title: "Product Sold & Funds Settled",
-      message: `"${link.description}" এর জন্য $${link.amount} পেমেন্ট পাওয়া গেছে। আপনার ব্যালেন্স আপডেট করা হয়েছে।`,
-      type: 'DIRECTIVE',
-      read: false,
-      timestamp: Date.now(),
-    };
-
-    addDoc(notifRef, notification).catch(() => {});
-
-    setTimeout(() => {
-      emitEvent('FINANCE', 'PAYMENT_RECEIVED_MARKETPLACE', 2, { amount: link.amount, seal: link.seal });
-      toast({
-        title: "Payment Successful",
-        description: `অভিনন্দন! আপনার পণ্যটি সফলভাবে বিক্রি হয়েছে।`,
-      });
-      setProcessingPayment(null);
-    }, 1500);
   };
 
   const handleDelete = (id: string, seal: string) => {
@@ -267,27 +230,15 @@ export function PaymentLinkManager() {
                          
                          <div className="flex items-center gap-2">
                             {link.status === 'ACTIVE' ? (
-                              <>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="text-[9px] font-bold h-8 border-accent/30 text-accent hover:bg-accent/10"
-                                  onClick={() => simulateCustomerPayment(link)}
-                                  disabled={processingPayment === link.id}
-                                >
-                                   {processingPayment === link.id ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <ExternalLink className="h-3 w-3 mr-1.5" />}
-                                   Test Payment
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="text-[9px] font-bold h-8 border border-white/5 bg-secondary/20"
-                                  onClick={() => copyToClipboard(link.id, link.seal)}
-                                >
-                                   {copiedId === link.id ? <Check className="h-3.5 w-3.5 text-green-400 mr-1.5" /> : <Copy className="h-3.5 w-3.5 mr-1.5" />}
-                                   Copy URL
-                                </Button>
-                              </>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-[9px] font-bold h-8 border border-white/5 bg-secondary/20 transition-all hover:bg-accent hover:text-background"
+                                onClick={() => copyToClipboard(link.id, link.seal)}
+                              >
+                                 {copiedId === link.id ? <Check className="h-3.5 w-3.5 text-green-400 mr-1.5" /> : <Copy className="h-3.5 w-3.5 mr-1.5" />}
+                                 Copy Checkout URL
+                              </Button>
                             ) : (
                               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-[9px] font-bold text-green-400 uppercase">
                                 <PackageCheck className="h-3 w-3" /> Settled
