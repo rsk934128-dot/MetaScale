@@ -37,10 +37,6 @@ const PredictiveComplianceOutputSchema = z.object({
   policyAdaptationSuggestions: z.array(z.string()),
 });
 
-export async function predictComplianceRisk(input: z.infer<typeof PredictiveComplianceInputSchema>) {
-  return predictiveComplianceFlow(input);
-}
-
 const compliancePredictorPrompt = ai.definePrompt({
   name: 'compliancePredictorPrompt',
   input: { schema: PredictiveComplianceInputSchema },
@@ -74,3 +70,7 @@ const predictiveComplianceFlow = ai.defineFlow(
     return output!;
   }
 );
+
+export async function predictComplianceRisk(input: z.infer<typeof PredictiveComplianceInputSchema>) {
+  return predictiveComplianceFlow(input);
+}

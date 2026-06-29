@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Project 45: Forensic Liquidity Drift Analysis.
@@ -20,10 +21,6 @@ const DriftOutputSchema = z.object({
   rebalancingProtocol: z.enum(['NONE', 'STANDARD_SHIFT', 'EMERGENCY_INJECTION', 'LOCKDOWN_THROTTLE']),
   estimatedImpactTime: z.string().describe('ETA of potential liquidity exhaustion.'),
 });
-
-export async function analyzeLiquidityDrift(input: z.infer<typeof DriftInputSchema>) {
-  return liquidityDriftFlow(input);
-}
 
 const driftPrompt = ai.definePrompt({
   name: 'driftPrompt',
@@ -54,3 +51,7 @@ const liquidityDriftFlow = ai.defineFlow(
     return output!;
   }
 );
+
+export async function analyzeLiquidityDrift(input: z.infer<typeof DriftInputSchema>) {
+  return liquidityDriftFlow(input);
+}

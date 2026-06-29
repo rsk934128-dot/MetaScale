@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Sovereign Economic Governance Simulator.
@@ -51,10 +52,6 @@ const EconomyOutputSchema = z.object({
   })).optional(),
 });
 
-export async function simulateTrustEconomy(input: z.infer<typeof EconomyInputSchema>) {
-  return simulateTrustEconomyFlow(input);
-}
-
 const economySimulatorPrompt = ai.definePrompt({
   name: 'economySimulatorPrompt',
   input: { schema: EconomyInputSchema },
@@ -66,7 +63,7 @@ MARKET CONDITION: {{{marketTrend}}}
 
 HIERARCHICAL NODES:
 {{#each networkNodes}}
-- {{id}} [Layer: {{layer}}]: Trust {{trustScore}}, Liquidity \${{liquidityAvailable}}
+- {{id}} [Layer: {{layer}}]: Trust {{trustScore}}, Liquidity \${{{liquidityAvailable}}}
 {{/each}}
 
 PROPOSED POLICY:
@@ -89,3 +86,7 @@ const simulateTrustEconomyFlow = ai.defineFlow(
     return output!;
   }
 );
+
+export async function simulateTrustEconomy(input: z.infer<typeof EconomyInputSchema>) {
+  return simulateTrustEconomyFlow(input);
+}
