@@ -22,7 +22,8 @@ import {
   Activity,
   Users,
   Fingerprint,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,41 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 const API_ENDPOINTS = [
+  {
+    id: "bank-list",
+    title: "Institution Discovery",
+    method: "GET",
+    path: "/api/v1/banking/institutions",
+    desc: "Yapily Direct API ব্যবহার করে সাপোর্ট করা ১৪,০০০+ ব্যাংকের লিস্ট পেতে এটি ব্যবহার করুন।",
+    headers: [
+      { name: "X-Sovereign-Signature", desc: "SHA-256 HMAC payload signature." }
+    ],
+    params: [
+      { name: "country_code", type: "string", desc: "ISO 3166-1 alpha-2 code (e.g. GB, BD)." }
+    ],
+    example: `GET /api/v1/banking/institutions?country_code=GB`
+  },
+  {
+    id: "bank-consent",
+    title: "Create Auth Request",
+    method: "POST",
+    path: "/api/v1/banking/consent",
+    desc: "ব্যাংক অ্যাকাউন্টের ডাটা এক্সেস বা পেমেন্ট ইনিশিয়েট করার জন্য ইউজারের কনসেন্ট নিতে এটি ব্যবহার করুন।",
+    headers: [
+      { name: "X-Sovereign-Signature", desc: "SHA-256 HMAC payload signature." },
+      { name: "X-Idempotency-Key", desc: "Unique UUID to prevent duplicate requests." }
+    ],
+    params: [
+      { name: "institution_id", type: "string", desc: "Target bank identifier." },
+      { name: "scope", type: "enum", desc: "AIS, PIS." },
+      { name: "callback_url", type: "string", desc: "The URL to redirect after bank auth." }
+    ],
+    example: `{
+  "institution_id": "barclays",
+  "scope": "AIS",
+  "callback_url": "https://yourapp.com/callback"
+}`
+  },
   {
     id: "card-issue",
     title: "Virtual Card Issuance",
@@ -45,36 +81,13 @@ const API_ENDPOINTS = [
     ],
     params: [
       { name: "user_id", type: "string", desc: "Target citizen unique ID." },
-      { name: "team_id", type: "string", desc: "The unique ID of the organization." },
       { name: "brand", type: "enum", desc: "MASTERCARD, VISA." },
       { name: "initial_load", type: "number", desc: "Starting balance in USD." }
     ],
     example: `{
   "user_id": "sko_user_82af",
-  "team_id": "team_UJR6KEPUrWUszD8jdhiyjQgV",
   "brand": "MASTERCARD",
   "initial_load": 100.00
-}`
-  },
-  {
-    id: "card-settle",
-    title: "Bidirectional Settlement",
-    method: "POST",
-    path: "/api/v1/cards/settle",
-    desc: "কার্ড থেকে মেইন ওয়ালেটে (CARD_TO_MESH) অথবা ওয়ালেট থেকে কার্ডে (MESH_TO_CARD) রিয়েল-টাইম টাকা ট্রান্সফার।",
-    headers: [
-      { name: "X-Sovereign-Signature", desc: "SHA-256 HMAC payload signature." },
-      { name: "X-Idempotency-Key", desc: "Unique UUID to prevent duplicate transactions." }
-    ],
-    params: [
-      { name: "card_id", type: "string", desc: "Target card seal identifier." },
-      { name: "direction", type: "enum", desc: "CARD_TO_MESH, MESH_TO_CARD" },
-      { name: "amount", type: "number", desc: "Transfer amount." }
-    ],
-    example: `{
-  "card_id": "vcard_991202",
-  "direction": "CARD_TO_MESH",
-  "amount": 50.00
 }`
   },
   {
@@ -88,7 +101,7 @@ const API_ENDPOINTS = [
       { name: "X-Idempotency-Key", desc: "Unique UUID to prevent duplicate transactions." }
     ],
     params: [
-      { name: "gateway", type: "string", desc: "PAYPAL, PRIYO_PAY, SWIFT" },
+      { name: "gateway", type: "string", desc: "PAYPAL, PRIYO_PAY, PAYONEER" },
       { name: "recipient_id", type: "string", desc: "Email or Bank Account No." },
       { name: "amount", type: "number", desc: "Disbursement amount in USD." }
     ],
@@ -105,7 +118,6 @@ export default function APIDocsPage() {
   const [isTesting, setIsTesting] = useState(false);
   const [testLogs, setTestLogs] = useState<{msg: string, type: 'info' | 'success' | 'error' | 'warning'}[]>([]);
   const [liveLedger, setLiveLedger] = useState<any[]>([]);
-  const [lastProcessedKey, setLastProcessedKey] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleCopy = (text: string, id: string) => {
@@ -116,13 +128,12 @@ export default function APIDocsPage() {
   };
 
   const runSimulation = (
-    type: 'ISSUE' | 'SETTLE' | 'PAYOUT', 
+    type: 'ISSUE' | 'SETTLE' | 'PAYOUT' | 'DIRECT_API', 
     mode: 'SUCCESS' | 'OVERDRAFT' | 'BAD_SIG' | 'TIMEOUT' | 'DUPLICATE' = 'SUCCESS'
   ) => {
     setIsTesting(true);
     setTestLogs([]);
     
-    // Generate a mock idempotency key for the session
     const currentKey = "idemp_" + Math.random().toString(36).substr(2, 6);
     
     let steps: {msg: string, type: 'info' | 'success' | 'error' | 'warning'}[] = [
@@ -130,7 +141,6 @@ export default function APIDocsPage() {
       { msg: `Binding Team Context: team_UJR6KEPUrWUszD8jdhiyjQgV...`, type: 'info' },
     ];
 
-    // Idempotency Check
     if (mode === 'DUPLICATE') {
       steps.push({ msg: "Header Found: X-Idempotency-Key (REUSED_VAL)", type: 'warning' });
       steps.push({ msg: "Cache Lookup: Transaction already processed.", type: 'warning' });
@@ -149,26 +159,19 @@ export default function APIDocsPage() {
     }
 
     if (mode === 'SUCCESS') {
-      if (type === 'ISSUE') {
+      if (type === 'DIRECT_API') {
+         steps.push({ msg: "Yapily Mesh Access: Handshake established.", type: 'info' });
+         steps.push({ msg: "Fetching 14,000 global institution nodes...", type: 'info' });
+         steps.push({ msg: "Protocol Finalized: Institutions Map Updated.", type: 'success' });
+      } else if (type === 'ISSUE') {
         steps.push({ msg: "Provisioning Virtual Asset: MASTERCARD v1.2", type: 'info' });
         steps.push({ msg: "Settlement Finality: $100.00 loaded from Team Pool.", type: 'success' });
         steps.push({ msg: "Virtual Card Node Activated Successfully.", type: 'success' });
-      } else if (type === 'SETTLE') {
-        steps.push({ msg: "Bidirectional Pulse: CARD_TO_MESH confirmed.", type: 'success' });
-        steps.push({ msg: "Mesh Balance Reconciled at Node 04.", type: 'success' });
       } else if (type === 'PAYOUT') {
         steps.push({ msg: "External Rail: PAYPAL_REST_V2 Handshake active.", type: 'info' });
         steps.push({ msg: "ISO 20022 Message Packet Signed.", type: 'success' });
         steps.push({ msg: "Payout Batch Dispatched: FALLBACK_P180_SUCCESS", type: 'success' });
       }
-    } else if (mode === 'OVERDRAFT') {
-      steps.push({ msg: "Checking deterministic capacity...", type: 'info' });
-      steps.push({ msg: "Critical Failure: ERR_INSUFFICIENT_MESH_BALANCE", type: 'error' });
-      steps.push({ msg: "Protocol Reverted: ISO_ERR_204", type: 'error' });
-    } else if (mode === 'TIMEOUT') {
-      steps.push({ msg: "Connecting to External Gateway...", type: 'info' });
-      steps.push({ msg: "Latency Peak: 4500ms detected. Retrying (1/3)...", type: 'warning' });
-      steps.push({ msg: "Gateway Node Unreachable: L3_IMPERIAL_SETTLEMENT_TIMEOUT", type: 'error' });
     }
 
     let i = 0;
@@ -182,16 +185,14 @@ export default function APIDocsPage() {
         if (mode === 'SUCCESS' || mode === 'DUPLICATE') {
           if (mode === 'SUCCESS') {
             const newEntry = {
-              id: type === 'ISSUE' ? `vcard_${Math.floor(100000 + Math.random() * 900000)}` : `TX_${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+              id: `TX_${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
               status: 'SUCCESS',
-              type: type === 'SETTLE' ? 'CARD_TO_MESH' : type === 'ISSUE' ? 'ISSUE_CARD' : 'GLOBAL_PAYOUT',
-              amount: type === 'PAYOUT' ? '1250.00' : (Math.random() * 1000).toFixed(2),
+              type: type.replace(/_/g, ' '),
+              amount: (Math.random() * 1000).toFixed(2),
               ts: new Date().toLocaleTimeString(),
-              team: "team_UJR6KEPU...",
               idemp: currentKey
             };
             setLiveLedger(prev => [newEntry, ...prev].slice(0, 10));
-            setLastProcessedKey(currentKey);
           }
           toast({ title: mode === 'DUPLICATE' ? "Idempotency Success" : "Simulation Finalized", description: `Logic confirmed for ${type} flow.` });
         } else {
@@ -210,30 +211,30 @@ export default function APIDocsPage() {
           <div className="flex-1">
             <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-accent">
               <Code2 className="h-5 w-5 text-accent" />
-              Sovereign API & Card Mesh
+              Sovereign API & UBIL Mesh
             </h1>
           </div>
           <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
-            v1.2.0-stable • ISO_20022_READY
+            v1.2.0-stable • YAPILY_DIRECT_READY
           </Badge>
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-12">
           <div className="flex flex-col xl:flex-row justify-between items-start gap-8">
             <div className="space-y-4 flex-1">
-              <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic">Handshake <span className="text-accent">Oracle</span></h2>
+              <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic text-white">API <span className="text-accent">Oracle</span></h2>
               <div className="flex flex-wrap gap-3">
                  <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20 w-fit">
                     <Users className="h-4 w-4 text-primary" />
                     <span className="text-[10px] font-bold text-white uppercase tracking-widest">Active Team ID: team_UJR6KEPUrWUszD8jdhiyjQgV</span>
                  </div>
                  <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/10 border border-accent/20 w-fit">
-                    <ShieldCheck className="h-4 w-4 text-accent" />
-                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">Idempotency: ENFORCED</span>
+                    <Building2 className="h-4 w-4 text-accent" />
+                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">Yapily Coverage: 14k+ Banks</span>
                  </div>
               </div>
               <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed italic">
-                "FusionPay v1.2 provides a deterministic environment for team-based settlement. Every request is verified via SHA-256 and protected by Idempotency Keys to ensure T+0 finality without duplicates."
+                "FusionPay v1.2 integrates Yapily Direct API to provide seamless access to global banking infrastructure. Every request is verified via SHA-256 and protected by Idempotency Keys."
               </p>
             </div>
 
@@ -244,21 +245,19 @@ export default function APIDocsPage() {
                     <Play className="h-5 w-5 text-accent" />
                     <p className="text-xs font-bold uppercase text-white tracking-widest">Interactive Handshake Lab</p>
                   </div>
-                  <Badge variant="outline" className="text-[8px] animate-pulse border-green-500/50 text-green-400">STATEFUL_SIM_v1</Badge>
+                  <Badge variant="outline" className="text-[8px] animate-pulse border-green-500/50 text-green-400">CORE_V1</Badge>
                </div>
                
                <div className="space-y-4 relative z-10">
                   <div className="grid grid-cols-2 gap-2">
-                    <Button className="text-[9px] font-bold h-10 bg-accent text-background cyan-glow uppercase" onClick={() => runSimulation('ISSUE')} disabled={isTesting}>Issue Virtual Card</Button>
-                    <Button variant="outline" className="text-[9px] font-bold h-10 border-blue-400/30 text-blue-400 uppercase" onClick={() => runSimulation('SETTLE')} disabled={isTesting}>Test 2-Way Settle</Button>
+                    <Button className="text-[9px] font-bold h-10 bg-accent text-background cyan-glow uppercase" onClick={() => runSimulation('DIRECT_API')} disabled={isTesting}>Yapily Direct Sync</Button>
+                    <Button variant="outline" className="text-[9px] font-bold h-10 border-blue-400/30 text-blue-400 uppercase" onClick={() => runSimulation('PAYOUT')} disabled={isTesting}>Test ISO Payout</Button>
                   </div>
                   <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-3">
                     <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2"><ShieldAlert className="h-3 w-3 text-red-400" /> Validation Edge Cases</p>
                     <div className="grid grid-cols-2 gap-2">
-                       <Button variant="ghost" className="text-[8px] h-8 border border-red-500/20 text-red-400 hover:bg-red-500/10 uppercase" onClick={() => runSimulation('ISSUE', 'OVERDRAFT')} disabled={isTesting}>Overdraft</Button>
-                       <Button variant="ghost" className="text-[8px] h-8 border border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10 uppercase" onClick={() => runSimulation('SETTLE', 'BAD_SIG')} disabled={isTesting}>Bad Hash</Button>
-                       <Button variant="ghost" className="text-[8px] h-8 border border-orange-500/20 text-orange-400 hover:bg-orange-500/10 uppercase" onClick={() => runSimulation('PAYOUT', 'TIMEOUT')} disabled={isTesting}>Node Timeout</Button>
-                       <Button variant="ghost" className="text-[8px] h-8 border border-purple-500/20 text-purple-400 hover:bg-purple-500/10 uppercase" onClick={() => runSimulation('SETTLE', 'DUPLICATE')} disabled={isTesting}>Test Duplicate</Button>
+                       <Button variant="ghost" className="text-[8px] h-8 border border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10 uppercase" onClick={() => runSimulation('DIRECT_API', 'BAD_SIG')} disabled={isTesting}>Bad Hash</Button>
+                       <Button variant="ghost" className="text-[8px] h-8 border border-purple-500/20 text-purple-400 hover:bg-purple-500/10 uppercase" onClick={() => runSimulation('PAYOUT', 'DUPLICATE')} disabled={isTesting}>Test Duplicate</Button>
                     </div>
                   </div>
                </div>
@@ -302,33 +301,18 @@ export default function APIDocsPage() {
                       </CardHeader>
                       <CardContent className="p-0">
                         <div className="grid grid-cols-1 md:grid-cols-2">
-                          <div className="p-6 space-y-6 border-r border-white/5">
-                             <div className="space-y-4">
-                                <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Required Headers</h4>
-                                <div className="space-y-3">
-                                  {api.headers.map((h, i) => (
-                                    <div key={i} className="flex flex-col gap-1">
-                                      <span className="text-xs font-bold text-accent">{h.name}</span>
-                                      <p className="text-[10px] text-muted-foreground italic">{h.desc}</p>
-                                    </div>
-                                  ))}
-                                </div>
-                             </div>
-                             <div className="space-y-4">
-                                <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Body Parameters</h4>
-                                <div className="space-y-3">
-                                  {api.params.map((p, i) => (
-                                    <div key={i} className="flex flex-col gap-1">
-                                      <div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{p.name}</span><span className="text-[10px] font-mono text-accent">[{p.type}]</span></div>
-                                      <p className="text-[10px] text-muted-foreground">{p.desc}</p>
-                                    </div>
-                                  ))}
-                                </div>
-                             </div>
-                          </div>
                           <div className="p-6 bg-black/40">
-                             <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-4">Payload Example</h4>
+                             <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-4">Implementation Example</h4>
                              <pre className="text-[11px] font-mono text-white/80 leading-relaxed overflow-x-auto p-4 rounded bg-black/20 border border-white/5 group-hover:border-accent/20 transition-colors">{api.example}</pre>
+                          </div>
+                          <div className="p-6 space-y-4">
+                             <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Required Params</h4>
+                             {api.params.map((p, i) => (
+                               <div key={i} className="flex flex-col gap-1 border-b border-white/5 pb-2">
+                                  <div className="flex items-center gap-2"><span className="text-xs font-bold text-white">{p.name}</span><span className="text-[8px] font-mono text-accent">[{p.type}]</span></div>
+                                  <p className="text-[10px] text-muted-foreground italic">{p.desc}</p>
+                               </div>
+                             ))}
                           </div>
                         </div>
                       </CardContent>
@@ -340,7 +324,7 @@ export default function APIDocsPage() {
                    <Card className="glass-panel border-white/5">
                       <CardHeader><CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest"><Database className="h-4 w-4 text-accent" /> Secure Storage Paths</CardTitle></CardHeader>
                       <CardContent className="space-y-4">
-                         {[{ path: "/users/{userId}", schema: "UserProfile", desc: "Citizen identity bound to organization." }, { path: "/users/{userId}/cards", schema: "VirtualCard", desc: "Team-isolated virtual card vault." }, { path: "/events", schema: "KernelEvent", desc: "Deterministic kernel ledger for auditing." }, { path: "/payment_links", schema: "PaymentLink", desc: "Registry of active settlement corridors." }].map((p, i) => (
+                         {[{ path: "/users/{userId}", schema: "UserProfile", desc: "Citizen identity bound to organization." }, { path: "/ubil_events", schema: "UBILEvent", desc: "Registry of all NoorNexus UBIL incoming events." }].map((p, i) => (
                            <div key={i} className="p-3 rounded-lg bg-secondary/20 border border-white/5 flex items-center justify-between group hover:border-accent/30 transition-all">
                               <div>
                                  <p className="text-xs font-mono text-accent font-bold">{p.path}</p>
@@ -373,7 +357,7 @@ export default function APIDocsPage() {
                                   <div className="flex justify-between items-center"><span className="text-[10px] font-mono text-accent font-bold">{tx.id}</span><Badge className="bg-green-500/20 text-green-400 text-[8px]">SUCCESS</Badge></div>
                                   <div className="flex justify-between items-end">
                                      <div>
-                                        <p className="text-[9px] uppercase font-bold text-white">{tx.type.replace(/_/g, ' ')}</p>
+                                        <p className="text-[9px] uppercase font-bold text-white">{tx.type}</p>
                                         <p className="text-[8px] text-muted-foreground font-mono">{tx.ts} • {tx.idemp}</p>
                                      </div>
                                      <p className="text-sm font-headline font-bold text-white">${tx.amount}</p>

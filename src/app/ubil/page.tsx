@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,7 +17,6 @@ import {
   Cloud, 
   Activity, 
   ShieldAlert, 
-  Bell, 
   Database,
   Unplug,
   Globe,
@@ -25,12 +24,15 @@ import {
   Server,
   Lock,
   Loader2,
-  Trash2,
   Eye,
   Mail,
   Smartphone,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Building2,
+  ArrowUpRight,
+  ExternalLink,
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +40,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Area, 
   AreaChart, 
@@ -53,9 +56,10 @@ import {
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useCollection } from "@/firebase";
-import { collection, query, orderBy, limit, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, setDoc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getYapilyInstitutions, createYapilyConsent } from "@/ai/flows/yapily-banking-flow";
 
 const PIE_DATA = [
   { name: "Txn Success", value: 28, color: "hsl(var(--accent))" },
@@ -86,6 +90,10 @@ export default function UBILIntegrationPage() {
   const [simBank, setSimBank] = useState("Brac Bank");
   const [isSignatureValid, setIsSignatureValid] = useState(true);
   const [logs, setLogs] = useState<string[]>(["UBIL Core: Webhook Node online, listening..."]);
+  const [institutions, setInstitutions] = useState<any[]>([]);
+  const [isLoadingInstitutions, setIsLoadingInstitutions] = useState(false);
+  const [isCreatingConsent, setIsCreatingConsent] = useState(false);
+
   const { toast } = useToast();
   const firestore = useFirestore();
 
@@ -95,6 +103,36 @@ export default function UBILIntegrationPage() {
   }, [firestore]);
 
   const { data: remoteEvents, loading } = useCollection<any>(eventsQuery);
+
+  const handleFetchInstitutions = async () => {
+    setIsLoadingInstitutions(true);
+    try {
+      const data = await getYapilyInstitutions('GB');
+      setInstitutions(data);
+    } catch (err) {
+      toast({ variant: "destructive", title: "API Error", description: "Failed to fetch institutions from Yapily node." });
+    } finally {
+      setIsLoadingInstitutions(false);
+    }
+  };
+
+  const handleCreateConsent = async (instId: string) => {
+    setIsCreatingConsent(true);
+    try {
+      const result = await createYapilyConsent({
+        institutionId: instId,
+        callbackUrl: window.location.href,
+        scope: 'AIS',
+        userId: 'sko_user_82af'
+      });
+      window.open(result.authorisationUrl, '_blank');
+      toast({ title: "Consent Initiated", description: "Redirecting to bank authorization portal..." });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Consent Error", description: "Could not initialize Direct API handshake." });
+    } finally {
+      setIsCreatingConsent(false);
+    }
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText("noornexus_ubil_secret_2026");
@@ -157,388 +195,351 @@ export default function UBILIntegrationPage() {
           <div className="flex-1">
             <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-white uppercase italic">
               <Lock className="h-5 w-5 text-accent" />
-              Sovereign OS <span className="text-accent">CORE LIVE</span>
+              Sovereign OS <span className="text-accent">UBIL CORE</span>
             </h1>
           </div>
           <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px] uppercase">
-            NoorNexus UBIL Webhook Integration
+            Universal Banking Integration Layer
           </Badge>
         </header>
 
         <main className="flex-1 p-6 max-w-[1600px] mx-auto w-full space-y-6">
-          {/* Status Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-             <Card className="glass-panel border-l-4 border-l-accent p-4">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Listener</p>
-                <div className="flex items-center gap-2 mt-1">
-                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                   <span className="text-xl font-bold">Active</span>
-                </div>
-                <p className="text-[9px] text-muted-foreground mt-1">Port 3000</p>
-             </Card>
-             <Card className="glass-panel border-l-4 border-l-primary p-4">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Security</p>
-                <div className="flex items-center gap-2 mt-1">
-                   <ShieldCheck className="h-5 w-5 text-primary" />
-                   <span className="text-xl font-bold">Active</span>
-                </div>
-                <p className="text-[9px] text-muted-foreground mt-1">HMAC-SHA256</p>
-             </Card>
-             <Card className="glass-panel border-l-4 border-l-yellow-500 p-4">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">G-Drive Backup</p>
-                <div className="flex items-center gap-2 mt-1">
-                   <Cloud className="h-5 w-5 text-yellow-500" />
-                   <span className="text-xl font-bold">Pending</span>
-                </div>
-                <p className="text-[9px] text-muted-foreground mt-1">Sovereign OS</p>
-             </Card>
-             <Card className="glass-panel border-l-4 border-l-blue-400 p-4">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Local Audit</p>
-                <div className="flex items-center gap-2 mt-1">
-                   <Database className="h-5 w-5 text-blue-400" />
-                   <span className="text-xl font-bold">{remoteEvents?.length || 0} Nodes</span>
-                </div>
-                <p className="text-[9px] text-muted-foreground mt-1">SOVEREIGN DRIVE</p>
-             </Card>
-          </div>
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="bg-secondary/50 border border-white/5 p-1">
+              <TabsTrigger value="overview" className="text-[10px] uppercase font-bold tracking-widest px-6">System Overview</TabsTrigger>
+              <TabsTrigger value="direct-api" className="text-[10px] uppercase font-bold tracking-widest px-6" onClick={handleFetchInstitutions}>Yapily Direct API</TabsTrigger>
+              <TabsTrigger value="audit" className="text-[10px] uppercase font-bold tracking-widest px-6">Audit Ledger</TabsTrigger>
+            </TabsList>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-             {/* Left Column: Config & Simulator */}
-             <div className="lg:col-span-4 space-y-6">
-                <Card className="glass-panel border-accent/20">
-                   <CardHeader className="p-4">
+            <TabsContent value="overview" className="space-y-6 animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="glass-panel border-l-4 border-l-accent p-4">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Listener Status</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-xl font-bold">Active</span>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground mt-1">Port 3000 | NoorNexus Protocol</p>
+                </Card>
+                <Card className="glass-panel border-l-4 border-l-primary p-4">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Global Coverage</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Globe className="h-5 w-5 text-primary" />
+                    <span className="text-xl font-bold">14k+ Banks</span>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground mt-1">Yapily Connect Ready</p>
+                </Card>
+                <Card className="glass-panel border-l-4 border-l-yellow-500 p-4">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Security Layer</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <ShieldCheck className="h-5 w-5 text-yellow-500" />
+                    <span className="text-xl font-bold">HMAC-256</span>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground mt-1">Sovereign Encryption</p>
+                </Card>
+                <Card className="glass-panel border-l-4 border-l-blue-400 p-4">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Daily Ingest</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Activity className="h-5 w-5 text-blue-400" />
+                    <span className="text-xl font-bold">48 Events</span>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground mt-1">Current Cycle</p>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div className="lg:col-span-4 space-y-6">
+                  <Card className="glass-panel border-accent/20">
+                    <CardHeader className="p-4">
                       <CardTitle className="text-xs uppercase flex items-center gap-2">
-                         <Lock className="h-4 w-4 text-accent" />
-                         HMAC-SHA256 Shared Secret
+                        <Lock className="h-4 w-4 text-accent" />
+                        Shared Secret Mesh
                       </CardTitle>
-                   </CardHeader>
-                   <CardContent className="p-4 pt-0 space-y-4">
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0 space-y-4">
                       <div className="p-3 rounded-lg bg-black/40 border border-white/5 flex items-center justify-between">
-                         <span className="text-xs font-mono text-accent">noornexus_ubil_secret_2026</span>
-                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopy}>
-                            {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
-                         </Button>
+                        <span className="text-xs font-mono text-accent">noornexus_ubil_secret_2026</span>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopy}>
+                          {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                        </Button>
                       </div>
                       <p className="text-[9px] text-muted-foreground italic leading-relaxed">
-                         Provide this key to banking platforms (e.g., Brac, City, or standard merchant gateways) to calculate the HMAC SHA-256 hash of their JSON request payload.
+                        Calculate the HMAC SHA-256 hash of JSON payloads using this key for NoorNexus-to-Bank handshakes.
                       </p>
-                   </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
 
-                <Card className="glass-panel">
-                   <CardHeader className="p-4 flex flex-row items-center justify-between">
-                      <CardTitle className="text-xs uppercase">Notification Engine</CardTitle>
-                      <span className="text-[9px] font-mono opacity-50">rubels1k994@gmail.com</span>
-                   </CardHeader>
-                   <CardContent className="p-4 pt-0 space-y-4">
-                      <div className="space-y-3">
-                         <div className="flex items-center justify-between text-[11px]">
-                            <span className="text-white/80 font-bold uppercase tracking-tighter flex items-center gap-2"><Mail className="h-3 w-3" /> Email Relay</span>
-                            <Switch defaultChecked />
-                         </div>
-                         <div className="flex items-center justify-between text-[11px]">
-                            <span className="text-white/80 font-bold uppercase tracking-tighter flex items-center gap-2"><ShieldAlert className="h-3 w-3" /> AuthFailed Warnings</span>
-                            <Switch defaultChecked />
-                         </div>
-                         <div className="flex items-center justify-between text-[11px]">
-                            <span className="text-white/80 font-bold uppercase tracking-tighter flex items-center gap-2"><Activity className="h-3 w-3" /> High-Value Trans Alerts</span>
-                            <Switch defaultChecked />
-                         </div>
-                      </div>
-                      <div className="pt-2 space-y-3">
-                         <div className="flex justify-between text-[10px] font-bold uppercase">
-                            <span className="text-accent">Alert Threshold</span>
-                            <span>5,000 Units</span>
-                         </div>
-                         <Slider defaultValue={[5000]} max={25000} step={1000} className="[&>span]:bg-accent" />
-                         <div className="flex justify-between text-[8px] font-mono opacity-40">
-                            <span>1k</span><span>5k</span><span>10k</span><span>25k</span>
-                         </div>
-                      </div>
-                   </CardContent>
-                </Card>
-
-                <Card className="glass-panel border-accent/20 bg-accent/5">
-                   <CardHeader className="p-4 border-b border-white/5">
+                  <Card className="glass-panel border-accent/20 bg-accent/5">
+                    <CardHeader className="p-4 border-b border-white/5">
                       <CardTitle className="text-xs uppercase flex items-center gap-2">
-                         <Zap className="h-4 w-4 text-accent" />
-                         Interactive Webhook Simulator
+                        <Zap className="h-4 w-4 text-accent" />
+                        Webhook Simulator
                       </CardTitle>
-                      <CardDescription className="text-[10px]">Local Simulator Node</CardDescription>
-                   </CardHeader>
-                   <CardContent className="p-4 space-y-4">
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-4">
+                      <div className="grid grid-cols-3 gap-1">
+                        {["Txn Success", "Bal Update", "Auth Failed"].map(p => (
+                          <Button key={p} variant={simPreset === p ? "default" : "outline"} className="h-8 text-[9px] p-0" onClick={() => setSimPreset(p)}>{p}</Button>
+                        ))}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[9px] uppercase">Transaction Amount (BDT)</Label>
+                        <Input value={simAmount} onChange={e => setSimAmount(e.target.value)} className="h-9 bg-secondary/30 text-xs" />
+                      </div>
                       <div className="space-y-2">
-                         <Label className="text-[9px] uppercase font-bold text-muted-foreground">Select Banking Event Preset</Label>
-                         <div className="grid grid-cols-3 gap-1">
-                            {["Txn Success", "Bal Update", "Auth Failed"].map(p => (
-                               <Button 
-                                 key={p} 
-                                 variant={simPreset === p ? "default" : "outline"}
-                                 className="h-8 text-[9px] p-0"
-                                 onClick={() => setSimPreset(p)}
-                               >
-                                  {p}
-                               </Button>
-                            ))}
-                         </div>
+                        <Button variant="outline" className={cn("w-full h-10 justify-between text-[10px] font-bold border-white/5", isSignatureValid && "border-accent/40 bg-accent/5")} onClick={() => setIsSignatureValid(true)}>
+                          <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-green-400" /> Authentic Node</div>
+                        </Button>
+                        <Button variant="outline" className={cn("w-full h-10 justify-between text-[10px] font-bold border-white/5", !isSignatureValid && "border-red-500/40 bg-red-500/5")} onClick={() => setIsSignatureValid(false)}>
+                          <div className="flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-red-400" /> Signature Hack</div>
+                        </Button>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                         <div className="space-y-1">
-                            <Label className="text-[9px] uppercase">Transaction Amount</Label>
-                            <Input value={simAmount} onChange={e => setSimAmount(e.target.value)} className="h-9 bg-secondary/30 text-xs" />
-                         </div>
-                         <div className="space-y-1">
-                            <Label className="text-[9px] uppercase">Currency</Label>
-                            <Input defaultValue="BDT" readOnly className="h-9 bg-secondary/30 text-xs opacity-50" />
-                         </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                         <div className="space-y-1">
-                            <Label className="text-[9px] uppercase">Sender Bank</Label>
-                            <Input value={simBank} onChange={e => setSimBank(e.target.value)} className="h-9 bg-secondary/30 text-xs" />
-                         </div>
-                         <div className="space-y-1">
-                            <Label className="text-[9px] uppercase">Account Number</Label>
-                            <Input defaultValue="120.291.839" className="h-9 bg-secondary/30 text-xs" />
-                         </div>
-                      </div>
-
-                      <div className="space-y-2 pt-2">
-                         <Label className="text-[9px] uppercase font-bold text-muted-foreground">Signature Security Options</Label>
-                         <div className="space-y-2">
-                            <Button 
-                              variant="outline" 
-                              className={cn("w-full h-10 justify-between text-[10px] font-bold border-white/5", isSignatureValid && "border-accent/40 bg-accent/5")}
-                              onClick={() => setIsSignatureValid(true)}
-                            >
-                               <div className="flex items-center gap-2">
-                                  <ShieldCheck className="h-4 w-4 text-green-400" />
-                                  <span>Authentic Node</span>
-                               </div>
-                               <span className="text-[8px] opacity-40">Signs with valid secret key</span>
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              className={cn("w-full h-10 justify-between text-[10px] font-bold border-white/5", !isSignatureValid && "border-red-500/40 bg-red-500/5")}
-                              onClick={() => setIsSignatureValid(false)}
-                            >
-                               <div className="flex items-center gap-2">
-                                  <ShieldAlert className="h-4 w-4 text-red-400" />
-                                  <span>Signature Hack</span>
-                               </div>
-                               <span className="text-[8px] opacity-40">Simulates corrupt header</span>
-                            </Button>
-                         </div>
-                      </div>
-
-                      <Button 
-                        className="w-full h-12 bg-accent text-background font-bold uppercase text-[10px] tracking-widest cyan-glow"
-                        onClick={dispatchSimulation}
-                        disabled={isSimulating}
-                      >
-                         {isSimulating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Dispatch Simulated Transaction"}
+                      <Button className="w-full h-12 bg-accent text-background font-bold uppercase text-[10px] tracking-widest cyan-glow" onClick={dispatchSimulation} disabled={isSimulating}>
+                        {isSimulating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Dispatch Handshake"}
                       </Button>
-                   </CardContent>
-                </Card>
-             </div>
+                    </CardContent>
+                  </Card>
+                </div>
 
-             {/* Right Column: Metrics & Ledger */}
-             <div className="lg:col-span-8 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <Card className="glass-panel">
+                <div className="lg:col-span-8 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card className="glass-panel">
                       <CardHeader className="p-4 border-b border-white/5">
-                         <CardTitle className="text-xs uppercase">24h Webhook Event Distribution</CardTitle>
-                         <CardDescription className="text-[9px]">Live metrics and signature-verified gateway distribution</CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-4 flex flex-col items-center">
-                         <div className="h-[200px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                               <PieChart>
-                                  <Pie
-                                    data={PIE_DATA}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                  >
-                                    {PIE_DATA.map((entry, index) => (
-                                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                                    ))}
-                                  </Pie>
-                                  <Tooltip 
-                                    contentStyle={{ background: '#13151a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }} 
-                                    itemStyle={{ color: '#fff' }}
-                                  />
-                               </PieChart>
-                            </ResponsiveContainer>
-                         </div>
-                         <div className="grid grid-cols-3 w-full gap-2 text-center mt-4">
-                            {PIE_DATA.map(d => (
-                               <div key={d.name} className="space-y-1">
-                                  <p className="text-[10px] font-bold text-white">{d.name}</p>
-                                  <p className="text-xl font-headline font-bold" style={{ color: d.color }}>{d.value}</p>
-                               </div>
-                            ))}
-                         </div>
-                      </CardContent>
-                   </Card>
-
-                   <Card className="glass-panel">
-                      <CardHeader className="p-4 border-b border-white/5">
-                         <CardTitle className="text-xs uppercase">12h Traffic Frequency Timeline</CardTitle>
-                         <CardDescription className="text-[9px]">Identifies data ingest spikes, throughput limits, and security blockades</CardDescription>
+                        <CardTitle className="text-xs uppercase">Event Distribution</CardTitle>
                       </CardHeader>
                       <CardContent className="p-4">
-                         <div className="h-[200px] w-full mt-4">
-                            <ChartContainer config={chartConfig}>
-                               <AreaChart data={TRAFFIC_DATA}>
-                                  <defs>
-                                     <linearGradient id="successGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
-                                     </linearGradient>
-                                  </defs>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fill: 'rgba(255,255,255,0.4)', fontSize: 10}} />
-                                  <YAxis axisLine={false} tickLine={false} tick={{fill: 'rgba(255,255,255,0.4)', fontSize: 10}} />
-                                  <Tooltip content={<ChartTooltipContent />} />
-                                  <Area type="monotone" dataKey="success" stroke="hsl(var(--accent))" strokeWidth={2} fill="url(#successGradient)" />
-                                  <Area type="monotone" dataKey="blocked" stroke="hsl(var(--destructive))" strokeWidth={1} fill="transparent" strokeDasharray="5 5" />
-                               </AreaChart>
-                            </ChartContainer>
-                         </div>
-                         <div className="flex justify-between items-center mt-6 px-4">
-                            <div className="text-center">
-                               <p className="text-[8px] font-bold text-muted-foreground uppercase">Total</p>
-                               <p className="text-xl font-bold">48</p>
-                            </div>
-                            <div className="text-center">
-                               <p className="text-[8px] font-bold text-muted-foreground uppercase">Success</p>
-                               <p className="text-xl font-bold text-accent">91.7%</p>
-                            </div>
-                            <div className="text-center">
-                               <p className="text-[8px] font-bold text-muted-foreground uppercase">Blocked</p>
-                               <p className="text-xl font-bold text-red-400">8.3%</p>
-                            </div>
-                         </div>
+                        <div className="h-[200px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie data={PIE_DATA} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                                {PIE_DATA.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />)}
+                              </Pie>
+                              <Tooltip contentStyle={{ background: '#13151a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }} itemStyle={{ color: '#fff' }} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
                       </CardContent>
-                   </Card>
-                </div>
+                    </Card>
 
-                <Card className="glass-panel border-white/5">
-                   <CardHeader className="p-6 border-b border-white/5 flex flex-row items-center justify-between">
-                      <div>
-                         <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2 text-white italic">
-                            <Database className="h-4 w-4 text-accent" />
-                            UBIL Audit Ledger Trail
-                         </CardTitle>
-                         <CardDescription className="text-[10px]">Real-time incoming payloads from secure webhooks</CardDescription>
-                      </div>
-                      <div className="flex gap-2">
-                         <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold border-white/10 uppercase"><Download className="mr-1.5 h-3 w-3" /> Export CSV</Button>
-                      </div>
-                   </CardHeader>
-                   <CardContent className="p-0">
-                      <div className="p-4 border-b border-white/5 flex gap-4">
-                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                            <Input 
-                              placeholder="Search by sender, bank, A/C or ID..." 
-                              className="pl-9 h-9 bg-secondary/30 border-white/5 text-[11px]"
-                              value={search}
-                              onChange={e => setSearch(e.target.value)}
-                            />
-                         </div>
-                         <Button variant="outline" size="sm" className="h-9 w-9 border-white/5"><Filter className="h-4 w-4" /></Button>
-                      </div>
-                      <ScrollArea className="h-[400px]">
-                         {loading ? (
-                           <div className="p-20 flex flex-col items-center gap-4 opacity-40">
-                              <Loader2 className="h-8 w-8 animate-spin text-accent" />
-                              <p className="text-[9px] font-bold uppercase tracking-widest">Accessing Secure Vault...</p>
+                    <Card className="glass-panel">
+                      <CardHeader className="p-4 border-b border-white/5">
+                        <CardTitle className="text-xs uppercase">Traffic Latency</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <div className="h-[200px] w-full mt-4">
+                          <ChartContainer config={chartConfig}>
+                            <AreaChart data={TRAFFIC_DATA}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                              <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fill: 'rgba(255,255,255,0.4)', fontSize: 10}} />
+                              <YAxis axisLine={false} tickLine={false} tick={{fill: 'rgba(255,255,255,0.4)', fontSize: 10}} />
+                              <Tooltip content={<ChartTooltipContent />} />
+                              <Area type="monotone" dataKey="success" stroke="hsl(var(--accent))" strokeWidth={2} fill="transparent" />
+                            </AreaChart>
+                          </ChartContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  <div className="p-4 rounded-xl bg-black/60 border border-white/5 font-mono text-[10px] space-y-2 relative overflow-hidden">
+                    <div className="absolute top-2 right-2 text-white/20"><Terminal className="h-4 w-4" /></div>
+                    <p className="text-accent uppercase font-bold">OS LOG CONSOLE:</p>
+                    {logs.map((log, i) => <p key={i} className="text-white/60 animate-fade-in">&gt; {log}</p>)}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="direct-api" className="space-y-6 animate-fade-in">
+               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-6">
+                     <Card className="glass-panel border-accent/20">
+                        <CardHeader className="p-6 border-b border-white/5">
+                           <div className="flex justify-between items-center">
+                              <div>
+                                 <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
+                                    <Building2 className="h-4 w-4 text-accent" />
+                                    Yapily Direct Institutions
+                                 </CardTitle>
+                                 <CardDescription className="text-[10px] uppercase font-bold mt-1">14,000+ Banks Available via Direct API</CardDescription>
+                              </div>
+                              <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold border-accent/20" onClick={handleFetchInstitutions} disabled={isLoadingInstitutions}>
+                                 {isLoadingInstitutions ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <RefreshCw className="h-3 w-3 mr-1.5" />}
+                                 Sync Mesh
+                              </Button>
                            </div>
-                         ) : filteredEvents.length === 0 ? (
-                           <div className="p-20 text-center space-y-4 opacity-30">
-                              <Unplug className="h-12 w-12 mx-auto" />
-                              <p className="text-xs italic">UBIL Core: Webhook Node online, listening...</p>
-                           </div>
-                         ) : (
+                        </CardHeader>
+                        <CardContent className="p-0">
                            <div className="divide-y divide-white/5">
-                              {filteredEvents.map((event) => (
-                                 <div key={event.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-white/5 transition-all group">
-                                    <div className="flex gap-4">
-                                       <div className={cn(
-                                         "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border",
-                                         event.status === 'SUCCESS' ? "bg-accent/10 border-accent/20 text-accent" : "bg-red-500/10 border-red-500/20 text-red-400"
-                                       )}>
-                                          {event.type === 'AUTH_FAILED' ? <ShieldAlert className="h-5 w-5" /> : <Activity className="h-5 w-5" />}
-                                       </div>
-                                       <div className="space-y-1">
-                                          <div className="flex items-center gap-2">
-                                             <span className="text-[11px] font-bold text-white uppercase">{event.senderName}</span>
-                                             <Badge variant="outline" className="text-[8px] font-mono border-white/10 uppercase">{event.senderBank}</Badge>
-                                             <Badge className={cn(
-                                               "text-[8px] font-bold uppercase",
-                                               event.status === 'SUCCESS' ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
-                                             )}>
-                                               {event.status}
-                                             </Badge>
-                                          </div>
-                                          <p className="text-[10px] text-muted-foreground font-mono">ID: {event.id} | AC: {event.accountNumber} | SIG: {event.signatureStatus}</p>
-                                          <p className="text-[9px] text-muted-foreground uppercase">{new Date(event.timestamp).toLocaleString()}</p>
-                                       </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                       <div className="text-right">
-                                          <p className="text-sm font-headline font-bold text-white">${event.amount.toLocaleString()}</p>
-                                          <p className="text-[9px] text-muted-foreground uppercase">{event.currency}</p>
-                                       </div>
-                                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent opacity-0 group-hover:opacity-100 transition-opacity">
-                                          <Eye className="h-4 w-4" />
-                                       </Button>
-                                    </div>
+                              {isLoadingInstitutions ? (
+                                 <div className="p-20 text-center space-y-4 opacity-40">
+                                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-accent" />
+                                    <p className="text-xs uppercase font-bold tracking-widest">Querying Yapily Node-04...</p>
                                  </div>
-                              ))}
+                              ) : institutions.length === 0 ? (
+                                 <div className="p-20 text-center text-muted-foreground italic text-xs">
+                                    No institutions loaded. Hit "Sync Mesh" to query the global anycast grid.
+                                 </div>
+                              ) : (
+                                 institutions.map((inst) => (
+                                    <div key={inst.id} className="p-4 flex items-center justify-between group hover:bg-white/5 transition-all">
+                                       <div className="flex items-center gap-4">
+                                          <div className="w-10 h-10 rounded-lg bg-secondary/50 border border-white/5 flex items-center justify-center text-accent">
+                                             <Building2 className="h-5 w-5" />
+                                          </div>
+                                          <div>
+                                             <p className="text-sm font-bold text-white uppercase">{inst.name}</p>
+                                             <div className="flex items-center gap-2">
+                                                <Badge variant="ghost" className="text-[8px] p-0 font-mono opacity-50 uppercase">{inst.id}</Badge>
+                                                <div className="flex gap-1">
+                                                   {inst.countries.map((c: string) => <span key={c} className="text-[8px] font-bold opacity-40">{c}</span>)}
+                                                </div>
+                                             </div>
+                                          </div>
+                                       </div>
+                                       <div className="flex items-center gap-3">
+                                          <div className="flex -space-x-2">
+                                             {inst.features.slice(0, 3).map((f: string, i: number) => (
+                                                <div key={i} className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center" title={f}>
+                                                   <Zap className="h-2 w-2 text-accent" />
+                                                </div>
+                                             ))}
+                                          </div>
+                                          <Button size="sm" className="h-8 bg-accent text-background font-bold text-[10px] uppercase" onClick={() => handleCreateConsent(inst.id)}>
+                                             Authorize Direct
+                                          </Button>
+                                       </div>
+                                    </div>
+                                 ))
+                              )}
                            </div>
-                         )}
-                      </ScrollArea>
-                   </CardContent>
-                </Card>
+                        </CardContent>
+                     </Card>
+                  </div>
 
-                {/* Log Console & Footer */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-                   <div className="md:col-span-2 p-4 rounded-xl bg-black/60 border border-white/5 font-mono text-[10px] space-y-2 relative overflow-hidden">
-                      <div className="absolute top-2 right-2 text-white/20"><Terminal className="h-4 w-4" /></div>
-                      <p className="text-accent uppercase font-bold">OS LOG CONSOLE:</p>
-                      {logs.map((log, i) => (
-                        <p key={i} className="text-white/60 animate-fade-in">&gt; {log}</p>
-                      ))}
-                      <div className="flex items-center gap-2 text-yellow-500/60 pt-2 animate-pulse">
-                         <AlertTriangle className="h-3 w-3" />
-                         <span>OAuth Pipeline offline. Authenticate with Google to connect Drive.</span>
+                  <div className="space-y-6">
+                     <Card className="glass-panel border-accent/20 bg-accent/5">
+                        <CardHeader>
+                           <CardTitle className="text-xs uppercase flex items-center gap-2">
+                              <ShieldCheck className="h-4 w-4 text-accent" />
+                              Direct API Handshake
+                           </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                           <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-3">
+                              <div className="flex justify-between items-center text-[10px]">
+                                 <span className="text-muted-foreground uppercase">Integration Path</span>
+                                 <span className="text-white font-bold">DIRECT_API</span>
+                              </div>
+                              <div className="flex justify-between items-center text-[10px]">
+                                 <span className="text-muted-foreground uppercase">Consent Protocol</span>
+                                 <span className="text-white font-bold">PSD2 / SCA</span>
+                              </div>
+                              <div className="flex justify-between items-center text-[10px]">
+                                 <span className="text-muted-foreground uppercase">Sovereign Seal</span>
+                                 <span className="text-green-400 font-bold uppercase">Ready</span>
+                              </div>
+                           </div>
+                           <p className="text-[10px] text-muted-foreground leading-relaxed italic">
+                              Yapily Direct API gives NoorNexus total control over the UI/UX while accessing global banking rails. Secure for AIS/PIS.
+                           </p>
+                           <Button variant="outline" className="w-full h-10 text-[10px] font-bold uppercase tracking-widest border-accent/20 text-accent">
+                              View Consent Lifecycle
+                           </Button>
+                        </CardContent>
+                     </Card>
+
+                     <Card className="glass-panel border-white/5">
+                        <CardHeader className="p-4">
+                           <CardTitle className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
+                              <Activity className="h-3 w-3 text-primary" />
+                              Connectivity Health
+                           </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0 space-y-4">
+                           <div className="space-y-2">
+                              <div className="flex justify-between text-[9px] font-bold uppercase">
+                                 <span className="text-muted-foreground">Anycast Node-04</span>
+                                 <span className="text-primary">Latency: 12ms</span>
+                              </div>
+                              <div className="w-full h-1 bg-primary/10 rounded-full overflow-hidden">
+                                 <div className="h-full bg-primary" style={{ width: '98%' }} />
+                              </div>
+                           </div>
+                           <p className="text-[9px] text-white/50 leading-relaxed italic">
+                              "Optimized routing active for European TPP licenses via Yapily Connect Bridge."
+                           </p>
+                        </CardContent>
+                     </Card>
+                  </div>
+               </div>
+            </TabsContent>
+
+            <TabsContent value="audit" className="space-y-6 animate-fade-in">
+              <Card className="glass-panel border-white/5">
+                <CardHeader className="p-6 border-b border-white/5 flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2 text-white italic">
+                      <Database className="h-4 w-4 text-accent" />
+                      UBIL Audit Ledger Trail
+                    </CardTitle>
+                    <CardDescription className="text-[10px]">Real-time incoming payloads from secure webhooks</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold border-white/10 uppercase"><Download className="mr-1.5 h-3 w-3" /> Export CSV</Button>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="p-4 border-b border-white/5 flex gap-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input placeholder="Search by sender, bank, A/C or ID..." className="pl-9 h-9 bg-secondary/30 border-white/5 text-[11px]" value={search} onChange={e => setSearch(e.target.value)} />
+                    </div>
+                  </div>
+                  <ScrollArea className="h-[500px]">
+                    {loading ? (
+                      <div className="p-20 flex flex-col items-center gap-4 opacity-40"><Loader2 className="h-8 w-8 animate-spin text-accent" /><p className="text-[9px] font-bold uppercase tracking-widest">Accessing Secure Vault...</p></div>
+                    ) : filteredEvents.length === 0 ? (
+                      <div className="p-20 text-center space-y-4 opacity-30"><Unplug className="h-12 w-12 mx-auto" /><p className="text-xs italic">UBIL Core: Webhook Node online, listening...</p></div>
+                    ) : (
+                      <div className="divide-y divide-white/5">
+                        {filteredEvents.map((event) => (
+                          <div key={event.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-white/5 transition-all group">
+                            <div className="flex gap-4">
+                              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border", event.status === 'SUCCESS' ? "bg-accent/10 border-accent/20 text-accent" : "bg-red-500/10 border-red-500/20 text-red-400")}>
+                                {event.type === 'AUTH_FAILED' ? <ShieldAlert className="h-5 w-5" /> : <Activity className="h-5 w-5" />}
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] font-bold text-white uppercase">{event.senderName}</span>
+                                  <Badge variant="outline" className="text-[8px] font-mono border-white/10 uppercase">{event.senderBank}</Badge>
+                                  <Badge className={cn("text-[8px] font-bold uppercase", event.status === 'SUCCESS' ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400")}>{event.status}</Badge>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground font-mono">ID: {event.id} | AC: {event.accountNumber} | SIG: {event.signatureStatus}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-headline font-bold text-white">${event.amount.toLocaleString()}</p>
+                              <p className="text-[9px] text-muted-foreground uppercase">{new Date(event.timestamp).toLocaleString()}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                   </div>
-                   <div className="flex flex-col items-center justify-center p-6 border border-dashed border-white/10 rounded-xl bg-secondary/10 text-center space-y-4">
-                      <Cloud className="h-10 w-10 text-muted-foreground opacity-20" />
-                      <Button variant="outline" size="sm" className="text-[10px] font-bold uppercase tracking-widest border-accent/30 text-accent">Authorize Cloud</Button>
-                   </div>
-                </div>
-             </div>
-          </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
 
           <footer className="pt-12 text-center border-t border-white/5 space-y-2 opacity-40">
-             <p className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground">
-                NoorNexus Sovereign OS • Powered by Google Cloud
-             </p>
-             <div className="flex items-center justify-center gap-4 text-[8px] font-mono">
-                <span>SHA-256: 4F82...E911</span>
-                <span>•</span>
-                <span>NODE: UK-04-ANYCAST</span>
-                <span>•</span>
-                <span>Uptime: 99.99%</span>
-             </div>
+            <p className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground">
+              NoorNexus Sovereign OS • Powered by Yapily Direct API
+            </p>
+            <div className="flex items-center justify-center gap-4 text-[8px] font-mono">
+              <span>SHA-256: 4F82...E911</span>
+              <span>•</span>
+              <span>NODE: UK-04-ANYCAST</span>
+              <span>•</span>
+              <span>Uptime: 99.99%</span>
+            </div>
           </footer>
         </main>
       </SidebarInset>
