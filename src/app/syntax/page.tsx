@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -22,16 +21,16 @@ import {
   ArrowRight,
   Info,
   ChevronRight,
-  Monitor
+  Monitor,
+  Lightbulb
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { architectSyntax } from "@/ai/flows/ai-syntax-architect";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function SyntaxArchitectPage() {
   const [intention, setIntention] = useState("");
@@ -41,14 +40,16 @@ export default function SyntaxArchitectPage() {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
-  const handleArchitect = async () => {
-    if (!intention.trim()) return;
+  const handleArchitect = async (overrideIntention?: string) => {
+    const finalIntention = overrideIntention || intention;
+    if (!finalIntention.trim()) return;
+    
     setIsArchitecting(true);
     setResult(null);
 
     try {
       const output = await architectSyntax({
-        intention: intention,
+        intention: finalIntention,
         targetPlane: targetPlane
       });
       setResult(output);
@@ -69,6 +70,12 @@ export default function SyntaxArchitectPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const QUICK_EXAMPLES = [
+    { label: "ISO 20022 Python", text: "Create a secure Python function for an ISO 20022 compliant payment initiation with HMAC-256 signing." },
+    { label: "Node.js Webhook", text: "Generate an Express.js middleware to validate Sovereign OS webhook signatures." },
+    { label: "Security Lockdown", text: "Create a CLI command to isolate Node-04 and trigger emergency payout throttling." }
+  ];
 
   return (
     <div className="flex min-h-screen">
@@ -92,7 +99,7 @@ export default function SyntaxArchitectPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
             <div className="space-y-2">
               <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic">Syntax <span className="text-primary">Orchestration</span></h2>
-              <p className="text-muted-foreground max-w-2xl">
+              <p className="text-muted-foreground max-w-2xl italic">
                 "Converting human directives into deterministic Sovereign SDKs and Kernel commands using Project 43 logic."
               </p>
             </div>
@@ -143,9 +150,31 @@ export default function SyntaxArchitectPage() {
                       />
                     </div>
                   </div>
+
+                  <div className="space-y-3">
+                    <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest flex items-center gap-2">
+                       <Lightbulb className="h-3 w-3 text-accent" /> Quick Commands
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                       {QUICK_EXAMPLES.map((ex, i) => (
+                         <Button 
+                            key={i} 
+                            variant="ghost" 
+                            className="text-[9px] h-7 bg-secondary/30 hover:bg-primary/20 hover:text-primary transition-all border border-white/5"
+                            onClick={() => {
+                               setIntention(ex.text);
+                               handleArchitect(ex.text);
+                            }}
+                         >
+                            {ex.label}
+                         </Button>
+                       ))}
+                    </div>
+                  </div>
+
                   <Button 
                     className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-bold blue-glow uppercase text-[10px]"
-                    onClick={handleArchitect}
+                    onClick={() => handleArchitect()}
                     disabled={isArchitecting || !intention.trim()}
                   >
                     {isArchitecting ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
@@ -168,7 +197,7 @@ export default function SyntaxArchitectPage() {
                      "Auto-calculation of HMAC SHA-256",
                      "Idempotency Key enforcement (T+0)",
                      "Deterministic error mapping",
-                     "Multi-language support (Py, Go, Java)"
+                     "Knowledge Bank Indexing (L0 Link)"
                    ].map((f, i) => (
                      <div key={i} className="flex items-center gap-2 text-[10px] text-white/80 italic">
                         <ChevronRight className="h-3 w-3 text-accent" />
@@ -257,46 +286,20 @@ export default function SyntaxArchitectPage() {
               </Card>
             </div>
           </div>
+        </main>
 
-          {/* Sovereign SDK Examples */}
-          <div className="space-y-6">
-            <h3 className="text-xl font-headline font-bold uppercase tracking-widest text-accent flex items-center gap-2">
-              <Code2 className="h-6 w-6" /> Sovereign SDK Preview
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               {[
-                 { lang: "Python", code: "client = SovereignSDK(secret='...')\nclient.payout.initiate(...)" },
-                 { lang: "Go", code: "client := sovereign.NewClient(secret)\nerr := client.Settle(...)" },
-                 { lang: "Node.js", code: "const sko = new Sovereign('...');\nawait sko.handshake();" }
-               ].map((sdk, i) => (
-                 <Card key={i} className="glass-panel border-white/5 hover:border-accent/30 transition-all group">
-                    <CardHeader className="p-4 border-b border-white/5 bg-white/5 flex flex-row justify-between items-center">
-                       <span className="text-[10px] font-bold uppercase text-accent">{sdk.lang}</span>
-                       <FileCode className="h-3 w-3 text-muted-foreground opacity-50" />
-                    </CardHeader>
-                    <CardContent className="p-4 bg-black/40">
-                       <pre className="text-[10px] font-mono text-white/60 leading-relaxed">
-                          {sdk.code}
-                       </pre>
-                    </CardContent>
-                 </Card>
-               ))}
-            </div>
-          </div>
-
-          <footer className="pt-20 border-t border-white/5 text-center space-y-6 pb-12">
+        <footer className="pt-20 border-t border-white/5 text-center space-y-6 pb-12">
              <div className="flex items-center justify-center gap-4">
                 <div className="h-0.5 w-20 bg-gradient-to-r from-transparent to-primary/50" />
                 <Badge variant="outline" className="border-primary/20 text-primary font-mono text-[10px] uppercase px-4">
                    Syntax Architect v1.0 • Project 43
                 </Badge>
-                <div className="h-0.5 w-20 bg-gradient-to-l from-transparent to-primary/50" />
+                <div className="h-0.5 w-20 bg-gradient-to-l from-transparent to-accent/50" />
              </div>
-             <p className="text-[9px] font-bold uppercase tracking-[0.5em] text-muted-foreground opacity-50">
-                Deterministic Code Generation Node. Distributed via Anycast Node-04.
+             <p className="text-[9px] font-bold uppercase tracking-[0.5em] text-muted-foreground opacity-50 italic">
+                Knowledge Bank Indexing: ACTIVE • Synchronized with Project 44
              </p>
           </footer>
-        </main>
       </SidebarInset>
     </div>
   );
