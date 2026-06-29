@@ -21,6 +21,20 @@
       },
       "required": ["uid", "email", "kernelId", "accountNumber"]
     },
+    "LibraryAsset": {
+      "title": "Library Asset",
+      "description": "A media asset stored in the citizen's personal library.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "url": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "mimeType": { "type": "string" },
+        "source": { "type": "string", "enum": ["GOOGLE_DRIVE", "LOCAL_UPLOAD"] },
+        "createdAt": { "type": "number" }
+      }
+    },
     "PaymentLink": {
       "title": "Sovereign Payment Link",
       "description": "A cryptographically signed link for requesting funds.",
@@ -166,9 +180,10 @@
     "/users/{userId}/notifications": { "schema": "Notification", "description": "User specific real-time alerts." },
     "/users/{userId}/payment_links": { "schema": "PaymentLink", "description": "User generated payment request links." },
     "/users/{userId}/media_tasks": { "schema": "MediaTask", "description": "User specific media extraction tasks." },
+    "/users/{userId}/assets": { "schema": "LibraryAsset", "description": "Citizen's media library assets." },
     "/verification_docs/{docId}": { "schema": "VerificationDocument", "description": "Pending compliance documents." },
     "/system/control": { "schema": "SystemControlState", "description": "Global OS mode state." },
-    "/events/{eventId}": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." },
+    "/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." },
     "/payment_links/{linkId}": { "schema": "PaymentLink", "description": "Public registry of payment links." }
   }
 }
