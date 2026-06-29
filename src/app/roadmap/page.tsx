@@ -15,7 +15,11 @@ import {
   Network,
   Rocket,
   Layers,
-  Activity
+  Activity,
+  Server,
+  Key,
+  ShieldAlert,
+  ArrowRight
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -24,60 +28,56 @@ import { cn } from "@/lib/utils";
 const ROADMAP_PHASES = [
   {
     id: "p1",
-    title: "Phase 1: Genesis Kernel",
-    status: "Completed",
+    title: "Phase 1: Seed & Manual Desk",
+    status: "Active",
     icon: ShieldCheck,
-    date: "Q1 - Q2 2024",
+    date: "Current Focus",
     progress: 100,
+    desc: "Focus on first 100 high-trust users. Payouts are handled manually via the Liquidity Desk.",
     items: [
-      "Deterministic Event Priority Engine v1.0",
-      "Anycast Infrastructure Mesh (42 Nodes)",
-      "Basic Civic SOS Dispatch Protocol",
-      "Google Auth & Identity Binding"
+      "Manual bKash/Nagad Settlement",
+      "2% Revenue Collection Protocol",
+      "Trade License Compliance Check",
+      "Manual Ledger Reconciliation"
     ]
   },
   {
     id: "p2",
-    title: "Phase 2: Intelligence Plane",
-    status: "In Progress",
-    icon: Zap,
-    date: "Q3 - Q4 2024",
-    progress: 75,
+    title: "Phase 2: API Bridge & Sandbox",
+    status: "Upcoming (Q2)",
+    icon: Network,
+    date: "Q2 2024",
+    progress: 45,
+    desc: "B2C API integration in Sandbox mode. Automated Grant Token exchange testing.",
     items: [
-      "GenAI Flow Orchestrator (Genkit Integration)",
-      "Multi-Rail Financial Disbursement (PayPal/Payoneer)",
-      "Real-time River & Flood Intelligence",
-      "Dynamic Trust Map & KYB Synchronization"
+      "OAuth2 Node Implementation",
+      "Server IP Whitelisting (bKash/Nagad)",
+      "B2C Approval Process & Documentation",
+      "Grant Token Handshake Simulation"
     ]
   },
   {
     id: "p3",
-    title: "Phase 3: Autonomous Governance",
-    status: "Upcoming",
+    title: "Phase 3: Fully Automated SaaS",
+    status: "Vision (Q4)",
     icon: Cpu,
-    date: "Q1 2025",
-    progress: 15,
+    date: "Q4 2024",
+    progress: 10,
+    desc: "Real-time automated disbursements. Institutional API keys live. 3.5% Premium Instant Fee.",
     items: [
-      "Self-Healing Network Grid (Auto-Rerouting)",
-      "AI Council: Autonomous Agent Scaling Policies",
-      "Predictive Compliance & Regulatory Drift Detection",
-      "Zero-Trust Settlement Corridor Negotiation"
-    ]
-  },
-  {
-    id: "p4",
-    title: "Phase 4: Civilization Stability",
-    status: "Planned",
-    icon: Globe,
-    date: "Q2 - Q4 2025",
-    progress: 0,
-    items: [
-      "Global Economic Governance Simulator (SEG-MLC)",
-      "Macro-Stability Index for Inter-Entity Trade",
-      "Fully Automated Disaster Recovery Orchestration",
-      "Sovereign Consensus Protocol (SHURUKKHA-Chain)"
+      "Direct Bank Settlement Rails",
+      "Global Remittance Node Activation",
+      "Corporate Guarantee Bond Active",
+      "Deterministic Payout Orchestration"
     ]
   }
+];
+
+const B2C_CHECKS = [
+  { title: "bKash B2C API Application", desc: "Formal request for disbursement keys.", status: "Pending", icon: Key },
+  { title: "Server IP Whitelisting", desc: "Binding your server node IP to bKash/Nagad firewall.", status: "Ready", icon: Server },
+  { title: "Grant Token Exchange", desc: "Implementation of OAuth2 Token exchange handshake.", status: "Ready", icon: Zap },
+  { title: "Corporate Guarantee Bond", desc: "Financial commitment bond for B2C payout liquidity.", status: "Pending", icon: ShieldAlert },
 ];
 
 export default function RoadmapPage() {
@@ -88,21 +88,26 @@ export default function RoadmapPage() {
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-6">
           <SidebarTrigger />
           <div className="flex-1">
-            <h1 className="text-lg font-headline font-bold flex items-center gap-2">
+            <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-accent">
               <Milestone className="h-5 w-5 text-accent" />
-              OS Development Roadmap
+              Strategic Automation Roadmap
             </h1>
           </div>
           <Badge variant="outline" className="text-accent border-accent/20">
-            Current Version: v1.2.0-stable
+            Node Status: v1.2.0-stable
           </Badge>
         </header>
 
-        <main className="flex-1 p-8 max-w-[1200px] mx-auto w-full space-y-8">
-          <div className="text-center space-y-4 max-w-2xl mx-auto mb-12">
-            <h2 className="text-4xl font-headline font-bold">The Path to Sovereignty</h2>
-            <p className="text-muted-foreground">
-              Mapping the evolution of SHURUKKHA-OS from a core kernel to a globally distributed civilization-level intelligence mesh.
+        <main className="flex-1 p-8 max-w-[1200px] mx-auto w-full space-y-12">
+          <div className="text-center space-y-4 max-w-3xl mx-auto mb-16">
+            <Badge className="bg-accent/10 text-accent border-accent/20 uppercase tracking-[0.3em] text-[10px] font-bold px-4 py-1">
+              Deterministic Scaling Path
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-headline font-bold text-white tracking-tighter">
+              LIQUIDITY DESK TO <span className="text-accent italic">SAAS NODE</span>
+            </h2>
+            <p className="text-muted-foreground text-sm max-w-xl mx-auto italic">
+              "Our strategy to transition from a manual Liquidity Desk to a fully automated, high-throughput SaaS financial node."
             </p>
           </div>
 
@@ -110,60 +115,124 @@ export default function RoadmapPage() {
             {ROADMAP_PHASES.map((phase, idx) => (
               <div key={phase.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group animate-fade-in" style={{ animationDelay: `${idx * 0.2}s` }}>
                 {/* Icon Dot */}
-                <div className="flex items-center justify-center w-10 h-10 rounded-full border border-accent bg-background shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 cyan-glow z-10">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full border border-accent bg-background shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 cyan-glow z-10 transition-transform group-hover:scale-110">
                   <phase.icon className="h-5 w-5 text-accent" />
                 </div>
 
                 {/* Content Card */}
-                <Card className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass-panel hover:border-accent/30 transition-all">
+                <Card className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass-panel hover:border-accent/30 transition-all shadow-2xl">
                   <CardHeader className="p-4 md:p-6 pb-2">
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex justify-between items-start mb-3">
                       <Badge 
-                        variant={phase.status === 'Completed' ? 'default' : phase.status === 'In Progress' ? 'outline' : 'secondary'}
+                        variant={phase.status === 'Active' ? 'default' : 'outline'}
                         className={cn(
                           "text-[10px] uppercase font-bold",
-                          phase.status === 'Completed' && "bg-green-500/20 text-green-400 border-green-500/30",
-                          phase.status === 'In Progress' && "border-accent/50 text-accent animate-pulse"
+                          phase.status === 'Active' && "bg-green-500/20 text-green-400 border-green-500/30",
+                          phase.status.includes('Upcoming') && "border-accent/50 text-accent animate-pulse"
                         )}
                       >
                         {phase.status}
                       </Badge>
                       <span className="text-xs font-mono text-muted-foreground">{phase.date}</span>
                     </div>
-                    <CardTitle className="text-xl font-headline">{phase.title}</CardTitle>
+                    <CardTitle className="text-xl font-headline text-white">{phase.title}</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground/80 leading-relaxed mt-2 italic">
+                      {phase.desc}
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="p-4 md:p-6 pt-0 space-y-4">
+                  <CardContent className="p-4 md:p-6 pt-0 space-y-5">
                     <div className="space-y-2">
                       <div className="flex justify-between text-[10px] uppercase font-bold text-muted-foreground">
                         <span>Phase Implementation</span>
                         <span>{phase.progress}%</span>
                       </div>
-                      <Progress value={phase.progress} className="h-1 bg-accent/10" />
+                      <Progress value={phase.progress} className="h-1 bg-accent/10 [&>div]:bg-accent" />
                     </div>
                     
-                    <ul className="space-y-2">
+                    <div className="grid grid-cols-1 gap-2">
                       {phase.items.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-white/80">
-                          <CheckCircle2 className={cn("h-4 w-4 shrink-0 mt-0.5", phase.status === 'Completed' ? "text-green-400" : "text-muted-foreground/40")} />
-                          {item}
-                        </li>
+                        <div key={i} className="flex items-center gap-3 p-2 rounded bg-secondary/20 border border-white/5 group/item transition-colors hover:bg-white/5">
+                           <div className={cn(
+                             "w-4 h-4 rounded-full border flex items-center justify-center shrink-0",
+                             phase.status === 'Active' ? "border-green-500/50 bg-green-500/10" : "border-white/10"
+                           )}>
+                             {phase.status === 'Active' && <CheckCircle2 className="h-2.5 w-2.5 text-green-500" />}
+                           </div>
+                           <span className="text-[11px] text-white/70 font-medium group-hover/item:text-white transition-colors">{item}</span>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
             ))}
           </div>
 
-          <div className="mt-20 p-8 rounded-2xl bg-accent/5 border border-accent/20 text-center space-y-4">
-            <Activity className="h-12 w-12 text-accent mx-auto animate-pulse" />
-            <h3 className="text-2xl font-headline font-bold">Continuous Synchronization</h3>
-            <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-              Sovereign OS is updated deterministically. New kernel patches are deployed via the 42-node anycast mesh every 24 hours to ensure civilization-level stability.
-            </p>
+          {/* B2C Readiness Check Section */}
+          <div className="mt-32 space-y-8">
+            <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-white/5 pb-4">
+              <div className="space-y-1">
+                <h3 className="text-2xl font-headline font-bold text-white flex items-center gap-2">
+                  <ShieldCheck className="h-6 w-6 text-accent" />
+                  B2C Readiness Check
+                </h3>
+                <p className="text-sm text-muted-foreground">Compliance and infrastructure verification for automated disbursements.</p>
+              </div>
+              <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
+                GATEWAY: BKASH_NAGAD_DIRECT
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+               {B2C_CHECKS.map((check, i) => (
+                 <Card key={i} className="glass-panel border-white/5 overflow-hidden group">
+                   <CardContent className="p-5 space-y-4">
+                      <div className="flex justify-between items-start">
+                         <div className={cn(
+                           "p-2 rounded-lg bg-secondary/50 transition-colors",
+                           check.status === 'Ready' ? "text-accent" : "text-muted-foreground/50"
+                         )}>
+                            <check.icon className="h-5 w-5" />
+                         </div>
+                         <Badge className={cn(
+                           "text-[9px] uppercase font-bold",
+                           check.status === 'Ready' ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-500"
+                         )}>
+                           {check.status}
+                         </Badge>
+                      </div>
+                      <div className="space-y-1">
+                         <p className="text-xs font-bold text-white uppercase">{check.title}</p>
+                         <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2 italic">
+                           {check.desc}
+                         </p>
+                      </div>
+                   </CardContent>
+                 </Card>
+               ))}
+            </div>
           </div>
+
+          <footer className="mt-24 p-8 rounded-3xl bg-gradient-to-br from-accent/10 to-transparent border border-accent/20 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-[100px] -mr-32 -mt-32" />
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="space-y-2 text-center md:text-left">
+                <h3 className="text-xl font-headline font-bold text-white flex items-center justify-center md:justify-start gap-2">
+                  <Activity className="h-5 w-5 text-accent animate-pulse" />
+                  Continuous Synchronization
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-xl">
+                  Sovereign OS is updated deterministically. Automated B2C rails are currently under audit in the Finance Plane.
+                </p>
+              </div>
+              <Button className="cyan-glow bg-accent text-background font-bold h-12 px-8 uppercase tracking-widest text-[10px] shrink-0">
+                View Tech Specs <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </footer>
         </main>
       </SidebarInset>
     </div>
   );
 }
+
