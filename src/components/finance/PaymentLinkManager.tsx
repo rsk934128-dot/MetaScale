@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -14,7 +13,6 @@ import {
   RefreshCw,
   Loader2,
   PackageCheck,
-  ExternalLink,
   ShoppingBag
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -23,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useCollection } from "@/firebase";
-import { collection, query, orderBy, limit, deleteDoc, doc, updateDoc, increment, setDoc } from "firebase/firestore";
+import { collection, query, orderBy, limit, deleteDoc, doc, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -60,7 +58,6 @@ export function PaymentLinkManager() {
     }
 
     setIsCreating(true);
-    // Generate a clean deterministic seal ID
     const seal = `PAY_SEAL_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     
     const linkData = {
@@ -75,39 +72,33 @@ export function PaymentLinkManager() {
       createdAt: Date.now(),
     };
 
-    // References
     const publicLinkRef = doc(firestore, 'payment_links', seal);
     const userLinkRef = doc(firestore, 'users', user.uid, 'payment_links', seal);
 
-    // Robust dual-write with error handling
+    // Faster sequential writes without unnecessary blocking
     setDoc(publicLinkRef, linkData)
       .then(() => {
         setDoc(userLinkRef, linkData)
           .then(() => {
             emitEvent('FINANCE', 'MARKETPLACE_LINK_GENERATED', 4, { seal, amount });
-            toast({
-              title: "Payment Link Generated",
-              description: "পেমেন্ট লিঙ্কটি পাবলিক রেজিস্ট্রিতে সক্রিয় করা হয়েছে।",
-            });
+            toast({ title: "Link Activated", description: "পেমেন্ট লিঙ্কটি এখন গ্লোবাল রেজিস্ট্রিতে লাইভ।" });
             setAmount("");
             setDesc("");
           })
-          .catch(async (error) => {
-             const pErr = new FirestorePermissionError({
+          .catch((err) => {
+             errorEmitter.emit('permission-error', new FirestorePermissionError({
                path: userLinkRef.path,
                operation: 'create',
-               requestResourceData: linkData,
-             });
-             errorEmitter.emit('permission-error', pErr);
+               requestResourceData: linkData
+             }));
           });
       })
-      .catch(async (error) => {
-        const pErr = new FirestorePermissionError({
-          path: publicLinkRef.path,
-          operation: 'create',
-          requestResourceData: linkData,
-        });
-        errorEmitter.emit('permission-error', pErr);
+      .catch((err) => {
+         errorEmitter.emit('permission-error', new FirestorePermissionError({
+           path: publicLinkRef.path,
+           operation: 'create',
+           requestResourceData: linkData
+         }));
       })
       .finally(() => {
         setIsCreating(false);
@@ -116,23 +107,19 @@ export function PaymentLinkManager() {
 
   const copyToClipboard = (id: string, seal: string) => {
     if (typeof window === 'undefined') return;
-    const origin = window.location.origin;
-    const url = `${origin}/checkout/${seal}`;
-    navigator.clipboard.writeText(url);
-    setCopiedId(id);
-    toast({ title: "Checkout URL Copied", description: "লিঙ্কটি কপি করা হয়েছে। আপনার কাস্টমারকে এটি পাঠান।" });
-    setTimeout(() => setCopiedId(null), 2000);
+    const url = `${window.location.origin}/checkout/${seal}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(id);
+      toast({ title: "URL Copied", description: "চেকআউট লিঙ্কটি কপি করা হয়েছে।" });
+      setTimeout(() => setCopiedId(null), 2000);
+    });
   };
 
   const handleDelete = (id: string, seal: string) => {
     if (!firestore || !user?.uid) return;
-    const linkRef = doc(firestore, 'users', user.uid, 'payment_links', id);
-    const publicLinkRef = doc(firestore, 'payment_links', seal);
-    
-    deleteDoc(linkRef).catch(() => {});
-    deleteDoc(publicLinkRef).catch(() => {});
-    
-    toast({ title: "Link Deactivated", description: "পেমেন্ট রুট বন্ধ করা হয়েছে।" });
+    deleteDoc(doc(firestore, 'users', user.uid, 'payment_links', id));
+    deleteDoc(doc(firestore, 'payment_links', seal));
+    toast({ title: "Link Deactivated", description: "করিডোরটি সফলভাবে বন্ধ করা হয়েছে।" });
   };
 
   return (
@@ -142,28 +129,24 @@ export function PaymentLinkManager() {
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest text-accent">
               <ShoppingBag className="h-4 w-4" />
-              Generate Checkout Link
+              Quick Generate
             </CardTitle>
-            <CardDescription className="text-[10px]">আপনার পণ্যের জন্য একটি স্থায়ী পেমেন্ট লিঙ্ক তৈরি করুন।</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Product Price (USD)</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent/50" />
-                <Input 
-                  type="number" 
-                  placeholder="0.00" 
-                  className="pl-10 bg-secondary/30 border-white/5 h-11 text-sm"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
-              </div>
+              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Price (USD)</Label>
+              <Input 
+                type="number" 
+                placeholder="0.00" 
+                className="bg-secondary/30 border-white/5 h-11 text-sm"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Product Name / Description</Label>
+              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Product Name</Label>
               <Input 
-                placeholder="e.g. Digital Design Course" 
+                placeholder="e.g. Digital Asset" 
                 className="bg-secondary/30 border-white/5 h-11 text-sm"
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
@@ -175,7 +158,7 @@ export function PaymentLinkManager() {
               disabled={isCreating}
             >
               {isCreating ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-              Generate Checkout Link
+              {isCreating ? "Deploying..." : "Generate Link"}
             </Button>
           </CardContent>
         </Card>
@@ -184,82 +167,60 @@ export function PaymentLinkManager() {
       <div className="lg:col-span-2">
         <Card className="glass-panel border-white/5 h-full flex flex-col">
           <CardHeader className="border-b border-white/5">
-            <div className="flex justify-between items-center">
-               <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest">
-                  <LinkIcon className="h-4 w-4 text-primary" />
-                  Active Sales Corridors
-               </CardTitle>
-               <Badge variant="outline" className="text-[8px] border-white/10 opacity-50">GLOBAL_SYNC</Badge>
-            </div>
+            <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest">
+              <LinkIcon className="h-4 w-4 text-primary" />
+              Marketplace Routes
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0 flex-1">
-            <ScrollArea className="h-[500px]">
+            <ScrollArea className="h-[400px]">
                {loading ? (
                  <div className="flex flex-col items-center justify-center h-40 opacity-30">
-                    <Loader2 className="h-6 w-6 animate-spin mb-2" />
-                    <p className="text-[10px] uppercase font-bold tracking-widest">Accessing Ledger...</p>
+                    <Loader2 className="h-6 w-6 animate-spin" />
                  </div>
                ) : links && links.length > 0 ? (
                  <div className="divide-y divide-white/5">
                     {links.map((link: any) => (
-                      <div key={link.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:bg-white/5 transition-all">
+                      <div key={link.id} className="p-4 flex items-center justify-between gap-4 hover:bg-white/5 transition-all">
                          <div className="flex items-center gap-4">
                             <div className={cn(
-                              "w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 transition-colors",
+                              "w-10 h-10 rounded-lg border flex items-center justify-center shrink-0",
                               link.status === 'PAID' ? "bg-green-500/10 border-green-500/30 text-green-400" : "bg-primary/10 border-primary/20 text-primary"
                             )}>
-                               {link.status === 'PAID' ? <PackageCheck className="h-6 w-6" /> : <ShoppingBag className="h-6 w-6" />}
+                               <ShoppingBag className="h-5 w-5" />
                             </div>
-                            <div className="space-y-1">
-                               <div className="flex items-center gap-2">
-                                  <span className="text-base font-bold text-white">${link.amount?.toLocaleString() || '0.00'}</span>
-                                  <Badge className={cn(
-                                    "text-[8px] uppercase font-bold",
-                                    link.status === 'PAID' ? "bg-green-500 text-background" : "bg-accent text-background"
-                                  )}>
-                                    {link.status}
-                                  </Badge>
-                               </div>
-                               <p className="text-xs text-white/90 font-medium">"{link.description}"</p>
-                               <div className="flex items-center gap-2 text-[9px] font-mono text-muted-foreground/50">
-                                  <Clock className="h-3 w-3" />
-                                  {new Date(link.createdAt).toLocaleString()}
-                               </div>
+                            <div className="space-y-0.5">
+                               <p className="text-sm font-bold text-white">${link.amount}</p>
+                               <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">{link.description}</p>
                             </div>
                          </div>
-                         
                          <div className="flex items-center gap-2">
-                            {link.status === 'ACTIVE' ? (
+                            {link.status === 'ACTIVE' && (
                               <Button 
-                                variant="ghost" 
+                                variant="outline" 
                                 size="sm" 
-                                className="text-[9px] font-bold h-8 border border-white/5 bg-secondary/20 transition-all hover:bg-accent hover:text-background"
+                                className="h-8 text-[9px] uppercase font-bold"
                                 onClick={() => copyToClipboard(link.id, link.seal)}
                               >
-                                 {copiedId === link.id ? <Check className="h-3.5 w-3.5 text-green-400 mr-1.5" /> : <Copy className="h-3.5 w-3.5 mr-1.5" />}
-                                 Copy Checkout URL
+                                 {copiedId === link.id ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
+                                 Copy
                               </Button>
-                            ) : (
-                              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-[9px] font-bold text-green-400 uppercase">
-                                <PackageCheck className="h-3 w-3" /> Settled
-                              </div>
                             )}
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className="h-8 w-8 text-red-400 hover:bg-red-400/10"
+                              className="h-8 w-8 text-red-400"
                               onClick={() => handleDelete(link.id, link.seal)}
                             >
-                               <Trash2 className="h-4 w-4" />
+                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                          </div>
                       </div>
                     ))}
                  </div>
                ) : (
-                 <div className="flex flex-col items-center justify-center h-60 opacity-20">
-                    <ShoppingBag className="h-12 w-12 mb-4" />
-                    <p className="text-[10px] uppercase font-bold tracking-[0.2em]">No Marketplace Sales Yet</p>
+                 <div className="h-40 flex items-center justify-center text-[10px] uppercase font-bold text-muted-foreground opacity-20">
+                    No active routes.
                  </div>
                )}
             </ScrollArea>
