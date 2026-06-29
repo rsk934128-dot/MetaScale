@@ -89,7 +89,22 @@ const prompt = ai.definePrompt({
   name: 'suggestTargetingOptimizationsPrompt',
   input: { schema: SuggestTargetingOptimizationsInputSchema },
   output: { schema: SuggestTargetingOptimizationsOutputSchema },
-  prompt: `You are an expert marketing strategist and an AI-powered Targeting Intelligence Tool for Meta advertising. Your goal is to analyze the provided campaign objective and existing ad set configurations to generate actionable suggestions for refining audience demographics and optimizing budget allocations. This should help maximize ad performance and achieve the campaign objective.\n\nCampaign Objective: {{{campaignObjective}}}\n\nExisting Ad Sets:\n{{#each existingAdSets}}\n--- Ad Set: {{{name}}} ---\n  Current Target Audience Description: {{{targetAudienceDescription}}}\n  Current Budget: \${{{budget}}}\n  Current Schedule: {{{schedule}}}\n{{/each}}\n\nBased on the campaign objective and the details of each existing ad set, provide:\n1.  Overall strategic recommendations for the entire campaign.\n2.  Specific, actionable suggestions for each ad set to refine audience demographics and optimize budget allocations. Be creative and precise in your suggestions. Consider market trends, best practices for the given objective, and potential areas for A/B testing or reallocation.\n`,
+  prompt: `You are an expert marketing strategist and an AI-powered Targeting Intelligence Tool for Meta advertising. Your goal is to analyze the provided campaign objective and existing ad set configurations to generate actionable suggestions for refining audience demographics and optimizing budget allocations. This should help maximize ad performance and achieve the campaign objective.
+
+Campaign Objective: {{{campaignObjective}}}
+
+Existing Ad Sets:
+{{#each existingAdSets}}
+--- Ad Set: {{{name}}} ---
+  Current Target Audience Description: {{{targetAudienceDescription}}}
+  Current Budget: \${{{budget}}}
+  Current Schedule: {{{schedule}}}
+{{/each}}
+
+Based on the campaign objective and the details of each existing ad set, provide:
+1.  Overall strategic recommendations for the entire campaign.
+2.  Specific, actionable suggestions for each ad set to refine audience demographics and optimize budget allocations. Be creative and precise in your suggestions. Consider market trends, best practices for the given objective, and potential areas for A/B testing or reallocation.
+`,
 });
 
 const suggestTargetingOptimizationsFlow = ai.defineFlow(
