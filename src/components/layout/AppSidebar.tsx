@@ -25,7 +25,9 @@ import {
   UserCircle,
   Music2,
   ShieldCheck,
-  Gem
+  Gem,
+  TrendingUp,
+  Search
 } from "lucide-react";
 import {
   Sidebar,
@@ -58,9 +60,9 @@ import { useMemo } from "react";
 
 const civicNav = [
   { icon: Globe, label: "Control Plane", href: "/dashboard" },
+  { icon: TrendingUp, label: "Insights Hub", href: "/insights" },
   { icon: Waves, label: "Civic Intelligence", href: "/civic" },
   { icon: Music2, label: "Media Intelligence", href: "/media" },
-  { icon: Gem, label: "Prospectus", href: "/prospectus" },
 ];
 
 const financialNav = [

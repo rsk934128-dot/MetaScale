@@ -1,7 +1,7 @@
 
-# 🚀 FusionPay | Global Smart Wallet & Settlement Node
+# 🚀 FusionPay | Global Smart Wallet & Intelligence OS
 
-**FusionPay** (powered by Sovereign Kernel) হলো একটি এআই-নেটিভ (AI-native) গ্লোবাল ফিনটেক সল্যুশন। এটি লন্ডন-স্ট্যান্ডার্ড ইনফ্রাস্ট্রাকচার ব্যবহার করে লোকাল পেমেন্ট (bKash, Nagad) এবং গ্লোবাল সেটেলমেন্ট (PayPal, Stripe, SWIFT) এর মধ্যে একটি শক্তিশালী সেতু তৈরি করে।
+**FusionPay** (powered by Sovereign Kernel) হলো একটি এআই-নেটিভ (AI-native) গ্লোবাল ফিনটেক সল্যুশন। এটি লন্ডন-স্ট্যান্ডার্ড ইনফ্রাস্ট্রাকচার ব্যবহার করে লোকাল পেমেন্ট (bKash, Nagad) এবং গ্লোবাল সেটেলমেন্ট (PayPal, Stripe, SWIFT) এর মধ্যে একটি শক্তিশালী সেতু তৈরি করে, সাথে যুক্ত করেছে এআই-চালিত মার্কেট ইন্টেলিজেন্স।
 
 ---
 
@@ -12,8 +12,12 @@
 *   **Cross-Border Payouts:** PayPal REST API, Priyo Pay, এবং bKash B2C সরাসরি ইন্টিগ্রেশন।
 *   **Oracle Handshake:** ২-স্টেপ (Check & Confirm) সেটেলমেন্ট ভেরিফিকেশন লজিক।
 
+### 🧠 Financial Intelligence (Insights Hub)
+*   **AI Stock Analyst:** রিয়েল-টাইম সেন্টিমেন্ট এবং রিস্ক স্কোর অ্যানালাইসিস (AAPL, BTC, etc.)।
+*   **AI Article Summarizer:** দীর্ঘ ফিন্যান্সিয়াল নিউজ বা রিপোর্ট থেকে দ্রুত এক্সিকিউটিভ সামারি তৈরি।
+*   **Citizen Watchlist:** আপনার পছন্দের অ্যাসেটগুলো ট্র্যাক করার জন্য পার্সোনালাইজড ড্যাশবোর্ড।
+
 ### 🤖 AI Intelligence (Genkit Powered)
-*   **AI Insights:** লেনদেন বিশ্লেষণ করে পার্সোনালাইজড আর্থিক পরামর্শ।
 *   **Fraud Detection:** রিয়েল-টাইম ফ্রড স্কোরিং এবং অ্যানোমালি ডিটেকশন।
 *   **AI Decision Engine:** ডিটারমিনিস্টিক লিকুইডিটি ডেসপ্যাচ।
 
@@ -42,5 +46,5 @@
 
 ---
 
-> **"Global Connectivity, Local Trust."**  
+> **"Global Connectivity, Intelligent Trust."**  
 > *© 2024 FusionPay Global Node. Founded in London.*

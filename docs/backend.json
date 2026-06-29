@@ -21,6 +21,18 @@
       },
       "required": ["uid", "email", "kernelId", "accountNumber"]
     },
+    "WatchlistItem": {
+      "title": "Watchlist Item",
+      "description": "A financial instrument tracked by the citizen.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ticker": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["STOCK", "CRYPTO", "COMMODITY"] },
+        "addedAt": { "type": "number" }
+      }
+    },
     "VirtualCard": {
       "title": "Fusion Virtual Card",
       "description": "Company-issued virtual Mastercard/Visa for citizens.",
@@ -107,6 +119,7 @@
     "/users/{userId}/notifications": { "schema": "Notification", "description": "User specific real-time alerts." },
     "/users/{userId}/payment_links": { "schema": "PaymentLink", "description": "User generated payment request links." },
     "/users/{userId}/assets": { "schema": "LibraryAsset", "description": "Citizen's media library assets." },
+    "/users/{userId}/watchlist": { "schema": "WatchlistItem", "description": "User's tracked financial instruments." },
     "/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." },
     "/payment_links/{linkId}": { "schema": "PaymentLink", "description": "Public registry of payment links." }
   }
