@@ -27,7 +27,9 @@ import {
   ShieldCheck,
   Gem,
   TrendingUp,
-  Search
+  Search,
+  CreditCard,
+  ShoppingBag
 } from "lucide-react";
 import {
   Sidebar,
@@ -238,6 +240,19 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-4 border-t border-white/5 space-y-2">
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={pathname === '/pricing'} tooltip="System Plans">
+              <Link 
+                href="/pricing" 
+                className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-accent"
+                onClick={handleLinkClick}
+              >
+                <Gem className="h-4 w-4" />
+                <span>System Plans</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname === '/api-docs'} tooltip="API Docs">
               <Link 
