@@ -45,9 +45,17 @@ const YapilyConsentOutputSchema = z.object({
  * Smart Router Logic for Integration Path selection.
  * Determines whether to use Hosted Pages or Direct API based on request complexity and NoorNexus Priority Rules.
  */
-function determineIntegrationPath(requestType: string): { path: 'HOSTED' | 'DIRECT_API', reason: string } {
+function determineIntegrationPath(requestType: string, institutionId: string = ''): { path: 'HOSTED' | 'DIRECT_API', reason: string } {
   const hostedTypes = ['single_payment', 'standard_consent'];
   const directTypes = ['bulk_payment', 'scheduled_payment', 'international_transfer', 'custom_ui_required'];
+
+  // Priority Rule: Amex UK (amex-ob_uk) always uses Direct API for full control
+  if (institutionId === 'amex-ob_uk') {
+    return {
+      path: 'DIRECT_API',
+      reason: 'Priority Node Rule: American Express (amex-ob_uk) requires Direct API for institutional integrity.'
+    };
+  }
 
   if (directTypes.includes(requestType)) {
     return { 
@@ -107,7 +115,7 @@ const yapilyConsentFlow = ai.defineFlow(
     outputSchema: YapilyConsentOutputSchema,
   },
   async (input) => {
-    const routing = determineIntegrationPath(input.requestType);
+    const routing = determineIntegrationPath(input.requestType, input.institutionId);
     const consentId = `CON_YAP_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     
     // Simulate different URLs based on path

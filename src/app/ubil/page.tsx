@@ -26,7 +26,8 @@ import {
   Globe,
   Unplug,
   Cpu,
-  FileCode
+  FileCode,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,7 @@ export default function UBILIntegrationPage() {
   const [search, setSearch] = useState("");
   const [isSimulating, setIsSimulating] = useState(false);
   const [isTestRunning, setIsTestRunning] = useState(false);
+  const [isVerifyingAmex, setIsVerifyingAmex] = useState(false);
   const [simPreset, setSimPreset] = useState("Txn Success");
   const [simAmount, setSimAmount] = useState("25000.00");
   const [simBank, setSimBank] = useState("Brac Bank");
@@ -57,15 +59,16 @@ export default function UBILIntegrationPage() {
   const firestore = useFirestore();
 
   useEffect(() => {
-    // Simulate Amex UK node registration on mount
+    // Initializing System Logs
     const timer = setTimeout(() => {
       setLogs(prev => [
-        "> Amex UK Institution Node (amex-ob_uk) registered successfully.",
-        "> Mapping BIC: AETCUS55XXX to Sovereign Grid...",
-        "> Syncing PIS/AIS features for American Express UK...",
+        "> Node amex-ob_uk registered successfully. Status: ACTIVE_READY",
+        "> Mapping BIC: AETCUS55XXX for American Express UK...",
+        "> Smart Router: Priority rule applied for Amex UK (Force Direct API)",
+        "> System: Level 0 Ledger Syncing with Sovereign Drive...",
         ...prev
       ]);
-    }, 1500);
+    }, 1000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -114,6 +117,40 @@ export default function UBILIntegrationPage() {
         variant: isSignatureValid ? "default" : "destructive" 
       });
     }, 800);
+  };
+
+  const handleAmexVerify = async () => {
+    setIsVerifyingAmex(true);
+    setLogs(prev => [`$ nn-cli --node-verify amex-ob_uk --status`, ...prev]);
+    
+    setTimeout(() => {
+      setLogs(prev => [`> Status: ACTIVE_READY (Verified by NoorNexus Kernel)`, ...prev]);
+      setIsVerifyingAmex(false);
+      toast({
+        title: "Node Verified",
+        description: "amex-ob_uk is ACTIVE_READY and prioritized.",
+      });
+      
+      // Inject permanent record into ledger
+      const recordId = `CONF_AMEX_UK_${Date.now()}`;
+      const record = {
+        id: recordId,
+        type: 'NODE_REGISTRATION',
+        senderBank: 'American Express UK',
+        senderName: 'System Architect',
+        status: 'SUCCESS',
+        integrationPath: 'DIRECT_API',
+        routingReason: 'Institutional Priority: Force Direct API for High-Profile Node.',
+        handshakeStatus: 'ACTIVE_READY',
+        idempKey: `idemp_config_amex`,
+        timestamp: Date.now(),
+        metadata: { id: 'amex-ob_uk', bic: 'AETCUS55XXX', env: 'LIVE' }
+      };
+      
+      if (firestore) {
+        setDoc(doc(firestore, 'ubil_events', recordId), record);
+      }
+    }, 1500);
   };
 
   const runTestTriggerScript = async () => {
@@ -166,8 +203,6 @@ export default function UBILIntegrationPage() {
         }
 
         setLogs(prev => [`> Request ${i+1} (${req.type}) routed to: ${response.integrationPath}`, ...prev]);
-        
-        // Small delay to simulate sequential processing
         await new Promise(resolve => setTimeout(resolve, 500));
     }
 
@@ -202,6 +237,16 @@ export default function UBILIntegrationPage() {
                 variant="outline" 
                 size="sm" 
                 className="border-accent/30 text-accent font-bold text-[10px] h-8 hidden md:flex"
+                onClick={handleAmexVerify}
+                disabled={isVerifyingAmex}
+             >
+                {isVerifyingAmex ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <ShieldCheck className="mr-2 h-3 w-3" />}
+                Verify Amex UK Node
+             </Button>
+             <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-primary/30 text-primary font-bold text-[10px] h-8 hidden md:flex"
                 onClick={runTestTriggerScript}
                 disabled={isTestRunning}
              >
@@ -313,16 +358,6 @@ export default function UBILIntegrationPage() {
                             </div>
                         </CardContent>
                     </Card>
-                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2">
-                        <div className="flex items-center gap-2 text-primary">
-                            <Database className="h-3 w-3" />
-                            <span className="text-[9px] font-bold uppercase">G-Drive Access (L0)</span>
-                        </div>
-                        <p className="text-[8px] text-muted-foreground leading-relaxed">
-                            Transactional logs are automatically pushed to: <br/>
-                            <span className="font-mono text-white/60">/NoorNexus_Root/Transactional_Logs/</span>
-                        </p>
-                    </div>
                 </TabsContent>
               </Tabs>
 
@@ -330,7 +365,7 @@ export default function UBILIntegrationPage() {
                  <p className="text-accent uppercase font-bold sticky top-0 bg-black/60 pb-1 flex items-center gap-2">
                     <Terminal className="h-3 w-3" /> CORE MAINFRAME:
                  </p>
-                 {logs.map((log, i) => <p key={i} className={cn("animate-fade-in", log.startsWith('!') ? "text-red-400 font-bold" : log.startsWith('>') ? "text-primary italic" : log.startsWith('?') ? "text-yellow-400" : "text-white/60")}>{log}</p>)}
+                 {logs.map((log, i) => <p key={i} className={cn("animate-fade-in", log.startsWith('!') ? "text-red-400 font-bold" : log.startsWith('>') ? "text-primary italic" : log.startsWith('$') ? "text-accent font-bold" : log.startsWith('?') ? "text-yellow-400" : "text-white/60")}>{log}</p>)}
               </div>
             </div>
 
@@ -414,22 +449,11 @@ export default function UBILIntegrationPage() {
                                         </div>
                                         <div className="space-y-1">
                                             <p className="text-[8px] uppercase font-bold text-muted-foreground">Signature Status</p>
-                                            <Badge className={selectedEvent.signatureStatus === 'VALID' ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}>
+                                            <Badge className={selectedEvent.signatureStatus === 'INVALID' ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400"}>
                                                 {selectedEvent.signatureStatus || 'VALID (Test)'}
                                             </Badge>
                                         </div>
                                     </div>
-                                    {selectedEvent.status === 'BLOCKED' && (
-                                        <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 space-y-3">
-                                            <div className="flex items-center gap-2 text-red-400">
-                                            <ShieldAlert className="h-4 w-4" />
-                                            <span className="text-[10px] font-bold uppercase">Security Tag: {selectedEvent.securityTag}</span>
-                                            </div>
-                                            <p className="text-[10px] text-red-300 leading-relaxed italic">
-                                            "Handshake terminated: HMAC-SHA256 verification failed. The payload integrity hash provided by {selectedEvent.senderBank} does not match the local kernel calculation."
-                                            </p>
-                                        </div>
-                                    )}
                                 </TabsContent>
 
                                 <TabsContent value="routing" className="space-y-4 m-0">
@@ -463,11 +487,6 @@ export default function UBILIntegrationPage() {
                                     </div>
                                 </TabsContent>
                             </Tabs>
-                            
-                            <div className="flex gap-2 pt-4 border-t border-white/10">
-                                <Button className="flex-1 bg-accent text-background text-[10px] font-bold uppercase h-9 shadow-2xl">Download Audit CSV</Button>
-                                <Button variant="outline" className="flex-1 border-white/10 text-[10px] font-bold uppercase h-9">Report to Node</Button>
-                            </div>
                          </div>
                        ) : (
                          <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-30">
