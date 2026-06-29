@@ -2,7 +2,7 @@
 "use client";
 
 import { useDoc, useFirestore } from "@/firebase";
-import { doc, updateDoc, increment, collection, addDoc } from "firebase/firestore";
+import { doc, updateDoc, increment, collection, addDoc, setDoc } from "firebase/firestore";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

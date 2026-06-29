@@ -13,13 +13,14 @@ import {
   Radio, 
   Cpu, 
   RefreshCw,
-  Search,
+  Search, 
   Filter,
   ArrowUpRight,
   Server,
   Terminal,
   Unplug,
-  Loader2
+  Loader2,
+  Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
