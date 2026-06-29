@@ -19,7 +19,8 @@ import {
   Activity,
   ChevronRight,
   TrendingUp,
-  Target
+  Target,
+  Briefcase
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -41,7 +42,7 @@ export default function IntelligenceLayerPage() {
     if (chatHistory.length === 0) {
       setChatHistory([{
         role: 'model',
-        text: "EXECUTION MODE ACTIVE. I am the Sovereign Business Strategist. Beyond technical logging, I am now analyzing your ROI potential across Projects 42-45. Your infrastructure is institutional-ready. How shall we orchestrate your global launch today?"
+        text: "EXECUTION MODE ACTIVE. I am the Sovereign Business Strategist. Beyond technical logging, I am now analyzing your ROI potential across Projects 42-45. Your infrastructure is institutional-ready. How shall we orchestrate your global launch today? I have drafted a Growth Roadmap and Prospectus for your review."
       }]);
     }
   }, []);
@@ -58,7 +59,7 @@ export default function IntelligenceLayerPage() {
       const result = await marketingCommandChat({
         query: userMsg,
         history: chatHistory,
-        context: "Sovereign OS context: Project 42-44 complete. Metadata density 92.4%. Focus: Commercial scaling and Revenue Ops. System mode: NORMAL. Anycast Node-04 is healthy. Strategy: Transition from system-building to commercial execution.",
+        context: "Sovereign OS context: Project 42-44 complete. Metadata density 92.4%. Focus: Commercial scaling and Revenue Ops. System mode: NORMAL. Anycast Node-04 is healthy. Strategy: Transition from system-building to commercial execution. Growth targets: 300% merchant increase by Q4. Prospectus v1.2 is live.",
       });
       
       setLastResult(result);
@@ -109,7 +110,7 @@ export default function IntelligenceLayerPage() {
                         ? 'bg-primary border-primary/50 text-white' 
                         : 'bg-secondary/40 border-white/5 text-white/90'
                       )}>
-                        {msg.role === 'model' && <div className="flex items-center gap-2 mb-2 pb-1 border-b border-white/5 opacity-50"><Zap className="h-3 w-3 text-accent" /><span className="text-[8px] uppercase font-bold tracking-widest">Sovereign Logic</span></div>}
+                        {msg.role === 'model' && <div className="flex items-center gap-2 mb-2 pb-1 border-b border-white/5 opacity-50"><Zap className="h-3 w-3 text-accent" /><span className="text-[8px] uppercase font-bold tracking-widest">Sovereign Strategist</span></div>}
                         <p className="whitespace-pre-wrap">{msg.text}</p>
                       </div>
                     </div>
@@ -128,10 +129,10 @@ export default function IntelligenceLayerPage() {
               <div className="p-4 border-t border-white/5 bg-background/50 backdrop-blur-sm">
                 <div className="relative flex items-center gap-2">
                   <div className="absolute left-3 p-1 rounded bg-accent/10 border border-accent/20">
-                     <Target className="h-3 w-3 text-accent" />
+                     <Briefcase className="h-3 w-3 text-accent" />
                   </div>
                   <Input 
-                    placeholder="Enter scaling directive or launch query..." 
+                    placeholder="Ask about scaling, ROI, or market expansion..." 
                     className="flex-1 h-12 text-xs bg-secondary/30 border-white/10 pl-11 pr-12 rounded-xl focus:border-primary/50 transition-all"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -147,18 +148,18 @@ export default function IntelligenceLayerPage() {
 
           <div className="hidden lg:block space-y-6 overflow-y-auto pr-2 h-full">
             <Card className="glass-panel border-accent/20 bg-accent/5">
-              <CardHeader className="pb-2 p-4">
-                <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest">
+              <CardHeader className="pb-2 p-4 border-b border-white/5">
+                <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest text-accent">
                   <Activity className="h-4 w-4 text-accent" />
-                  Strategy Index
+                  Commercial Index
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 pt-0 space-y-3">
+              <CardContent className="p-4 space-y-3">
                 {[
-                  { label: "Launch Readiness", val: "88%", color: "text-green-400" },
-                  { label: "Revenue Model", val: "Verified", color: "text-primary" },
-                  { label: "Market Fit", val: "Optimal", color: "text-accent" },
-                  { label: "Scaling Tier", val: "Enterprise", color: "text-yellow-400" }
+                  { label: "Market Fit", val: "Optimal", color: "text-green-400" },
+                  { label: "Scaling Tier", val: "Enterprise", color: "text-primary" },
+                  { label: "Yield Target", val: "3.5%", color: "text-accent" },
+                  { label: "Risk Level", val: "Low", color: "text-green-400" }
                 ].map((item, i) => (
                   <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-black/40 border border-white/5 group hover:border-accent/30 transition-all cursor-default">
                     <span className="text-[9px] text-muted-foreground font-bold uppercase">{item.label}</span>
@@ -169,35 +170,56 @@ export default function IntelligenceLayerPage() {
             </Card>
 
             <Card className="glass-panel border-white/5">
-               <CardHeader className="p-4">
+               <CardHeader className="p-4 border-b border-white/5">
                   <CardTitle className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-                     <FileText className="h-3 w-3 text-primary" /> Execution Hooks
+                     <Target className="h-3 w-3 text-primary" /> Growth Milestones
                   </CardTitle>
                </CardHeader>
-               <CardContent className="p-4 pt-0 space-y-2">
+               <CardContent className="p-4 space-y-2">
                   {[
                     "Stripe API bridge ready",
                     "Elorus webhook mapped",
                     "Node-04 traffic prioritized",
-                    "ISO 20022 Audit passed"
+                    "Prospectus v1.2 signed"
                   ].map((log, i) => (
                     <div key={i} className="flex items-center gap-2 text-[9px] text-white/60 italic">
-                       <ChevronRight className="h-2 w-2 text-primary shrink-0" />
+                       <CheckCircle2 className="h-2.5 w-2.5 text-primary shrink-0" />
                        <span className="truncate">{log}</span>
                     </div>
                   ))}
                </CardContent>
             </Card>
 
-            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2 text-center">
+            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2 text-center shadow-inner">
                <Sparkles className="h-6 w-6 text-primary mx-auto opacity-50" />
                <p className="text-[9px] text-primary font-bold uppercase tracking-widest leading-relaxed">
-                  Execution Mode emphasizes speed and scalability. Your system is now tuned for commercial growth.
+                  Execution Mode: The system is now optimized for institutional capital and global scaling.
                </p>
             </div>
           </div>
         </main>
       </SidebarInset>
     </div>
+  );
+}
+
+function CheckCircle2({ className, ...props }: any) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      {...props}
+    >
+      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
   );
 }
