@@ -23,7 +23,8 @@ import {
   DollarSign,
   Gavel,
   PieChart,
-  Milestone
+  Milestone,
+  Rocket
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -120,11 +121,11 @@ export default function Project45EconomyPage() {
           </div>
           <div className="flex items-center gap-4">
             <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
-              FISCAL_READY: TRUE
+              EXECUTION_MODE: ACTIVE
             </Badge>
-            <Button size="sm" onClick={handleRunSimulation} disabled={isSimulating} className="cyan-glow text-xs font-bold bg-accent text-background">
-              {isSimulating ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Cpu className="h-3 w-3 mr-1" />}
-              {isSimulating ? 'Analyzing...' : 'Run Fiscal Command'}
+            <Button size="sm" onClick={handleRunSimulation} disabled={isSimulating} className="cyan-glow text-xs font-bold bg-accent text-background px-4">
+              {isSimulating ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : <Rocket className="h-3.5 w-3.5 mr-1.5" />}
+              {isSimulating ? 'Analyzing...' : 'Execute Fiscal Audit'}
             </Button>
           </div>
         </header>
@@ -137,7 +138,7 @@ export default function Project45EconomyPage() {
               </Badge>
               <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic">Sovereign <span className="text-accent">Economy</span></h2>
               <p className="text-muted-foreground max-w-2xl italic leading-relaxed">
-                "Autonomous management of transaction fees, liquidity depth, and system compute cost to ensure long-term financial sovereignty."
+                "Autonomous management of transaction fees, liquidity depth, and revenue yields to ensure long-term commercial sovereignty."
               </p>
             </div>
             <div className="text-right">
@@ -159,30 +160,30 @@ export default function Project45EconomyPage() {
             </Card>
             <Card className="glass-panel border-l-4 border-l-primary bg-primary/5">
               <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Liquidity Depth</CardTitle>
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Revenue Yield</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="text-3xl font-bold text-white">$4.2M</div>
-                <p className="text-[9px] text-primary font-bold mt-2 uppercase">Global Mesh Reserve</p>
+                <div className="text-3xl font-bold text-white">3.5%</div>
+                <p className="text-[9px] text-primary font-bold mt-2 uppercase">System Take Rate</p>
               </CardContent>
             </Card>
             <Card className="glass-panel border-l-4 border-l-blue-400 bg-blue-400/5">
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Liquidity Deepness</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="text-3xl font-bold text-white">$4.2M</div>
+                <p className="text-[9px] text-blue-400 font-bold mt-2 uppercase">Global Mesh Reserve</p>
+              </CardContent>
+            </Card>
+            <Card className="glass-panel border-l-4 border-l-yellow-500 bg-yellow-500/5">
               <CardHeader className="p-4 pb-2">
                 <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Compute ROI</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="text-3xl font-bold text-white">1.4x</div>
-                <Progress value={70} className="h-1 mt-2 bg-blue-400/10 [&>div]:bg-blue-400" />
-                <p className="text-[9px] text-muted-foreground mt-2 uppercase">Revenue vs Energy Cost</p>
-              </CardContent>
-            </Card>
-            <Card className="glass-panel border-l-4 border-l-yellow-500 bg-yellow-500/5">
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Tax Yield</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="text-3xl font-bold text-white">3.5%</div>
-                <p className="text-[9px] text-yellow-500 font-bold mt-2 uppercase">Effective System Revenue</p>
+                <Progress value={70} className="h-1 mt-2 bg-yellow-500/10 [&>div]:bg-yellow-500" />
+                <p className="text-[9px] text-yellow-500 font-bold mt-2 uppercase">Revenue vs Node Cost</p>
               </CardContent>
             </Card>
           </div>
@@ -224,7 +225,7 @@ export default function Project45EconomyPage() {
                 <CardHeader className="p-4 border-b border-white/5">
                   <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-tighter">
                     <Scale className="h-4 w-4 text-accent" />
-                    Project 45 Directives
+                    Execution Directives
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 space-y-4">
@@ -237,17 +238,15 @@ export default function Project45EconomyPage() {
                         </p>
                       </div>
                       <div className="space-y-2">
-                        <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest">Concentration Risk</p>
+                        <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest">Yield Optimization</p>
                         <div className="flex justify-between text-[10px] font-bold">
-                          <span className="text-muted-foreground">Systemic Risk</span>
-                          <span className={result.liquidityConcentrationRisk > 30 ? 'text-red-400' : 'text-green-400'}>
-                            {result.liquidityConcentrationRisk}%
-                          </span>
+                          <span className="text-muted-foreground">Projected MRR Lift</span>
+                          <span className="text-green-400">+$2,400</span>
                         </div>
-                        <Progress value={result.liquidityConcentrationRisk} className="h-1 bg-white/5" />
+                        <Progress value={65} className="h-1 bg-white/5" />
                       </div>
                       <Button className="w-full h-10 bg-accent text-background font-bold text-[10px] uppercase tracking-widest cyan-glow">
-                         Deploy Policy Adapter
+                         Deploy Scaling Policy
                       </Button>
                     </div>
                   ) : (
@@ -262,15 +261,15 @@ export default function Project45EconomyPage() {
               <Card className="glass-panel border-white/5">
                  <CardHeader className="p-4 border-b border-white/5">
                     <CardTitle className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-                       <ShieldAlert className="h-3 w-3 text-red-400" /> Isolation Rules
+                       <ShieldAlert className="h-3 w-3 text-red-400" /> Commercial Guard
                     </CardTitle>
                  </CardHeader>
                  <CardContent className="p-4 pt-0 space-y-3">
                     <div className="p-2 rounded bg-secondary/30 text-[9px] text-white/70 italic leading-relaxed border border-white/5">
-                       "Automatic fee surge active if node compute latency exceeds 500ms in Sector 7."
+                       "Automatic fee surge active if node compute latency exceeds 500ms."
                     </div>
                     <div className="p-2 rounded bg-secondary/30 text-[9px] text-white/70 italic leading-relaxed border border-white/5">
-                       "Liquidity bridges to high-volatility tickers are currently throttled by 15%."
+                       "Stripe bridge is currently monitoring for payout anomalies in EU corridors."
                     </div>
                  </CardContent>
               </Card>
@@ -282,12 +281,12 @@ export default function Project45EconomyPage() {
            <div className="flex items-center justify-center gap-4">
               <div className="h-0.5 w-20 bg-gradient-to-r from-transparent to-accent/50" />
               <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px] uppercase px-4 flex gap-2">
-                 <Milestone className="h-3 w-3" /> Project 45 • Eco Governance
+                 <Milestone className="h-3 w-3" /> Project 45 • Execution Mode
               </Badge>
               <div className="h-0.5 w-20 bg-gradient-to-l from-transparent to-accent/50" />
            </div>
            <p className="text-[9px] font-bold uppercase tracking-[0.5em] text-muted-foreground opacity-30 italic">
-              Synchronized with Project 44 Data Rails • NoorNexus Sovereign OS
+              NoorNexus Sovereign OS • Commercial Infrastructure v1.2
            </p>
         </footer>
       </SidebarInset>

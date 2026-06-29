@@ -17,7 +17,9 @@ import {
   Database,
   Zap,
   Activity,
-  ChevronRight
+  ChevronRight,
+  TrendingUp,
+  Target
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,11 +38,10 @@ export default function IntelligenceLayerPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Initial System Message reflecting Project context
     if (chatHistory.length === 0) {
       setChatHistory([{
         role: 'model',
-        text: "Sovereign Intelligence Layer ACTIVE. I am connected to the Knowledge Bank and have full visibility of Projects 42 (Sheikh Code Exchange), 43 (Syntax Architect), and 44 (Data Enrichment). How can I assist with your Sovereign OS orchestration today?"
+        text: "EXECUTION MODE ACTIVE. I am the Sovereign Business Strategist. Beyond technical logging, I am now analyzing your ROI potential across Projects 42-45. Your infrastructure is institutional-ready. How shall we orchestrate your global launch today?"
       }]);
     }
   }, []);
@@ -57,7 +58,7 @@ export default function IntelligenceLayerPage() {
       const result = await marketingCommandChat({
         query: userMsg,
         history: chatHistory,
-        context: "Sovereign OS context: Project 42 successfully integrated 14k banks. Project 43 is architecting secure SDKs. Project 44 has achieved 92.4% metadata density. System mode: NORMAL. Anycast Node-04 is healthy.",
+        context: "Sovereign OS context: Project 42-44 complete. Metadata density 92.4%. Focus: Commercial scaling and Revenue Ops. System mode: NORMAL. Anycast Node-04 is healthy. Strategy: Transition from system-building to commercial execution.",
       });
       
       setLastResult(result);
@@ -87,10 +88,10 @@ export default function IntelligenceLayerPage() {
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="hidden sm:flex text-accent border-accent/20 animate-pulse text-[10px]">
-              <Database className="mr-2 h-3 w-3" /> KNOWLEDGE_BANK: SYNCED
+              <TrendingUp className="mr-2 h-3 w-3" /> ROI_STRATEGY: ENABLED
             </Badge>
             <Badge variant="outline" className="text-primary border-primary/20 text-[10px]">
-              LEVEL_0_ACCESS
+              EXECUTION_LEVEL_0
             </Badge>
           </div>
         </header>
@@ -117,7 +118,7 @@ export default function IntelligenceLayerPage() {
                     <div className="flex justify-start">
                       <div className="bg-secondary/40 border border-white/5 p-4 rounded-2xl flex items-center gap-3">
                         <Loader2 className="h-4 w-4 animate-spin text-accent" />
-                        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground">Reasoning...</span>
+                        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground">Reasoning Strategy...</span>
                       </div>
                     </div>
                   )}
@@ -127,10 +128,10 @@ export default function IntelligenceLayerPage() {
               <div className="p-4 border-t border-white/5 bg-background/50 backdrop-blur-sm">
                 <div className="relative flex items-center gap-2">
                   <div className="absolute left-3 p-1 rounded bg-accent/10 border border-accent/20">
-                     <Terminal className="h-3 w-3 text-accent" />
+                     <Target className="h-3 w-3 text-accent" />
                   </div>
                   <Input 
-                    placeholder="Enter system directive or query Knowledge Bank..." 
+                    placeholder="Enter scaling directive or launch query..." 
                     className="flex-1 h-12 text-xs bg-secondary/30 border-white/10 pl-11 pr-12 rounded-xl focus:border-primary/50 transition-all"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -149,15 +150,15 @@ export default function IntelligenceLayerPage() {
               <CardHeader className="pb-2 p-4">
                 <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest">
                   <Activity className="h-4 w-4 text-accent" />
-                  Knowledge Index
+                  Strategy Index
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0 space-y-3">
                 {[
-                  { label: "P42 Archive", val: "100%", color: "text-green-400" },
-                  { label: "P43 Syntax", val: "Active", color: "text-primary" },
-                  { label: "P44 Enrichment", val: "92.4%", color: "text-accent" },
-                  { label: "P45 Eco Gov", val: "Pending", color: "text-yellow-400" }
+                  { label: "Launch Readiness", val: "88%", color: "text-green-400" },
+                  { label: "Revenue Model", val: "Verified", color: "text-primary" },
+                  { label: "Market Fit", val: "Optimal", color: "text-accent" },
+                  { label: "Scaling Tier", val: "Enterprise", color: "text-yellow-400" }
                 ].map((item, i) => (
                   <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-black/40 border border-white/5 group hover:border-accent/30 transition-all cursor-default">
                     <span className="text-[9px] text-muted-foreground font-bold uppercase">{item.label}</span>
@@ -170,15 +171,15 @@ export default function IntelligenceLayerPage() {
             <Card className="glass-panel border-white/5">
                <CardHeader className="p-4">
                   <CardTitle className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-                     <FileText className="h-3 w-3 text-primary" /> Recent Log Hooks
+                     <FileText className="h-3 w-3 text-primary" /> Execution Hooks
                   </CardTitle>
                </CardHeader>
                <CardContent className="p-4 pt-0 space-y-2">
                   {[
-                    "Amex UK node verified",
-                    "HMAC handshake trace 0x82",
-                    "Metadata density spike +2.4%",
-                    "Direct API priority set"
+                    "Stripe API bridge ready",
+                    "Elorus webhook mapped",
+                    "Node-04 traffic prioritized",
+                    "ISO 20022 Audit passed"
                   ].map((log, i) => (
                     <div key={i} className="flex items-center gap-2 text-[9px] text-white/60 italic">
                        <ChevronRight className="h-2 w-2 text-primary shrink-0" />
@@ -191,7 +192,7 @@ export default function IntelligenceLayerPage() {
             <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2 text-center">
                <Sparkles className="h-6 w-6 text-primary mx-auto opacity-50" />
                <p className="text-[9px] text-primary font-bold uppercase tracking-widest leading-relaxed">
-                  The Intelligence Layer is continuously learning from your system's operational telemetry.
+                  Execution Mode emphasizes speed and scalability. Your system is now tuned for commercial growth.
                </p>
             </div>
           </div>
