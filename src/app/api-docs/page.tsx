@@ -26,7 +26,9 @@ import {
   Check,
   AlertTriangle,
   ArrowDownCircle,
-  ArrowUpCircle
+  ArrowUpCircle,
+  Box,
+  Fingerprint
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,15 +40,72 @@ import { cn } from "@/lib/utils";
 
 const API_ENDPOINTS = [
   {
+    id: "card-issue",
+    title: "Virtual Card Issuance",
+    method: "POST",
+    path: "/api/v1/cards/issue",
+    desc: "নতুন একটি মাস্টারকার্ড বা ভিসা কার্ড তৈরি করতে এবং ওয়ালেট থেকে প্রাথমিক ব্যালেন্স লোড করতে এটি ব্যবহার করুন।",
+    params: [
+      { name: "user_id", type: "string", desc: "Target citizen unique ID." },
+      { name: "brand", type: "enum", desc: "MASTERCARD, VISA." },
+      { name: "initial_load", type: "number", desc: "Starting balance in USD." },
+      { name: "directive", type: "string", desc: "L2_VIRTUAL_ASSET_CREATION" }
+    ],
+    example: `{
+  "user_id": "sko_user_82af",
+  "brand": "MASTERCARD",
+  "initial_load": 100.00,
+  "directive": "L2_VIRTUAL_ASSET_CREATION"
+}`
+  },
+  {
+    id: "card-settle",
+    title: "Two-way Settlement",
+    method: "POST",
+    path: "/api/v1/cards/settle",
+    desc: "কার্ড থেকে মেইন ওয়ালেটে (CARD_TO_MESH) অথবা ওয়ালেট থেকে কার্ডে (MESH_TO_CARD) রিয়েল-টাইম টাকা ট্রান্সফার।",
+    params: [
+      { name: "card_id", type: "string", desc: "Target card seal identifier." },
+      { name: "direction", type: "enum", desc: "CARD_TO_MESH, MESH_TO_CARD" },
+      { name: "amount", type: "number", desc: "Transfer amount." },
+      { name: "routing_seal", type: "string", desc: "SIG_HMAC_SHA256_FUSION" }
+    ],
+    example: `{
+  "card_id": "vcard_991202",
+  "direction": "CARD_TO_MESH",
+  "amount": 50.00,
+  "routing_seal": "SIG_HMAC_SHA256_FUSION"
+}`
+  },
+  {
+    id: "payout-execute",
+    title: "Global Global Payout",
+    method: "POST",
+    path: "/api/v1/payouts/execute",
+    desc: "ফিউশন সিস্টেম থেকে বাইরের গেটওয়ে (PayPal, Priyo Pay, bKash) টাকা সফলভাবে আউটবাউন্ড করার লজিক।",
+    params: [
+      { name: "gateway", type: "enum", desc: "PAYPAL, PRIYO_PAY, BKASH_B2C" },
+      { name: "recipient_id", type: "string", desc: "Recipient identity (Email/Mobile)." },
+      { name: "amount", type: "number", desc: "Disbursement amount." },
+      { name: "directive", type: "string", desc: "L3_IMPERIAL_SETTLEMENT" }
+    ],
+    example: `{
+  "gateway": "PAYPAL",
+  "recipient_id": "vendor@global.com",
+  "amount": 1250.00,
+  "directive": "L3_IMPERIAL_SETTLEMENT"
+}`
+  },
+  {
     id: "inbound-settlement",
     title: "Inbound Bank Settlement",
     method: "POST",
     path: "/api/v1/settlement/inbound",
-    desc: "অন্যান্য ব্যাংক বা ফিনটেক অ্যাপ থেকে আমাদের সিস্টেমে টাকা পাঠানোর জন্য এই এন্ডপয়েন্ট ব্যবহার করা হয়। এটি T+0 সেটেলমেন্ট নিশ্চিত করে।",
+    desc: "অন্যান্য ব্যাংক থেকে আমাদের সিস্টেমে টাকা পাঠানোর জন্য এপিআই। এটি T+0 সেটেলমেন্ট নিশ্চিত করে।",
     params: [
       { name: "account_number", type: "string", desc: "Recipient FusionPay mesh account number." },
-      { name: "amount", type: "number", desc: "Settlement amount in USD." },
-      { name: "routing_seal", type: "string", desc: "HMAC-SHA256 signature for payload integrity." }
+      { name: "amount", type: "number", desc: "Settlement amount." },
+      { name: "routing_seal", type: "string", desc: "HMAC-SHA256 signature." }
     ],
     example: `{
   "account_number": "481290310221",
@@ -54,40 +113,6 @@ const API_ENDPOINTS = [
   "currency": "USD",
   "origin_node": "HSBC_UK_04",
   "routing_seal": "SIG_HMAC_72AF..."
-}`
-  },
-  {
-    id: "outbound-payout",
-    title: "Outbound Global Payout",
-    method: "POST",
-    path: "/api/v1/payouts/execute",
-    desc: "ফিউশন নোড থেকে বাইরের সিস্টেমে (PayPal, Priyo Pay, bKash) টাকা পাঠানোর লজিক।",
-    params: [
-      { name: "gateway", type: "enum", desc: "PAYPAL, PRIYO_PAY, BKASH_B2C" },
-      { name: "recipient_id", type: "string", desc: "Recipient's identity (Email/Phone)." },
-      { name: "amount", type: "number", desc: "Disbursement amount." }
-    ],
-    example: `{
-  "gateway": "PRIYO_PAY",
-  "recipient_id": "vendor@global.com",
-  "amount": 1250.00,
-  "directive": "L3_IMPERIAL_SETTLEMENT"
-}`
-  },
-  {
-    id: "card-load",
-    title: "Virtual Card Issuance",
-    method: "POST",
-    path: "/api/v1/cards/issue",
-    desc: "কোম্পানির নিজস্ব মাস্টারকার্ড বা ভিসা কার্ড ইস্যু করার এন্ডপয়েন্ট।",
-    params: [
-      { name: "user_id", type: "string", desc: "Target citizen unique ID." },
-      { name: "brand", type: "enum", desc: "MASTERCARD, VISA." }
-    ],
-    example: `{
-  "user_id": "sko_user_82af",
-  "brand": "MASTERCARD",
-  "initial_load": 100.00
 }`
   }
 ];
@@ -106,18 +131,30 @@ export default function APIDocsPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const simulateTransaction = (direction: 'INBOUND' | 'OUTBOUND') => {
+  const runSimulation = (type: 'ISSUE' | 'SETTLE' | 'PAYOUT' | 'INBOUND') => {
     setIsTesting(true);
     setTestLogs([]);
     
-    const steps = [
-      { msg: `Initializing ${direction} Corridor Handshake...`, type: 'info' as const },
-      { msg: "Validating X-Sovereign-Signature (HMAC-SHA256)...", type: 'info' as const },
-      { msg: "Checking Mesh Node Capacity...", type: 'info' as const },
-      { msg: direction === 'INBOUND' ? "Source: HSBC_UK Validated OK." : "Target: PAYPAL_GATEWAY Ready.", type: 'success' as const },
-      { msg: "Atomic Data Persistence Syncing...", type: 'info' as const },
-      { msg: `${direction} Settlement Completed Successfully.`, type: 'success' as const }
+    let steps = [
+      { msg: `Initializing ${type} request...`, type: 'info' as const },
+      { msg: "Validating Payload Integrity (SHA-256)...", type: 'info' as const },
+      { msg: "X-Sovereign-Signature: VERIFIED", type: 'success' as const },
+      { msg: "Check deterministic capacity...", type: 'info' as const },
     ];
+
+    if (type === 'ISSUE') {
+      steps.push({ msg: "Directive: L2_VIRTUAL_ASSET_CREATION confirmed.", type: 'success' as const });
+      steps.push({ msg: "Virtual Card Node v1.2 created successfully.", type: 'success' as const });
+    } else if (type === 'SETTLE') {
+      steps.push({ msg: "ISO 20022 Handshake: Bidirectional sync active.", type: 'info' as const });
+      steps.push({ msg: "Settlement: CARD_TO_MESH finality achieved.", type: 'success' as const });
+    } else if (type === 'PAYOUT') {
+      steps.push({ msg: "Outbound Rail: PAYPAL_REST_V2 active.", type: 'info' as const });
+      steps.push({ msg: "Imperial Directive seal applied.", type: 'success' as const });
+    } else {
+      steps.push({ msg: "Origin Node: Validated via Clearing House.", type: 'success' as const });
+      steps.push({ msg: "Mesh Balance synchronized.", type: 'success' as const });
+    }
 
     let i = 0;
     const interval = setInterval(() => {
@@ -129,20 +166,20 @@ export default function APIDocsPage() {
         setIsTesting(false);
         
         const newEntry = {
-          id: `TX_${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+          id: type === 'ISSUE' ? `vcard_${Math.floor(100000 + Math.random() * 900000)}` : `TX_${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
           status: 'SUCCESS',
-          type: direction === 'INBOUND' ? 'RECEIVE_FROM_BANK' : 'SEND_TO_APP',
-          amount: (Math.random() * 1000).toFixed(2),
+          type: type === 'SETTLE' ? 'CARD_TO_MESH' : type === 'ISSUE' ? 'ISSUE_CARD' : type === 'PAYOUT' ? 'GLOBAL_PAYOUT' : 'INBOUND_BANK',
+          amount: type === 'PAYOUT' ? '1250.00' : (Math.random() * 1000).toFixed(2),
           ts: new Date().toLocaleTimeString()
         };
         setLiveLedger(prev => [newEntry, ...prev].slice(0, 10));
         
         toast({
-          title: `${direction} Ready & Verified`,
-          description: "System logic is 100% confirmed for this corridor.",
+          title: "Simulation Finalized",
+          description: `Logic confirmed for ${type} flow.`,
         });
       }
-    }, 600);
+    }, 500);
   };
 
   return (
@@ -154,7 +191,7 @@ export default function APIDocsPage() {
           <div className="flex-1">
             <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-accent">
               <Code2 className="h-5 w-5 text-accent" />
-              Sovereign API & Database Mesh
+              Sovereign API & Card Mesh
             </h1>
           </div>
           <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
@@ -165,56 +202,63 @@ export default function APIDocsPage() {
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-12">
           <div className="flex flex-col xl:flex-row justify-between items-start gap-8">
             <div className="space-y-4 flex-1">
-              <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic">Connectivity <span className="text-accent">Oracle</span></h2>
-              <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed">
-                ফিউশন পে-এর ডিটারমিনিস্টিক এপিআই সিস্টেম এখন ১০০% রেডি। বাইরের যেকোনো ব্যাংক বা অ্যাপ আমাদের এপিআই ব্যবহার করে সরাসরি টাকা পাঠাতে পারবে (Inbound) এবং আমরাও গ্লোবাল গেটওয়ে ব্যবহার করে টাকা পাঠাতে পারবো (Outbound)। প্রতিটি ট্রানজ্যাকশন ISO 20022 স্ট্যান্ডার্ড মেনে সিঙ্ক হয়।
+              <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic">Simulation <span className="text-accent">Oracle</span></h2>
+              <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed italic">
+                "FusionPay v1.2 provides a deterministic environment for two-way settlement and global payouts. Test your integrations below using our interactive handshake lab."
               </p>
               <div className="flex flex-wrap items-center gap-4 pt-2">
                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/5 border border-accent/20">
-                    <ArrowDownCircle className="h-4 w-4 text-accent" />
-                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">Receive Logic Ready</span>
+                    <ShieldCheck className="h-4 w-4 text-accent" />
+                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">SHA-256 Verified</span>
                  </div>
                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/5 border border-blue-500/20">
-                    <ArrowUpCircle className="h-4 w-4 text-blue-400" />
-                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">Send Logic Ready</span>
-                 </div>
-                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/5 border border-green-500/20">
-                    <ShieldCheck className="h-4 w-4 text-green-400" />
-                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">ISO 20022 Compliant</span>
+                    <Activity className="h-4 w-4 text-blue-400" />
+                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">T+0 Finality</span>
                  </div>
               </div>
             </div>
 
-            <Card className="glass-panel border-accent/20 bg-accent/5 p-6 w-full xl:w-96 shrink-0 shadow-2xl relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-2 opacity-10"><Activity className="h-20 w-20 text-accent" /></div>
+            <Card className="glass-panel border-accent/20 bg-accent/5 p-6 w-full xl:w-[450px] shrink-0 shadow-2xl relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-2 opacity-10"><Terminal className="h-20 w-20 text-accent" /></div>
                <div className="flex items-center gap-3 mb-4">
-                  <Terminal className="h-5 w-5 text-accent" />
-                  <p className="text-xs font-bold uppercase text-white tracking-widest">Handshake Lab (Testing)</p>
+                  <Play className="h-5 w-5 text-accent" />
+                  <p className="text-xs font-bold uppercase text-white tracking-widest">Interactive Handshake Lab</p>
                </div>
-               <div className="space-y-4 relative z-10">
-                 <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                    "অন্য ব্যাংক থেকে আমাদের সিস্টেমে টাকা আসার লজিক এবং আমাদের থেকে টাকা যাওয়ার লজিক এখনই টেস্ট করুন।"
-                 </p>
-                 <div className="grid grid-cols-2 gap-2">
-                    <Button 
-                      className="text-[9px] font-bold h-10 bg-accent text-background cyan-glow uppercase tracking-widest"
-                      onClick={() => simulateTransaction('INBOUND')}
-                      disabled={isTesting}
-                    >
-                      Test Inbound (Receive)
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      className="text-[9px] font-bold h-10 border-blue-400/30 text-blue-400 uppercase tracking-widest"
-                      onClick={() => simulateTransaction('OUTBOUND')}
-                      disabled={isTesting}
-                    >
-                      Test Outbound (Send)
-                    </Button>
-                 </div>
+               <div className="grid grid-cols-2 gap-2 relative z-10">
+                  <Button 
+                    className="text-[9px] font-bold h-10 bg-accent text-background cyan-glow uppercase"
+                    onClick={() => runSimulation('ISSUE')}
+                    disabled={isTesting}
+                  >
+                    Issue Virtual Card
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="text-[9px] font-bold h-10 border-blue-400/30 text-blue-400 uppercase"
+                    onClick={() => runSimulation('SETTLE')}
+                    disabled={isTesting}
+                  >
+                    Test 2-Way Settle
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="text-[9px] font-bold h-10 border-green-500/30 text-green-400 uppercase"
+                    onClick={() => runSimulation('PAYOUT')}
+                    disabled={isTesting}
+                  >
+                    Global Payout
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    className="text-[9px] font-bold h-10 text-muted-foreground uppercase"
+                    onClick={() => runSimulation('INBOUND')}
+                    disabled={isTesting}
+                  >
+                    Inbound Bank
+                  </Button>
                </div>
                {testLogs.length > 0 && (
-                 <div className="mt-4 p-3 rounded bg-black/40 border border-white/5 font-mono text-[8px] space-y-1.5 animate-fade-in">
+                 <div className="mt-4 p-3 rounded bg-black/40 border border-white/5 font-mono text-[8px] space-y-1.5 animate-fade-in h-32 overflow-y-auto">
                     {testLogs.map((log, i) => (
                       <p key={i} className={cn(
                         "flex items-start gap-2",
@@ -249,7 +293,7 @@ export default function APIDocsPage() {
                                <span className="text-xs font-mono text-accent/80 tracking-tighter">{api.path}</span>
                             </div>
                             <CardTitle className="text-xl mt-2 flex items-center gap-2 text-white uppercase italic">
-                              {api.id.includes('settlement') ? <ArrowDownCircle className="h-5 w-5 text-accent" /> : <ArrowUpCircle className="h-5 w-5 text-primary" />}
+                              {api.id.includes('card') ? <CreditCard className="h-5 w-5 text-accent" /> : <Globe className="h-5 w-5 text-primary" />}
                               {api.title}
                             </CardTitle>
                           </div>
@@ -262,7 +306,7 @@ export default function APIDocsPage() {
                       <CardContent className="p-0">
                         <div className="grid grid-cols-1 md:grid-cols-2">
                           <div className="p-6 space-y-4 border-r border-white/5">
-                             <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Request Parameters</h4>
+                             <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Required Parameters</h4>
                              <div className="space-y-3">
                                {api.params.map((p, i) => (
                                  <div key={i} className="flex flex-col gap-1">
@@ -291,15 +335,14 @@ export default function APIDocsPage() {
                    <Card className="glass-panel border-white/5">
                       <CardHeader>
                          <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest">
-                            <Database className="h-4 w-4 text-accent" /> Storage Paths & Security
+                            <Database className="h-4 w-4 text-accent" /> Secure Storage Paths
                          </CardTitle>
-                         <CardDescription className="text-[10px] italic">"Direct access paths for authorized clearing house nodes."</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
                          {[
-                           { path: "/users/{userId}", desc: "Citizen identity & Balance node." },
-                           { path: "/payment_links", desc: "Marketplace corridor registry." },
-                           { path: "/events", desc: "Root event log for audit oracles." }
+                           { path: "/users/{userId}/cards", desc: "Citizen virtual card vault." },
+                           { path: "/payment_links", desc: "Public marketplace registry." },
+                           { path: "/events", desc: "Deterministic kernel ledger." }
                          ].map((p, i) => (
                            <div key={i} className="p-3 rounded-lg bg-secondary/20 border border-white/5 flex items-center justify-between group hover:border-accent/30 transition-all">
                               <div>
@@ -309,15 +352,6 @@ export default function APIDocsPage() {
                               <Lock className="h-3 w-3 text-muted-foreground/30 group-hover:text-accent transition-colors" />
                            </div>
                          ))}
-                         <div className="p-4 rounded-xl bg-yellow-500/5 border border-yellow-500/20 flex gap-4 mt-4">
-                            <AlertTriangle className="h-5 w-5 text-yellow-500 shrink-0" />
-                            <div className="space-y-1">
-                               <p className="text-[10px] font-bold text-yellow-500 uppercase">Conflict Resolution</p>
-                               <p className="text-[9px] text-muted-foreground leading-relaxed italic">
-                                  যদি ডাটা সিঙ্কে কোনো সমস্যা হয় (যেমন: ৪০৩ এরর), তবে সিস্টেম স্বয়ংক্রিয়ভাবে ট্রানজ্যাকশন রিভার্ট করবে এবং কার্নেল প্লেনে "RECOVERY" মোড ট্রিগার করবে।
-                               </p>
-                            </div>
-                         </div>
                       </CardContent>
                    </Card>
                 </TabsContent>
@@ -329,22 +363,22 @@ export default function APIDocsPage() {
                   <CardHeader className="p-4 border-b border-white/5">
                      <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest">
                         <History className="h-4 w-4 text-accent" />
-                        Live Mesh Ledger
+                        Live Card Ledger
                      </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
                      <ScrollArea className="h-[450px]">
                         {liveLedger.length === 0 ? (
                           <div className="p-20 text-center text-muted-foreground italic text-[10px]">
-                             No active mesh interactions. Run a test to see live updates.
+                             No active card interactions. Run a test to see live updates.
                           </div>
                         ) : (
                           <div className="divide-y divide-white/5">
-                             {liveLedger.map((tx) => (
-                               <div key={tx.id} className="p-4 space-y-2 hover:bg-white/5 transition-all">
+                             {liveLedger.map((tx, i) => (
+                               <div key={i} className="p-4 space-y-2 hover:bg-white/5 transition-all animate-fade-in">
                                   <div className="flex justify-between items-center">
                                      <span className="text-[10px] font-mono text-accent font-bold">{tx.id}</span>
-                                     <Badge className="bg-green-500/20 text-green-400 text-[8px] border-green-500/20">CONFIRMED</Badge>
+                                     <Badge className="bg-green-500/20 text-green-400 text-[8px] border-green-500/20">SUCCESS</Badge>
                                   </div>
                                   <div className="flex justify-between items-end">
                                      <div>
@@ -360,6 +394,19 @@ export default function APIDocsPage() {
                      </ScrollArea>
                   </CardContent>
                </Card>
+
+               <Card className="glass-panel border-white/5 bg-secondary/10">
+                  <CardHeader className="p-4">
+                     <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2">
+                        <ShieldCheck className="h-3 w-3 text-accent" /> Audit Protocol
+                     </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                     <p className="text-[9px] text-muted-foreground leading-relaxed italic">
+                        All simulations are executed within the Sovereign Sandbox. SHA-256 payloads are logged for deterministic compliance.
+                     </p>
+                  </CardContent>
+               </Card>
             </div>
           </div>
         </main>
@@ -367,4 +414,3 @@ export default function APIDocsPage() {
     </div>
   );
 }
-
