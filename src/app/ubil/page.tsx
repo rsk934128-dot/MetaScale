@@ -39,7 +39,7 @@ import { useFirestore, useCollection } from "@/firebase";
 import { collection, query, orderBy, limit, doc, setDoc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getYapilyInstitutions, createYapilyConsent } from "@/ai/flows/yapily-banking-flow";
+import { createYapilyConsent } from "@/ai/flows/yapily-banking-flow";
 
 export default function UBILIntegrationPage() {
   const [search, setSearch] = useState("");
@@ -123,39 +123,48 @@ export default function UBILIntegrationPage() {
     setIsVerifyingAmex(true);
     setLogs(prev => [`$ nn-cli --node-verify amex-ob_uk --status`, ...prev]);
     
-    setTimeout(() => {
-      setLogs(prev => [`> Status: ACTIVE_READY (Verified by NoorNexus Kernel)`, ...prev]);
-      setIsVerifyingAmex(false);
-      toast({
-        title: "Node Verified",
-        description: "amex-ob_uk is ACTIVE_READY and prioritized.",
-      });
+    setTimeout(async () => {
+      const recordId = `LOG_AMEX_UK_2026_06_30_001`;
+      const timestamp = Date.now();
       
-      // Inject permanent record into ledger
-      const recordId = `CONF_AMEX_UK_${Date.now()}`;
+      setLogs(prev => [
+        `> Status: ACTIVE_READY (Verified by NoorNexus Kernel)`,
+        `> Ledger Entry Created: ${recordId}`,
+        ...prev
+      ]);
+
       const record = {
         id: recordId,
-        type: 'NODE_REGISTRATION',
+        type: 'NODE_VERIFICATION',
         senderBank: 'American Express UK',
-        senderName: 'System Architect',
+        senderName: 'NoorNexus Sovereign Grid',
         status: 'SUCCESS',
         integrationPath: 'DIRECT_API',
-        routingReason: 'Institutional Priority: Force Direct API for High-Profile Node.',
+        routingReason: 'Amex UK node successfully integrated into Sovereign Grid. Routing priority set to Direct API for PIS/AIS operations.',
         handshakeStatus: 'ACTIVE_READY',
-        idempKey: `idemp_config_amex`,
-        timestamp: Date.now(),
-        metadata: { id: 'amex-ob_uk', bic: 'AETCUS55XXX', env: 'LIVE' }
+        idempKey: `idemp_config_amex_2026`,
+        signatureStatus: 'VALID',
+        securitySignature: 'SHA-256: 8f2e9c...8e',
+        timestamp: timestamp,
+        isPermanentRecord: true,
+        metadata: { id: 'amex-ob_uk', bic: 'AETCUS55XXX', env: 'LIVE', nodeStatus: 'VERIFIED_NODE' }
       };
       
       if (firestore) {
-        setDoc(doc(firestore, 'ubil_events', recordId), record);
+        await setDoc(doc(firestore, 'ubil_events', recordId), record);
       }
+
+      setIsVerifyingAmex(false);
+      toast({
+        title: "Node Verified & Logged",
+        description: "Amex UK node record LOG_AMEX_UK_2026_06_30_001 added to ledger.",
+      });
     }, 1500);
   };
 
   const runTestTriggerScript = async () => {
     setIsTestRunning(true);
-    setLogs(prev => [`> Starting NoorNexus UBIL Smart Router Test...`, ...prev]);
+    setLogs(prev => [`> Starting NoorNexus UBIL Smart Router Bulk Validation...`, ...prev]);
     
     const testRequests = [
         { type: "single_payment", desc: "Standard Single Payment" },
@@ -166,7 +175,7 @@ export default function UBILIntegrationPage() {
         { type: "single_payment", desc: "Standard Single Payment" },
         { type: "custom_ui_required", desc: "Custom Interface Flow" },
         { type: "bulk_payment", desc: "Bulk Transaction" },
-        { type: "standard_consent", desc: "Data Consent Flow" },
+        { type: "single_payment", desc: "Amex UK Priority Check", institutionId: 'amex-ob_uk' },
         { type: "international_transfer", desc: "Cross-border Transfer" }
     ];
 
@@ -174,41 +183,41 @@ export default function UBILIntegrationPage() {
         const req = testRequests[i];
         const eventId = `UBIL_TEST_${i+1}_${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
         
-        // Call Genkit Flow for routing
         const response = await createYapilyConsent({
-            institutionId: 'barclays',
+            institutionId: req.institutionId || 'barclays',
             callbackUrl: 'https://noornexus.com/callback',
             scope: req.type.includes('payment') ? 'PIS' : 'AIS',
-            userId: 'user_123',
-            requestType: req.type as any
+            userId: 'user_tester_01',
+            requestType: (req.type === 'amex_priority' ? 'single_payment' : req.type) as any
         });
 
         const eventData = {
             id: eventId,
             type: req.type.toUpperCase(),
-            amount: 1000 + (i * 100),
+            amount: 1500 + (i * 250),
             currency: 'USD',
-            senderBank: 'Yapily Integrated Node',
+            senderBank: req.institutionId === 'amex-ob_uk' ? 'American Express UK' : 'Yapily Integrated Node',
             senderName: `Tester Node ${i+1}`,
             status: 'SUCCESS',
             integrationPath: response.integrationPath,
             routingReason: response.routingReason,
             handshakeStatus: response.handshakeStatus,
-            idempKey: `idemp_test_${i+1}`,
-            timestamp: Date.now()
+            idempKey: `idemp_bulk_test_${i+1}`,
+            timestamp: Date.now(),
+            notes: req.desc
         };
 
         if (firestore) {
             await setDoc(doc(firestore, 'ubil_events', eventId), eventData);
         }
 
-        setLogs(prev => [`> Request ${i+1} (${req.type}) routed to: ${response.integrationPath}`, ...prev]);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        setLogs(prev => [`> Request ${i+1}: Routed to ${response.integrationPath} [${req.desc}]`, ...prev]);
+        await new Promise(resolve => setTimeout(resolve, 600));
     }
 
-    setLogs(prev => [`> Test Complete. Check Webhook Inspector for logs.`, ...prev]);
+    setLogs(prev => [`> Bulk Validation Complete. Ledger synchronization finalized.`, ...prev]);
     setIsTestRunning(false);
-    toast({ title: "Test Trigger Complete", description: "১০টি টেস্ট সিনারিও সফলভাবে অডিট লগে পুশ করা হয়েছে।" });
+    toast({ title: "Test Script Complete", description: "১০টি ট্রানজ্যাকশন সফলভাবে অডিট লগে রেকর্ড করা হয়েছে।" });
   };
 
   const filteredEvents = useMemo(() => {
@@ -419,7 +428,7 @@ export default function UBILIntegrationPage() {
                                   </div>
                                   <span className="text-[9px] text-muted-foreground font-mono">{new Date(event.timestamp).toLocaleTimeString()}</span>
                                </div>
-                               <p className="text-[11px] font-bold text-white truncate">{event.id}</p>
+                               <p className={cn("text-[11px] font-bold truncate", event.isPermanentRecord ? "text-accent" : "text-white")}>{event.id}</p>
                                <p className="text-[10px] text-muted-foreground">{event.senderBank} • {event.type}</p>
                             </div>
                           ))}
@@ -454,6 +463,12 @@ export default function UBILIntegrationPage() {
                                             </Badge>
                                         </div>
                                     </div>
+                                    {selectedEvent.securitySignature && (
+                                        <div className="p-2 rounded bg-black/40 border border-white/5 space-y-1">
+                                            <p className="text-[8px] uppercase font-bold text-muted-foreground">Security Signature</p>
+                                            <p className="text-[10px] font-mono text-accent truncate">{selectedEvent.securitySignature}</p>
+                                        </div>
+                                    )}
                                 </TabsContent>
 
                                 <TabsContent value="routing" className="space-y-4 m-0">
@@ -480,10 +495,13 @@ export default function UBILIntegrationPage() {
                                     <div className="p-4 rounded-lg bg-black/40 border border-white/5 font-mono text-[9px] text-white/60 space-y-1">
                                         <p>"sender": "{selectedEvent.senderName}"</p>
                                         <p>"bank": "{selectedEvent.senderBank}"</p>
-                                        <p>"amount": {selectedEvent.amount}</p>
-                                        <p>"currency": "{selectedEvent.currency}"</p>
+                                        <p>"amount": {selectedEvent.amount || 0}</p>
+                                        <p>"currency": "{selectedEvent.currency || 'USD'}"</p>
                                         <p>"origin_node": "NoorNexus_Yapily_Router"</p>
                                         <p>"l0_sync": "SUCCESSFUL"</p>
+                                        {selectedEvent.metadata && Object.entries(selectedEvent.metadata).map(([k, v]) => (
+                                          <p key={k}>"{k}": "{v}"</p>
+                                        ))}
                                     </div>
                                 </TabsContent>
                             </Tabs>

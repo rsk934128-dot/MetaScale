@@ -53,7 +53,7 @@ function determineIntegrationPath(requestType: string, institutionId: string = '
   if (institutionId === 'amex-ob_uk') {
     return {
       path: 'DIRECT_API',
-      reason: 'Priority Node Rule: American Express (amex-ob_uk) requires Direct API for institutional integrity.'
+      reason: 'Amex UK node successfully integrated into Sovereign Grid. Routing priority set to Direct API for PIS/AIS operations.'
     };
   }
 
@@ -130,7 +130,7 @@ const yapilyConsentFlow = ai.defineFlow(
       expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
       integrationPath: routing.path,
       routingReason: routing.reason,
-      handshakeStatus: 'DETERMINISTIC_FINALITY_READY'
+      handshakeStatus: 'ACTIVE_READY'
     };
   }
 );
