@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useDoc, useFirestore } from "@/firebase";
@@ -144,11 +145,11 @@ export default function CheckoutPage() {
       <nav className="w-full px-6 h-20 flex items-center justify-between border-b border-white/5 bg-background/50 backdrop-blur-xl sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <Logo size="sm" />
-          <span className="font-headline font-bold text-lg uppercase italic text-white tracking-tighter">Sovereign Checkout</span>
+          <span className="font-headline font-bold text-lg uppercase italic text-white tracking-tighter">Sovereign OS</span>
         </div>
         <div className="flex items-center gap-4">
            <Badge variant="outline" className="hidden sm:flex border-accent/20 text-accent font-mono text-[9px] uppercase tracking-widest px-3">
-             <ShieldCheck className="mr-2 h-3 w-3" /> Encrypted Session
+             <ShieldCheck className="mr-2 h-3 w-3" /> Mastercard Fintech Hub
            </Badge>
            <Badge variant="outline" className="border-white/10 text-muted-foreground font-mono text-[9px]">
              {sealId?.substring(0, 12)}...
@@ -164,13 +165,13 @@ export default function CheckoutPage() {
           
           <CardHeader className="text-center pt-10 pb-6">
              <div className="w-20 h-20 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-6 shadow-2xl transition-transform hover:scale-105">
-                <ShoppingBag className="h-10 w-10 text-accent" />
+                <CreditCard className="h-10 w-10 text-accent" />
              </div>
              <CardTitle className="text-3xl font-headline font-bold uppercase italic tracking-tighter text-white">
-               {isPaid ? "Settled Successfully" : "Payment Authorization"}
+               {isPaid ? "Settled Successfully" : "Authorize Payment"}
              </CardTitle>
              <CardDescription className="text-[10px] uppercase font-bold tracking-[0.4em] text-muted-foreground mt-2">
-               Deterministic Financial Protocol
+               Mastercard | Stripe | Priyo Pay
              </CardDescription>
           </CardHeader>
 
@@ -179,7 +180,7 @@ export default function CheckoutPage() {
                <>
                 <div className="p-8 rounded-3xl bg-secondary/30 border border-white/10 text-center space-y-3 relative overflow-hidden group shadow-inner">
                    <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                   <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.2em] relative">Authorized Amount</p>
+                   <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.2em] relative">Amount to Authorize</p>
                    <div className="flex items-baseline justify-center gap-1 relative">
                      <span className="text-2xl font-bold text-accent/70">$</span>
                      <p className="text-6xl font-headline font-bold text-white tracking-tighter">{link?.amount}</p>
@@ -192,24 +193,43 @@ export default function CheckoutPage() {
                 <div className="space-y-5">
                   <div className="flex justify-between items-center px-1">
                     <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.2em]">Select Settlement Rail</Label>
-                    <Badge variant="ghost" className="text-[8px] font-mono opacity-50">v1.2.0</Badge>
+                    <Badge variant="ghost" className="text-[8px] font-mono opacity-50">FINTECH_V1</Badge>
                   </div>
                   <Tabs value={selectedMethod} onValueChange={setSelectedMethod} className="w-full">
                     <TabsList className="grid grid-cols-5 bg-secondary/50 p-1.5 h-14 rounded-2xl gap-1.5 shadow-2xl border border-white/5">
-                      <TabsTrigger value="card" className="rounded-xl data-[state=active]:bg-accent data-[state=active]:text-background transition-all"><CreditCard className="h-4 w-4" /></TabsTrigger>
+                      <TabsTrigger value="card" className="rounded-xl data-[state=active]:bg-[#eb001b] data-[state=active]:text-white transition-all">
+                        <CreditCard className="h-4 w-4" />
+                      </TabsTrigger>
+                      <TabsTrigger value="stripe" className="rounded-xl data-[state=active]:bg-[#635bff] data-[state=active]:text-white">
+                        <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24"><path d="M13.962 8.196l2.736-2.126h-8.082V4.453H21v3.31l-2.736 2.125h8.082v1.617H13.962z"/></svg>
+                      </TabsTrigger>
                       <TabsTrigger value="priyopay" className="rounded-xl text-[#6366f1] font-bold text-[9px] uppercase data-[state=active]:bg-[#6366f1] data-[state=active]:text-white">Priyo</TabsTrigger>
                       <TabsTrigger value="nagad" className="text-orange-500 font-bold rounded-xl text-[9px] uppercase data-[state=active]:bg-orange-500 data-[state=active]:text-white">Nagad</TabsTrigger>
                       <TabsTrigger value="mesh" className="rounded-xl data-[state=active]:bg-accent data-[state=active]:text-background"><Building2 className="h-4 w-4" /></TabsTrigger>
-                      <TabsTrigger value="wallet" className="rounded-xl data-[state=active]:bg-accent data-[state=active]:text-background"><Wallet className="h-4 w-4" /></TabsTrigger>
                     </TabsList>
 
                     <div className="mt-6 p-6 rounded-2xl border border-white/10 bg-black/40 min-h-[160px] flex flex-col justify-center shadow-inner">
                       <TabsContent value="card" className="space-y-4 m-0 animate-fade-in">
+                        <div className="flex justify-between items-center mb-2">
+                           <span className="text-[10px] font-bold uppercase text-white/50 tracking-widest">Mastercard Settlement</span>
+                           <div className="flex gap-1">
+                              <div className="w-4 h-4 rounded-full bg-[#eb001b] opacity-80" />
+                              <div className="w-4 h-4 rounded-full bg-[#f79e1b] -ml-2 opacity-80" />
+                           </div>
+                        </div>
                         <Input placeholder="Card Number" className="h-12 bg-background/50 border-white/10 rounded-xl text-sm font-mono tracking-widest" />
                         <div className="grid grid-cols-2 gap-4">
                           <Input placeholder="MM/YY" className="h-12 bg-background/50 border-white/10 rounded-xl text-sm text-center" />
                           <Input placeholder="CVC" type="password" className="h-12 bg-background/50 border-white/10 rounded-xl text-sm text-center" />
                         </div>
+                      </TabsContent>
+                      <TabsContent value="stripe" className="text-center py-6 space-y-4 m-0 animate-fade-in">
+                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#635bff]/10 border border-[#635bff]/20">
+                           <span className="text-[9px] text-[#635bff] font-bold uppercase tracking-widest">Stripe Secure Rail</span>
+                         </div>
+                         <p className="text-[10px] text-muted-foreground italic leading-relaxed">
+                            Redirecting to Stripe checkout node for secure processing.
+                         </p>
                       </TabsContent>
                       <TabsContent value="priyopay" className="space-y-4 m-0 animate-fade-in">
                         <div className="text-center space-y-3">
@@ -220,27 +240,16 @@ export default function CheckoutPage() {
                            <Input placeholder="username@priyo.com" className="h-14 bg-background/50 border-white/10 rounded-xl text-lg text-center font-mono text-white" />
                         </div>
                       </TabsContent>
-                      <TabsContent value="nagad" className="space-y-4 m-0 animate-fade-in">
-                        <div className="text-center space-y-3">
-                           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20">
-                             <Smartphone className="h-3 w-3 text-orange-400" />
-                             <span className="text-[9px] text-orange-400 font-bold uppercase tracking-widest">Nagad Mobile Payment</span>
-                           </div>
-                           <Input placeholder="01XXXXXXXXX" className="h-14 bg-background/50 border-white/10 rounded-xl text-2xl text-center font-mono text-white tracking-widest" />
-                        </div>
-                      </TabsContent>
-                      <TabsContent value="mesh" className="text-center space-y-4 m-0 animate-fade-in">
-                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20">
-                           <Building2 className="h-3 w-3 text-accent" />
-                           <span className="text-[9px] text-accent font-bold uppercase tracking-widest">Sovereign Mesh Node</span>
+                      <TabsContent value="nagad" className="text-center space-y-4 m-0 animate-fade-in">
+                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20">
+                           <Smartphone className="h-3 w-3 text-orange-400" />
+                           <span className="text-[9px] text-orange-400 font-bold uppercase tracking-widest">Nagad Mobile</span>
                          </div>
-                         <Input placeholder="12-digit account number" className="h-14 bg-background/50 border-white/10 rounded-xl text-center font-mono text-white tracking-[0.2em]" />
+                         <Input placeholder="01XXXXXXXXX" className="h-14 bg-background/50 border-white/10 rounded-xl text-2xl text-center font-mono text-white tracking-widest" />
                       </TabsContent>
-                      <TabsContent value="wallet" className="text-center py-8 space-y-3 m-0 animate-fade-in">
-                        <div className="inline-block p-3 rounded-2xl bg-accent/10 border border-accent/20">
-                          <Zap className="h-6 w-6 text-accent animate-pulse" />
-                        </div>
-                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em]">External Wallet Transfer Mode</p>
+                      <TabsContent value="mesh" className="text-center py-8 space-y-3 m-0 animate-fade-in">
+                        <Building2 className="h-8 w-8 text-accent mx-auto" />
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em]">Sovereign Mesh Internal Transfer</p>
                       </TabsContent>
                     </div>
                   </Tabs>
@@ -272,23 +281,12 @@ export default function CheckoutPage() {
                       <h3 className="text-3xl font-headline font-bold text-white uppercase italic tracking-tighter">Settled Successfully</h3>
                       <p className="text-xs text-muted-foreground font-medium">পেমেন্ট সফলভাবে সম্পন্ন হয়েছে। বিক্রেতাকে ডিরেক্টিভ পাঠানো হয়েছে।</p>
                     </div>
-                    
-                    <div className="flex justify-center gap-4 py-2">
-                       <div className="flex flex-col items-center gap-2">
-                          <div className="p-2 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20"><PackageCheck className="h-4 w-4" /></div>
-                          <span className="text-[8px] font-bold uppercase text-muted-foreground">Signed</span>
-                       </div>
-                       <div className="flex flex-col items-center gap-2">
-                          <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20"><Truck className="h-4 w-4" /></div>
-                          <span className="text-[8px] font-bold uppercase text-muted-foreground">Processing</span>
-                       </div>
-                    </div>
                   </div>
 
                   <div className="p-5 rounded-2xl bg-black/60 border border-white/10 font-mono text-[10px] text-white/70 space-y-2 text-left shadow-2xl relative group">
-                     <div className="absolute top-0 right-0 p-2 opacity-20"><ShieldCheck className="h-4 w-4" /></div>
+                     <div className="absolute top-0 right-0 p-2 opacity-20"><ShieldCheck className="h-4 w-4 text-accent" /></div>
                      <p className="flex justify-between border-b border-white/5 pb-1"><span>SEAL:</span> <span className="text-accent">{sealId?.substring(0, 16)}...</span></p>
-                     <p className="flex justify-between border-b border-white/5 pb-1"><span>METHOD:</span> <span className="text-white font-bold">{selectedMethod.toUpperCase()}</span></p>
+                     <p className="flex justify-between border-b border-white/5 pb-1"><span>RAIL:</span> <span className="text-white font-bold">{selectedMethod.toUpperCase()}</span></p>
                      <p className="flex justify-between"><span>STATUS:</span> <span className="text-green-400 font-bold">DETERMINISTIC_FINALITY_OK</span></p>
                   </div>
                   
@@ -303,7 +301,7 @@ export default function CheckoutPage() {
              <div className="flex items-center gap-3 opacity-40 group cursor-default">
                 <ShieldCheck className="h-4 w-4 text-accent group-hover:text-white transition-colors" />
                 <p className="text-[9px] uppercase font-bold tracking-[0.4em] text-muted-foreground group-hover:text-white transition-colors">
-                   Sovereign Kernel Orchestration • Secure Gateway
+                   Sovereign OS • Mastercard Fintech Hub
                 </p>
              </div>
           </CardFooter>

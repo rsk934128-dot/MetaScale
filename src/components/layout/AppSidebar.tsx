@@ -24,7 +24,8 @@ import {
   Code2,
   UserCircle,
   Music2,
-  ShieldCheck
+  ShieldCheck,
+  Gem
 } from "lucide-react";
 import {
   Sidebar,
@@ -59,7 +60,7 @@ const civicNav = [
   { icon: Globe, label: "Control Plane", href: "/dashboard" },
   { icon: Waves, label: "Civic Intelligence", href: "/civic" },
   { icon: Music2, label: "Media Intelligence", href: "/media" },
-  { icon: Milestone, label: "Roadmap", href: "/roadmap" },
+  { icon: Gem, label: "Prospectus", href: "/prospectus" },
 ];
 
 const financialNav = [
