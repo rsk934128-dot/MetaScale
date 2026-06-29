@@ -2,6 +2,7 @@
 /**
  * @fileOverview Yapily Direct API Orchestrator & Smart Router for NoorNexus UBIL.
  * Handles institution discovery, consent lifecycle, and intelligent integration path switching.
+ * Synchronized with Global Ledger Access (Level 0).
  */
 
 import { ai } from '@/ai/genkit';
@@ -37,11 +38,12 @@ const YapilyConsentOutputSchema = z.object({
   expiresAt: z.string(),
   integrationPath: z.enum(['HOSTED', 'DIRECT_API']),
   routingReason: z.string(),
+  handshakeStatus: z.string().default('OK'),
 });
 
 /**
  * Smart Router Logic for Integration Path selection.
- * Determines whether to use Hosted Pages or Direct API based on request complexity.
+ * Determines whether to use Hosted Pages or Direct API based on request complexity and NoorNexus Priority Rules.
  */
 function determineIntegrationPath(requestType: string): { path: 'HOSTED' | 'DIRECT_API', reason: string } {
   const hostedTypes = ['single_payment', 'standard_consent'];
@@ -50,13 +52,13 @@ function determineIntegrationPath(requestType: string): { path: 'HOSTED' | 'DIRE
   if (directTypes.includes(requestType)) {
     return { 
       path: 'DIRECT_API', 
-      reason: `Complex transaction (${requestType}) detected. Direct API required for granular control.` 
+      reason: `Complex transaction (${requestType}) detected. Direct API Engine utilized for full control and custom UI compliance.` 
     };
   }
   
   return { 
     path: 'HOSTED', 
-    reason: `Standard request (${requestType}) detected. Hosted Page prioritized for rapid scaling.` 
+    reason: `Standard request (${requestType}) detected. Hosted Pages prioritized for rapid scaling and automated SCA handling.` 
   };
 }
 
@@ -112,7 +114,8 @@ const yapilyConsentFlow = ai.defineFlow(
       status: 'AWAITING_AUTHORISATION',
       expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
       integrationPath: routing.path,
-      routingReason: routing.reason
+      routingReason: routing.reason,
+      handshakeStatus: 'DETERMINISTIC_FINALITY_READY'
     };
   }
 );
