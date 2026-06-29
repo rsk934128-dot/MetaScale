@@ -16,6 +16,7 @@
         "accountNumber": { "type": "string", "description": "Unique 12-digit mesh account number." },
         "balance": { "type": "number", "description": "Current liquid assets in the system." },
         "role": { "type": "string", "enum": ["ADMIN", "OPERATOR", "CITIZEN"] },
+        "plan": { "type": "string", "enum": ["FREE", "PRO", "ENTERPRISE"], "default": "FREE" },
         "verificationStatus": { "type": "string", "enum": ["UNVERIFIED", "PENDING", "VERIFIED", "FLAGGED"] },
         "trustScore": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }

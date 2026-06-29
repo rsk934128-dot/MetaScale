@@ -85,6 +85,7 @@ export default function LoginPage() {
           teamId: DEFAULT_TEAM_ID,
           lastLogin: serverTimestamp(),
           role: isAdmin ? 'ADMIN' : 'CITIZEN',
+          plan: 'FREE',
           ...(userSnap.exists() ? {} : { 
             accountNumber: generateAccountNumber(), 
             balance: 1000,
@@ -124,6 +125,7 @@ export default function LoginPage() {
         accountNumber: generateAccountNumber(),
         balance: 1000.00,
         role: isAdmin ? 'ADMIN' : 'CITIZEN',
+        plan: 'FREE',
         trustScore: 85.0,
         verificationStatus: 'UNVERIFIED',
         createdAt: serverTimestamp(),

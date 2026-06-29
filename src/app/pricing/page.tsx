@@ -21,12 +21,19 @@ import {
   Terminal,
   Server,
   Info,
-  BadgeCheck
+  BadgeCheck,
+  Loader2,
+  RefreshCw
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useUser, useFirestore, useDoc } from "@/firebase";
+import { doc, updateDoc } from "firebase/firestore";
+import { useState, useMemo } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useKernel } from "@/components/kernel/KernelProvider";
 
 const FEATURES = [
   { name: "Global Edge Network", hobby: true, pro: true, enterprise: true },
@@ -40,6 +47,47 @@ const FEATURES = [
 ];
 
 export default function PricingPage() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const { emitEvent } = useKernel();
+  const [isUpgrading, setIsUpgrading] = useState(false);
+
+  const userRef = useMemo(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+
+  const { data: profile } = useDoc<any>(userRef);
+
+  const handleUpgrade = async (plan: 'PRO' | 'ENTERPRISE') => {
+    if (!userRef || isUpgrading) return;
+    
+    setIsUpgrading(true);
+    try {
+      await updateDoc(userRef, { plan: plan });
+      
+      emitEvent('FINANCE', 'PLAN_UPGRADE_EXECUTED', 2, { 
+        userId: user?.uid, 
+        newPlan: plan,
+        timestamp: Date.now()
+      });
+
+      toast({
+        title: "Upgrade Successful",
+        description: `Your account has been migrated to the ${plan} tier.`,
+      });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Upgrade Failed",
+        description: "Kernel communication error during settlement handshake."
+      });
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen">
       <AppSidebar />
@@ -99,7 +147,13 @@ export default function PricingPage() {
                    </ul>
                 </CardContent>
                 <CardFooter className="p-8">
-                   <Button variant="outline" className="w-full h-12 uppercase text-[10px] font-bold tracking-widest border-white/10">Get Started</Button>
+                   <Button 
+                    variant="outline" 
+                    className="w-full h-12 uppercase text-[10px] font-bold tracking-widest border-white/10"
+                    disabled={profile?.plan === 'FREE' || isUpgrading}
+                   >
+                     {profile?.plan === 'FREE' ? "Current Plan" : "Get Started"}
+                   </Button>
                 </CardFooter>
              </Card>
 
@@ -133,7 +187,14 @@ export default function PricingPage() {
                    </ul>
                 </CardContent>
                 <CardFooter className="p-8">
-                   <Button className="w-full h-12 bg-accent text-background font-bold uppercase text-[10px] tracking-widest cyan-glow">Upgrade to Pro</Button>
+                   <Button 
+                    className="w-full h-12 bg-accent text-background font-bold uppercase text-[10px] tracking-widest cyan-glow"
+                    onClick={() => handleUpgrade('PRO')}
+                    disabled={profile?.plan === 'PRO' || isUpgrading}
+                   >
+                     {isUpgrading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : null}
+                     {profile?.plan === 'PRO' ? "Current Plan" : "Upgrade to Pro"}
+                   </Button>
                 </CardFooter>
              </Card>
 
@@ -163,7 +224,14 @@ export default function PricingPage() {
                    </ul>
                 </CardContent>
                 <CardFooter className="p-8">
-                   <Button variant="outline" className="w-full h-12 uppercase text-[10px] font-bold tracking-widest border-white/10">Talk to Sales</Button>
+                   <Button 
+                    variant="outline" 
+                    className="w-full h-12 uppercase text-[10px] font-bold tracking-widest border-white/10"
+                    onClick={() => handleUpgrade('ENTERPRISE')}
+                    disabled={profile?.plan === 'ENTERPRISE' || isUpgrading}
+                   >
+                     {profile?.plan === 'ENTERPRISE' ? "Current Plan" : "Talk to Sales"}
+                   </Button>
                 </CardFooter>
              </Card>
           </div>
