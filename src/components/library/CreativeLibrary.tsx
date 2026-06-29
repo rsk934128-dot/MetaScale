@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { 
   Search, 
   Plus, 
@@ -40,6 +40,7 @@ export function CreativeLibrary() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const { emitEvent } = useKernel();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [search, setSearch] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
@@ -54,6 +55,66 @@ export function CreativeLibrary() {
   }, [firestore, user?.uid]);
 
   const { data: myAssets, loading } = useCollection<any>(assetsQuery);
+
+  const handleLocalUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !firestore || !user?.uid) return;
+
+    // Prototypes often use small files. Document size limit in Firestore is 1MB.
+    if (file.size > 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "File Too Large",
+        description: "Prototype limit is 1MB for mesh persistence."
+      });
+      return;
+    }
+
+    setIsSyncing(true);
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+      try {
+        const dataUrl = event.target?.result as string;
+        const assetId = `LOCAL_${Date.now()}_${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+        
+        const assetData = {
+          id: assetId,
+          name: file.name,
+          url: dataUrl,
+          thumbnail: dataUrl,
+          mimeType: file.type,
+          source: 'LOCAL_UPLOAD',
+          createdAt: Date.now()
+        };
+
+        const assetRef = doc(firestore, 'users', user.uid, 'assets', assetId);
+        await setDoc(assetRef, assetData);
+
+        emitEvent('INFRA', 'LOCAL_ASSET_UPLOADED', 4, { fileName: file.name });
+        toast({
+          title: "Asset Uploaded",
+          description: `"${file.name}" has been bound to your mesh node.`,
+        });
+      } catch (err) {
+        toast({
+          variant: "destructive",
+          title: "Upload Failed",
+          description: "Kernel rejected local file persistence.",
+        });
+      } finally {
+        setIsSyncing(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    };
+
+    reader.onerror = () => {
+      toast({ variant: "destructive", title: "Read Error", description: "Failed to read local file." });
+      setIsSyncing(false);
+    };
+
+    reader.readAsDataURL(file);
+  };
 
   const handleDriveFiles = async (files: any[]) => {
     if (!firestore || !user?.uid) return;
@@ -127,9 +188,23 @@ export function CreativeLibrary() {
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
           <GoogleDrivePicker onFilesSelected={handleDriveFiles} />
-          <Button size="sm" className="cyan-glow bg-accent text-background font-bold h-9">
-            <Plus className="mr-2 h-4 w-4" /> Upload Local
+          
+          <Button 
+            size="sm" 
+            className="cyan-glow bg-accent text-background font-bold h-9"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isSyncing}
+          >
+            {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+            Upload Local
           </Button>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept="image/*,video/*" 
+            onChange={handleLocalUpload} 
+          />
         </div>
       </div>
 
@@ -155,7 +230,7 @@ export function CreativeLibrary() {
                 <Cloud className="h-10 w-10 text-accent opacity-20" />
              </div>
              <p className="text-xs text-muted-foreground italic max-w-xs">
-                আপনার লাইব্রেরি বর্তমানে ফাঁকা। ড্রাইভ থেকে ফাইল ইমপোর্ট করুন সরাসরি আপনার ড্যাশবোর্ডে।
+                আপনার লাইব্রেরি বর্তমানে ফাঁকা। ড্রাইভ থেকে বা লোকাল থেকে ফাইল ইমপোর্ট করুন সরাসরি আপনার ড্যাশবোর্ডে।
              </p>
           </div>
         ) : (
@@ -200,7 +275,8 @@ export function CreativeLibrary() {
                   </div>
                   <div className="flex items-center gap-2">
                      <Badge variant="outline" className="text-[8px] py-0 border-accent/20 text-accent font-bold uppercase tracking-tighter">
-                       <Cloud className="mr-1 h-2 w-2" /> Google Drive
+                       {asset.source === 'LOCAL_UPLOAD' ? <Plus className="mr-1 h-2 w-2" /> : <Cloud className="mr-1 h-2 w-2" />}
+                       {asset.source.replace('_', ' ')}
                      </Badge>
                   </div>
                 </CardContent>
