@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, useFirestore, useDoc } from '@/firebase';
+import { useUser, useFirestore, useDoc, useAuth } from '@/firebase';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -25,14 +25,16 @@ import {
   Wallet,
   CreditCard,
   Save,
-  X
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { doc, collection, addDoc, updateDoc } from 'firebase/firestore';
+import { updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useKernel } from '@/components/kernel/KernelProvider';
 import { 
@@ -44,17 +46,21 @@ import {
   DialogFooter,
   DialogTrigger
 } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function ProfilePage() {
   const { user } = useUser();
+  const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
   const { emitEvent } = useKernel();
   
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [copiedId, setCopiedId] = useState(false);
   const [copiedAcc, setCopiedAcc] = useState(false);
   const [isUploading, setIsUploading] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   // Edit States
   const [editMobile, setEditMobile] = useState('');
@@ -88,6 +94,13 @@ export default function ProfilePage() {
         displayName: editName || profile?.displayName,
         mobile: editMobile || profile?.mobile
       });
+      
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, {
+          displayName: editName || profile?.displayName
+        });
+      }
+
       emitEvent('SECURITY', 'PROFILE_INFO_UPDATED', 3, { userId: user?.uid });
       toast({ title: "Profile Updated", description: "Identity parameters reconciled." });
       setIsEditing(false);
@@ -95,6 +108,37 @@ export default function ProfilePage() {
       toast({ variant: "destructive", title: "Update Failed", description: "Kernel rejected profile changes." });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userRef || !auth.currentUser) return;
+
+    // Simulation of upload. In a real app, you'd upload to Firebase Storage.
+    // We will use a temporary URL and update the profile for demo purposes.
+    setIsUploadingImage(true);
+    
+    try {
+      // Create a local preview
+      const previewUrl = URL.createObjectURL(file);
+      
+      // Update Firestore
+      await updateDoc(userRef, {
+        photoURL: previewUrl // In production, this would be the Storage URL
+      });
+
+      // Update Auth Profile
+      await updateProfile(auth.currentUser, {
+        photoURL: previewUrl
+      });
+
+      emitEvent('SECURITY', 'PROFILE_IMAGE_UPDATED', 3, { userId: user?.uid });
+      toast({ title: "Image Uploaded", description: "Your profile picture has been updated in the mesh." });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Upload Failed", description: "Mesh storage link interrupted." });
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -189,17 +233,38 @@ export default function ProfilePage() {
 
         <main className="flex-1 p-8 max-w-[1000px] mx-auto w-full space-y-12">
           <div className="flex flex-col md:flex-row items-center gap-8 animate-fade-in">
-             <div className="relative group">
-                <div className="absolute inset-0 bg-accent/20 rounded-full blur-[40px] opacity-50 transition-opacity" />
-                <div className="relative w-32 h-32 rounded-full border-2 border-accent/30 p-1 bg-background">
-                   <div className="w-full h-full rounded-full bg-secondary/50 flex items-center justify-center overflow-hidden border border-white/5">
-                      {user?.photoURL ? (
-                        <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
-                      ) : (
-                        <User className="w-16 h-16 text-accent/40" />
-                      )}
+             <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                <div className="absolute inset-0 bg-accent/20 rounded-full blur-[40px] opacity-50 transition-opacity group-hover:opacity-80" />
+                <div className="relative w-32 h-32 rounded-full border-2 border-accent/30 p-1 bg-background overflow-hidden transition-transform group-hover:scale-105">
+                   <div className="w-full h-full rounded-full bg-secondary/50 flex items-center justify-center overflow-hidden border border-white/5 relative">
+                      <Avatar className="w-full h-full">
+                        <AvatarImage src={profile?.photoURL || user?.photoURL || ''} className="object-cover" />
+                        <AvatarFallback className="bg-accent/10 text-3xl text-accent font-bold uppercase">
+                          {user?.displayName?.[0] || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      {/* Overlay on hover */}
+                      <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                         {isUploadingImage ? (
+                           <RefreshCw className="h-6 w-6 text-accent animate-spin" />
+                         ) : (
+                           <>
+                             <Camera className="h-6 w-6 text-accent mb-1" />
+                             <span className="text-[8px] font-bold uppercase text-accent">Update Photo</span>
+                           </>
+                         )}
+                      </div>
                    </div>
                 </div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={handleImageUpload}
+                  disabled={isUploadingImage}
+                />
              </div>
 
              <div className="text-center md:text-left space-y-2 flex-1">
@@ -210,7 +275,7 @@ export default function ProfilePage() {
                    </Badge>
                    {getStatusBadge()}
                 </div>
-                <div className="flex items-center justify-center md:justify-start gap-4 text-muted-foreground mt-2">
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-muted-foreground mt-2">
                    <button onClick={() => handleCopy(profile?.kernelId || '', 'ID')} className="flex items-center gap-2 hover:text-accent transition-colors group">
                      <span className="text-[10px] font-mono uppercase opacity-70">Kernel ID:</span>
                      <span className="text-sm font-bold text-white/90">{profile?.kernelId || '...'}</span>
@@ -387,4 +452,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

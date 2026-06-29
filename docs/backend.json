@@ -1,5 +1,4 @@
 
-
 {
   "entities": {
     "UserProfile": {
@@ -11,6 +10,7 @@
         "displayName": { "type": "string" },
         "email": { "type": "string" },
         "mobile": { "type": "string" },
+        "photoURL": { "type": "string", "description": "URL to the citizen's profile image." },
         "kernelId": { "type": "string" },
         "accountNumber": { "type": "string", "description": "Unique 12-digit mesh account number." },
         "balance": { "type": "number", "description": "Current liquid assets in the system." },
@@ -168,4 +168,3 @@
     "/system/events": { "schema": "KernelEvent", "description": "Persistent log of all kernel events." }
   }
 }
-
