@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -31,7 +32,8 @@ import {
   ShoppingBag,
   Unplug,
   Sparkles,
-  Braces
+  Braces,
+  BrainCircuit
 } from "lucide-react";
 import {
   Sidebar,
@@ -71,7 +73,7 @@ const civicNav = [
 
 const financialNav = [
   { icon: DollarSign, label: "Fiscal Command", href: "/finance" },
-  { icon: Scale, label: "Eco Governance", href: "/economy" },
+  { icon: Scale, label: "P45: Eco Governance", href: "/economy" },
   { icon: Gavel, label: "Compliance & KYB", href: "/compliance" },
   { icon: Activity, label: "Revenue Ops", href: "/revenue" },
 ];
@@ -85,12 +87,12 @@ const projectNav = [
 const securityNav = [
   { icon: ShieldAlert, label: "Security Intelligence", href: "/risk" },
   { icon: Lock, label: "Identity & Trust", href: "/network" },
-  { icon: Terminal, label: "Sovereign Chat", href: "/intelligence" },
+  { icon: BrainCircuit, label: "Sovereign Chat", href: "/intelligence" },
 ];
 
 const infraNav = [
   { icon: Network, label: "42-Node Mesh", href: "/infrastructure" },
-  { icon: Unplug, label: "UBIL Integration", href: "/ubil" },
+  { icon: Unplug, label: "UBIL Mainframe", href: "/ubil" },
   { icon: Cpu, label: "AI Council", href: "/agents" },
   { icon: Database, label: "Knowledge Bank", href: "/library" },
   { icon: Mail, label: "Communication Plane", href: "/communications" },
@@ -128,7 +130,7 @@ export function AppSidebar() {
   if (!isDashboardRoute) return null;
 
   return (
-    <Sidebar className="border-r border-border/50">
+    <Sidebar className="border-r border-border/50 shadow-2xl">
       <SidebarHeader className="p-6 flex flex-row items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
           <Logo size="sm" className="transition-transform group-hover:scale-110" />
@@ -139,7 +141,7 @@ export function AppSidebar() {
       <SidebarContent>
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-accent">Admin Command</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-accent uppercase tracking-widest text-[10px] font-bold">Admin Command</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
@@ -160,7 +162,7 @@ export function AppSidebar() {
         )}
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-primary">Successive Projects</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-primary uppercase tracking-widest text-[10px] font-bold">Successive Projects</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {projectNav.map((item) => (
@@ -182,7 +184,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Civic Intelligence</SidebarGroupLabel>
+          <SidebarGroupLabel className="uppercase tracking-widest text-[10px] font-bold opacity-50">Civic Intelligence</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {civicNav.map((item) => (
@@ -204,7 +206,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Financial Sovereign</SidebarGroupLabel>
+          <SidebarGroupLabel className="uppercase tracking-widest text-[10px] font-bold opacity-50">Financial Sovereign</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {financialNav.map((item) => (
@@ -226,7 +228,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Security Intelligence</SidebarGroupLabel>
+          <SidebarGroupLabel className="uppercase tracking-widest text-[10px] font-bold opacity-50">Security Intelligence</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {securityNav.map((item) => (
@@ -248,7 +250,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Infrastructure Mesh</SidebarGroupLabel>
+          <SidebarGroupLabel className="uppercase tracking-widest text-[10px] font-bold opacity-50">Infrastructure Mesh</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {infraNav.map((item) => (
