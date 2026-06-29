@@ -49,10 +49,25 @@ export default function UBILIntegrationPage() {
   const [simBank, setSimBank] = useState("Brac Bank");
   const [isSignatureValid, setIsSignatureValid] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [logs, setLogs] = useState<string[]>(["UBIL Core: Webhook Node online, listening..."]);
+  const [logs, setLogs] = useState<string[]>([
+    "UBIL Core: Webhook Node online, listening...",
+  ]);
 
   const { toast } = useToast();
   const firestore = useFirestore();
+
+  useEffect(() => {
+    // Simulate Amex UK node registration on mount
+    const timer = setTimeout(() => {
+      setLogs(prev => [
+        "> Amex UK Institution Node (amex-ob_uk) registered successfully.",
+        "> Mapping BIC: AETCUS55XXX to Sovereign Grid...",
+        "> Syncing PIS/AIS features for American Express UK...",
+        ...prev
+      ]);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const eventsQuery = useMemo(() => {
     if (!firestore) return null;
@@ -284,7 +299,8 @@ export default function UBILIntegrationPage() {
                                 {[
                                     { name: "Smart Router", status: "Active", desc: "Hosted vs Direct Routing" },
                                     { name: "Direct API Engine", status: "Active", desc: "Low-Latency Yapily PIS/AIS" },
-                                    { name: "Audit Inspector", status: "Active", desc: "L0 Ledger Synchronization" }
+                                    { name: "Audit Inspector", status: "Active", desc: "L0 Ledger Synchronization" },
+                                    { name: "Amex UK Node", status: "Active", desc: "BIC: AETCUS55XXX (LIVE)" }
                                 ].map((item, i) => (
                                     <div key={i} className="p-3 space-y-1">
                                         <div className="flex justify-between items-center">

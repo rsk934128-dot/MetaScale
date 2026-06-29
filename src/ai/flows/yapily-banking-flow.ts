@@ -89,6 +89,13 @@ const yapilyInstitutionsFlow = ai.defineFlow(
       { id: 'hsbc-uk', name: 'HSBC UK', countries: ['GB'], features: ['INITIATE_DOMESTIC_SINGLE_PAYMENT', 'READ_ACCOUNTS'] },
       { id: 'revolut', name: 'Revolut', countries: ['GB', 'IE', 'FR'], features: ['INITIATE_DOMESTIC_SINGLE_PAYMENT', 'READ_ACCOUNTS'] },
       { id: 'brac-bank-mock', name: 'Brac Bank (UBIL-Bridge)', countries: ['BD'], features: ['READ_ACCOUNTS'] },
+      { 
+        id: 'amex-ob_uk', 
+        name: 'Amex UK', 
+        fullName: 'American Express UK', 
+        countries: ['GB'], 
+        features: ['PIS', 'AIS', 'READ_ACCOUNTS', 'INITIATE_PAYMENT'] 
+      },
     ];
   }
 );
