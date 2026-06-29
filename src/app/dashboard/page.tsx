@@ -72,7 +72,7 @@ export default function SovereignControlPlane() {
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-4 md:px-6">
           <SidebarTrigger />
           <div className="flex-1 truncate">
-            <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 uppercase italic tracking-tighter">
+            <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 uppercase italic tracking-tighter text-accent">
               <Globe className="h-4 w-4 md:h-5 md:w-5 text-accent shrink-0 animate-logo-spin" />
               <span className="truncate">Sovereign Mission Control</span>
             </h1>
@@ -82,27 +82,26 @@ export default function SovereignControlPlane() {
               "hidden sm:flex border-accent/20 text-accent font-mono text-[10px]",
               isLive && "border-green-500 text-green-400"
             )}>
-              {isLive ? "SYSTEM_LIVE: PROTOCOL_STABLE" : "EXECUTION_MODE: ACTIVE"}
+              {isLive ? "COMMERCIAL_LIVE: PROTOCOL_STABLE" : "EXECUTION_MODE: ACTIVE"}
             </Badge>
             <div className="hidden md:flex bg-secondary/50 p-1 rounded-lg border border-white/5">
               {(['NORMAL', 'EMERGENCY', 'LOCKDOWN'] as SystemMode[]).map((m) => (
-                <Button 
+                <button 
                   key={m}
-                  variant="ghost" 
-                  size="sm" 
                   className={cn(
-                    "text-[9px] h-7 px-2 font-bold transition-all", 
+                    "text-[9px] h-7 px-3 rounded-md font-bold transition-all uppercase tracking-widest", 
                     mode === m && m === 'NORMAL' && "bg-green-500/20 text-green-400",
                     mode === m && m === 'EMERGENCY' && "bg-yellow-500/20 text-yellow-400",
-                    mode === m && m === 'LOCKDOWN' && "bg-red-500/20 text-red-400"
+                    mode === m && m === 'LOCKDOWN' && "bg-red-500/20 text-red-400",
+                    mode !== m && "text-muted-foreground hover:text-white"
                   )}
                   onClick={() => handleModeChange(m)}
                 >
                   {m}
-                </Button>
+                </button>
               ))}
             </div>
-            <Button size="sm" onClick={handleSyncAllNodes} disabled={isSyncing} className="cyan-glow text-[10px] font-bold h-8">
+            <Button size="sm" onClick={handleSyncAllNodes} disabled={isSyncing} className="cyan-glow text-[10px] font-bold h-8 bg-accent text-background">
               {isSyncing ? <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Zap className="h-3.5 w-3.5 mr-1.5" />}
               Sync Mesh
             </Button>
