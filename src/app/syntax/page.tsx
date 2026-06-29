@@ -271,11 +271,11 @@ export default function SyntaxArchitectPage() {
                       </TabsContent>
 
                       <TabsContent value="forensics" className="flex-1 p-6 m-0 space-y-2">
-                        <p className="text-[10px] font-mono text-accent">>>> START_COMMERCIAL_TRACE</p>
-                        <p className="text-[10px] font-mono text-white/60">>>> MAPPING_INTENT: {intention.substring(0, 50)}...</p>
-                        <p className="text-[10px] font-mono text-white/60">>>> TARGET_PLANE: {targetPlane}</p>
-                        <p className="text-[10px] font-mono text-white/60">>>> OUTREACH_QUALITY: HIGH_CONVERSION</p>
-                        <p className="text-[10px] font-mono text-green-400">>>> STATUS: EXECUTION_READY</p>
+                        <p className="text-[10px] font-mono text-accent">&gt;&gt;&gt; START_COMMERCIAL_TRACE</p>
+                        <p className="text-[10px] font-mono text-white/60">&gt;&gt;&gt; MAPPING_INTENT: {intention.substring(0, 50)}...</p>
+                        <p className="text-[10px] font-mono text-white/60">&gt;&gt;&gt; TARGET_PLANE: {targetPlane}</p>
+                        <p className="text-[10px] font-mono text-white/60">&gt;&gt;&gt; OUTREACH_QUALITY: HIGH_CONVERSION</p>
+                        <p className="text-[10px] font-mono text-green-400">&gt;&gt;&gt; STATUS: EXECUTION_READY</p>
                       </TabsContent>
                     </Tabs>
                   ) : (
