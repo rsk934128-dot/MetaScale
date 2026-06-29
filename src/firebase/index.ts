@@ -4,7 +4,6 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
-import { getPerformance } from 'firebase/performance';
 import { firebaseConfig } from './config';
 
 export function initializeFirebase() {
@@ -23,7 +22,7 @@ export function initializeFirebase() {
   
   const auth = getAuth(app);
 
-  // Initialize App Check and Performance only on the client side
+  // Initialize App Check only on the client side
   if (typeof window !== 'undefined') {
     // App Check
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -36,13 +35,6 @@ export function initializeFirebase() {
       } catch (e) {
         // App Check might also be already initialized
       }
-    }
-
-    // Performance Monitoring
-    try {
-      getPerformance(app);
-    } catch (e) {
-      // Performance might already be initialized
     }
   }
 
