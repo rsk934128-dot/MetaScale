@@ -22,7 +22,9 @@ import {
   ArrowRightLeft,
   ShieldCheck,
   RefreshCw,
-  Play
+  Play,
+  Network,
+  CloudLightning
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,19 +38,37 @@ const API_ENDPOINTS = [
     title: "Inbound Settlement (PIS)",
     method: "POST",
     path: "/api/v1/settlement/inbound",
-    desc: "অন্যান্য ব্যাংক থেকে Sovereign Mesh একাউন্টে টাকা পাঠানোর এন্ডপয়েন্ট।",
+    desc: "অন্যান্য ব্যাংক থেকে আপনার Sovereign Mesh একাউন্টে টাকা পাঠানোর প্রধান এন্ডপয়েন্ট। এটি ডিটারমিনিস্টিক ভেরিফিকেশন সম্পন্ন করে।",
     params: [
-      { name: "target_account", type: "string", desc: "Sovereign ১২-ডিজিট একাউন্ট নম্বর।" },
-      { name: "amount", type: "number", desc: "টাকার পরিমাণ (USD/BDT)।" },
-      { name: "source_bank", type: "string", desc: "প্রেরক ব্যাংকের নাম বা BIC কোড।" },
-      { name: "external_ref", type: "string", desc: "বাহ্যিক ট্রানজ্যাকশন রেফারেন্স।" }
+      { name: "target_account", type: "string", desc: "আপনার ১২-ডিজিটের ইউনিক কার্নেল একাউন্ট নম্বর।" },
+      { name: "amount", type: "number", desc: "টাকার পরিমাণ (USD)।" },
+      { name: "source_node", type: "string", desc: "প্রেরক সার্ভারের আইপি বা ডোমেইন।" },
+      { name: "security_seal", type: "string", desc: "ট্রানজ্যাকশন সীল (HMAC-SHA256)।" }
     ],
     example: `{
   "target_account": "108734305736",
-  "amount": 5000.00,
+  "amount": 500.00,
   "currency": "USD",
-  "source_bank": "HSBC-GLOBAL",
-  "external_ref": "TXN_9921028"
+  "source_node": "fintech-fusion.app",
+  "security_seal": "SIG_82AF...4E21"
+}`
+  },
+  {
+    id: "payout-orchestration",
+    title: "Outbound Payout (PIS)",
+    method: "POST",
+    path: "/api/v1/payouts/execute",
+    desc: "Sovereign Mesh থেকে বাইরের সিস্টেমে (যেমন Priyo Pay বা Bank) টাকা পাঠানোর জন্য এই লজিক ব্যবহার করা হয়।",
+    params: [
+      { name: "recipient_identity", type: "string", desc: "টার্গেট ইমেইল বা গেটওয়ে আইডি।" },
+      { name: "gateway", type: "enum", desc: "PRIYO_PAY, PAYPAL, BKASH_B2C" },
+      { name: "amount", type: "number", desc: "Disbursement amount." }
+    ],
+    example: `{
+  "gateway": "PRIYO_PAY",
+  "recipient_identity": "vendor@mesh.gov",
+  "amount": 1250.00,
+  "directive": "L3_IMPERIAL"
 }`
   },
   {
@@ -56,35 +76,17 @@ const API_ENDPOINTS = [
     title: "Entity Verification (AIS)",
     method: "GET",
     path: "/api/v1/entity/verify/{account_number}",
-    desc: "কোনো একাউন্ট নম্বর ভ্যালিড কিনা এবং তার ট্রাস্ট স্কোর চেক করার জন্য।",
+    desc: "কোনো একাউন্ট নম্বর ভ্যালিড কিনা এবং তার ট্রাস্ট স্কোর চেক করার জন্য। কানেকশন সচল রাখতে এটি জরুরি।",
     params: [
       { name: "account_number", type: "path", desc: "১২-ডিজিট আইডেন্টিটি নম্বর।" },
       { name: "api_key", type: "header", desc: "আপনার অ্যাপের সিক্রেট কি।" }
     ],
-    example: `// Response Example
+    example: `// Response 200 OK
 {
   "status": "VERIFIED",
   "trust_score": 98.4,
-  "jurisdiction": "BD",
+  "connection_integrity": "STABLE",
   "clearance": "L3_DETERMINISTIC"
-}`
-  },
-  {
-    id: "payout-orchestration",
-    title: "Payout Orchestrator",
-    method: "POST",
-    path: "/api/v1/payouts/execute",
-    desc: "Sovereign Mesh থেকে বাইরের ব্যাংকে বা প্রিয় পে-তে টাকা পাঠানোর এন্ডপয়েন্ট।",
-    params: [
-      { name: "gateway", type: "enum", desc: "PAYPAL, PRIYO_PAY, PAYONEER" },
-      { name: "amount", type: "number", desc: "USD equivalent" },
-      { name: "recipient_email", type: "string", desc: "Target identity email" }
-    ],
-    example: `{
-  "gateway": "PRIYO_PAY",
-  "amount": 1250,
-  "recipient_email": "vendor@mesh.gov",
-  "security_seal": "FALLBACK_P180_X92"
 }`
   }
 ];
@@ -110,7 +112,7 @@ export default function APIDocsPage() {
       setHandshakeLog(prev => [...prev, "Auth: API_KEY_VALID_LIVE", "Target Server: fintech-fusion-ziaz.vercel.app", "Status: HANDSHAKE_SUCCESSFUL"]);
       setIsTestingHandshake(false);
       toast({
-        title: "Handshake Test Success",
+        title: "Connection Established",
         description: "Server communication established with 99.9% uptime reliability.",
       });
     }, 2000);
@@ -125,33 +127,33 @@ export default function APIDocsPage() {
           <div className="flex-1">
             <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-accent">
               <Code2 className="h-5 w-5 text-accent" />
-              Sovereign API Documentation
+              Sovereign API Intelligence
             </h1>
           </div>
           <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
-            v1.2.0-stable
+            v1.2.0-stable • ONLINE
           </Badge>
         </header>
 
         <main className="flex-1 p-8 max-w-[1200px] mx-auto w-full space-y-12">
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div className="space-y-4 flex-1">
-              <h2 className="text-4xl font-headline font-bold tracking-tighter">Financial <span className="text-accent italic">Interoperability</span></h2>
-              <p className="text-muted-foreground text-sm max-w-2xl">
-                আপনার ব্যাংক বা অ্যাপকে Sovereign Mesh-এর সাথে যুক্ত করুন। আমাদের এন্ডপয়েন্টগুলো ব্যবহার করে এখনই টাকা পাঠানো এবং রিসিভ করা শুরু করুন।
+              <h2 className="text-4xl font-headline font-bold tracking-tighter">Global <span className="text-accent italic">Interoperability</span></h2>
+              <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed">
+                আপনার ব্যাংক বা পেমেন্ট অ্যাপকে Sovereign Mesh-এর সাথে যুক্ত করুন। আমাদের ডকুমেন্টেশন ব্যবহার করে যে কেউ, যেকোনো সময়, যেকোনো জায়গা থেকে কানেক্ট করতে পারবে। টাকা পাঠানো এবং গ্রহণ করার প্রক্রিয়া এখন পুরোপুরি অটোমেটেড।
               </p>
             </div>
-            <Card className="glass-panel border-accent/20 bg-accent/5 p-6 w-full md:w-80 shrink-0">
+            <Card className="glass-panel border-accent/20 bg-accent/5 p-6 w-full md:w-80 shrink-0 shadow-2xl">
                <div className="flex items-center gap-3 mb-4">
                   <ShieldCheck className="h-5 w-5 text-accent" />
-                  <p className="text-xs font-bold uppercase text-white">Handshake Protocol</p>
+                  <p className="text-xs font-bold uppercase text-white tracking-widest">Handshake Protocol</p>
                </div>
                <div className="space-y-4">
                  <p className="text-[10px] text-muted-foreground italic leading-relaxed">
                     "সবগুলো কল অবশ্যই SSL/TLS এনক্রিপ্টেড হতে হবে এবং Authorization হেডার-এ Bearer Token থাকতে হবে।"
                  </p>
                  <Button 
-                   className="w-full text-[10px] font-bold h-9 bg-accent text-background cyan-glow"
+                   className="w-full text-[10px] font-bold h-10 bg-accent text-background cyan-glow uppercase tracking-widest"
                    onClick={simulateHandshake}
                    disabled={isTestingHandshake}
                  >
@@ -162,7 +164,7 @@ export default function APIDocsPage() {
                {handshakeLog.length > 0 && (
                  <div className="mt-4 p-3 rounded bg-black/40 border border-white/5 font-mono text-[8px] space-y-1 animate-fade-in">
                     {handshakeLog.map((log, i) => (
-                      <p key={i} className={log.includes('SUCCESS') ? 'text-green-400' : 'text-white/60'}>
+                      <p key={i} className={log.includes('SUCCESS') ? 'text-green-400 font-bold' : 'text-white/60'}>
                         {`> ${log}`}
                       </p>
                     ))}
@@ -172,29 +174,32 @@ export default function APIDocsPage() {
           </div>
 
           <Tabs defaultValue="financial" className="space-y-8">
-            <TabsList className="bg-secondary/50 border border-white/5 h-12">
-              <TabsTrigger value="financial" className="text-[10px] uppercase font-bold tracking-widest px-6">Financial Integration</TabsTrigger>
-              <TabsTrigger value="intelligence" className="text-[10px] uppercase font-bold tracking-widest px-6">Intelligence Plane</TabsTrigger>
-              <TabsTrigger value="mesh" className="text-[10px] uppercase font-bold tracking-widest px-6">Data Mesh</TabsTrigger>
+            <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1">
+              <TabsTrigger value="financial" className="text-[10px] uppercase font-bold tracking-widest px-6 data-[state=active]:bg-accent data-[state=active]:text-background">Receive & Send (PIS)</TabsTrigger>
+              <TabsTrigger value="intelligence" className="text-[10px] uppercase font-bold tracking-widest px-6 data-[state=active]:bg-accent data-[state=active]:text-background">Intelligence Plane</TabsTrigger>
+              <TabsTrigger value="mesh" className="text-[10px] uppercase font-bold tracking-widest px-6 data-[state=active]:bg-accent data-[state=active]:text-background">Data Registry</TabsTrigger>
             </TabsList>
 
             <TabsContent value="financial" className="space-y-8">
               {API_ENDPOINTS.map((api) => (
-                <Card key={api.id} className="glass-panel border-white/5 overflow-hidden group">
+                <Card key={api.id} className="glass-panel border-white/5 overflow-hidden group hover:border-accent/30 transition-all shadow-xl">
                   <CardHeader className="p-6 border-b border-white/5 bg-white/5">
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                           <Badge className="bg-accent text-background font-bold">{api.method}</Badge>
-                           <span className="text-xs font-mono text-accent/80">{api.path}</span>
+                           <Badge className="bg-accent text-background font-bold px-3">{api.method}</Badge>
+                           <span className="text-xs font-mono text-accent/80 tracking-tighter">{api.path}</span>
                         </div>
-                        <CardTitle className="text-xl mt-2">{api.title}</CardTitle>
+                        <CardTitle className="text-xl mt-2 flex items-center gap-2">
+                          {api.id === 'inbound-settlement' ? <DollarSign className="h-5 w-5 text-green-400" /> : <CloudLightning className="h-5 w-5 text-primary" />}
+                          {api.title}
+                        </CardTitle>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => handleCopy(api.example, api.id)}>
+                      <Button variant="ghost" size="icon" onClick={() => handleCopy(api.example, api.id)} className="hover:bg-accent/10">
                         {copiedId === api.id ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                       </Button>
                     </div>
-                    <CardDescription className="text-xs mt-2">{api.desc}</CardDescription>
+                    <CardDescription className="text-xs mt-2 italic text-muted-foreground">{api.desc}</CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="grid grid-cols-1 md:grid-cols-2">
@@ -214,7 +219,7 @@ export default function APIDocsPage() {
                       </div>
                       <div className="p-6 bg-black/40">
                          <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-4">Payload Example</h4>
-                         <pre className="text-[11px] font-mono text-white/80 leading-relaxed overflow-x-auto p-4 rounded bg-black/20 border border-white/5">
+                         <pre className="text-[11px] font-mono text-white/80 leading-relaxed overflow-x-auto p-4 rounded bg-black/20 border border-white/5 group-hover:border-accent/20 transition-colors">
                            {api.example}
                          </pre>
                       </div>
@@ -225,23 +230,32 @@ export default function APIDocsPage() {
             </TabsContent>
 
             <TabsContent value="intelligence" className="space-y-6">
-              <Card className="glass-panel">
+              <Card className="glass-panel border-l-4 border-l-accent shadow-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-widest">
-                    <Terminal className="h-5 w-5 text-accent" />
-                    Civic Response API
+                    <Network className="h-5 w-5 text-accent" />
+                    Civic Response API (SOS)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                   <div className="p-4 rounded-xl bg-secondary/30 border border-white/5 space-y-4">
+                   <div className="p-5 rounded-xl bg-secondary/30 border border-white/5 space-y-4">
                       <div className="flex items-center gap-2">
                         <Badge>POST</Badge>
-                        <span className="text-xs font-mono">/ai/flows/civicIncidentAnalysis</span>
+                        <span className="text-xs font-mono text-accent">/ai/flows/civicIncidentAnalysis</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">Analyzes civic emergencies and suggests deterministic response strategies.</p>
-                      <pre className="text-[10px] font-mono text-accent p-2 bg-black/40 rounded">
-                        {`{ "type": "FLOOD", "severity": 4, "location": "Sector 7" }`}
-                      </pre>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        ইমারজেন্সি ডিটেকশন এবং অটোমেটেড ডিসপ্যাচ লজিক বাইরের সেন্সর থেকে এই এপিআই-তে হিট করলে কার্নেল সরাসরি রেসপন্স করবে।
+                      </p>
+                      <div className="p-4 rounded bg-black/40 border border-white/5">
+                        <pre className="text-[10px] font-mono text-accent">
+                          {`{ 
+  "type": "FLOOD", 
+  "severity": 4, 
+  "location": "Sector 7",
+  "sensor_id": "SN-042"
+}`}
+                        </pre>
+                      </div>
                    </div>
                 </CardContent>
               </Card>
@@ -250,24 +264,24 @@ export default function APIDocsPage() {
             <TabsContent value="mesh" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[
-                  { title: "System Events", path: "/system/events/logs/{id}", entity: "KernelEvent" },
-                  { title: "Financial Node", path: "/users/{userId}", entity: "UserProfile" },
-                  { title: "Payment Links", path: "/payment_links/{linkId}", entity: "PaymentLink" },
-                  { title: "OS Control", path: "/system/control", entity: "SystemControlState" }
+                  { title: "System Ledger", path: "/system/events/logs/{id}", entity: "KernelEvent" },
+                  { title: "Financial Identity", path: "/users/{userId}", entity: "UserProfile" },
+                  { title: "Public Payments", path: "/payment_links/{linkId}", entity: "PaymentLink" },
+                  { title: "Mode Registry", path: "/system/control", entity: "SystemControlState" }
                 ].map((mesh, i) => (
-                  <Card key={i} className="glass-panel group hover:border-accent/30 transition-all">
+                  <Card key={i} className="glass-panel group hover:border-accent/30 transition-all cursor-pointer">
                     <CardHeader className="p-4">
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 rounded bg-accent/10">
+                          <div className="p-2 rounded bg-accent/10 group-hover:bg-accent/20 transition-colors">
                             <Database className="h-4 w-4 text-accent" />
                           </div>
                           <div>
-                            <h4 className="text-sm font-bold text-white">{mesh.title}</h4>
+                            <h4 className="text-sm font-bold text-white group-hover:text-accent transition-colors">{mesh.title}</h4>
                             <p className="text-[10px] font-mono text-muted-foreground">{mesh.path}</p>
                           </div>
                         </div>
-                        <Badge variant="outline" className="text-[8px]">{mesh.entity}</Badge>
+                        <Badge variant="outline" className="text-[8px] border-white/10 uppercase">{mesh.entity}</Badge>
                       </div>
                     </CardHeader>
                   </Card>
@@ -276,34 +290,38 @@ export default function APIDocsPage() {
             </TabsContent>
           </Tabs>
 
-          <section className="p-8 rounded-2xl bg-secondary/20 border border-white/5 space-y-6">
-             <div className="flex items-center gap-3">
+          <section className="p-8 rounded-2xl bg-secondary/20 border border-white/5 space-y-6 relative overflow-hidden shadow-2xl">
+             <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-[100px] -mr-32 -mt-32" />
+             <div className="flex items-center gap-3 relative z-10">
                 <Building2 className="h-6 w-6 text-primary" />
-                <h3 className="text-xl font-headline font-bold">External Node Onboarding</h3>
+                <h3 className="text-xl font-headline font-bold uppercase tracking-tight">External Node Onboarding</h3>
              </div>
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
                 <div className="space-y-2">
-                   <p className="text-xs font-bold text-white uppercase">Step 1: Auth Link</p>
-                   <p className="text-[10px] text-muted-foreground">আপনার সিস্টেমের পাবলিক আইপি এবং ডোমেইন আমাদের সিকিউরিটি প্যানেলে রেজিস্টার করুন।</p>
+                   <Badge className="bg-primary/20 text-primary text-[8px] mb-2 uppercase">Step 1</Badge>
+                   <p className="text-xs font-bold text-white uppercase">Auth Link & DNS</p>
+                   <p className="text-[10px] text-muted-foreground leading-relaxed">আপনার সিস্টেমের পাবলিক আইপি এবং ডোমেইন আমাদের সিকিউরিটি প্যানেলে রেজিস্টার করুন।</p>
                 </div>
                 <div className="space-y-2">
-                   <p className="text-xs font-bold text-white uppercase">Step 2: Key Exchange</p>
-                   <p className="text-[10px] text-muted-foreground">OAuth2 হ্যান্ডশেকের মাধ্যমে আপনার সিস্টেমের জন্য একটি ডেডিকেটেড গ্র্যান্ট টোকেন তৈরি করুন।</p>
+                   <Badge className="bg-primary/20 text-primary text-[8px] mb-2 uppercase">Step 2</Badge>
+                   <p className="text-xs font-bold text-white uppercase">Symmetric Key Exchange</p>
+                   <p className="text-[10px] text-muted-foreground leading-relaxed">OAuth2 হ্যান্ডশেকের মাধ্যমে আপনার সিস্টেমের জন্য একটি ডেডিকেটেড গ্র্যান্ট টোকেন তৈরি করুন।</p>
                 </div>
                 <div className="space-y-2">
-                   <p className="text-xs font-bold text-white uppercase">Step 3: Webhook Bind</p>
-                   <p className="text-[10px] text-muted-foreground">রিয়েল-টাইম পেমেন্ট নোটিফিকেশন পাওয়ার জন্য আপনার Webhook URL কনফিগার করুন।</p>
+                   <Badge className="bg-primary/20 text-primary text-[8px] mb-2 uppercase">Step 3</Badge>
+                   <p className="text-xs font-bold text-white uppercase">Webhook Tunneling</p>
+                   <p className="text-[10px] text-muted-foreground leading-relaxed">রিয়েল-টাইম পেমেন্ট নোটিফিকেশন পাওয়ার জন্য আপনার Webhook URL কনফিগার করুন।</p>
                 </div>
              </div>
           </section>
 
           <footer className="pt-12 border-t border-white/5 flex flex-col items-center gap-4 text-center">
             <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-accent" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Deterministic API Grid v1.2</span>
+              <Zap className="h-4 w-4 text-accent animate-pulse" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">Deterministic API Grid v1.2</span>
             </div>
-            <p className="text-[9px] text-muted-foreground opacity-50 uppercase tracking-tighter">
-              All interactions with the Mesh are cryptographically signed and logged.
+            <p className="text-[9px] text-muted-foreground opacity-50 uppercase tracking-widest italic">
+              All interactions with the Mesh are cryptographically signed, logged, and audited by AI.
             </p>
           </footer>
         </main>
