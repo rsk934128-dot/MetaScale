@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -22,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useCollection } from "@/firebase";
-import { collection, addDoc, query, orderBy, limit, deleteDoc, doc, updateDoc, increment, setDoc } from "firebase/firestore";
+import { collection, query, orderBy, limit, deleteDoc, doc, updateDoc, increment, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -55,7 +56,7 @@ export function PaymentLinkManager() {
 
   const handleCreateLink = () => {
     if (!amount || parseFloat(amount) <= 0 || !firestore || !user?.uid) {
-      toast({ variant: "destructive", title: "Invalid Data", description: "Please provide a valid amount and description." });
+      toast({ variant: "destructive", title: "Invalid Data", description: "সঠিক মূল্য এবং বিবরণ প্রদান করুন।" });
       return;
     }
 
@@ -63,6 +64,7 @@ export function PaymentLinkManager() {
     const seal = `PAY_SEAL_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     
     const linkData = {
+      id: seal,
       creatorId: user.uid,
       creatorName: user.displayName || 'Sovereign Citizen',
       amount: parseFloat(amount),
@@ -73,33 +75,34 @@ export function PaymentLinkManager() {
       createdAt: Date.now(),
     };
 
-    // 1. Add to user's private collection
-    const userLinksRef = collection(firestore, 'users', user.uid, 'payment_links');
-    addDoc(userLinksRef, linkData)
-      .then((docRef) => {
-        // 2. Also register in public registry for checkout page access
-        const publicLinksRef = doc(firestore, 'payment_links', seal);
-        setDoc(publicLinksRef, { ...linkData, id: docRef.id });
+    // 1. Register in root public registry (Source of Truth for Checkout)
+    const publicLinkRef = doc(firestore, 'payment_links', seal);
+    
+    // 2. Add to user's private collection for management
+    const userLinkRef = doc(firestore, 'users', user.uid, 'payment_links', seal);
 
-        emitEvent('FINANCE', 'MARKETPLACE_LINK_GENERATED', 4, { seal, amount });
-        toast({
-          title: "Payment Link Generated",
-          description: `Product checkout link ready for integration.`,
-        });
-        setAmount("");
-        setDesc("");
-      })
-      .catch(async (error) => {
-        const pErr = new FirestorePermissionError({
-          path: userLinksRef.path,
-          operation: 'create',
-          requestResourceData: linkData,
-        });
-        errorEmitter.emit('permission-error', pErr);
-      })
-      .finally(() => {
-        setIsCreating(false);
+    // Write to both places for redundancy and access
+    Promise.all([
+      setDoc(publicLinkRef, linkData),
+      setDoc(userLinkRef, linkData)
+    ]).then(() => {
+      emitEvent('FINANCE', 'MARKETPLACE_LINK_GENERATED', 4, { seal, amount });
+      toast({
+        title: "Payment Link Generated",
+        description: `পেমেন্ট লিঙ্ক তৈরি হয়েছে এবং মার্কেটপ্লেসে ব্যবহারের জন্য প্রস্তুত।`,
       });
+      setAmount("");
+      setDesc("");
+    }).catch(async (error) => {
+      const pErr = new FirestorePermissionError({
+        path: publicLinkRef.path,
+        operation: 'create',
+        requestResourceData: linkData,
+      });
+      errorEmitter.emit('permission-error', pErr);
+    }).finally(() => {
+      setIsCreating(false);
+    });
   };
 
   const copyToClipboard = (id: string, seal: string) => {
@@ -108,7 +111,7 @@ export function PaymentLinkManager() {
     const url = `${origin}/checkout/${seal}`;
     navigator.clipboard.writeText(url);
     setCopiedId(id);
-    toast({ title: "Checkout URL Copied", description: "Integration link ready." });
+    toast({ title: "Checkout URL Copied", description: "লিঙ্কটি কপি করা হয়েছে। আপনার কাস্টমারকে এটি পাঠান।" });
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -123,8 +126,8 @@ export function PaymentLinkManager() {
     
     const updateData = { status: 'PAID', paidAt: Date.now() };
     
-    updateDoc(linkRef, updateData).catch(async () => {});
-    updateDoc(publicLinkRef, updateData).catch(async () => {});
+    updateDoc(linkRef, updateData).catch(() => {});
+    updateDoc(publicLinkRef, updateData).catch(() => {});
 
     updateDoc(userRef, { balance: increment(link.amount) })
       .catch(async (error) => {
@@ -136,19 +139,21 @@ export function PaymentLinkManager() {
         errorEmitter.emit('permission-error', pErr);
       });
 
-    addDoc(notifRef, {
+    const notification = {
       title: "Product Sold & Funds Settled",
-      message: `Payment received for "${link.description}". $${link.amount} added to balance.`,
+      message: `"${link.description}" এর জন্য $${link.amount} পেমেন্ট পাওয়া গেছে। আপনার ব্যালেন্স আপডেট করা হয়েছে।`,
       type: 'DIRECTIVE',
       read: false,
       timestamp: Date.now(),
-    }).catch(async () => {});
+    };
+
+    addDoc(notifRef, notification).catch(() => {});
 
     setTimeout(() => {
       emitEvent('FINANCE', 'PAYMENT_RECEIVED_MARKETPLACE', 2, { amount: link.amount, seal: link.seal });
       toast({
         title: "Payment Successful",
-        description: `Funds received! Product "${link.description}" is now settled.`,
+        description: `অভিনন্দন! আপনার পণ্যটি সফলভাবে বিক্রি হয়েছে।`,
       });
       setProcessingPayment(null);
     }, 1500);
@@ -159,10 +164,10 @@ export function PaymentLinkManager() {
     const linkRef = doc(firestore, 'users', user.uid, 'payment_links', id);
     const publicLinkRef = doc(firestore, 'payment_links', seal);
     
-    deleteDoc(linkRef).catch(async () => {});
-    deleteDoc(publicLinkRef).catch(async () => {});
+    deleteDoc(linkRef).catch(() => {});
+    deleteDoc(publicLinkRef).catch(() => {});
     
-    toast({ title: "Link Deactivated", description: "Marketplace route severed." });
+    toast({ title: "Link Deactivated", description: "পেমেন্ট রুট বন্ধ করা হয়েছে।" });
   };
 
   return (
@@ -174,7 +179,7 @@ export function PaymentLinkManager() {
               <ShoppingBag className="h-4 w-4" />
               Generate Checkout Link
             </CardTitle>
-            <CardDescription className="text-[10px]">Create an integration link for your product or service.</CardDescription>
+            <CardDescription className="text-[10px]">আপনার পণ্যের জন্য একটি স্থায়ী পেমেন্ট লিঙ্ক তৈরি করুন।</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -219,7 +224,7 @@ export function PaymentLinkManager() {
                   <LinkIcon className="h-4 w-4 text-primary" />
                   Active Sales Corridors
                </CardTitle>
-               <Badge variant="outline" className="text-[8px] border-white/10 opacity-50">SYNC_ACTIVE</Badge>
+               <Badge variant="outline" className="text-[8px] border-white/10 opacity-50">GLOBAL_SYNC</Badge>
             </div>
           </CardHeader>
           <CardContent className="p-0 flex-1">
@@ -269,7 +274,7 @@ export function PaymentLinkManager() {
                                   disabled={processingPayment === link.id}
                                 >
                                    {processingPayment === link.id ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <ExternalLink className="h-3 w-3 mr-1.5" />}
-                                   Test Local
+                                   Test Payment
                                 </Button>
                                 <Button 
                                   variant="ghost" 

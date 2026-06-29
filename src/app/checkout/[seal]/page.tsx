@@ -28,10 +28,10 @@ export default function CheckoutPage() {
   const { seal } = useParams();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
 
+  // Read directly from the public registry for global availability
   const linkRef = useMemo(() => firestore ? doc(firestore, 'payment_links', seal as string) : null, [firestore, seal]);
   const { data: link, loading } = useDoc<any>(linkRef);
 
@@ -40,37 +40,40 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
     try {
-      // 1. Update public link status
-      await updateDoc(linkRef!, { status: 'PAID', paidAt: Date.now() });
+      const timestamp = Date.now();
+      const updateData = { status: 'PAID', paidAt: timestamp };
 
-      // 2. Update user's private link status
+      // 1. Update public link status
+      await updateDoc(linkRef!, updateData);
+
+      // 2. Update seller's private link status
       const userLinkRef = doc(firestore, 'users', link.creatorId, 'payment_links', link.id);
-      await updateDoc(userLinkRef, { status: 'PAID', paidAt: Date.now() });
+      await updateDoc(userLinkRef, updateData);
 
       // 3. Increment seller's balance
       const sellerRef = doc(firestore, 'users', link.creatorId);
       await updateDoc(sellerRef, { balance: increment(link.amount) });
 
-      // 4. Send notification to seller
+      // 4. Send directive notification to seller for delivery
       const notifRef = collection(firestore, 'users', link.creatorId, 'notifications');
       await addDoc(notifRef, {
         title: "Product Sold",
-        message: `Received $${link.amount} for "${link.description}"`,
+        message: `"${link.description}" এর জন্য $${link.amount} পেমেন্ট সম্পন্ন হয়েছে। পণ্যটি ডেলিভারির জন্য প্রস্তুত করুন।`,
         type: 'DIRECTIVE',
         read: false,
-        timestamp: Date.now()
+        timestamp: timestamp
       });
 
       setIsPaid(true);
       toast({
         title: "Payment Successful",
-        description: "Transaction confirmed on the Sovereign Mesh.",
+        description: "ট্রানজ্যাকশন সফলভাবে সম্পন্ন হয়েছে। বিক্রেতাকে জানানো হয়েছে।",
       });
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Payment Failed",
-        description: "Could not establish secure settlement corridor.",
+        description: "পেমেন্ট সম্পন্ন করা সম্ভব হয়নি। কার্নেল কানেকশন চেক করুন।",
       });
     } finally {
       setIsProcessing(false);
@@ -94,7 +97,7 @@ export default function CheckoutPage() {
         </div>
         <div className="space-y-2">
           <h1 className="text-2xl font-headline font-bold uppercase">Invalid Route</h1>
-          <p className="text-sm text-muted-foreground italic max-w-xs">The requested payment corridor does not exist or has been severed.</p>
+          <p className="text-sm text-muted-foreground italic max-w-xs">এই পেমেন্ট করিডোরটি পাওয়া যায়নি। এটি ডিলিট বা ডিঅ্যাক্টিভেট করা হতে পারে।</p>
         </div>
         <Button asChild variant="outline" className="border-white/10 uppercase text-[10px] font-bold">
            <Link href="/"><ChevronLeft className="mr-2 h-4 w-4" /> Return to Mesh</Link>
@@ -117,7 +120,7 @@ export default function CheckoutPage() {
           <span className="font-headline font-bold text-xl uppercase italic text-white tracking-tighter">Sovereign OS</span>
         </div>
         <Badge variant="outline" className="border-accent/20 text-accent text-[10px] font-mono">
-          SECURE_PIS_GATEWAY
+          SECURE_GATEWAY_v1.2
         </Badge>
       </nav>
 
@@ -174,7 +177,7 @@ export default function CheckoutPage() {
                 <Button 
                   className="w-full h-14 bg-accent text-background font-bold text-base uppercase tracking-widest cyan-glow group"
                   onClick={handlePay}
-                  disabled={isProcessing}
+                  disabled={isProcessing || link.status === 'PAID'}
                 >
                    {isProcessing ? (
                      <Loader2 className="h-5 w-5 animate-spin" />
@@ -191,7 +194,7 @@ export default function CheckoutPage() {
                   <div className="space-y-2">
                     <h3 className="text-xl font-bold text-white uppercase italic">Funds Received</h3>
                     <p className="text-xs text-muted-foreground italic max-w-xs mx-auto leading-relaxed">
-                      Your payment has been successfully settled via the Anycast Mesh. The merchant has been notified.
+                      আপনার পেমেন্ট সফলভাবে বিক্রেতার অ্যাকাউন্টে জমা হয়েছে। বিক্রেতা পণ্য ডেলিভারির জন্য প্রস্তুত হচ্ছেন।
                     </p>
                   </div>
                   <div className="p-4 rounded-xl bg-black/40 border border-white/5 font-mono text-[10px] space-y-1">
