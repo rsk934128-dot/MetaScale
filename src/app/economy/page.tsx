@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -30,7 +31,9 @@ import {
   BarChart4,
   HardDriveDownload,
   AlertTriangle,
-  BrainCircuit
+  BrainCircuit,
+  Save,
+  CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +53,17 @@ import { simulateTrustEconomy } from "@/ai/flows/economy-simulator";
 import { analyzeLiquidityDrift } from "@/ai/flows/liquidity-drift-analysis";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useKernel } from "@/components/kernel/KernelProvider";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
 
 const stabilityData = [
   { time: "00:00", micro: 88, meso: 82, macro: 90 },
@@ -82,7 +96,15 @@ export default function Project45EconomyPage() {
   const [result, setResult] = useState<any>(null);
   const [driftResult, setDriftResult] = useState<any>(null);
   const [reserveBalance, setReserveBalance] = useState(125000);
+  
+  // Dynamic Recycle Rate State
+  const [recycleRate, setRecycleRate] = useState(42.5);
+  const [tempRate, setTempRate] = useState(42.5);
+  const [isAdjustingRecycle, setIsAdjustingRecycle] = useState(false);
+  const [isSavingRecycle, setIsSavingRecycle] = useState(false);
+
   const { toast } = useToast();
+  const { emitEvent } = useKernel();
 
   const handleRunSimulation = async () => {
     setIsSimulating(true);
@@ -156,6 +178,26 @@ export default function Project45EconomyPage() {
     }, 1500);
   };
 
+  const handleConfirmRecycleRate = () => {
+    setIsSavingRecycle(true);
+    
+    emitEvent('FINANCE', 'YIELD_RECYCLE_ADJUSTED', 2, { 
+      oldRate: recycleRate, 
+      newRate: tempRate,
+      node: 'GLOBAL_MESH'
+    });
+
+    setTimeout(() => {
+      setRecycleRate(tempRate);
+      setIsSavingRecycle(false);
+      setIsAdjustingRecycle(false);
+      toast({
+        title: "Recycle Policy Updated",
+        description: `New yield recycling rate set to ${tempRate}% for all nodes.`,
+      });
+    }, 1200);
+  };
+
   return (
     <div className="flex min-h-screen">
       <AppSidebar />
@@ -202,8 +244,8 @@ export default function Project45EconomyPage() {
                 <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Recycled Yield</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="text-3xl font-bold text-white">42.5%</div>
-                <Progress value={42.5} className="h-1 mt-2 bg-accent/10 [&>div]:bg-accent" />
+                <div className="text-3xl font-bold text-white">{recycleRate}%</div>
+                <Progress value={recycleRate} className="h-1 mt-2 bg-accent/10 [&>div]:bg-accent" />
                 <p className="text-[9px] text-muted-foreground mt-2 uppercase tracking-tighter">P45 Policy: Active Recycle</p>
               </CardContent>
             </Card>
@@ -348,10 +390,16 @@ export default function Project45EconomyPage() {
                           <HardDriveDownload className="h-3 w-3" /> Liquidity Recycling
                        </p>
                        <p className="text-[10px] text-white/90 leading-relaxed italic">
-                          "Currently recycling 42.5% of transaction yield into Node-04 expansion and liquidity pools."
+                          "Currently recycling {recycleRate}% of transaction yield into Node-04 expansion and liquidity pools."
                        </p>
                     </div>
-                    <Button className="w-full h-10 bg-accent text-background font-bold text-[10px] uppercase tracking-widest cyan-glow">
+                    <Button 
+                      className="w-full h-10 bg-accent text-background font-bold text-[10px] uppercase tracking-widest cyan-glow"
+                      onClick={() => {
+                        setTempRate(recycleRate);
+                        setIsAdjustingRecycle(true);
+                      }}
+                    >
                        Adjust Recycle Rate
                     </Button>
                   </div>
@@ -416,6 +464,83 @@ export default function Project45EconomyPage() {
            </p>
         </footer>
       </SidebarInset>
+
+      {/* Adjust Recycle Rate Dialog */}
+      <Dialog open={isAdjustingRecycle} onOpenChange={setIsAdjustingRecycle}>
+        <DialogContent className="glass-panel border-accent/20 bg-background/95 p-0 overflow-hidden sm:max-w-md">
+          <div className="bg-accent/10 p-6 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-accent/20">
+                <HardDriveDownload className="h-6 w-6 text-accent" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-headline italic uppercase tracking-tighter">Fiscal Recycle Policy</DialogTitle>
+                <DialogDescription className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Adjust Global Yield Recycling Threshold</DialogDescription>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-8 space-y-8">
+            <div className="space-y-4">
+              <div className="flex justify-between items-end">
+                <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Recycle Rate (%)</Label>
+                <span className="text-3xl font-headline font-bold text-accent">{tempRate}%</span>
+              </div>
+              <Slider 
+                value={[tempRate]} 
+                onValueChange={(v) => setTempRate(v[0])} 
+                max={100} 
+                step={0.5} 
+                className="py-4"
+              />
+              <div className="flex justify-between text-[9px] text-muted-foreground font-mono">
+                <span>0% MIN</span>
+                <span>100% MAX (FULL REINVESTMENT)</span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-2">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-white uppercase">
+                <ShieldCheck className="h-3.5 w-3.5 text-accent" />
+                Policy Impact Analysis
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed italic">
+                Increasing the rate to {tempRate}% will prioritize node expansion and liquidity depth over immediate profit distribution.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                variant="ghost" 
+                className="flex-1 text-xs font-bold uppercase"
+                onClick={() => setIsAdjustingRecycle(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1 bg-accent text-background font-bold uppercase text-xs cyan-glow"
+                onClick={handleConfirmRecycleRate}
+                disabled={isSavingRecycle}
+              >
+                {isSavingRecycle ? (
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Authorize Policy
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter className="bg-secondary/30 p-4 border-t border-white/5 justify-center">
+             <div className="flex items-center gap-2 opacity-40">
+                <Lock className="h-3 w-3 text-accent" />
+                <span className="text-[8px] uppercase font-bold tracking-widest">Kernel Authorization Required</span>
+             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
