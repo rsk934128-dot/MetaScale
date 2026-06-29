@@ -1,7 +1,8 @@
+
 'use server';
 /**
  * @fileOverview Project 43: AI Syntax Architect.
- * Converts natural language directives into Sovereign OS deterministic commands.
+ * Converts natural language directives into Sovereign OS deterministic commands and SDK snippets.
  */
 
 import { ai } from '@/ai/genkit';
@@ -13,10 +14,10 @@ const SyntaxInputSchema = z.object({
 });
 
 const SyntaxOutputSchema = z.object({
-  syntax: z.string().describe('The generated system command or configuration snippet.'),
-  explanation: z.string().describe('Explanation of the generated syntax.'),
-  safetyCheck: z.boolean().describe('Whether the syntax passed internal safety protocols.'),
-  complexity: z.number().min(1).max(10),
+  syntax: z.string().describe('The generated system command, configuration snippet, or SDK code block.'),
+  explanation: z.string().describe('Detailed technical explanation of what the code executes.'),
+  safetyCheck: z.boolean().describe('True if it complies with NoorNexus safety standards.'),
+  complexity: z.number().min(1).max(10).describe('Risk and logic complexity (1-10).'),
 });
 
 export async function architectSyntax(input: z.infer<typeof SyntaxInputSchema>) {
@@ -27,16 +28,25 @@ const syntaxPrompt = ai.definePrompt({
   name: 'syntaxPrompt',
   input: { schema: SyntaxInputSchema },
   output: { schema: SyntaxOutputSchema },
-  prompt: `You are the Project 43 AI Syntax Architect for Sovereign OS.
-Your task is to convert human intentions into formal system commands for the {{{targetPlane}}} plane.
+  prompt: `You are the Project 43 AI Syntax Architect for NoorNexus Sovereign OS.
+Your core mission is to convert human intentions into formal, deterministic system commands or SDK snippets.
 
-INTENTION: {{{intention}}}
+CONTEXT:
+Target Plane: {{{targetPlane}}}
+Intention: {{{intention}}}
 
-Guidelines:
-1. Ensure the syntax is deterministic and follows the Sovereign Shell (S-Shell) standards.
-2. Provide a clear, technical explanation of what this command will execute.
-3. Perform a safety check to ensure it doesn't violate core kernel stability.
-4. Assign a complexity score (1-10) based on the execution risk.`,
+RULES:
+1. If the intention asks for code (SDK), provide a clean implementation including HMAC SHA-256 calculation if relevant.
+2. If it's a CLI command, use S-Shell (Sovereign Shell) standards (e.g., nn-cli --command).
+3. Ensure the syntax is error-free and follows ISO 20022 messaging logic for FINANCE.
+4. Perform a kernel-level safety check. If the command involves critical disbursement or lockdown, flag the complexity higher.
+5. Support multiple languages like Python, Go, and Node.js if the intention implies an integration.
+
+GENERATE:
+- Syntax (The Code/Command)
+- Explanation (Technical summary)
+- Safety Check (Boolean)
+- Complexity (Score)`,
 });
 
 const aiSyntaxArchitectFlow = ai.defineFlow(
