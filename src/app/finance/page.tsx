@@ -26,7 +26,8 @@ import {
   Plus,
   ArrowUpRight,
   TrendingDown,
-  Activity
+  Activity,
+  Link as LinkIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,7 @@ import { Progress } from "@/components/ui/progress";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BankSandboxModal } from "@/components/finance/BankSandboxModal";
+import { PaymentLinkManager } from "@/components/finance/PaymentLinkManager";
 
 export default function FinancialIntelligence() {
   const { mode, emitEvent } = useKernel();
@@ -218,99 +220,114 @@ export default function FinancialIntelligence() {
                  </Card>
               </div>
 
-              <Card className="glass-panel border-l-4 border-l-accent overflow-hidden">
-                <CardHeader className="p-4 md:p-6 bg-accent/5">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-sm md:text-base flex items-center gap-2">
-                        <Send className="h-4 w-4 text-accent" />
-                        Multi-Rail Settlement System (PIS)
-                      </CardTitle>
-                      <CardDescription className="text-[10px] uppercase font-bold tracking-widest mt-1">Bank Integration Testbed</CardDescription>
-                    </div>
-                    <Badge variant="outline" className="text-[8px] bg-background">v1.2 Stable</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 md:p-6 space-y-6">
-                  <div className="space-y-3">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">1. Select Disbursement Rail</Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <Button 
-                        variant={gateway === 'PAYPAL' ? 'default' : 'outline'} 
-                        size="sm" 
-                        onClick={() => setGateway('PAYPAL')}
-                        disabled={isProcessing}
-                        className={gateway === 'PAYPAL' ? 'bg-accent text-background' : 'text-[10px] h-9'}
-                      >
-                        PayPal REST v1
-                      </Button>
-                      <Button 
-                        variant={gateway === 'PRIYO_PAY' ? 'default' : 'outline'} 
-                        size="sm" 
-                        onClick={() => setGateway('PRIYO_PAY')}
-                        disabled={isProcessing}
-                        className={gateway === 'PRIYO_PAY' ? 'bg-accent text-background' : 'text-[10px] h-9'}
-                      >
-                        Priyo Pay Direct
-                      </Button>
-                      <Button 
-                        variant={gateway === 'PAYONEER' ? 'default' : 'outline'} 
-                        size="sm" 
-                        onClick={() => setGateway('PAYONEER')}
-                        disabled={isProcessing}
-                        className={gateway === 'PAYONEER' ? 'bg-accent text-background' : 'text-[10px] h-9'}
-                      >
-                        Payoneer (EU PIS)
-                      </Button>
-                    </div>
-                  </div>
+              <Tabs defaultValue="settlement" className="space-y-6">
+                <TabsList className="bg-secondary/50 border border-white/5 w-full justify-start md:w-auto p-1 h-auto flex flex-wrap">
+                  <TabsTrigger value="settlement" className="data-[state=active]:bg-accent data-[state=active]:text-background text-[10px] uppercase font-bold tracking-widest px-6 h-10">Multi-Rail PIS</TabsTrigger>
+                  <TabsTrigger value="links" className="data-[state=active]:bg-accent data-[state=active]:text-background text-[10px] uppercase font-bold tracking-widest px-6 h-10 flex items-center gap-2">
+                    <LinkIcon className="h-3 w-3" /> Payment Links
+                  </TabsTrigger>
+                </TabsList>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">2. Recipient Identity</Label>
-                      <Input 
-                        placeholder="Email or SSFN-ITP ID" 
-                        className="h-10 text-xs bg-secondary/30 border-white/5 focus:border-accent/50"
-                        value={recipient}
-                        onChange={(e) => setRecipient(e.target.value)}
-                        disabled={isProcessing}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">3. Amount (USD Equivalent)</Label>
-                      <Input 
-                        type="number" 
-                        placeholder="0.00" 
-                        className="h-10 text-xs bg-secondary/30 border-white/5 focus:border-accent/50"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        disabled={isProcessing}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {isProcessing && (
-                      <div className="space-y-2 animate-pulse">
-                        <div className="flex justify-between text-[9px] font-bold text-accent uppercase tracking-widest">
-                          <span>Executing Kernel Pulse...</span>
-                          <span>{validationStep}%</span>
+                <TabsContent value="settlement" className="space-y-6">
+                  <Card className="glass-panel border-l-4 border-l-accent overflow-hidden">
+                    <CardHeader className="p-4 md:p-6 bg-accent/5">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-sm md:text-base flex items-center gap-2">
+                            <Send className="h-4 w-4 text-accent" />
+                            Multi-Rail Settlement System (PIS)
+                          </CardTitle>
+                          <CardDescription className="text-[10px] uppercase font-bold tracking-widest mt-1">Bank Integration Testbed</CardDescription>
                         </div>
-                        <Progress value={validationStep} className="h-1 bg-accent/10 [&>div]:bg-accent" />
+                        <Badge variant="outline" className="text-[8px] bg-background">v1.2 Stable</Badge>
                       </div>
-                    )}
-                    
-                    <Button 
-                      className={`w-full text-xs font-bold h-10 transition-all ${isThrottled ? 'bg-secondary' : 'bg-accent text-background cyan-glow'}`}
-                      onClick={handlePayout}
-                      disabled={isProcessing || isThrottled}
-                    >
-                      {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                      {isThrottled ? 'Kernel Throttled' : `Initiate ${gateway} Test`}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardHeader>
+                    <CardContent className="p-4 md:p-6 space-y-6">
+                      <div className="space-y-3">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">1. Select Disbursement Rail</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <Button 
+                            variant={gateway === 'PAYPAL' ? 'default' : 'outline'} 
+                            size="sm" 
+                            onClick={() => setGateway('PAYPAL')}
+                            disabled={isProcessing}
+                            className={gateway === 'PAYPAL' ? 'bg-accent text-background' : 'text-[10px] h-9'}
+                          >
+                            PayPal REST v1
+                          </Button>
+                          <Button 
+                            variant={gateway === 'PRIYO_PAY' ? 'default' : 'outline'} 
+                            size="sm" 
+                            onClick={() => setGateway('PRIYO_PAY')}
+                            disabled={isProcessing}
+                            className={gateway === 'PRIYO_PAY' ? 'bg-accent text-background' : 'text-[10px] h-9'}
+                          >
+                            Priyo Pay Direct
+                          </Button>
+                          <Button 
+                            variant={gateway === 'PAYONEER' ? 'default' : 'outline'} 
+                            size="sm" 
+                            onClick={() => setGateway('PAYONEER')}
+                            disabled={isProcessing}
+                            className={gateway === 'PAYONEER' ? 'bg-accent text-background' : 'text-[10px] h-9'}
+                          >
+                            Payoneer (EU PIS)
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">2. Recipient Identity</Label>
+                          <Input 
+                            placeholder="Email or SSFN-ITP ID" 
+                            className="h-10 text-xs bg-secondary/30 border-white/5 focus:border-accent/50"
+                            value={recipient}
+                            onChange={(e) => setRecipient(e.target.value)}
+                            disabled={isProcessing}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">3. Amount (USD Equivalent)</Label>
+                          <Input 
+                            type="number" 
+                            placeholder="0.00" 
+                            className="h-10 text-xs bg-secondary/30 border-white/5 focus:border-accent/50"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            disabled={isProcessing}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        {isProcessing && (
+                          <div className="space-y-2 animate-pulse">
+                            <div className="flex justify-between text-[9px] font-bold text-accent uppercase tracking-widest">
+                              <span>Executing Kernel Pulse...</span>
+                              <span>{validationStep}%</span>
+                            </div>
+                            <Progress value={validationStep} className="h-1 bg-accent/10 [&>div]:bg-accent" />
+                          </div>
+                        )}
+                        
+                        <Button 
+                          className={`w-full text-xs font-bold h-10 transition-all ${isThrottled ? 'bg-secondary' : 'bg-accent text-background cyan-glow'}`}
+                          onClick={handlePayout}
+                          disabled={isProcessing || isThrottled}
+                        >
+                          {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+                          {isThrottled ? 'Kernel Throttled' : `Initiate ${gateway} Test`}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="links">
+                  <PaymentLinkManager />
+                </TabsContent>
+              </Tabs>
 
               {lastPayout && (
                 <Card className="glass-panel border-white/10 animate-fade-in">

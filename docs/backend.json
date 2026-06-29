@@ -18,6 +18,21 @@
       },
       "required": ["uid", "email", "kernelId"]
     },
+    "PaymentLink": {
+      "title": "Sovereign Payment Link",
+      "description": "A cryptographically signed link for requesting funds.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "amount": { "type": "number" },
+        "currency": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["ACTIVE", "PAID", "EXPIRED"] },
+        "seal": { "type": "string" },
+        "createdAt": { "type": "number" }
+      }
+    },
     "TINCertificate": {
       "title": "TIN Certificate",
       "description": "Taxpayer Identification Number data for civic compliance.",
@@ -129,6 +144,7 @@
   "firestore": {
     "/users/{userId}": { "schema": "UserProfile", "description": "Extended user profile information." },
     "/users/{userId}/notifications": { "schema": "Notification", "description": "User specific real-time alerts." },
+    "/users/{userId}/payment_links": { "schema": "PaymentLink", "description": "User generated payment request links." },
     "/users/{userId}/media_tasks": { "schema": "MediaTask", "description": "User specific media extraction tasks." },
     "/verification_docs/{docId}": { "schema": "VerificationDocument", "description": "Pending compliance documents." },
     "/system/control": { "schema": "SystemControlState", "description": "Global OS mode state." },
