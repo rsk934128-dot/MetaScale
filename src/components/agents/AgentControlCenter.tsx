@@ -77,29 +77,30 @@ export function AgentControlCenter() {
   const router = useRouter();
 
   const handleToggleAgent = (agentId: string) => {
-    setAgents(prev => prev.map(agent => {
-      if (agent.id === agentId) {
-        const isCurrentlyActive = agent.status === 'Active';
-        const nextStatus = isCurrentlyActive ? 'Paused' : 'Active';
-        
-        // Emit high-clearance security event
-        emitEvent('SECURITY', isCurrentlyActive ? 'AGENT_HALTED' : 'AGENT_RESUMED', 2, { 
-          agentId, 
-          agentName: agent.name,
-          priority: 'CRITICAL',
-          timestamp: Date.now()
-        });
+    const agentToToggle = agents.find(a => a.id === agentId);
+    if (!agentToToggle) return;
 
-        toast({
-          title: isCurrentlyActive ? "Agent Paused" : "Agent Resumed",
-          description: `${agent.name} is now ${nextStatus.toLowerCase()}.`,
-          variant: isCurrentlyActive ? "destructive" : "default",
-        });
+    const isCurrentlyActive = agentToToggle.status === 'Active';
+    const nextStatus = isCurrentlyActive ? 'Paused' : 'Active';
 
-        return { ...agent, status: nextStatus };
-      }
-      return agent;
-    }));
+    // 1. Perform side effects outside the state updater
+    emitEvent('SECURITY', isCurrentlyActive ? 'AGENT_HALTED' : 'AGENT_RESUMED', 2, { 
+      agentId, 
+      agentName: agentToToggle.name,
+      priority: 'CRITICAL',
+      timestamp: Date.now()
+    });
+
+    toast({
+      title: isCurrentlyActive ? "Agent Paused" : "Agent Resumed",
+      description: `${agentToToggle.name} is now ${nextStatus.toLowerCase()}.`,
+      variant: isCurrentlyActive ? "destructive" : "default",
+    });
+
+    // 2. Pure state update
+    setAgents(prev => prev.map(agent => 
+      agent.id === agentId ? { ...agent, status: nextStatus } : agent
+    ));
   };
 
   const handleViewLogs = (agentName: string) => {
@@ -140,8 +141,7 @@ export function AgentControlCenter() {
   };
 
   const handleHaltAll = () => {
-    setAgents(prev => prev.map(agent => ({ ...agent, status: 'Paused' })));
-    
+    // Side effects first
     emitEvent('SECURITY', 'CLUSTER_EMERGENCY_HALT', 1, { 
       reason: 'MANUAL_OVERRIDE',
       timestamp: Date.now(),
@@ -153,6 +153,9 @@ export function AgentControlCenter() {
       title: "EMERGENCY HALT EXECUTED",
       description: "All cluster agents have been forcefully paused by direct directive.",
     });
+
+    // Then update state
+    setAgents(prev => prev.map(agent => ({ ...agent, status: 'Paused' })));
   };
 
   return (
