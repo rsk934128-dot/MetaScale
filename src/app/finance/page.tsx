@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -18,7 +19,8 @@ import {
   ShieldCheck,
   Search,
   ShoppingBag,
-  TrendingUp
+  TrendingUp,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +61,7 @@ export default function FinancialIntelligence() {
   const [targetAccount, setTargetAccount] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
   const [isTransferring, setIsTransferring] = useState(false);
+  const [isToppingUp, setIsToppingUp] = useState(false);
   
   // Sandbox State
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
@@ -117,6 +120,35 @@ export default function FinancialIntelligence() {
     toast({ title: "Bank Linked", description: "Identity bound to institution." });
   };
 
+  const handleTopUp = async (amount: number) => {
+    if (!userRef || !connectedAccount) return;
+    
+    setIsToppingUp(true);
+    emitEvent('FINANCE', 'TREASURY_TOP_UP_INITIATED', 2, { amount, source: connectedAccount.bankName });
+
+    try {
+      // 1. Deduct from external simulated bank
+      setConnectedAccount((prev: any) => ({
+        ...prev,
+        balance: prev.balance - amount
+      }));
+
+      // 2. Add to Sovereign balance
+      await updateDoc(userRef, { balance: increment(amount) });
+
+      emitEvent('FINANCE', 'TREASURY_SYNC_SUCCESS', 2, { amount, type: 'DEPOSIT' });
+      
+      toast({
+        title: "Deposit Successful",
+        description: `$${amount} has been pulled from ${connectedAccount.bankName} to Mesh balance.`,
+      });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Deposit Failed", description: "Kernel sync interrupted." });
+    } finally {
+      setIsToppingUp(false);
+    }
+  };
+
   const isThrottled = mode === 'LOCKDOWN' || mode === 'EMERGENCY';
 
   return (
@@ -168,16 +200,32 @@ export default function FinancialIntelligence() {
 
              <Card className="glass-panel border-l-4 border-l-primary lg:col-span-2 overflow-hidden h-full">
                 <CardHeader className="pb-2 p-4">
-                  <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Linked Institution (AIS)</CardTitle>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Linked Institution (AIS)</CardTitle>
+                    {connectedAccount && (
+                      <Badge className="bg-primary/20 text-primary text-[8px] font-mono">SYNC_OK</Badge>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="p-4 flex flex-col justify-center min-h-[100px]">
                    {connectedAccount ? (
-                     <div className="flex justify-between items-center">
+                     <div className="flex justify-between items-center gap-4">
                         <div>
                           <p className="text-2xl font-headline font-bold text-white">${connectedAccount.balance.toLocaleString()}</p>
-                          <p className="text-[9px] text-muted-foreground uppercase">{connectedAccount.bankName}</p>
+                          <p className="text-[9px] text-muted-foreground uppercase">{connectedAccount.bankName} - {connectedAccount.accountNumber}</p>
                         </div>
-                        <Badge className="bg-primary/20 text-primary">SYNC_OK</Badge>
+                        <div className="flex flex-col gap-2 shrink-0">
+                           <Button 
+                             size="sm" 
+                             className="bg-primary text-primary-foreground font-bold text-[10px] h-8 px-4"
+                             onClick={() => handleTopUp(1000)}
+                             disabled={isToppingUp || connectedAccount.balance < 1000}
+                           >
+                              {isToppingUp ? <RefreshCw className="mr-1 h-3 w-3 animate-spin" /> : <Download className="mr-1 h-3 w-3" />}
+                              Deposit $1,000
+                           </Button>
+                           <Button variant="ghost" className="text-[8px] uppercase font-bold h-6" onClick={() => setConnectedAccount(null)}>Disconnect</Button>
+                        </div>
                      </div>
                    ) : (
                      <Button variant="ghost" className="text-[10px] font-bold text-primary hover:bg-primary/10 h-12 border border-dashed border-primary/20 w-full" onClick={() => setIsSandboxOpen(true)}>
