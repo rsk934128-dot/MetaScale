@@ -47,6 +47,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState('');
+  const [activeTab, setActiveTab] = useState('login');
 
   // Form States
   const [email, setEmail] = useState('');
@@ -96,8 +97,6 @@ export default function LoginPage() {
         router.replace('/dashboard');
       }
     } catch (error: any) {
-      console.error("Google Auth Error:", error);
-      
       let errorDesc = "Authentication sequence interrupted.";
       
       if (error.code === 'auth/operation-not-allowed') {
@@ -121,7 +120,7 @@ export default function LoginPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !name) {
-      toast({ variant: "destructive", title: "Incomplete Data", description: "Please fill all required fields." });
+      toast({ variant: "destructive", title: "Incomplete Data", description: "সবগুলো ঘর সঠিকভাবে পূরণ করুন।" });
       return;
     }
     setIsLoading(true);
@@ -153,7 +152,11 @@ export default function LoginPage() {
       toast({ title: isAdmin ? "Admin Protocol Active" : "Protocol Established", description: isAdmin ? "Root privileges granted." : "Kernel identity created successfully." });
       router.replace('/dashboard');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Registration Blocked", description: error.message });
+      let msg = "রেজিস্ট্রেশন ব্যর্থ হয়েছে।";
+      if (error.code === 'auth/email-already-in-use') msg = "এই ইমেইলটি অলরেডি ব্যবহার করা হয়েছে। লগইন করার চেষ্টা করুন।";
+      else if (error.code === 'auth/weak-password') msg = "পাসওয়ার্ডটি অন্তত ৬ অক্ষরের হতে হবে।";
+      
+      toast({ variant: "destructive", title: "Registration Blocked", description: msg });
     } finally {
       setIsLoading(false);
     }
@@ -161,13 +164,30 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) {
+      toast({ variant: "destructive", title: "Missing Fields", description: "ইমেইল এবং পাসওয়ার্ড প্রদান করুন।" });
+      return;
+    }
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: "Access Granted", description: "Deterministic link established." });
       router.replace('/dashboard');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Auth Failure", description: "Invalid credentials or unauthorized access." });
+      let msg = "লগইন করা সম্ভব হয়নি।";
+      let title = "Auth Failure";
+
+      if (error.code === 'auth/user-not-found') {
+        msg = "এই ইমেইলে কোনো একাউন্ট পাওয়া যায়নি। দয়া করে রেজিস্ট্রেশন করুন।";
+        title = "User Not Found";
+      } else if (error.code === 'auth/wrong-password') {
+        msg = "ভুল পাসওয়ার্ড দিয়েছেন। আবার চেষ্টা করুন।";
+        title = "Incorrect Password";
+      } else if (error.code === 'auth/invalid-credential') {
+        msg = "আপনার দেওয়া ইমেইল বা পাসওয়ার্ড সঠিক নয়।";
+      }
+
+      toast({ variant: "destructive", title, description: msg });
     } finally {
       setIsLoading(false);
     }
@@ -219,7 +239,7 @@ export default function LoginPage() {
         <Card className="w-full max-w-lg glass-panel border-white/10 shadow-2xl overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary animate-pulse" />
           
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-secondary/30 rounded-none border-b border-white/5 h-14">
               <TabsTrigger value="login" className="data-[state=active]:bg-accent/10 data-[state=active]:text-accent uppercase text-[10px] font-bold tracking-widest">Sign In</TabsTrigger>
               <TabsTrigger value="register" className="data-[state=active]:bg-accent/10 data-[state=active]:text-accent uppercase text-[10px] font-bold tracking-widest">Register</TabsTrigger>
