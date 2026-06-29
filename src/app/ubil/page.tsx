@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -34,7 +33,8 @@ import {
   Milestone,
   FolderArchive,
   HeartPulse,
-  Radar
+  Radar,
+  ShieldHalf
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,8 +72,9 @@ export default function UBILMainframePage() {
     const timer = setTimeout(() => {
       setLogs(prev => [
         "> System Status: Projects 42-44 verified in Knowledge Bank.",
-        "> Project 45 (Eco Governance) rails identified.",
+        "> Project 45 (Eco Governance) rails identified and active.",
         "> Amex UK Node status: PERMANENT_VERIFIED.",
+        "> Fiscal Recycler: Active (Recycling 42.5% Yield)",
         "> Ready for Global Health & Integrity Check...",
         ...prev
       ]);
@@ -96,6 +97,7 @@ export default function UBILMainframePage() {
       { msg: "> Validating Project 42 (Bank Connectivity)... OK (100% Nodes)", delay: 600 },
       { msg: "> Validating Project 43 (Syntax Logic)... OK (SDK v1.2 Ready)", delay: 600 },
       { msg: "> Validating Project 44 (Data Enrichment)... OK (92.4% Density)", delay: 600 },
+      { msg: "> Checking Project 45 (Eco Governance)... OK (Yield Recycle Active)", delay: 800 },
       { msg: "> Stress Testing Smart Router... OK (27.5ms Avg Latency)", delay: 800 },
       { msg: "> Checking Forensic Security Seals... OK (0x82 Protocol Guard)", delay: 600 },
       { msg: "! FINAL STATUS: SYSTEM INTEGRITY 100% - SOVEREIGN GRID SECURE", delay: 1000 }
@@ -107,7 +109,7 @@ export default function UBILMainframePage() {
     }
 
     setIsHealthChecking(false);
-    toast({ title: "Global Health Check PASSED", description: "All operational planes are in OPTIMAL state." });
+    toast({ title: "Global Health Check PASSED", description: "All operational planes including P45 are in OPTIMAL state." });
   };
 
   const dispatchSimulation = async () => {
@@ -222,7 +224,7 @@ export default function UBILMainframePage() {
 
     setIsTestRunning(false);
     setShowIntegrityReport(true);
-    setLogs(prev => [`> Project 42 Integrity Report: 100% SUCCESS ARCHIVED.`, ...prev]);
+    setLogs(prev => [`> Project 42-45 Integrity Report: 100% SUCCESS ARCHIVED.`, ...prev]);
     toast({ title: "Test Trigger Script Complete" });
   };
 
@@ -254,7 +256,7 @@ export default function UBILMainframePage() {
                 onClick={runGlobalHealthCheck}
                 disabled={isHealthChecking}
              >
-                {isHealthChecking ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <HeartPulse className="mr-2 h-3 w-3" />}
+                {isHealthChecking ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <ShieldHalf className="mr-2 h-3 w-3" />}
                 Global Health Check
              </Button>
              <Button 
@@ -289,7 +291,7 @@ export default function UBILMainframePage() {
                         <ShieldCheck className="h-8 w-8" />
                      </div>
                      <div>
-                        <CardTitle className="text-xl font-headline italic uppercase tracking-tighter text-white">Final Integrity Report: Sheikh Code Exchange (Project 42)</CardTitle>
+                        <CardTitle className="text-xl font-headline italic uppercase tracking-tighter text-white">Full Grid Integrity Report (P42-P45)</CardTitle>
                         <p className="text-[10px] uppercase font-bold tracking-[0.4em] text-green-500 mt-1">DETERMINISTIC_FINALITY: ACHIEVED</p>
                      </div>
                   </div>
@@ -299,7 +301,7 @@ export default function UBILMainframePage() {
                      {[
                         { label: "Success Rate", val: "100%", icon: CheckCircle2 },
                         { label: "Avg Latency", val: "27.5ms", icon: Zap },
-                        { label: "Security", val: "AUTHENTIC", icon: Lock },
+                        { label: "Eco Governance", val: "ACTIVE", icon: ShieldHalf },
                         { label: "Nodes Sync", val: "14,200", icon: Globe },
                         { label: "Sovereignty", val: "MIL-SPEC", icon: ShieldCheck }
                      ].map((s, i) => (
@@ -312,7 +314,7 @@ export default function UBILMainframePage() {
                      ))}
                   </div>
                   <div className="mt-6 p-4 rounded-xl bg-secondary/20 border border-white/10 text-[11px] text-white/80 italic leading-relaxed">
-                    "Amex UK node successfully integrated via Project 42 protocol. Smart Routing optimized. Full 14k bank directory is now accessible through Sovereign UBIL rales."
+                    "Project 45 Eco Governance is now recycling 42.5% of yield. All nodes reporting optimal profitability. AML/CFT Screening is active across the 42-node mesh."
                   </div>
                </CardContent>
             </Card>
@@ -462,7 +464,7 @@ export default function UBILMainframePage() {
                                            <Badge className="bg-primary/20 text-primary uppercase text-[8px]">{selectedEvent.integrationPath || 'DIRECT_API'}</Badge>
                                         </div>
                                         <p className="text-[11px] text-white/90 italic leading-relaxed border-l-2 border-primary/30 pl-4">
-                                            "{selectedEvent.routingReason || 'Project 42 verification audit successfully mapped node to Sovereign Grid.'}"
+                                            "{selectedEvent.routingReason || 'Project 42-45 verification audit successfully mapped node to Sovereign Grid.'}"
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-3 p-3 rounded-xl bg-green-500/5 border border-green-500/20 text-[10px] text-green-400 font-bold">
@@ -509,6 +511,9 @@ export default function UBILMainframePage() {
            </Badge>
            <Badge variant="ghost" className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground/30 italic">
               Data Enrichment (Project 44)
+           </Badge>
+           <Badge variant="ghost" className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground/30 italic">
+              Eco Governance (Project 45)
            </Badge>
         </footer>
       </SidebarInset>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -63,12 +62,12 @@ const ROADMAP_PHASES = [
     status: "Active",
     icon: Cpu,
     date: "Current Focus",
-    progress: 85,
-    desc: "Autonomous fiscal management, compute cost optimization, and institutional ISO 20022 ready.",
+    progress: 92,
+    desc: "Autonomous fiscal management, yield recycling, and regulatory compliance hub.",
     items: [
-      "Direct Bank Settlement Rails",
-      "Sovereign Fiscal Command",
-      "ISO 20022 Standard Audit"
+      "Fiscal Stability Control",
+      "Regulatory Compliance Hub (AML/CFT)",
+      "Dynamic Resource Allocation"
     ]
   },
   {
@@ -108,7 +107,7 @@ export default function RoadmapPage() {
             </h1>
           </div>
           <Badge variant="outline" className="text-accent border-accent/20">
-            PHASE: EXECUTION_READY
+            PHASE: ECO_GOVERNANCE_READY
           </Badge>
         </header>
 

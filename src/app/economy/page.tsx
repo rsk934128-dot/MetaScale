@@ -25,7 +25,10 @@ import {
   Milestone,
   Rocket,
   Lock,
-  Wallet
+  Wallet,
+  ShieldHalf,
+  BarChart4,
+  HardDriveDownload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -130,7 +133,7 @@ export default function Project45EconomyPage() {
           <SidebarTrigger />
           <div className="flex-1">
             <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-white">
-              <Gavel className="h-5 w-5 text-accent" />
+              <ShieldHalf className="h-5 w-5 text-accent" />
               Project 45: <span className="text-accent">Sovereign Eco Governance</span>
             </h1>
           </div>
@@ -165,12 +168,12 @@ export default function Project45EconomyPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <Card className="glass-panel border-l-4 border-l-accent bg-accent/5">
               <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Fee Efficiency</CardTitle>
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Recycled Yield</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="text-3xl font-bold text-white">98.1%</div>
-                <Progress value={98} className="h-1 mt-2 bg-accent/10 [&>div]:bg-accent" />
-                <p className="text-[9px] text-muted-foreground mt-2 uppercase tracking-tighter">Avg. Txn Fee: $0.002</p>
+                <div className="text-3xl font-bold text-white">42.5%</div>
+                <Progress value={42.5} className="h-1 mt-2 bg-accent/10 [&>div]:bg-accent" />
+                <p className="text-[9px] text-muted-foreground mt-2 uppercase tracking-tighter">P45 Policy: Active Recycle</p>
               </CardContent>
             </Card>
             <Card className="glass-panel border-l-4 border-l-primary bg-primary/5">
@@ -207,12 +210,15 @@ export default function Project45EconomyPage() {
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             <Card className="xl:col-span-2 glass-panel border-white/5 shadow-2xl">
-              <CardHeader className="border-b border-white/5 bg-white/5">
-                <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-widest">
-                  <Activity className="h-5 w-5 text-accent" />
-                  Stability Telemetry (L0 Sync)
-                </CardTitle>
-                <CardDescription className="text-[10px]">Multi-layer stability analysis across Micro, Meso, and Macro economic nodes.</CardDescription>
+              <CardHeader className="border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-widest">
+                    <Activity className="h-5 w-5 text-accent" />
+                    Resource Allocation Intelligence
+                  </CardTitle>
+                  <CardDescription className="text-[10px]">Real-time compute shift based on node-level profitability and latency.</CardDescription>
+                </div>
+                <Badge variant="outline" className="text-[8px] font-mono border-blue-400/30 text-blue-400">P45_DYNAMIC_MODE</Badge>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="h-[350px] w-full">
@@ -242,21 +248,21 @@ export default function Project45EconomyPage() {
                 <CardHeader className="p-4 border-b border-white/5">
                   <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-tighter">
                     <Scale className="h-4 w-4 text-accent" />
-                    Fiscal Directives
+                    Fiscal Recycler
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 space-y-4">
                   <div className="space-y-4">
                     <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-2">
                        <p className="text-[11px] font-bold text-accent uppercase flex items-center gap-2">
-                          <Wallet className="h-3 w-3" /> Liquidity Strategy
+                          <HardDriveDownload className="h-3 w-3" /> Liquidity Recycling
                        </p>
                        <p className="text-[10px] text-white/90 leading-relaxed italic">
-                          "3.5% transaction yield is generating $4,500/day. Recommend allocating 40% to Liquidity Reserve for long-term security."
+                          "Currently recycling 42.5% of transaction yield into Node-04 expansion and liquidity pools."
                        </p>
                     </div>
                     <Button className="w-full h-10 bg-accent text-background font-bold text-[10px] uppercase tracking-widest cyan-glow">
-                       Authorize Reserve Shift
+                       Adjust Recycle Rate
                     </Button>
                   </div>
                 </CardContent>
@@ -265,15 +271,41 @@ export default function Project45EconomyPage() {
               <Card className="glass-panel border-white/5">
                  <CardHeader className="p-4 border-b border-white/5">
                     <CardTitle className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-                       <ShieldAlert className="h-3 w-3 text-red-400" /> Commercial Guard
+                       <ShieldAlert className="h-3 w-3 text-red-400" /> Compliance Hub
                     </CardTitle>
                  </CardHeader>
                  <CardContent className="p-4 pt-0 space-y-3">
-                    <div className="p-2 rounded bg-secondary/30 text-[9px] text-white/70 italic leading-relaxed border border-white/5">
-                       "Automatic fee surge active if node compute latency exceeds 500ms."
+                    <div className="p-2 rounded bg-secondary/30 text-[9px] text-white/70 italic border border-white/5 flex justify-between items-center">
+                       <span>AML/CFT Screening</span>
+                       <Badge className="bg-green-500/20 text-green-400 text-[7px]">ACTIVE</Badge>
                     </div>
-                    <div className="p-2 rounded bg-secondary/30 text-[9px] text-white/70 italic leading-relaxed border border-white/5">
-                       "Liquidity Reserve is cryptographically locked and cross-referenced with Node-04."
+                    <div className="p-2 rounded bg-secondary/30 text-[9px] text-white/70 italic border border-white/5 flex justify-between items-center">
+                       <span>ISO 20022 Audit</span>
+                       <Badge className="bg-blue-400/20 text-blue-400 text-[7px]">OPTIMAL</Badge>
+                    </div>
+                 </CardContent>
+              </Card>
+
+              <Card className="glass-panel border-primary/20">
+                 <CardHeader className="p-4">
+                    <CardTitle className="text-[10px] uppercase font-bold text-primary flex items-center gap-2">
+                       <BarChart4 className="h-3 w-3" /> Node Profitability
+                    </CardTitle>
+                 </CardHeader>
+                 <CardContent className="p-4 pt-0 space-y-3">
+                    <div className="space-y-1">
+                       <div className="flex justify-between text-[8px] uppercase font-bold">
+                          <span>EU Node (Node-04)</span>
+                          <span className="text-green-400">+$2.4k / Day</span>
+                       </div>
+                       <Progress value={90} className="h-0.5 bg-white/5" />
+                    </div>
+                    <div className="space-y-1">
+                       <div className="flex justify-between text-[8px] uppercase font-bold">
+                          <span>Asia Node (Node-22)</span>
+                          <span className="text-accent">+$0.8k / Day</span>
+                       </div>
+                       <Progress value={40} className="h-0.5 bg-white/5" />
                     </div>
                  </CardContent>
               </Card>
@@ -290,7 +322,7 @@ export default function Project45EconomyPage() {
               <div className="h-0.5 w-20 bg-gradient-to-l from-transparent to-accent/50" />
            </div>
            <p className="text-[9px] font-bold uppercase tracking-[0.5em] text-muted-foreground opacity-30 italic">
-              NoorNexus Sovereign OS • Commercial Infrastructure v1.2
+              NoorNexus Sovereign OS • Project 45 Fiscal Command Architecture
            </p>
         </footer>
       </SidebarInset>

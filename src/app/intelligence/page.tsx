@@ -41,7 +41,7 @@ export default function IntelligenceLayerPage() {
     if (chatHistory.length === 0) {
       setChatHistory([{
         role: 'model',
-        text: "EXECUTION MODE ACTIVE. Your current Gross Margin is 78.2%. I have identified the MQL Stall in the mid-market. I am ready to use Project 43: Syntax Architect to generate an 'Automated Outreach Campaign' for you. Shall we also initiate the 'Liquidity Reserve' shift from your 3.5% transaction yield?"
+        text: "PROJECT 45: ECO GOVERNANCE ACTIVE. I have initialized the Sovereign Fiscal Command. Your current transaction yield is 3.5% ($4,500/day). I am now monitoring AML/CFT screening across all 42 nodes. Shall we review the 'Liquidity Recycling Policy' or authorize a 'Compute Shift' to Node-04 for maximum profitability?"
       }]);
     }
   }, []);
@@ -58,7 +58,7 @@ export default function IntelligenceLayerPage() {
       const result = await marketingCommandChat({
         query: userMsg,
         history: chatHistory,
-        context: "Sovereign OS context: Project 42-45 complete. Gross Margin 78.2%. CAC/LTV 1:4.8. Focus: B2B Outreach and Liquidity Reserve Strategy. Target: Mitigation of mid-market MQL stall. Strategy: Personalized P43 outreach and P45 yield allocation.",
+        context: "Sovereign OS context: Project 45 Eco Governance in progress. Focus: Yield recycling, AML/CFT compliance hub, and dynamic compute allocation. 42 nodes operational. Revenue yield 3.5%.",
       });
       
       setLastResult(result);
@@ -88,7 +88,7 @@ export default function IntelligenceLayerPage() {
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="hidden sm:flex text-accent border-accent/20 animate-pulse text-[10px]">
-              <TrendingUp className="mr-2 h-3 w-3" /> ROI_STRATEGY: ENABLED
+              <TrendingUp className="mr-2 h-3 w-3" /> P45_FISCAL_MODE: ENABLED
             </Badge>
             <Badge variant="outline" className="text-primary border-primary/20 text-[10px]">
               EXECUTION_LEVEL_0
@@ -118,7 +118,7 @@ export default function IntelligenceLayerPage() {
                     <div className="flex justify-start">
                       <div className="bg-secondary/40 border border-white/5 p-4 rounded-2xl flex items-center gap-3">
                         <Loader2 className="h-4 w-4 animate-spin text-accent" />
-                        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground">Reasoning Strategy...</span>
+                        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground">Reasoning Governance...</span>
                       </div>
                     </div>
                   )}
@@ -131,7 +131,7 @@ export default function IntelligenceLayerPage() {
                      <Briefcase className="h-3 w-3 text-accent" />
                   </div>
                   <Input 
-                    placeholder="Authorize B2B Outreach or Reserve Shift..." 
+                    placeholder="Authorize Recycle Policy or Compute Shift..." 
                     className="flex-1 h-12 text-xs bg-secondary/30 border-white/10 pl-11 pr-12 rounded-xl focus:border-primary/50 transition-all"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -150,15 +150,15 @@ export default function IntelligenceLayerPage() {
               <CardHeader className="pb-2 p-4 border-b border-white/5">
                 <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest text-accent">
                   <Activity className="h-4 w-4 text-accent" />
-                  Commercial Index
+                  P45 Fiscal Index
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 space-y-3">
                 {[
-                  { label: "Gross Margin", val: "78.2%", color: "text-green-400" },
-                  { label: "CAC/LTV", val: "1:4.8", color: "text-primary" },
-                  { label: "Yield Reserve", val: "ACTIVE", color: "text-accent" },
-                  { label: "Sales Velocity", val: "OPTIMAL", color: "text-green-400" }
+                  { label: "Yield Recycle", val: "42.5%", color: "text-green-400" },
+                  { label: "Compliance Score", val: "100%", color: "text-primary" },
+                  { label: "Node Profitability", val: "OPTIMAL", color: "text-accent" },
+                  { label: "AML Screening", val: "ACTIVE", color: "text-green-400" }
                 ].map((item, i) => (
                   <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-black/40 border border-white/5 group hover:border-accent/30 transition-all cursor-default">
                     <span className="text-[9px] text-muted-foreground font-bold uppercase">{item.label}</span>
@@ -171,18 +171,18 @@ export default function IntelligenceLayerPage() {
             <Card className="glass-panel border-white/5">
                <CardHeader className="p-4 border-b border-white/5">
                   <CardTitle className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-                     <Target className="h-3 w-3 text-primary" /> Strategy Focus
+                     <Target className="h-3 w-3 text-primary" /> Governance Focus
                   </CardTitle>
                </CardHeader>
                <CardContent className="p-4 space-y-2">
                   {[
-                    "B2B Outreach sequence ready",
-                    "Reserve shift authorized",
-                    "Mid-market stall mitigation",
-                    "Global scaling handshake"
+                    "AML/CFT Hub synchronization",
+                    "Yield recycling policy set",
+                    "Dynamic compute allocation",
+                    "Global audit trail indexed"
                   ].map((log, i) => (
                     <div key={i} className="flex items-center gap-2 text-[9px] text-white/60 italic">
-                       <CheckCircle2 className="h-2.5 w-2.5 text-primary shrink-0" />
+                       <ShieldCheck className="h-2.5 w-2.5 text-primary shrink-0" />
                        <span className="truncate">{log}</span>
                     </div>
                   ))}
@@ -192,33 +192,12 @@ export default function IntelligenceLayerPage() {
             <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2 text-center shadow-inner">
                <Sparkles className="h-6 w-6 text-primary mx-auto opacity-50" />
                <p className="text-[9px] text-primary font-bold uppercase tracking-widest leading-relaxed">
-                  The system is now optimizing for B2B conversion and long-term liquidity reserves.
+                  System is now autonomously recycling yield and optimizing node-level compute power.
                </p>
             </div>
           </div>
         </main>
       </SidebarInset>
     </div>
-  );
-}
-
-function CheckCircle2({ className, ...props }: any) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      {...props}
-    >
-      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
   );
 }
