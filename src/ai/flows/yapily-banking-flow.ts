@@ -20,7 +20,14 @@ const YapilyConsentInputSchema = z.object({
   callbackUrl: z.string(),
   scope: z.enum(['AIS', 'PIS']),
   userId: z.string(),
-  requestType: z.enum(['single_payment', 'bulk_payment', 'scheduled_payment', 'international_transfer', 'standard_consent']).default('standard_consent'),
+  requestType: z.enum([
+    'single_payment', 
+    'bulk_payment', 
+    'scheduled_payment', 
+    'international_transfer', 
+    'standard_consent',
+    'custom_ui_required'
+  ]).default('standard_consent'),
 });
 
 const YapilyConsentOutputSchema = z.object({
@@ -38,18 +45,18 @@ const YapilyConsentOutputSchema = z.object({
  */
 function determineIntegrationPath(requestType: string): { path: 'HOSTED' | 'DIRECT_API', reason: string } {
   const hostedTypes = ['single_payment', 'standard_consent'];
-  const directTypes = ['bulk_payment', 'scheduled_payment', 'international_transfer'];
+  const directTypes = ['bulk_payment', 'scheduled_payment', 'international_transfer', 'custom_ui_required'];
 
   if (directTypes.includes(requestType)) {
     return { 
       path: 'DIRECT_API', 
-      reason: 'Complex transaction type detected. Direct API required for granular control.' 
+      reason: `Complex transaction (${requestType}) detected. Direct API required for granular control.` 
     };
   }
   
   return { 
     path: 'HOSTED', 
-    reason: 'Standard request detected. Hosted Page prioritized for rapid scaling and SCA management.' 
+    reason: `Standard request (${requestType}) detected. Hosted Page prioritized for rapid scaling.` 
   };
 }
 

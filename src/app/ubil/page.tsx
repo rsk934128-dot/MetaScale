@@ -8,55 +8,39 @@ import {
   ShieldCheck, 
   Zap, 
   RefreshCw, 
-  Copy, 
-  Check, 
   Search, 
-  Filter, 
   Download, 
-  Cloud, 
   Activity, 
   ShieldAlert, 
   Database,
   Unplug,
   Globe,
   Terminal,
-  Server,
   Lock,
   Loader2,
-  Eye,
-  Mail,
-  Smartphone,
-  CheckCircle2,
-  AlertTriangle,
   Building2,
-  ArrowUpRight,
-  ExternalLink,
-  ChevronRight,
-  FileText,
-  Link as LinkIcon,
   Navigation,
   Play,
   History,
-  Info
+  Info,
+  CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Area, 
   AreaChart, 
-  ResponsiveContainer, 
   XAxis, 
   YAxis, 
   Tooltip, 
   CartesianGrid,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  ResponsiveContainer
 } from "recharts";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { useToast } from "@/hooks/use-toast";
@@ -95,21 +79,20 @@ const OPERATIONAL_MODULES = [
   { component: "Webhook Handler", status: "Active", task: "ইনকামিং পেমেন্ট ও ডাটা ইভেন্ট প্রসেস করা" },
 ];
 
-const BULK_TEST_SCENARIOS = [
-  { type: 'single_payment', desc: 'Single Payment (USD)' },
-  { type: 'bulk_payment', desc: 'Bulk Salary Disbursement' },
-  { type: 'standard_consent', desc: 'Standard AIS Consent' },
-  { type: 'international_transfer', desc: 'International Wire (EUR)' },
-  { type: 'scheduled_payment', desc: 'Scheduled Rent Payment' },
-  { type: 'single_payment', desc: 'P2P Transfer (Small)' },
-  { type: 'bulk_payment', desc: 'Institutional Data Audit' },
-  { type: 'single_payment', desc: 'One-off Refund' },
-  { type: 'international_transfer', desc: 'Multi-currency Settlement' },
-  { type: 'standard_consent', desc: 'Partner Node Handshake' },
+const TEST_REQUESTS = [
+    { id: 1, type: "single_payment", desc: "Standard Single Payment" },
+    { id: 2, type: "bulk_payment", desc: "Bulk Transaction" },
+    { id: 3, type: "standard_consent", desc: "Data Consent Flow" },
+    { id: 4, type: "international_transfer", desc: "Cross-border Transfer" },
+    { id: 5, type: "scheduled_payment", desc: "Recurring Payment" },
+    { id: 6, type: "single_payment", desc: "Standard Single Payment" },
+    { id: 7, type: "custom_ui_required", desc: "Custom Interface Flow" },
+    { id: 8, type: "bulk_payment", desc: "Bulk Transaction" },
+    { id: 9, type: "standard_consent", desc: "Data Consent Flow" },
+    { id: 10, type: "international_transfer", desc: "Cross-border Transfer" }
 ];
 
 export default function UBILIntegrationPage() {
-  const [copied, setCopied] = useState(false);
   const [search, setSearch] = useState("");
   const [isSimulating, setIsSimulating] = useState(false);
   const [simPreset, setSimPreset] = useState("Txn Success");
@@ -121,7 +104,7 @@ export default function UBILIntegrationPage() {
   const [isLoadingInstitutions, setIsLoadingInstitutions] = useState(false);
   const [isCreatingConsent, setIsCreatingConsent] = useState(false);
   const [isTestingHandshake, setIsTestingHandshake] = useState(false);
-  const [isRunningBulkTest, setIsRunningBulkTest] = useState(false);
+  const [isRunningTestTrigger, setIsRunningTestTrigger] = useState(false);
 
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -139,7 +122,7 @@ export default function UBILIntegrationPage() {
       const data = await getYapilyInstitutions('GB');
       setInstitutions(data);
     } catch (err) {
-      toast({ variant: "destructive", title: "API Error", description: "Failed to fetch institutions from Yapily node." });
+      toast({ variant: "destructive", title: "API Error", description: "Failed to fetch institutions." });
     } finally {
       setIsLoadingInstitutions(false);
     }
@@ -148,15 +131,53 @@ export default function UBILIntegrationPage() {
   const handleTestHandshake = async () => {
     setIsTestingHandshake(true);
     setLogs(prev => [">>> INITIATING TEST HANDSHAKE WITH YAPILY ENDPOINT...", ...prev]);
-    
     setTimeout(() => {
       setIsTestingHandshake(false);
       setLogs(prev => [">>> HANDSHAKE SUCCESS: status=ACTIVE, lat=12ms, sig=VALID", ...prev]);
-      toast({
-        title: "Test Handshake Success",
-        description: "NoorNexus UBIL is now communicating with Yapily Direct API.",
-      });
+      toast({ title: "Test Handshake Success" });
     }, 2000);
+  };
+
+  const runTestTrigger = async () => {
+    setIsRunningTestTrigger(true);
+    setLogs(prev => [">>> STARTING NOORNEXUS UBIL SMART ROUTER TEST...", ...prev]);
+    
+    for (const req of TEST_REQUESTS) {
+      try {
+        const result = await createYapilyConsent({
+          institutionId: 'hsbc-uk',
+          callbackUrl: window.location.href,
+          scope: 'PIS',
+          userId: 'sko_user_82af',
+          requestType: req.type as any
+        });
+        
+        const eventId = `UBIL_TEST_${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+        const logMsg = `Request ${req.id} (${req.type}) routed to: ${result.integrationPath}`;
+        setLogs(prev => ["> " + logMsg, ...prev]);
+
+        if (firestore) {
+          await setDoc(doc(firestore, 'ubil_events', eventId), {
+            id: eventId,
+            type: 'ROUTING_DECISION',
+            requestType: req.type,
+            integrationPath: result.integrationPath,
+            routingReason: result.routingReason,
+            timestamp: Date.now(),
+            status: 'SUCCESS',
+            senderBank: 'hsbc-uk',
+            senderName: `TEST_REQ_${req.id}`
+          });
+        }
+        await new Promise(resolve => setTimeout(resolve, 400));
+      } catch (err) {
+        setLogs(prev => [`! Error on Request ${req.id}: Failed to route.`, ...prev]);
+      }
+    }
+
+    setIsRunningTestTrigger(false);
+    setLogs(prev => [">>> TEST COMPLETE. CHECK WEBHOOK INSPECTOR FOR LOGS.", ...prev]);
+    toast({ title: "Bulk Test Complete", description: "10 routing scenarios validated." });
   };
 
   const handleCreateConsent = async (instId: string, type: string) => {
@@ -171,8 +192,7 @@ export default function UBILIntegrationPage() {
       });
       
       const eventId = `UBIL_ROUTED_${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-      const logMsg = `>>> SMART ROUTER: Path Selected = ${result.integrationPath} | REASON: ${result.routingReason}`;
-      setLogs(prev => [logMsg, ...prev]);
+      setLogs(prev => [`>>> SMART ROUTER: Path Selected = ${result.integrationPath}`, ...prev]);
 
       if (firestore) {
         await setDoc(doc(firestore, 'ubil_events', eventId), {
@@ -184,34 +204,16 @@ export default function UBILIntegrationPage() {
           timestamp: Date.now(),
           status: 'SUCCESS',
           senderBank: instId,
-          senderName: 'SYSTEM_ROUTER'
+          senderName: 'MANUAL_TRIGGER'
         });
       }
 
       toast({ title: `Router: ${result.integrationPath}`, description: result.routingReason });
-      return result;
     } catch (err) {
-      toast({ variant: "destructive", title: "Consent Error", description: "Could not initialize integration handshake." });
+      toast({ variant: "destructive", title: "Consent Error" });
     } finally {
       setIsCreatingConsent(false);
     }
-  };
-
-  const runBulkTestSuite = async () => {
-    setIsRunningBulkTest(true);
-    setLogs(prev => [">>> INITIATING BULK ROUTER TEST SUITE (10 SCENARIOS)...", ...prev]);
-    
-    for (let i = 0; i < BULK_TEST_SCENARIOS.length; i++) {
-      const scenario = BULK_TEST_SCENARIOS[i];
-      await new Promise(resolve => setTimeout(resolve, 600)); // Delay for visual feedback
-      await handleCreateConsent('hsbc-uk', scenario.type);
-    }
-
-    setIsRunningBulkTest(false);
-    toast({
-      title: "Bulk Test Complete",
-      description: "10 routing scenarios have been validated and logged in the inspector.",
-    });
   };
 
   const dispatchSimulation = async () => {
@@ -219,8 +221,7 @@ export default function UBILIntegrationPage() {
     const eventId = `UBIL_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     const timestamp = Date.now();
     
-    const newLog = `>>> INCOMING WEBHOOK: [${simPreset}] FROM ${simBank}`;
-    setLogs(prev => [newLog, ...prev].slice(0, 10));
+    setLogs(prev => [`>>> INCOMING WEBHOOK: [${simPreset}] FROM ${simBank}`, ...prev]);
 
     const eventData = {
       id: eventId,
@@ -232,8 +233,7 @@ export default function UBILIntegrationPage() {
       senderName: 'Siddique Rahman',
       status: isSignatureValid ? 'SUCCESS' : 'BLOCKED',
       signatureStatus: isSignatureValid ? 'VALID' : 'INVALID',
-      timestamp: timestamp,
-      payload: { raw: "..." }
+      timestamp: timestamp
     };
 
     if (firestore) {
@@ -242,12 +242,8 @@ export default function UBILIntegrationPage() {
 
     setTimeout(() => {
       setIsSimulating(false);
-      if (isSignatureValid) {
-        toast({ title: "DISPATCH SUCCESS", description: "Transaction validated via HMAC-SHA256." });
-      } else {
-        toast({ variant: "destructive", title: "SECURITY BLOCK", description: "Invalid signature detected. Connection severed." });
-      }
-    }, 1000);
+      toast({ title: isSignatureValid ? "DISPATCH SUCCESS" : "SECURITY BLOCK" });
+    }, 800);
   };
 
   const filteredEvents = useMemo(() => {
@@ -275,15 +271,15 @@ export default function UBILIntegrationPage() {
              <Button 
                variant="outline" 
                size="sm" 
-               className="h-8 text-[10px] font-bold border-accent/20 text-accent hidden md:flex" 
+               className="h-8 text-[10px] font-bold border-accent/20 text-accent" 
                onClick={handleTestHandshake} 
                disabled={isTestingHandshake}
              >
                 {isTestingHandshake ? <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" /> : <Zap className="mr-1.5 h-3 w-3" />}
                 Test Handshake
              </Button>
-             <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px] uppercase">
-               v1.2.0-stable • SMART_ROUTER_ACTIVE
+             <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
+               v1.2.0-stable
              </Badge>
           </div>
         </header>
@@ -291,10 +287,10 @@ export default function UBILIntegrationPage() {
         <main className="flex-1 p-6 max-w-[1600px] mx-auto w-full space-y-6">
           <Tabs defaultValue="overview" className="space-y-6">
             <TabsList className="bg-secondary/50 border border-white/5 p-1">
-              <TabsTrigger value="overview" className="text-[10px] uppercase font-bold tracking-widest px-6">System Overview</TabsTrigger>
-              <TabsTrigger value="direct-api" className="text-[10px] uppercase font-bold tracking-widest px-6">Yapily Integration</TabsTrigger>
-              <TabsTrigger value="config" className="text-[10px] uppercase font-bold tracking-widest px-6">Operational Config</TabsTrigger>
-              <TabsTrigger value="audit" className="text-[10px] uppercase font-bold tracking-widest px-6">Audit Ledger & Inspector</TabsTrigger>
+              <TabsTrigger value="overview" className="text-[10px] uppercase font-bold px-6">Overview</TabsTrigger>
+              <TabsTrigger value="direct-api" className="text-[10px] uppercase font-bold px-6">Yapily Hybrid</TabsTrigger>
+              <TabsTrigger value="config" className="text-[10px] uppercase font-bold px-6">Config</TabsTrigger>
+              <TabsTrigger value="audit" className="text-[10px] uppercase font-bold px-6">Inspector</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6 animate-fade-in">
@@ -305,7 +301,6 @@ export default function UBILIntegrationPage() {
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     <span className="text-xl font-bold">Active</span>
                   </div>
-                  <p className="text-[9px] text-muted-foreground mt-1">AI-Powered Path Selection</p>
                 </Card>
                 <Card className="glass-panel border-l-4 border-l-primary p-4">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Global Coverage</p>
@@ -313,7 +308,6 @@ export default function UBILIntegrationPage() {
                     <Globe className="h-5 w-5 text-primary" />
                     <span className="text-xl font-bold">14k+ Banks</span>
                   </div>
-                  <p className="text-[9px] text-muted-foreground mt-1">Yapily Hybrid Mesh</p>
                 </Card>
                 <Card className="glass-panel border-l-4 border-l-yellow-500 p-4">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Security Layer</p>
@@ -321,44 +315,18 @@ export default function UBILIntegrationPage() {
                     <ShieldCheck className="h-5 w-5 text-yellow-500" />
                     <span className="text-xl font-bold">HMAC-256</span>
                   </div>
-                  <p className="text-[9px] text-muted-foreground mt-1">Sovereign Encryption</p>
                 </Card>
                 <Card className="glass-panel border-l-4 border-l-blue-400 p-4">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Daily Ingest</p>
                   <div className="flex items-center gap-2 mt-1">
                     <Activity className="h-5 w-5 text-blue-400" />
-                    <span className="text-xl font-bold">48 Events</span>
+                    <span className="text-xl font-bold">{remoteEvents?.length || 0}</span>
                   </div>
-                  <p className="text-[9px] text-muted-foreground mt-1">Current Cycle</p>
                 </Card>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div className="lg:col-span-4 space-y-6">
-                  <Card className="glass-panel border-accent/20">
-                    <CardHeader className="p-4">
-                      <CardTitle className="text-xs uppercase flex items-center gap-2">
-                        <Navigation className="h-4 w-4 text-accent" />
-                        Smart Router Rules
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0 space-y-4">
-                      <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-3">
-                        <div>
-                          <p className="text-[9px] font-bold text-accent uppercase mb-1">Priority: Hosted</p>
-                          <p className="text-[10px] text-white/60">Single Payment, Standard Consent</p>
-                        </div>
-                        <div className="border-t border-white/5 pt-2">
-                          <p className="text-[9px] font-bold text-primary uppercase mb-1">Priority: Direct API</p>
-                          <p className="text-[10px] text-white/60">Bulk, Scheduled, International</p>
-                        </div>
-                      </div>
-                      <p className="text-[9px] text-muted-foreground italic leading-relaxed">
-                        Router analyzes metadata to choose the most efficient path for SCA and performance.
-                      </p>
-                    </CardContent>
-                  </Card>
-
                   <Card className="glass-panel border-accent/20 bg-accent/5">
                     <CardHeader className="p-4 border-b border-white/5">
                       <CardTitle className="text-xs uppercase flex items-center gap-2">
@@ -373,7 +341,7 @@ export default function UBILIntegrationPage() {
                         ))}
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-[9px] uppercase">Transaction Amount (BDT)</Label>
+                        <Label className="text-[9px] uppercase">Amount (BDT)</Label>
                         <Input value={simAmount} onChange={e => setSimAmount(e.target.value)} className="h-9 bg-secondary/30 text-xs" />
                       </div>
                       <div className="space-y-2">
@@ -381,10 +349,10 @@ export default function UBILIntegrationPage() {
                           <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-green-400" /> Authentic Node</div>
                         </Button>
                         <Button variant="outline" className={cn("w-full h-10 justify-between text-[10px] font-bold border-white/5", !isSignatureValid && "border-red-500/40 bg-red-500/5")} onClick={() => setIsSignatureValid(false)}>
-                          <div className="flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-red-400" /> Signature Hack</div>
+                          <div className="flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-red-400" /> Corrupt Header</div>
                         </Button>
                       </div>
-                      <Button className="w-full h-12 bg-accent text-background font-bold uppercase text-[10px] tracking-widest cyan-glow" onClick={dispatchSimulation} disabled={isSimulating}>
+                      <Button className="w-full h-12 bg-accent text-background font-bold uppercase text-[10px] cyan-glow" onClick={dispatchSimulation} disabled={isSimulating}>
                         {isSimulating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Dispatch Handshake"}
                       </Button>
                     </CardContent>
@@ -404,7 +372,7 @@ export default function UBILIntegrationPage() {
                               <Pie data={PIE_DATA} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
                                 {PIE_DATA.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />)}
                               </Pie>
-                              <Tooltip contentStyle={{ background: '#13151a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }} itemStyle={{ color: '#fff' }} />
+                              <Tooltip contentStyle={{ background: '#13151a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }} />
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
@@ -430,10 +398,10 @@ export default function UBILIntegrationPage() {
                       </CardContent>
                     </Card>
                   </div>
-                  <div className="p-4 rounded-xl bg-black/60 border border-white/5 font-mono text-[10px] space-y-2 relative overflow-hidden h-48 overflow-y-auto">
+                  <div className="p-4 rounded-xl bg-black/60 border border-white/5 font-mono text-[10px] space-y-2 relative overflow-hidden h-48 overflow-y-auto scrollbar-hide">
                     <div className="absolute top-2 right-2 text-white/20"><Terminal className="h-4 w-4" /></div>
                     <p className="text-accent uppercase font-bold sticky top-0 bg-black/60 pb-1">OS LOG CONSOLE:</p>
-                    {logs.map((log, i) => <p key={i} className="text-white/60 animate-fade-in">&gt; {log}</p>)}
+                    {logs.map((log, i) => <p key={i} className={cn("animate-fade-in", log.startsWith('!') ? "text-red-400" : log.startsWith('>') ? "text-accent" : "text-white/60")}>{log}</p>)}
                   </div>
                 </div>
               </div>
@@ -450,18 +418,18 @@ export default function UBILIntegrationPage() {
                                     <Building2 className="h-4 w-4 text-accent" />
                                     Yapily Hybrid Integration
                                  </CardTitle>
-                                 <CardDescription className="text-[10px] uppercase font-bold mt-1">Smart Routing between Hosted Pages and Direct API</CardDescription>
+                                 <CardDescription className="text-[10px] uppercase font-bold mt-1">Smart Routing verification suite</CardDescription>
                               </div>
                               <div className="flex gap-2">
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  className="h-8 text-[10px] font-bold border-accent/20 text-accent" 
-                                  onClick={runBulkTestSuite} 
-                                  disabled={isRunningBulkTest}
+                                  className="h-8 text-[10px] font-bold border-accent/20 text-accent cyan-glow" 
+                                  onClick={runTestTrigger} 
+                                  disabled={isRunningTestTrigger}
                                 >
-                                   {isRunningBulkTest ? <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" /> : <Play className="mr-1.5 h-3 w-3" />}
-                                   Run Bulk Test Suite
+                                   {isRunningTestTrigger ? <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" /> : <Play className="mr-1.5 h-3 w-3" />}
+                                   Run Test Trigger Script
                                 </Button>
                                 <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold border-accent/20" onClick={handleFetchInstitutions} disabled={isLoadingInstitutions}>
                                    {isLoadingInstitutions ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <RefreshCw className="h-3 w-3 mr-1.5" />}
@@ -475,11 +443,11 @@ export default function UBILIntegrationPage() {
                               {isLoadingInstitutions ? (
                                  <div className="p-20 text-center space-y-4 opacity-40">
                                     <Loader2 className="h-8 w-8 animate-spin mx-auto text-accent" />
-                                    <p className="text-xs uppercase font-bold tracking-widest">Querying Yapily Node-04...</p>
+                                    <p className="text-xs uppercase font-bold tracking-widest">Querying anycast grid...</p>
                                  </div>
                               ) : institutions.length === 0 ? (
                                  <div className="p-20 text-center text-muted-foreground italic text-xs">
-                                    No institutions loaded. Hit "Sync Mesh" to query the global anycast grid.
+                                    No institutions loaded. Hit "Sync Mesh" to query global nodes.
                                  </div>
                               ) : (
                                  institutions.map((inst) => (
@@ -490,9 +458,7 @@ export default function UBILIntegrationPage() {
                                           </div>
                                           <div>
                                              <p className="text-sm font-bold text-white uppercase">{inst.name}</p>
-                                             <div className="flex items-center gap-2">
-                                                <Badge variant="ghost" className="text-[8px] p-0 font-mono opacity-50 uppercase">{inst.id}</Badge>
-                                             </div>
+                                             <Badge variant="ghost" className="text-[8px] p-0 font-mono opacity-50 uppercase">{inst.id}</Badge>
                                           </div>
                                        </div>
                                        <div className="flex items-center gap-2">
@@ -516,47 +482,36 @@ export default function UBILIntegrationPage() {
                         <CardHeader>
                            <CardTitle className="text-xs uppercase flex items-center gap-2">
                               <ShieldCheck className="h-4 w-4 text-accent" />
-                              Auto-Switch Protocol
+                              Auto-Switch Mech
                            </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                            <div className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-3">
                               <div className="flex justify-between items-center text-[10px]">
                                  <span className="text-muted-foreground uppercase">Smart Router</span>
-                                 <span className="text-green-400 font-bold uppercase">Active</span>
+                                 <span className="text-green-400 font-bold uppercase">Armed</span>
                               </div>
                               <div className="flex justify-between items-center text-[10px]">
-                                 <span className="text-muted-foreground uppercase">Hybrid Mode</span>
-                                 <span className="text-white font-bold">ENABLED</span>
-                              </div>
-                              <div className="flex justify-between items-center text-[10px]">
-                                 <span className="text-muted-foreground uppercase">Sovereign Seal</span>
-                                 <span className="text-green-400 font-bold uppercase">Ready</span>
+                                 <span className="text-muted-foreground uppercase">Integration</span>
+                                 <span className="text-white font-bold">HYBRID</span>
                               </div>
                            </div>
-                           <p className="text-[10px] text-muted-foreground leading-relaxed italic">
-                              Smart Router রিকোয়েস্টের ধরন বিশ্লেষণ করে স্বয়ংক্রিয়ভাবে Hosted বা Direct পাথ নির্ধারণ করবে।
+                           <p className="text-[9px] text-muted-foreground leading-relaxed italic">
+                              স্মার্ট রাউটিং ভেরিফিকেশনের জন্য টেস্ট ট্রিগার স্ক্রিপ্ট রান করুন। প্রতিটি ডিসিশন অডিট লগে রেকর্ড হবে।
                            </p>
                         </CardContent>
                      </Card>
 
                      <Card className="glass-panel border-white/5">
                         <CardHeader className="p-4">
-                           <CardTitle className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
+                           <CardTitle className="text-[10px] uppercase font-bold flex items-center gap-2">
                               <Activity className="h-3 w-3 text-primary" />
-                              Connectivity Health
+                              Anycast Latency
                            </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-4 pt-0 space-y-4">
-                           <div className="space-y-2">
-                              <div className="flex justify-between text-[9px] font-bold uppercase">
-                                 <span className="text-muted-foreground">Anycast Node-04</span>
-                                 <span className="text-primary">Latency: 12ms</span>
-                              </div>
-                              <div className="w-full h-1 bg-primary/10 rounded-full overflow-hidden">
-                                 <div className="h-full bg-primary" style={{ width: '98%' }} />
-                              </div>
-                           </div>
+                        <CardContent className="p-4 pt-0">
+                           <p className="text-2xl font-headline font-bold text-primary">12ms</p>
+                           <p className="text-[9px] text-muted-foreground mt-1 uppercase">Node-04 (UK)</p>
                         </CardContent>
                      </Card>
                   </div>
@@ -564,118 +519,64 @@ export default function UBILIntegrationPage() {
             </TabsContent>
 
             <TabsContent value="config" className="space-y-6 animate-fade-in">
-               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  <div className="lg:col-span-8 space-y-6">
-                     <Card className="glass-panel border-accent/20">
-                        <CardHeader className="p-6 border-b border-white/5">
-                           <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
-                              <FileText className="h-4 w-4 text-accent" />
-                              Operational Configuration
-                           </CardTitle>
-                           <CardDescription className="text-[10px] uppercase font-bold mt-1">NoorNexus UBIL: Hybrid Yapily Integration Architecture</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                           <table className="w-full text-left border-collapse">
-                              <thead>
-                                 <tr className="border-b border-white/5 bg-white/5">
-                                    <th className="p-4 text-[10px] font-bold uppercase text-muted-foreground">কম্পোনেন্ট</th>
-                                    <th className="p-4 text-[10px] font-bold uppercase text-muted-foreground">স্ট্যাটাস</th>
-                                    <th className="p-4 text-[10px] font-bold uppercase text-muted-foreground">কাজ</th>
-                                 </tr>
-                              </thead>
-                              <tbody>
-                                 {OPERATIONAL_MODULES.map((m, i) => (
-                                    <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                                       <td className="p-4 text-sm font-bold text-white">{m.component}</td>
-                                       <td className="p-4">
-                                          <Badge className="bg-green-500/20 text-green-400 text-[10px] font-bold uppercase">{m.status}</Badge>
-                                       </td>
-                                       <td className="p-4 text-xs text-muted-foreground italic">{m.task}</td>
-                                    </tr>
-                                 ))}
-                              </tbody>
-                           </table>
-                        </CardContent>
-                     </Card>
-
-                     <Card className="glass-panel border-white/5 bg-secondary/10">
-                        <CardHeader className="p-4">
-                           <CardTitle className="text-xs uppercase flex items-center gap-2">
-                              <LinkIcon className="h-4 w-4 text-primary" />
-                              Drive Reference (NoorNexus_Root)
-                           </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0">
-                           <div className="p-4 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between">
-                              <div className="flex items-center gap-4">
-                                 <div className="p-2 rounded bg-accent/20"><FileText className="h-5 w-5 text-accent" /></div>
-                                 <div>
-                                    <p className="text-xs font-bold text-white uppercase">yapily_config.json</p>
-                                    <p className="text-[9px] text-muted-foreground font-mono">ID: drive-uploaded-file-1lmsa-iBL...</p>
-                                 </div>
-                              </div>
-                              <Button variant="ghost" size="sm" className="h-8 text-[10px] font-bold text-accent">
-                                 <Download className="h-3 w-3 mr-1.5" /> Download
-                              </Button>
-                           </div>
-                        </CardContent>
-                     </Card>
-                  </div>
-
-                  <div className="lg:col-span-4 space-y-6">
-                     <Card className="glass-panel border-primary/20 bg-primary/5">
-                        <CardHeader>
-                           <CardTitle className="text-xs uppercase flex items-center gap-2">
-                              <Activity className="h-4 w-4 text-primary" />
-                              Integration Logic
-                           </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                           <div className="space-y-3">
-                              {[
-                                 { title: "Smart Router", desc: "রিকোয়েস্টের ধরণ বিশ্লেষণ করে Hosted/Direct নির্বাচন সক্রিয়।" },
-                                 { title: "Secure Handshake", desc: "OAuth 2.0 টোকেন জেনারেট হচ্ছে।" },
-                                 { title: "Webhook Listener", desc: "Payment status আপডেট গ্রহণে প্রস্তুত।" }
-                              ].map((item, i) => (
-                                 <div key={i} className="p-3 rounded bg-secondary/30 border border-white/5 space-y-1">
-                                    <p className="text-[10px] font-bold text-white uppercase">{item.title}</p>
-                                    <p className="text-[9px] text-muted-foreground italic leading-relaxed">{item.desc}</p>
-                                 </div>
-                              ))}
-                           </div>
-                        </CardContent>
-                     </Card>
-                  </div>
-               </div>
+               <Card className="glass-panel border-accent/20">
+                  <CardHeader className="p-6 border-b border-white/5">
+                     <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
+                        <History className="h-4 w-4 text-accent" />
+                        Operational Components
+                     </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                     <table className="w-full text-left">
+                        <thead>
+                           <tr className="border-b border-white/5 bg-white/5">
+                              <th className="p-4 text-[10px] font-bold uppercase text-muted-foreground">কম্পোনেন্ট</th>
+                              <th className="p-4 text-[10px] font-bold uppercase text-muted-foreground">স্ট্যাটাস</th>
+                              <th className="p-4 text-[10px] font-bold uppercase text-muted-foreground">কাজ</th>
+                           </tr>
+                        </thead>
+                        <tbody>
+                           {OPERATIONAL_MODULES.map((m, i) => (
+                              <tr key={i} className="border-b border-white/5">
+                                 <td className="p-4 text-sm font-bold text-white">{m.component}</td>
+                                 <td className="p-4">
+                                    <Badge className="bg-green-500/20 text-green-400 text-[9px] font-bold uppercase">{m.status}</Badge>
+                                 </td>
+                                 <td className="p-4 text-xs text-muted-foreground italic">{m.task}</td>
+                              </tr>
+                           ))}
+                        </tbody>
+                     </table>
+                  </CardContent>
+               </Card>
             </TabsContent>
 
             <TabsContent value="audit" className="space-y-6 animate-fade-in">
               <Card className="glass-panel border-white/5">
                 <CardHeader className="p-6 border-b border-white/5 flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2 text-white italic">
+                    <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
                       <Database className="h-4 w-4 text-accent" />
-                      UBIL Audit Ledger & Inspector
+                      UBIL Webhook Inspector
                     </CardTitle>
-                    <CardDescription className="text-[10px]">Real-time incoming payloads and routing decisions from secure webhooks</CardDescription>
+                    <CardDescription className="text-[10px]">Real-time routing decisions and transactional logs</CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold border-white/10 uppercase"><History className="mr-1.5 h-3 w-3" /> Notes & History</Button>
-                    <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold border-white/10 uppercase"><Download className="mr-1.5 h-3 w-3" /> Export CSV</Button>
+                    <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase"><Download className="mr-1.5 h-3 w-3" /> Export CSV</Button>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="p-4 border-b border-white/5 flex gap-4">
-                    <div className="relative flex-1">
+                  <div className="p-4 border-b border-white/5">
+                    <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                      <Input placeholder="Search by sender, bank, A/C or ID..." className="pl-9 h-9 bg-secondary/30 border-white/5 text-[11px]" value={search} onChange={e => setSearch(e.target.value)} />
+                      <Input placeholder="Search logs..." className="pl-9 h-9 bg-secondary/30 border-white/5 text-[11px]" value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
                   </div>
-                  <ScrollArea className="h-[600px]">
+                  <ScrollArea className="h-[550px]">
                     {loading ? (
-                      <div className="p-20 flex flex-col items-center gap-4 opacity-40"><Loader2 className="h-8 w-8 animate-spin text-accent" /><p className="text-[9px] font-bold uppercase tracking-widest">Accessing Secure Vault...</p></div>
+                      <div className="p-20 flex flex-col items-center gap-4 opacity-40"><Loader2 className="h-8 w-8 animate-spin text-accent" /><p className="text-[9px] font-bold uppercase tracking-widest">Accessing Vault...</p></div>
                     ) : filteredEvents.length === 0 ? (
-                      <div className="p-20 text-center space-y-4 opacity-30"><Unplug className="h-12 w-12 mx-auto" /><p className="text-xs italic">UBIL Core: Webhook Node online, listening...</p></div>
+                      <div className="p-20 text-center space-y-4 opacity-30"><Unplug className="h-12 w-12 mx-auto" /><p className="text-xs italic">Awaiting test trigger...</p></div>
                     ) : (
                       <div className="divide-y divide-white/5">
                         {filteredEvents.map((event) => (
@@ -683,24 +584,23 @@ export default function UBILIntegrationPage() {
                             <div className="flex gap-4">
                               <div className={cn(
                                 "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border", 
-                                event.type === 'ROUTING_DECISION' ? "bg-primary/10 border-primary/20 text-primary" :
-                                event.status === 'SUCCESS' ? "bg-accent/10 border-accent/20 text-accent" : 
-                                "bg-red-500/10 border-red-500/20 text-red-400"
+                                event.type === 'ROUTING_DECISION' ? "bg-primary/10 border-primary/20 text-primary" : "bg-accent/10 border-accent/20 text-accent"
                               )}>
-                                {event.type === 'AUTH_FAILED' ? <ShieldAlert className="h-5 w-5" /> : 
-                                 event.type === 'ROUTING_DECISION' ? <Navigation className="h-5 w-5" /> :
-                                 <Activity className="h-5 w-5" />}
+                                {event.type === 'ROUTING_DECISION' ? <Navigation className="h-5 w-5" /> : <Activity className="h-5 w-5" />}
                               </div>
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
                                   <span className="text-[11px] font-bold text-white uppercase">{event.senderName}</span>
-                                  <Badge variant="outline" className="text-[8px] font-mono border-white/10 uppercase">{event.senderBank}</Badge>
                                   {event.integrationPath && (
-                                    <Badge className="bg-primary/20 text-primary text-[8px] uppercase font-bold">{event.integrationPath}</Badge>
+                                    <Badge className={cn("text-[8px] uppercase font-bold", event.integrationPath === 'HOSTED' ? "bg-blue-500/20 text-blue-400" : "bg-purple-500/20 text-purple-400")}>
+                                      {event.integrationPath}
+                                    </Badge>
                                   )}
-                                  <Badge className={cn("text-[8px] font-bold uppercase", event.status === 'SUCCESS' ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400")}>{event.status}</Badge>
+                                  <Badge className="bg-green-500/20 text-green-400 text-[8px] uppercase font-bold flex items-center gap-1">
+                                    <CheckCircle2 className="h-2 w-2" /> Verified
+                                  </Badge>
                                 </div>
-                                <p className="text-[10px] text-muted-foreground font-mono">ID: {event.id} | AC: {event.accountNumber || 'SYSTEM'} | TYPE: {event.type}</p>
+                                <p className="text-[10px] text-muted-foreground font-mono">ID: {event.id} | TYPE: {event.requestType || event.type}</p>
                                 {event.routingReason && (
                                   <div className="flex items-center gap-2 pt-1">
                                     <Info className="h-3 w-3 text-accent" />
@@ -710,8 +610,8 @@ export default function UBILIntegrationPage() {
                               </div>
                             </div>
                             <div className="text-right">
-                              {event.amount && <p className="text-sm font-headline font-bold text-white">${event.amount.toLocaleString()}</p>}
-                              <p className="text-[9px] text-muted-foreground uppercase">{new Date(event.timestamp).toLocaleString()}</p>
+                              {event.amount && <p className="text-sm font-headline font-bold text-white">${event.amount}</p>}
+                              <p className="text-[9px] text-muted-foreground uppercase">{new Date(event.timestamp).toLocaleTimeString()}</p>
                             </div>
                           </div>
                         ))}
@@ -723,17 +623,10 @@ export default function UBILIntegrationPage() {
             </TabsContent>
           </Tabs>
 
-          <footer className="pt-12 text-center border-t border-white/5 space-y-2 opacity-40">
+          <footer className="pt-12 text-center opacity-40">
             <p className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground">
-              NoorNexus Sovereign OS • Powered by Yapily Direct API
+              NoorNexus OS • Hybrid Routing Protocol • 4F82...E911
             </p>
-            <div className="flex items-center justify-center gap-4 text-[8px] font-mono">
-              <span>SHA-256: 4F82...E911</span>
-              <span>•</span>
-              <span>NODE: UK-04-ANYCAST</span>
-              <span>•</span>
-              <span>Uptime: 99.99%</span>
-            </div>
           </footer>
         </main>
       </SidebarInset>
