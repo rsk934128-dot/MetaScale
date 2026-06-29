@@ -11,7 +11,6 @@ import {
   Mail, 
   Phone, 
   ShieldCheck, 
-  History, 
   Zap, 
   Activity, 
   Lock,
@@ -24,23 +23,43 @@ import {
   BadgeCheck,
   AlertCircle,
   Wallet,
-  CreditCard
+  CreditCard,
+  Save,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useState, useMemo } from 'react';
 import { doc, collection, addDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useKernel } from '@/components/kernel/KernelProvider';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger
+} from "@/components/ui/dialog";
 
 export default function ProfilePage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const { emitEvent } = useKernel();
+  
   const [copiedId, setCopiedId] = useState(false);
   const [copiedAcc, setCopiedAcc] = useState(false);
   const [isUploading, setIsUploading] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Edit States
+  const [editMobile, setEditMobile] = useState('');
+  const [editName, setEditName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const userRef = useMemo(() => {
     if (!firestore || !user?.uid) return null;
@@ -59,6 +78,24 @@ export default function ProfilePage() {
       setTimeout(() => setCopiedAcc(false), 2000);
     }
     toast({ title: "Copied", description: `${type} saved to clipboard.` });
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!userRef) return;
+    setIsSaving(true);
+    try {
+      await updateDoc(userRef, {
+        displayName: editName || profile?.displayName,
+        mobile: editMobile || profile?.mobile
+      });
+      emitEvent('SECURITY', 'PROFILE_INFO_UPDATED', 3, { userId: user?.uid });
+      toast({ title: "Profile Updated", description: "Identity parameters reconciled." });
+      setIsEditing(false);
+    } catch (err) {
+      toast({ variant: "destructive", title: "Update Failed", description: "Kernel rejected profile changes." });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleLinkDocument = async (type: 'TIN' | 'NID') => {
@@ -82,7 +119,6 @@ export default function ProfilePage() {
         issueDate: "June 03, 2024"
       };
     } else {
-      // Data from Sheikh Farid NID image (Front & Back)
       docData.metadata = {
          nid: "596 298 3689",
          name: "SHEIKH FARID",
@@ -101,7 +137,7 @@ export default function ProfilePage() {
       const collRef = collection(firestore, 'verification_docs');
       await addDoc(collRef, docData);
       await updateDoc(userRef!, { verificationStatus: 'PENDING' });
-      emitEvent('SECURITY', `CITIZEN_${type}_SUBMITTED`, 3, { userId: user.uid, idValue: docData.metadata.nid || docData.metadata.tin });
+      emitEvent('SECURITY', `CITIZEN_${type}_SUBMITTED`, 3, { userId: user.uid });
       toast({ title: `${type} Submitted`, description: "Kernel audit in progress." });
     } catch (err) {
        toast({ variant: "destructive", title: "Submission Failed", description: "Check mesh connection." });
@@ -174,12 +210,46 @@ export default function ProfilePage() {
                    </Badge>
                    {getStatusBadge()}
                 </div>
-                <div className="flex items-center justify-center md:justify-start gap-4 text-muted-foreground">
+                <div className="flex items-center justify-center md:justify-start gap-4 text-muted-foreground mt-2">
                    <button onClick={() => handleCopy(profile?.kernelId || '', 'ID')} className="flex items-center gap-2 hover:text-accent transition-colors group">
                      <span className="text-[10px] font-mono uppercase opacity-70">Kernel ID:</span>
                      <span className="text-sm font-bold text-white/90">{profile?.kernelId || '...'}</span>
                      {copiedId ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3 opacity-0 group-hover:opacity-100" />}
                    </button>
+                   
+                   <Dialog open={isEditing} onOpenChange={setIsEditing}>
+                      <DialogTrigger asChild>
+                         <Button variant="ghost" size="sm" className="h-8 text-[10px] uppercase font-bold text-accent" onClick={() => {
+                            setEditName(profile?.displayName || '');
+                            setEditMobile(profile?.mobile || '');
+                         }}>
+                            <Edit2 className="h-3 w-3 mr-1.5" /> Edit Profile
+                         </Button>
+                      </DialogTrigger>
+                      <DialogContent className="glass-panel border-accent/20 bg-background/95">
+                         <DialogHeader>
+                            <DialogTitle className="uppercase font-headline italic">Edit Citizen Profile</DialogTitle>
+                            <DialogDescription className="text-xs">Update your identity parameters in the Sovereign Mesh.</DialogDescription>
+                         </DialogHeader>
+                         <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                               <Label className="text-[10px] uppercase font-bold text-muted-foreground">Display Name</Label>
+                               <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="bg-secondary/30 border-white/5" />
+                            </div>
+                            <div className="space-y-2">
+                               <Label className="text-[10px] uppercase font-bold text-muted-foreground">Mobile Node</Label>
+                               <Input value={editMobile} onChange={(e) => setEditMobile(e.target.value)} placeholder="+880..." className="bg-secondary/30 border-white/5" />
+                            </div>
+                         </div>
+                         <DialogFooter>
+                            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>Cancel</Button>
+                            <Button size="sm" className="bg-accent text-background font-bold cyan-glow" onClick={handleUpdateProfile} disabled={isSaving}>
+                               {isSaving ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                               Save Parameters
+                            </Button>
+                         </DialogFooter>
+                      </DialogContent>
+                   </Dialog>
                 </div>
              </div>
           </div>
@@ -302,7 +372,7 @@ export default function ProfilePage() {
                             <span className="text-green-400">NOMINAL</span>
                          </div>
                          <p className="text-[9px] text-muted-foreground italic">
-                            Your account is cryptographically signed and bound to the Sovereign Mesh Node-04.
+                            Your account is cryptographically signed and bound to the Sovereign Mesh.
                          </p>
                       </div>
                       <div className="flex items-center gap-3 p-2 text-[10px] font-bold text-green-400">
@@ -317,3 +387,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
