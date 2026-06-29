@@ -29,7 +29,10 @@ import {
   ShieldX,
   BookOpen,
   FileCode,
-  Milestone
+  Milestone,
+  Key,
+  Eye,
+  Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -92,9 +95,21 @@ export default function APIDocsPage() {
   };
 
   const handleRotateKey = () => {
-    toast({ title: "Rotating HMAC Secret", description: "Updating all secure nodes with fresh 2026_v2 keys..." });
-    setIsBreachDetected(false);
-    setTestLogs([{ msg: "System Recovery: HMAC Secret Rotated. Breach state cleared.", type: 'success' }]);
+    setIsTesting(true);
+    setTestLogs([{ msg: "Initiating Global Key Rotation Sequence...", type: 'info' }]);
+    
+    setTimeout(() => {
+      setIsBreachDetected(false);
+      setTestLogs(prev => [
+        ...prev, 
+        { msg: "Revoking compromised HMAC Secret: 0x82...AF", type: 'warning' },
+        { msg: "Generating fresh MIL-SPEC Secret (256-bit entropy)...", type: 'info' },
+        { msg: "Synchronizing 42 nodes with new signing rales...", type: 'info' },
+        { msg: "System Recovery: Handshake stabilized. Breach state cleared.", type: 'success' }
+      ]);
+      setIsTesting(false);
+      toast({ title: "HMAC Secret Rotated", description: "All secure nodes updated with fresh keys." });
+    }, 2000);
   };
 
   const runSimulation = (
@@ -166,7 +181,7 @@ export default function APIDocsPage() {
             </h1>
           </div>
           <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
-            ISO 20022 READY • FORENSICS_V1
+            ISO 20022 READY • MIL-SPEC SECURITY
           </Badge>
         </header>
 
@@ -185,7 +200,7 @@ export default function APIDocsPage() {
                </div>
                <div className="flex gap-3">
                   <Button variant="outline" size="sm" className="border-red-500/20 text-red-400 hover:bg-red-500/10 text-[10px] font-bold uppercase" onClick={handleRotateKey}>
-                    <RotateCw className="mr-2 h-3.5 w-3.5" /> Rotate Secret
+                    <RotateCw className={cn("mr-2 h-3.5 w-3.5", isTesting && "animate-spin")} /> Rotate Secret
                   </Button>
                   <Button variant="destructive" size="sm" className="bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold uppercase">
                     <ShieldX className="mr-2 h-3.5 w-3.5" /> Block Source
@@ -231,6 +246,7 @@ export default function APIDocsPage() {
                     <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2"><ShieldAlert className="h-3 w-3 text-red-400" /> Validation Options</p>
                     <div className="grid grid-cols-2 gap-2">
                        <Button variant="ghost" className="text-[8px] h-8 border border-purple-500/20 text-purple-400 hover:bg-purple-500/10 uppercase" onClick={() => runSimulation('DIRECT_API', 'DUPLICATE')} disabled={isTesting}>Idempotency Test</Button>
+                       <Button variant="ghost" className="text-[8px] h-8 border border-accent/20 text-accent uppercase" onClick={handleRotateKey} disabled={isTesting}>Rotate HMAC</Button>
                     </div>
                   </div>
                </div>
@@ -249,9 +265,10 @@ export default function APIDocsPage() {
           </div>
 
           <Tabs defaultValue="guide" className="space-y-8">
-            <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1">
+            <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1 flex-wrap overflow-x-auto">
               <TabsTrigger value="guide" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Integration Guide</TabsTrigger>
               <TabsTrigger value="endpoints" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full data-[state=active]:bg-accent data-[state=active]:text-background">API Endpoints</TabsTrigger>
+              <TabsTrigger value="best-practices" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Best Practices</TabsTrigger>
               <TabsTrigger value="security" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Security Spec</TabsTrigger>
             </TabsList>
 
@@ -348,6 +365,83 @@ export default function APIDocsPage() {
                   </CardContent>
                 </Card>
               ))}
+            </TabsContent>
+
+            <TabsContent value="best-practices" className="space-y-8">
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card className="glass-panel border-white/5">
+                     <CardHeader>
+                        <div className="w-10 h-10 rounded bg-accent/20 flex items-center justify-center text-accent mb-2">
+                           <Key className="h-5 w-5" />
+                        </div>
+                        <CardTitle className="text-sm uppercase tracking-widest">Key Management</CardTitle>
+                     </CardHeader>
+                     <CardContent className="space-y-4">
+                        <p className="text-[11px] text-muted-foreground italic">
+                           Secret Keys are like master credentials. Never expose them in client-side code (JavaScript, HTML). Always store them in <strong>.env</strong> variables on protected server nodes.
+                        </p>
+                        <div className="p-2 rounded bg-black/40 border border-white/5 text-[9px] font-mono text-white/60">
+                           NODE_ENV=production <br />
+                           SOVEREIGN_SECRET=pk_live_...
+                        </div>
+                     </CardContent>
+                  </Card>
+
+                  <Card className="glass-panel border-white/5">
+                     <CardHeader>
+                        <div className="w-10 h-10 rounded bg-primary/20 flex items-center justify-center text-primary mb-2">
+                           <Shield className="h-5 w-5" />
+                        </div>
+                        <CardTitle className="text-sm uppercase tracking-widest">Least Privilege</CardTitle>
+                     </CardHeader>
+                     <CardContent className="space-y-4">
+                        <p className="text-[11px] text-muted-foreground italic">
+                           Use **Restricted API Keys** for specific microservices. A node only handling "Audits" should not have permission to "Initiate Payouts".
+                        </p>
+                        <Badge variant="outline" className="text-[8px] border-primary/30 text-primary uppercase">MIL-SPEC ENFORCED</Badge>
+                     </CardContent>
+                  </Card>
+
+                  <Card className="glass-panel border-white/5">
+                     <CardHeader>
+                        <div className="w-10 h-10 rounded bg-green-500/20 flex items-center justify-center text-green-400 mb-2">
+                           <LinkIcon className="h-5 w-5" />
+                        </div>
+                        <CardTitle className="text-sm uppercase tracking-widest">Webhook Integrity</CardTitle>
+                     </CardHeader>
+                     <CardContent className="space-y-4">
+                        <p className="text-[11px] text-muted-foreground italic">
+                           Always verify webhook signatures before acting on events. Signature verification ensures the payload was not tampered with and originated from the Sovereign Mesh.
+                        </p>
+                        <Button variant="ghost" className="h-7 text-[8px] uppercase font-bold text-accent px-0 hover:bg-transparent">
+                           Verify Algorithm <ChevronRight className="ml-1 h-3 w-3" />
+                        </Button>
+                     </CardContent>
+                  </Card>
+               </div>
+
+               <Card className="glass-panel border-accent/20 bg-accent/5">
+                  <CardHeader>
+                     <CardTitle className="text-lg uppercase italic tracking-tighter flex items-center gap-2">
+                        <RotateCw className="h-5 w-5 text-accent" /> Key Rotation Protocol
+                     </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        {[
+                          { title: "1. Generate", desc: "Generate a new MIL-SPEC secret key in Dashboard." },
+                          { title: "2. Deploy", desc: "Update your application environment variables." },
+                          { title: "3. Test", desc: "Verify handshake with fresh key in Sandbox." },
+                          { title: "4. Revoke", desc: "Immediately revoke the compromised or old secret key." }
+                        ].map((step, i) => (
+                          <div key={i} className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-2">
+                             <p className="text-[10px] font-bold text-accent uppercase">{step.title}</p>
+                             <p className="text-[10px] text-muted-foreground italic">{step.desc}</p>
+                          </div>
+                        ))}
+                     </div>
+                  </CardContent>
+               </Card>
             </TabsContent>
 
             <TabsContent value="security" className="space-y-6">
