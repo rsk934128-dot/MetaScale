@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,25 +10,24 @@ import {
   Send, 
   Wallet, 
   RefreshCw, 
-  Zap,
   Zap as PriyoIcon,
   Loader2,
   Activity,
-  Link as LinkIcon,
-  UserPlus,
   ArrowUpRight,
   ShieldCheck,
   Search,
   ShoppingBag,
   TrendingUp,
   Download,
-  ExternalLink,
   ChevronRight,
-  ArrowRight,
   Globe,
   Network,
   CloudLightning,
-  ShieldAlert
+  ShieldAlert,
+  Plus,
+  CreditCard,
+  Smartphone,
+  ArrowRightLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -208,12 +208,12 @@ export default function FinancialIntelligence() {
           <div className="flex-1 truncate">
             <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-accent">
               <DollarSign className="h-5 w-5 text-accent" />
-              Fiscal Command Console
+              FusionPay Fiscal Command
             </h1>
           </div>
           <div className="flex items-center gap-3">
              <Badge variant="outline" className="hidden sm:flex border-accent/20 text-accent font-mono text-[10px]">
-                <Globe className="mr-1 h-3 w-3" /> MESH_SYNC: OK
+                <Globe className="mr-1 h-3 w-3" /> NODE_04_SYNC: OK
              </Badge>
              <Badge variant="outline" className={cn("text-xs border-accent/20 text-accent font-mono", isThrottled && "animate-pulse")}>
               KERNEL_{mode}
@@ -222,31 +222,47 @@ export default function FinancialIntelligence() {
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
+          {/* Top-up Bar */}
+          <div className="flex flex-wrap gap-4">
+             <Button variant="outline" className="border-accent/20 bg-accent/5 hover:bg-accent/10 text-accent text-[10px] font-bold h-10 px-6 uppercase tracking-widest">
+                <Smartphone className="mr-2 h-4 w-4" /> bKash Load
+             </Button>
+             <Button variant="outline" className="border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary text-[10px] font-bold h-10 px-6 uppercase tracking-widest">
+                <CreditCard className="mr-2 h-4 w-4" /> Visa/MC Load
+             </Button>
+             <Button variant="outline" className="border-white/10 bg-white/5 hover:bg-white/10 text-white text-[10px] font-bold h-10 px-6 uppercase tracking-widest">
+                <Globe className="mr-2 h-4 w-4" /> SWIFT/Wire
+             </Button>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-             <Card className="glass-panel border-l-4 border-l-accent overflow-hidden h-full">
+             <Card className="glass-panel border-l-4 border-l-accent overflow-hidden h-full shadow-2xl">
                 <CardHeader className="pb-2 p-4">
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Liquid Assets</CardTitle>
+                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Smart Wallet Balance</CardTitle>
                     <Wallet className="h-4 w-4 text-accent animate-pulse" />
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 flex flex-col justify-center min-h-[100px]">
-                   <p className="text-3xl font-headline font-bold text-white">${profile?.balance?.toLocaleString() || '0.00'}</p>
-                   <p className="text-[9px] text-muted-foreground uppercase font-mono mt-1">ACC: {profile?.accountNumber || '...'}</p>
+                   <p className="text-4xl font-headline font-bold text-white">${profile?.balance?.toLocaleString() || '0.00'}</p>
+                   <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="outline" className="text-[8px] font-mono text-accent">USD_MAIN_NODE</Badge>
+                      <span className="text-[9px] text-muted-foreground uppercase font-mono">ACC: {profile?.accountNumber || '...'}</span>
+                   </div>
                 </CardContent>
              </Card>
 
              <Card className="glass-panel border-l-4 border-l-green-500 overflow-hidden h-full">
                 <CardHeader className="pb-2 p-4">
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Marketplace Income</CardTitle>
+                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Marketplace Earnings</CardTitle>
                     <ShoppingBag className="h-4 w-4 text-green-500" />
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 flex flex-col justify-center min-h-[100px]">
                    <p className="text-3xl font-headline font-bold text-white">${marketplaceEarnings.toLocaleString()}</p>
                    <div className="flex items-center gap-1 text-green-400 text-[10px] font-bold mt-1">
-                      <TrendingUp className="h-3 w-3" /> {paidLinks?.length || 0} Successful Sales
+                      <TrendingUp className="h-3 w-3" /> {paidLinks?.length || 0} Settled Sales
                    </div>
                 </CardContent>
              </Card>
@@ -254,9 +270,9 @@ export default function FinancialIntelligence() {
              <Card className="glass-panel border-l-4 border-l-primary lg:col-span-2 overflow-hidden h-full">
                 <CardHeader className="pb-2 p-4">
                   <div className="flex justify-between items-center">
-                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Linked Institution (AIS)</CardTitle>
+                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Bank Integration (AIS)</CardTitle>
                     {connectedAccount && (
-                      <Badge className="bg-primary/20 text-primary text-[8px] font-mono">SYNC_OK</Badge>
+                      <Badge className="bg-primary/20 text-primary text-[8px] font-mono">NODE_ACTIVE</Badge>
                     )}
                   </div>
                 </CardHeader>
@@ -275,14 +291,14 @@ export default function FinancialIntelligence() {
                              disabled={isToppingUp || connectedAccount.balance < 1000}
                            >
                               {isToppingUp ? <RefreshCw className="mr-1 h-3 w-3 animate-spin" /> : <Download className="mr-1 h-3 w-3" />}
-                              Deposit $1,000
+                              Sync $1,000
                            </Button>
-                           <Button variant="ghost" className="text-[8px] uppercase font-bold h-6" onClick={() => setConnectedAccount(null)}>Disconnect</Button>
+                           <Button variant="ghost" className="text-[8px] uppercase font-bold h-6" onClick={() => setConnectedAccount(null)}>Detach Node</Button>
                         </div>
                      </div>
                    ) : (
                      <Button variant="ghost" className="text-[10px] font-bold text-primary hover:bg-primary/10 h-12 border border-dashed border-primary/20 w-full" onClick={() => setIsSandboxOpen(true)}>
-                        Connect Open Banking Node
+                        Establish Institutional Handshake
                      </Button>
                    )}
                 </CardContent>
@@ -293,9 +309,9 @@ export default function FinancialIntelligence() {
             <div className="lg:col-span-2 space-y-6">
               <Tabs defaultValue="links" className="space-y-6">
                 <TabsList className="bg-secondary/50 border border-white/5 p-1 h-auto flex flex-wrap">
-                  <TabsTrigger value="links" className="data-[state=active]:bg-accent data-[state=active]:text-background text-[10px] uppercase font-bold tracking-widest px-6 h-10">Marketplace Links</TabsTrigger>
-                  <TabsTrigger value="priyo" className="data-[state=active]:bg-[#6366f1] data-[state=active]:text-white text-[10px] uppercase font-bold tracking-widest px-6 h-10">Priyo Pay Payouts</TabsTrigger>
-                  <TabsTrigger value="mesh" className="data-[state=active]:bg-accent data-[state=active]:text-background text-[10px] uppercase font-bold tracking-widest px-6 h-10">Mesh Transfer</TabsTrigger>
+                  <TabsTrigger value="links" className="data-[state=active]:bg-accent data-[state=active]:text-background text-[10px] uppercase font-bold tracking-widest px-6 h-10">Merchant Links</TabsTrigger>
+                  <TabsTrigger value="priyo" className="data-[state=active]:bg-[#6366f1] data-[state=active]:text-white text-[10px] uppercase font-bold tracking-widest px-6 h-10">Cross-Border Payout</TabsTrigger>
+                  <TabsTrigger value="mesh" className="data-[state=active]:bg-accent data-[state=active]:text-background text-[10px] uppercase font-bold tracking-widest px-6 h-10">Internal Mesh</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="links" className="space-y-6">
@@ -306,16 +322,16 @@ export default function FinancialIntelligence() {
                    <Card className="glass-panel border-l-4 border-l-[#6366f1] bg-[#6366f1]/5 shadow-2xl">
                       <CardHeader>
                          <CardTitle className="text-sm flex items-center gap-2 uppercase text-[#818cf8]">
-                            <PriyoIcon className="h-4 w-4" /> Priyo Pay Disbursement
+                            <PriyoIcon className="h-4 w-4" /> Global Payout Orchestration
                          </CardTitle>
-                         <CardDescription className="text-[10px] uppercase tracking-widest">Global USD disbursement gateway</CardDescription>
+                         <CardDescription className="text-[10px] uppercase tracking-widest">PayPal REST | Priyo Pay | bKash B2C</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                               <Label className="text-[10px] font-bold uppercase">Recipient Email</Label>
+                               <Label className="text-[10px] font-bold uppercase">Recipient Gateway ID</Label>
                                <Input 
-                                  placeholder="user@priyo.com" 
+                                  placeholder="email@gateway.com" 
                                   className="h-11 text-sm bg-background/50 border-white/5 focus:border-[#6366f1]/50"
                                   value={priyoEmail}
                                   onChange={(e) => setPriyoEmail(e.target.value)}
@@ -338,13 +354,13 @@ export default function FinancialIntelligence() {
                             disabled={isPriyoProcessing || isThrottled}
                          >
                             {isPriyoProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ChevronRight className="mr-2 h-4 w-4" />}
-                            Execute Priyo Payout
+                            Execute Disbursement
                          </Button>
 
                          {priyoReport && (
                            <div className="mt-4 p-4 rounded-xl bg-black/40 border border-[#6366f1]/20 space-y-3 animate-fade-in shadow-inner">
                               <div className="flex justify-between items-center">
-                                 <span className="text-[10px] font-bold text-[#818cf8]">STATUS: {priyoReport.status}</span>
+                                 <span className="text-[10px] font-bold text-[#818cf8]">FINALITY: {priyoReport.status}</span>
                                  <Badge variant="outline" className="text-[8px] font-mono">{priyoReport.batchId}</Badge>
                               </div>
                               <div className="space-y-1">
@@ -362,18 +378,18 @@ export default function FinancialIntelligence() {
                    <Card className="glass-panel border-l-4 border-l-accent bg-accent/5 shadow-2xl">
                       <CardHeader>
                          <CardTitle className="text-sm flex items-center gap-2 uppercase">
-                            <Send className="h-4 w-4 text-accent" /> Mesh Transfer Protocol
+                            <Send className="h-4 w-4 text-accent" /> Node-to-Node Mesh
                          </CardTitle>
                          <CardDescription className="text-[10px] uppercase tracking-widest">Internal anycast settlement corridor</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                               <Label className="text-[10px] font-bold uppercase">Recipient Account #</Label>
+                               <Label className="text-[10px] font-bold uppercase">Target Mesh Account</Label>
                                <div className="relative">
                                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent/50" />
                                   <Input 
-                                     placeholder="12-digit account number" 
+                                     placeholder="12-digit Fusion ID" 
                                      className="pl-10 h-11 text-sm bg-background/50 border-white/5 focus:border-accent/50"
                                      value={targetAccount}
                                      onChange={(e) => setTargetAccount(e.target.value)}
@@ -396,8 +412,8 @@ export default function FinancialIntelligence() {
                             onClick={handleMeshTransfer}
                             disabled={isTransferring || isThrottled}
                          >
-                            {isTransferring ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                            Execute Settlement
+                            {isTransferring ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRightLeft className="mr-2 h-4 w-4" />}
+                            Commit Transfer
                          </Button>
                       </CardContent>
                    </Card>
@@ -409,7 +425,7 @@ export default function FinancialIntelligence() {
                <Card className="glass-panel border-accent/20 bg-accent/5 shadow-xl">
                 <CardHeader className="p-4">
                   <CardTitle className="text-xs uppercase flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-accent" /> Fiscal Context
+                    <ShieldCheck className="h-4 w-4 text-accent" /> Security Context
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-4">
@@ -420,11 +436,11 @@ export default function FinancialIntelligence() {
                       </div>
                       <div className="flex justify-between">
                          <span className="text-muted-foreground uppercase">API Handshake</span>
-                         <span className="text-green-400 font-bold flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> ACTIVE</span>
+                         <span className="text-green-400 font-bold flex items-center gap-1">SECURE</span>
                       </div>
                       <div className="flex justify-between border-t border-white/5 pt-2">
-                         <span className="text-muted-foreground uppercase">Mesh Status</span>
-                         <span className="text-white font-mono">NOMINAL</span>
+                         <span className="text-muted-foreground uppercase">ISO 20022 Status</span>
+                         <span className="text-white font-mono text-[8px]">VALIDATED</span>
                       </div>
                    </div>
                 </CardContent>
@@ -440,13 +456,13 @@ export default function FinancialIntelligence() {
                  <CardContent className="p-4 pt-0 space-y-4">
                     <div className="space-y-2">
                       <div className="flex justify-between text-[9px] font-bold uppercase">
-                        <span className="text-muted-foreground">API Sync Speed</span>
-                        <span className="text-primary">124ms</span>
+                        <span className="text-muted-foreground">Anycast Sync Speed</span>
+                        <span className="text-primary">8.4ms</span>
                       </div>
-                      <Progress value={92} className="h-1 bg-primary/10 [&>div]:bg-primary" />
+                      <Progress value={98} className="h-1 bg-primary/10 [&>div]:bg-primary" />
                     </div>
                     <div className="p-2 rounded bg-secondary/30 text-[9px] text-white/60 italic leading-relaxed border border-white/5">
-                      {"Priyo Pay payouts are subject to Imperial Directive validation for amounts > $1,000."}
+                      {"FusionPay disbursements are T+0. Real-time settlement active for Verified citizens."}
                     </div>
                  </CardContent>
               </Card>
@@ -454,12 +470,12 @@ export default function FinancialIntelligence() {
               <Card className="glass-panel border-red-500/20 bg-red-500/5">
                  <CardHeader className="p-4">
                     <CardTitle className="text-[10px] uppercase font-bold text-red-400 flex items-center gap-2">
-                       <ShieldAlert className="h-3 w-3" /> System Warning
+                       <ShieldAlert className="h-3 w-3" /> System Guard
                     </CardTitle>
                  </CardHeader>
                  <CardContent className="p-4 pt-0">
                     <p className="text-[9px] text-red-300 leading-relaxed">
-                       Unauthorized external API calls will trigger immediate node isolation protocol.
+                       Fraud detection engine is monitoring all outbound disbursement corridors.
                     </p>
                  </CardContent>
               </Card>

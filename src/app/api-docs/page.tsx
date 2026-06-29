@@ -44,62 +44,59 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const API_ENDPOINTS = [
   {
-    id: "stripe-webhook",
-    title: "Stripe Webhook Listener",
+    id: "inbound-settlement",
+    title: "Inbound Settlement (PIS)",
     method: "POST",
-    path: "/api/v1/stripe/webhook",
-    desc: "Stripe থেকে আসা লাইভ পেমেন্ট ইভেন্টগুলো শোনার জন্য এই এন্ডপয়েন্ট ব্যবহার করুন। এটি স্বয়ংক্রিয়ভাবে ব্যালেন্স আপডেট করে।",
+    path: "/api/v1/settlement/inbound",
+    desc: "অন্যান্য ব্যাংক বা ফিনটেক অ্যাপগুলো এই এন্ডপয়েন্ট ব্যবহার করে সরাসরি আপনার ফিউশন একাউন্টে টাকা পাঠাতে পারবে। এটি ISO 20022 স্ট্যান্ডার্ড অনুসরণ করে।",
     params: [
-      { name: "stripe-signature", type: "header", desc: "Webhook signature secret for verification." },
-      { name: "type", type: "string", desc: "Event type (checkout.session.completed)." }
+      { name: "account_number", type: "string", desc: "টার্গেট ১২-ডিজিট ফিউশন একাউন্ট নম্বর।" },
+      { name: "amount", type: "number", desc: "Settlement amount in USD." },
+      { name: "source_gateway", type: "string", desc: "BKASH_V12, PAYPAL_REST, SWIFT_NODE." }
     ],
     example: `{
-  "id": "evt_1Pj...",
-  "type": "checkout.session.completed",
-  "data": {
-    "object": {
-      "amount_total": 5000,
-      "metadata": { "seal": "PAY_SEAL_X92" }
-    }
-  }
-}`
-  },
-  {
-    id: "card-settlement",
-    title: "Mastercard Clearing (Visa/MC)",
-    method: "POST",
-    path: "/api/v1/settlement/card",
-    desc: "গ্লোবাল কার্ড প্রসেসররা সরাসরি আপনার Sovereign Mesh একাউন্টে টাকা জমা করার জন্য এই এন্ডপয়েন্ট ব্যবহার করবে।",
-    params: [
-      { name: "card_token", type: "string", desc: "প্রসেসর থেকে প্রাপ্ত সিকিউর পেমেন্ট টোকেন।" },
-      { name: "processor_id", type: "string", desc: "ভ্যালিড প্রসেসর আইডি (MASTERCARD_NET, VISA_CORE)।" },
-      { name: "auth_code", type: "string", desc: "ব্যাংকের অথরাইজেশন কোড।" }
-    ],
-    example: `{
-  "processor_id": "MASTERCARD_GLOBAL",
   "target_account": "108734305736",
-  "amount": 1250.00,
+  "amount": 500.00,
   "currency": "USD",
-  "card_token": "TOK_MC_82AF",
-  "security_seal": "HMAC_SHA256_SIG"
+  "source_gateway": "BKASH_V12",
+  "routing_seal": "SIG_HMAC_SHA256_0X82AF"
 }`
   },
   {
     id: "payout-orchestration",
-    title: "Outbound Payout (PIS)",
+    title: "Global Payout (Outbound)",
     method: "POST",
     path: "/api/v1/payouts/execute",
-    desc: "Sovereign Mesh থেকে বাইরের সিস্টেমে (Stripe/Priyo/Nagad) টাকা পাঠানোর জন্য এই লজিক ব্যবহার করা হয়।",
+    desc: "ফিউশন নোড থেকে বাইরের সিস্টেমে (PayPal, Priyo Pay, bKash) টাকা পাঠানোর জন্য এই লজিক ব্যবহার করা হয়।",
     params: [
-      { name: "recipient_identity", type: "string", desc: "টার্গেট ইমেইল বা গেটওয়ে আইডি।" },
-      { name: "gateway", type: "enum", desc: "PRIYO_PAY, STRIPE_CONNECT, NAGAD" },
+      { name: "recipient_id", type: "string", desc: "Recipient's email or phone number." },
+      { name: "gateway", type: "enum", desc: "PAYPAL, PRIYO_PAY, BKASH_B2C" },
       { name: "amount", type: "number", desc: "Disbursement amount." }
     ],
     example: `{
-  "gateway": "PRIYO_PAY",
-  "recipient_identity": "vendor@mesh.gov",
+  "gateway": "PAYPAL",
+  "recipient_id": "vendor@global.com",
   "amount": 1250.00,
-  "directive": "L3_IMPERIAL"
+  "directive": "L3_IMPERIAL_SETTLEMENT"
+}`
+  },
+  {
+    id: "communication-relay",
+    title: "Gmail & SMS Relay",
+    method: "POST",
+    path: "/api/v1/communication/relay",
+    desc: "সার্ভারলেস নোটিফিকেশন সিস্টেম। এটি জিমেইল এবং এসএমএস গেটওয়ের মাধ্যমে সিটিজেনদের ডিরেক্টিভ মেসেজ পাঠায়।",
+    params: [
+      { name: "type", type: "enum", desc: "GMAIL_ANYCAST, SMS_GATEWAY" },
+      { name: "template", type: "string", desc: "Notification template ID." }
+    ],
+    example: `{
+  "type": "GMAIL_ANYCAST",
+  "target": "citizen@mesh.gov",
+  "payload": {
+    "title": "Payment Received",
+    "message": "You received $500.00 from Node-04."
+  }
 }`
   }
 ];
@@ -120,24 +117,24 @@ export default function APIDocsPage() {
 
   const simulateHandshake = () => {
     setIsTestingHandshake(true);
-    setHandshakeLog(["Connecting to Mastercard Node P180...", "Initiating SSL/TLS Handshake...", "Exchanging Grant Tokens..."]);
+    setHandshakeLog(["Establishing TLS 1.3 Tunnel...", "Cross-checking ISO 20022 Headers...", "Verifying SHA-256 Payload Signature..."]);
     
     setTimeout(() => {
       const newEntry = {
         id: `TX_${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
         status: 'SUCCESS',
-        type: 'MASTERCARD_CLEARING',
-        amount: (Math.random() * 1000).toFixed(2),
+        type: 'INBOUND_SETTLEMENT',
+        amount: (Math.random() * 5000).toFixed(2),
         ts: new Date().toLocaleTimeString()
       };
       
-      setHandshakeLog(prev => [...prev, "Auth: API_KEY_VALID_LIVE", "Target Mesh: Clearing_Node_OK", "Status: HANDSHAKE_SUCCESSFUL"]);
+      setHandshakeLog(prev => [...prev, "Signature: VALID_OK", "Mesh Persistence: SYNCED", "Status: HANDSHAKE_SUCCESSFUL"]);
       setLiveLedger(prev => [newEntry, ...prev].slice(0, 5));
       setIsTestingHandshake(false);
       
       toast({
         title: "Connection Established",
-        description: "Mastercard Clearing House successfully connected to Sovereign Mesh.",
+        description: "External Bank Node successfully connected to FusionPay Mesh.",
       });
     }, 2000);
   };
@@ -151,33 +148,33 @@ export default function APIDocsPage() {
           <div className="flex-1">
             <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-accent">
               <Code2 className="h-5 w-5 text-accent" />
-              Sovereign API & Mastercard Hub
+              FusionPay API & Global Mesh
             </h1>
           </div>
           <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
-            v1.2.0-stable • MESH_ONLINE
+            v1.2.0-stable • ISO_20022_ACTIVE
           </Badge>
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-12">
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div className="space-y-4 flex-1">
-              <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase">Fintech <span className="text-accent italic">Interoperability</span></h2>
+              <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic">Connectivity <span className="text-accent">Oracle</span></h2>
               <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed">
-                মাস্টারকার্ড এবং স্ট্রাইপ রেলের সাথে আমাদের ডিটারমিনিস্টিক গেটওয়ে ইন্টিগ্রেশন। এই ডকস ব্যবহার করে যেকোনো ফিনান্সিয়াল ইনস্টিটিউশন সরাসরি আপনার অ্যাপের ব্যালেন্সে টাকা সেটেল করতে পারবে। প্রতিটি ট্রানজ্যাকশন রিয়েল-টাইমে কার্নেল দ্বারা অডিট করা হবে।
+                ফিউশন পে-এর ডিটারমিনিস্টিক গেটওয়ে ইন্টিগ্রেশন। এই ডকস ব্যবহার করে যেকোনো ফিনান্সিয়াল ইনস্টিটিউশন (PayPal, bKash, SWIFT) সরাসরি আপনার অ্যাপের ব্যালেন্সে টাকা সেটেল করতে পারবে। প্রতিটি ট্রানজ্যাকশন ISO 20022 স্ট্যান্ডার্ডে অডিট করা হবে।
               </p>
               <div className="flex flex-wrap items-center gap-4 pt-2">
                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/5 border border-accent/20">
-                    <CreditCard className="h-4 w-4 text-accent" />
-                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">Mastercard Rail</span>
+                    <Smartphone className="h-4 w-4 text-accent" />
+                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">bKash v1.2</span>
                  </div>
-                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#635bff]/5 border border-[#635bff]/20">
-                    <Zap className="h-4 w-4 text-[#635bff]" />
-                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">Stripe Sync</span>
+                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/5 border border-blue-500/20">
+                    <CreditCard className="h-4 w-4 text-blue-400" />
+                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">PayPal REST</span>
                  </div>
                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/5 border border-green-500/20">
                     <ShieldCheck className="h-4 w-4 text-green-400" />
-                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">Signed Handshake</span>
+                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">SHA-256 Signed</span>
                  </div>
               </div>
             </div>
@@ -186,11 +183,11 @@ export default function APIDocsPage() {
                <div className="absolute top-0 right-0 p-2 opacity-10"><Activity className="h-20 w-20 text-accent" /></div>
                <div className="flex items-center gap-3 mb-4">
                   <Terminal className="h-5 w-5 text-accent" />
-                  <p className="text-xs font-bold uppercase text-white tracking-widest">Clearing Node</p>
+                  <p className="text-xs font-bold uppercase text-white tracking-widest">Handshake Lab</p>
                </div>
                <div className="space-y-4 relative z-10">
                  <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                    "সবগুলো কার্ড অপারেশন অবশ্যই এনক্রিপ্টেড হতে হবে এবং হেন্ডশেক প্রোটোকল মেনে চলতে হবে।"
+                    "সফলভাবে ইন্টিগ্রেশন টেস্ট করার জন্য নিচের বাটনে ক্লিক করে সার্ভার-টু-সার্ভার হ্যান্ডশেক সিমুলেট করুন।"
                  </p>
                  <Button 
                    className="w-full text-[10px] font-bold h-10 bg-accent text-background cyan-glow uppercase tracking-widest"
@@ -198,7 +195,7 @@ export default function APIDocsPage() {
                    disabled={isTestingHandshake}
                  >
                     {isTestingHandshake ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <Play className="mr-2 h-3 w-3" />}
-                    Test Hub Handshake
+                    Test Server Handshake
                  </Button>
                </div>
                {handshakeLog.length > 0 && (
@@ -231,8 +228,8 @@ export default function APIDocsPage() {
                                <Badge className="bg-accent text-background font-bold px-3">{api.method}</Badge>
                                <span className="text-xs font-mono text-accent/80 tracking-tighter">{api.path}</span>
                             </div>
-                            <CardTitle className="text-xl mt-2 flex items-center gap-2 text-white">
-                              {api.id === 'card-settlement' ? <CreditCard className="h-5 w-5 text-accent" /> : api.id === 'stripe-webhook' ? <Zap className="h-5 w-5 text-[#635bff]" /> : <CloudLightning className="h-5 w-5 text-primary" />}
+                            <CardTitle className="text-xl mt-2 flex items-center gap-2 text-white uppercase italic">
+                              {api.id.includes('settlement') ? <ArrowRightLeft className="h-5 w-5 text-accent" /> : <CloudLightning className="h-5 w-5 text-primary" />}
                               {api.title}
                             </CardTitle>
                           </div>
@@ -273,15 +270,15 @@ export default function APIDocsPage() {
                 <TabsContent value="database" className="space-y-6">
                    <Card className="glass-panel border-white/5">
                       <CardHeader>
-                         <CardTitle className="text-sm flex items-center gap-2 uppercase">
-                            <Database className="h-4 w-4 text-accent" /> Data Persistence
+                         <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest">
+                            <Database className="h-4 w-4 text-accent" /> Persistence Mesh
                          </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                          {[
-                           { path: "/users/{userId}", desc: "Mastercard-bound citizen identity." },
-                           { path: "/payment_links/{linkId}", desc: "Stripe/Priyo settlement corridors." },
-                           { path: "/events", desc: "Deterministic ledger of hub interactions." }
+                           { path: "/users/{userId}", desc: "Citizen identity & Liquid asset storage." },
+                           { path: "/payment_links/{linkId}", desc: "Merchant settlement corridors." },
+                           { path: "/events", desc: "ISO 20022 compliant interaction logs." }
                          ].map((p, i) => (
                            <div key={i} className="p-3 rounded-lg bg-secondary/20 border border-white/5 flex items-center justify-between">
                               <div>
@@ -302,14 +299,14 @@ export default function APIDocsPage() {
                   <CardHeader className="p-4 border-b border-white/5">
                      <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest">
                         <History className="h-4 w-4 text-accent" />
-                        Live Hub Ledger
+                        Live Mesh Ledger
                      </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
                      <ScrollArea className="h-[400px]">
                         {liveLedger.length === 0 ? (
                           <div className="p-20 text-center text-muted-foreground italic text-[10px]">
-                             No active hub interactions.
+                             No active mesh interactions.
                           </div>
                         ) : (
                           <div className="divide-y divide-white/5">

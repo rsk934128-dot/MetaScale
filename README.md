@@ -1,26 +1,25 @@
 
-# 🌐 Sovereign OS v1.2 | Mastercard Fintech Hub
+# 🚀 FusionPay | Global Smart Wallet & Settlement Node
 
-![Sovereign OS Banner](https://picsum.photos/seed/readme-header/1200/400)
-
-**Sovereign OS** is a mission-critical, deterministic operating system designed for the next generation of digital civilizations. It functions as a **Mastercard Fintech Hub**, orchestrating civic, financial, and security intelligence across a 42-node distributed anycast mesh.
+**FusionPay** (powered by Sovereign Kernel) হলো একটি এআই-নেটিভ (AI-native) গ্লোবাল ফিনটেক সল্যুশন। এটি লন্ডন-স্ট্যান্ডার্ড ইনফ্রাস্ট্রাকচার ব্যবহার করে লোকাল পেমেন্ট (bKash, Nagad) এবং গ্লোবাল সেটেলমেন্ট (PayPal, Stripe, SWIFT) এর মধ্যে একটি শক্তিশালী সেতু তৈরি করে।
 
 ---
 
-## 🚀 Strategic Operational Planes
+## ✨ Strategic Operational Planes
 
-### 💰 Financial Sovereign (Mastercard Hub)
-*   **Multi-Rail Settlements:** Native integration with Stripe, Priyo Pay, and bKash B2C.
-*   **Card Clearing House:** Direct API for Visa/Mastercard processing.
-*   **Deterministic Payouts:** AI-orchestrated disbursements with 99.9% accuracy.
+### 🌍 Global Settlement Nodes
+*   **Multi-Network Top-up:** bKash, SSLCommerz (Visa/Mastercard), Stripe Global, US Bank (ACH), International Wire (SWIFT).
+*   **Cross-Border Payouts:** PayPal REST API, Priyo Pay, এবং bKash B2C সরাসরি ইন্টিগ্রেশন।
+*   **Oracle Handshake:** ২-স্টেপ (Check & Confirm) সেটেলমেন্ট ভেরিফিকেশন লজিক।
 
-### 🌊 Civic Intelligence
-*   **River Health Monitoring:** Real-time environmental telemetry via distributed sensors.
-*   **Automated SOS Protocols:** Rapid response dispatch for civic emergencies.
+### 🤖 AI Intelligence (Genkit Powered)
+*   **AI Insights:** লেনদেন বিশ্লেষণ করে পার্সোনালাইজড আর্থিক পরামর্শ।
+*   **Fraud Detection:** রিয়েল-টাইম ফ্রড স্কোরিং এবং অ্যানোমালি ডিটেকশন।
+*   **AI Decision Engine:** ডিটারমিনিস্টিক লিকুইডিটি ডেসপ্যাচ।
 
-### 🛡️ Security Intelligence
-*   **Zero-Trust Mesh:** Biometric identity binding and autonomous threat containment.
-*   **DPE Logic:** Deterministic Priority Engine for mission-critical execution.
+### 🛠 Merchant & Developer Tools
+*   **SaaS Merchant Portal:** এপিআই কী ম্যানেজমেন্ট এবং ইনফ্রাস্ট্রাকচার কন্ট্রোল।
+*   **ISO 20022 Compliance:** প্রাতিষ্ঠানিক মেসেজিং স্ট্যান্ডার্ড অনুসরণকারী আর্কিটেকচার।
 
 ---
 
@@ -28,29 +27,20 @@
 
 | Component | Technology |
 | :--- | :--- |
-| **Framework** | [Next.js 15](https://nextjs.org/) (App Router) |
-| **AI Engine** | [Genkit](https://firebase.google.com/docs/genkit) (Gemini 2.5 Flash) |
-| **Backend** | [Firebase](https://firebase.google.com/) (Auth, Firestore) |
-| **Settlement** | Stripe & Priyo Pay Live Rails |
-| **Networking** | 42-Node Anycast Distributed Grid |
+| **Framework** | Next.js 15 (App Router), React 19 |
+| **AI Engine** | Genkit (Gemini 2.5 Flash) |
+| **Backend** | Firebase (Auth, Firestore, Cloud Functions) |
+| **Settlement** | PayPal REST, bKash v1.2, SSLCommerz, Stripe |
+| **Standards** | ISO 20022, SHA-256 Payload Verification |
 
 ---
 
 ## 🔑 Administrative Access
 
 - **Root Administrator:** `rubels1k994@gmail.com`
-- **Clearing House Keys:** Integrated via Sovereign Core Kernel.
+- **Clearing House Keys:** Integrated via FusionPay Global Node.
 
 ---
 
-## 🛤 Strategic Roadmap
-
-- [x] **Phase 1: Genesis Kernel** - Priority Engine & Identity Binding.
-- [x] **Phase 2: Intelligence Plane** - Genkit flows & Financial Rails.
-- [ ] **Phase 3: Autonomous Governance** - AI Council & Drift Detection.
-- [ ] **Phase 4: Global Settlement** - Full Mastercard Institutional Node.
-
----
-
-> **"In code we trust, by law we are bound."**  
-> *© 2024 Sovereign Kernel Orchestration (S.K.O.)*
+> **"Global Connectivity, Local Trust."**  
+> *© 2024 FusionPay Global Node. Founded in London.*
