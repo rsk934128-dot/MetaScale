@@ -31,7 +31,9 @@ import {
   Smartphone,
   Server,
   Activity,
-  History
+  History,
+  CreditCard,
+  Wallet
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,8 +44,30 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const API_ENDPOINTS = [
   {
+    id: "card-settlement",
+    title: "Card-to-Mesh Settlement (Visa/MC)",
+    method: "POST",
+    path: "/api/v1/settlement/card",
+    desc: "ভিসা এবং মাস্টারকার্ড প্রসেসররা সরাসরি আপনার Sovereign Mesh একাউন্টে টাকা জমা করার জন্য এই এন্ডপয়েন্ট ব্যবহার করবে। এটি সরাসরি কার্ড নেটওয়ার্কের সাথে সিকিউর হ্যান্ডশেক করে।",
+    params: [
+      { name: "card_token", type: "string", desc: "প্রসেসর থেকে প্রাপ্ত সিকিউর পেমেন্ট টোকেন।" },
+      { name: "processor_id", type: "string", desc: "ভ্যালিড প্রসেসর আইডি (VISA_NET, MC_GATEWAY)।" },
+      { name: "target_account", type: "string", desc: "সিটিজেন-এর ১২-ডিজিটের ইউনিক কার্নেল নম্বর।" },
+      { name: "auth_code", type: "string", desc: "ব্যাংকের অথরাইজেশন কোড।" }
+    ],
+    example: `{
+  "processor_id": "VISA_NET_GLOBAL",
+  "target_account": "108734305736",
+  "amount": 1250.00,
+  "currency": "USD",
+  "card_token": "TOK_82AF_921X",
+  "auth_code": "091202",
+  "security_seal": "HMAC_SHA256_SIG"
+}`
+  },
+  {
     id: "inbound-settlement",
-    title: "Inbound Settlement (PIS)",
+    title: "Bank Inbound Settlement (PIS)",
     method: "POST",
     path: "/api/v1/settlement/inbound",
     desc: "অন্যান্য ব্যাংক থেকে আপনার Sovereign Mesh একাউন্টে টাকা পাঠানোর প্রধান এন্ডপয়েন্ট। এটি সরাসরি ডাটাবেজের পেমেন্ট লেজারের সাথে যুক্ত।",
@@ -103,18 +127,18 @@ export default function APIDocsPage() {
       const newEntry = {
         id: `TX_${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
         status: 'SUCCESS',
-        type: 'INBOUND_SYNC',
+        type: 'CARD_CLEARING',
         amount: (Math.random() * 1000).toFixed(2),
         ts: new Date().toLocaleTimeString()
       };
       
-      setHandshakeLog(prev => [...prev, "Auth: API_KEY_VALID_LIVE", "Target Mesh: Firestore_Sync_OK", "Status: HANDSHAKE_SUCCESSFUL"]);
+      setHandshakeLog(prev => [...prev, "Auth: API_KEY_VALID_LIVE", "Target Mesh: Card_Node_OK", "Status: HANDSHAKE_SUCCESSFUL"]);
       setLiveLedger(prev => [newEntry, ...prev].slice(0, 5));
       setIsTestingHandshake(false);
       
       toast({
         title: "Connection Established",
-        description: "Data successfully written to the Sovereign Mesh Ledger.",
+        description: "Visa/MC Clearing House successfully connected to Sovereign Mesh.",
       });
     }, 2000);
   };
@@ -139,18 +163,22 @@ export default function APIDocsPage() {
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-12">
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div className="space-y-4 flex-1">
-              <h2 className="text-4xl font-headline font-bold tracking-tighter">Database <span className="text-accent italic">Interoperability</span></h2>
+              <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase">Clearance <span className="text-accent italic">Interoperability</span></h2>
               <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed">
-                আমাদের এপিআই ডকুমেন্টেশন ব্যবহার করে যে কেউ সরাসরি আপনার Sovereign Mesh-এর সাথে কানেক্ট হতে পারবে। ডাটাবেজ ইন্টিগ্রেশন এখন পুরোপুরি অটোমেটেড—ডাটা সরাসরি ফায়ারবেস মেশে সিঙ্ক হবে এবং প্রতিটি ট্রানজ্যাকশন ক্রিপ্টোগ্রাফিকভাবে সাইন করা হবে।
+                ভিসা, মাস্টারকার্ড এবং গ্লোবাল ব্যাংকগুলোর জন্য আমাদের ডিটারমিনিস্টিক গেটওয়ে ইন্টিগ্রেশন। এই ডকস ব্যবহার করে যেকোনো ফিনান্সিয়াল ইনস্টিটিউশন সরাসরি আপনার অ্যাপের ব্যালেন্সে টাকা সেটেল করতে পারবে। প্রতিটি ট্রানজ্যাকশন রিয়েল-টাইমে কার্নেল দ্বারা অডিট করা হবে।
               </p>
-              <div className="flex items-center gap-4 pt-2">
-                 <div className="flex items-center gap-2">
-                    <Database className="h-4 w-4 text-accent" />
-                    <span className="text-[10px] font-bold uppercase text-white">Firestore Sync</span>
+              <div className="flex flex-wrap items-center gap-4 pt-2">
+                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/5 border border-accent/20">
+                    <CreditCard className="h-4 w-4 text-accent" />
+                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">Visa/MC Rail</span>
                  </div>
-                 <div className="flex items-center gap-2">
+                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 border border-primary/20">
+                    <Database className="h-4 w-4 text-primary" />
+                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">Firestore Sync</span>
+                 </div>
+                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/5 border border-green-500/20">
                     <ShieldCheck className="h-4 w-4 text-green-400" />
-                    <span className="text-[10px] font-bold uppercase text-white">Auth Handshake</span>
+                    <span className="text-[9px] font-bold uppercase text-white tracking-widest">Signed Handshake</span>
                  </div>
               </div>
             </div>
@@ -159,11 +187,11 @@ export default function APIDocsPage() {
                <div className="absolute top-0 right-0 p-2 opacity-10"><Activity className="h-20 w-20 text-accent" /></div>
                <div className="flex items-center gap-3 mb-4">
                   <Terminal className="h-5 w-5 text-accent" />
-                  <p className="text-xs font-bold uppercase text-white tracking-widest">Handshake Protocol</p>
+                  <p className="text-xs font-bold uppercase text-white tracking-widest">Clearing Node</p>
                </div>
                <div className="space-y-4 relative z-10">
                  <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                    "সবগুলো ডাটাবেজ অপারেশন অবশ্যই এনক্রিপ্টেড হতে হবে এবং হেন্ডশেক প্রোটোকল মেনে চলতে হবে।"
+                    "সবগুলো কার্ড অপারেশন অবশ্যই এনক্রিপ্টেড হতে হবে এবং হেন্ডশেক প্রোটোকল মেনে চলতে হবে।"
                  </p>
                  <Button 
                    className="w-full text-[10px] font-bold h-10 bg-accent text-background cyan-glow uppercase tracking-widest"
@@ -171,7 +199,7 @@ export default function APIDocsPage() {
                    disabled={isTestingHandshake}
                  >
                     {isTestingHandshake ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <Play className="mr-2 h-3 w-3" />}
-                    Test Server Handshake
+                    Test Acquirer Handshake
                  </Button>
                </div>
                {handshakeLog.length > 0 && (
@@ -205,7 +233,7 @@ export default function APIDocsPage() {
                                <span className="text-xs font-mono text-accent/80 tracking-tighter">{api.path}</span>
                             </div>
                             <CardTitle className="text-xl mt-2 flex items-center gap-2 text-white">
-                              {api.id === 'inbound-settlement' ? <ArrowRightLeft className="h-5 w-5 text-green-400" /> : <CloudLightning className="h-5 w-5 text-primary" />}
+                              {api.id === 'card-settlement' ? <CreditCard className="h-5 w-5 text-accent" /> : api.id === 'inbound-settlement' ? <ArrowRightLeft className="h-5 w-5 text-green-400" /> : <CloudLightning className="h-5 w-5 text-primary" />}
                               {api.title}
                             </CardTitle>
                           </div>
@@ -315,7 +343,7 @@ export default function APIDocsPage() {
                   </CardHeader>
                   <CardContent className="p-4 pt-0 space-y-3">
                      <p className="text-[9px] text-muted-foreground leading-relaxed italic">
-                        "Developer accounts can directly query the Mesh for real-time verification status."
+                        "Acquirer accounts can directly query the Mesh for real-time verification status."
                      </p>
                      <div className="space-y-1">
                         <div className="flex justify-between text-[9px] font-bold">
