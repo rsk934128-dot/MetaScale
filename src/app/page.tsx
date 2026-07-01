@@ -79,7 +79,7 @@ export default function LandingPage() {
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 6000); 
+    }, 10000); 
     return () => clearInterval(timer);
   }, []);
 
@@ -95,7 +95,7 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md px-6 h-20 flex items-center justify-between">
         <div className="flex items-center gap-3 group">
-          <Logo size="md" className="transition-transform group-hover:scale-110" />
+          <Logo size="sm" className="transition-transform group-hover:scale-110" />
           <span className="font-headline font-bold text-2xl tracking-tighter uppercase italic text-white">FusionPay</span>
         </div>
         <div className="hidden md:flex items-center gap-8">
@@ -144,7 +144,7 @@ export default function LandingPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
             </div>
 
-            {/* Content Container - Adjusted for Right Alignment */}
+            {/* Content Container - Right Alignment */}
             <div className="relative z-10 h-full max-w-7xl mx-auto px-6 flex flex-col justify-center items-center md:items-end text-center md:text-right">
               <Badge variant="outline" className={cn("mb-6 uppercase tracking-[0.3em] px-4 py-1 text-[10px] font-bold animate-fade-in border-current", slide.color)}>
                 {slide.badge}
