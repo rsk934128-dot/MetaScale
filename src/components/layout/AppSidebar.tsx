@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -81,9 +82,9 @@ const financialNav = [
 ];
 
 const projectNav = [
+  { icon: Milestone, label: "System Roadmap", href: "/roadmap" },
   { icon: Braces, label: "P43: Syntax Architect", href: "/syntax" },
   { icon: Database, label: "P44: Data Enrichment", href: "/enrichment" },
-  { icon: Milestone, label: "System Roadmap", href: "/roadmap" },
 ];
 
 const securityNav = [

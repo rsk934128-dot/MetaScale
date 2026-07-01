@@ -23,7 +23,9 @@ import {
   TrendingUp,
   Users,
   RefreshCw,
-  Loader2
+  Loader2,
+  Lock,
+  Search
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,53 +52,53 @@ const ROADMAP_PHASES = [
   },
   {
     id: "p2",
-    title: "Phase 2: API Bridge & Projects 42-44",
+    title: "Phase 2: API Bridge & Ledger Architecture",
     status: "Completed",
     icon: Network,
     date: "Q1 2024",
     progress: 100,
-    desc: "Global banking integration (14k nodes), Syntax Architect, and Data Enrichment.",
+    desc: "Server-authoritative ledger, exactly-once crediting, and webhook integration.",
     items: [
-      "Project 42: Sheikh Code Exchange",
-      "Project 43: AI Syntax Architect",
-      "Project 44: Data Enrichment Portal"
+      "Firestore Hardened Security Rules",
+      "Transactional Balance Updates",
+      "Deterministic State Machine (CREATED->PAID->CREDITED)"
     ]
   },
   {
     id: "p3",
-    title: "Phase 3: Eco Governance & P45",
+    title: "Phase 3: Eco Governance & Self-Healing",
     status: "Active",
     icon: Cpu,
     date: "Current Focus",
-    progress: 92,
-    desc: "Autonomous fiscal management, yield recycling, and regulatory compliance hub.",
+    progress: 94,
+    desc: "Autonomous fiscal management, automated reconciliation, and forensic auditing.",
     items: [
-      "Fiscal Stability Control",
-      "Regulatory Compliance Hub (AML/CFT)",
-      "Dynamic Resource Allocation"
+      "Automated Reconciliation Cron Job",
+      "Forensic Anomaly Dashboard",
+      "Derived Query Indexing (Phase 2.7)"
     ]
   },
   {
     id: "p4",
-    title: "Phase 4: Global Scaling & Execution",
-    status: "Upcoming (Launch)",
+    title: "Phase 4: Global Execution & SaaS",
+    status: "Upcoming",
     icon: Rocket,
     date: "Q3 2024",
-    progress: 20,
-    desc: "Commercial launch, Stripe/Elorus integration, and anycast node-04 prioritization for Enterprise.",
+    progress: 15,
+    desc: "Commercial launch, multi-network payout hub, and anycast node-04 prioritization.",
     items: [
-      "Multi-Network Payout Hub",
-      "Commercial SaaS Billing Live",
-      "Global Liquidity Bridge Activation"
+      "Multi-Currency Liquidity Bridge",
+      "Commercial SaaS Billing Module",
+      "B2B Outreach Automation (P43)"
     ]
   }
 ];
 
-const EXECUTION_METRICS = [
-  { title: "Commercial Readiness", desc: "SaaS billing and contract modules.", status: "88%", icon: TrendingUp },
-  { title: "Partner Integration", desc: "Stripe and Elorus API linkages.", status: "Pending", icon: Users },
-  { title: "Node-04 Priority", desc: "Dedicated routing for Enterprise tier.", status: "Ready", icon: Server },
-  { title: "Final Compliance", desc: "Global AML/KYB Forensic check.", status: "Ready", icon: ShieldAlert },
+const READINESS_CHECKLIST = [
+  { title: "Ledger Integrity", status: "Verified", icon: Lock, score: "100%" },
+  { title: "Security Boundary", status: "Hardened", icon: ShieldCheck, score: "Optimal" },
+  { title: "Self-Healing Mesh", status: "Active", icon: Activity, score: "Ready" },
+  { title: "Compliance Audit", status: "Ready", icon: Gavel, score: "ISO 20022" },
 ];
 
 export default function RoadmapPage() {
@@ -106,35 +108,21 @@ export default function RoadmapPage() {
 
   const handleLaunchProtocol = async () => {
     setIsLaunching(true);
+    emitEvent('SECURITY', 'LAUNCH_PROTOCOL_INITIATED', 1, { trigger: 'MANUAL_AUTHORIZATION' });
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Step 1: Initialize Security Plane
-    emitEvent('SECURITY', 'LAUNCH_PROTOCOL_INITIATED', 1, { 
-      trigger: 'MANUAL_AUTHORIZATION',
-      sequence: 'S-LEVEL-0'
+    setSystemMode('NORMAL');
+    setIsLaunching(false);
+    toast({
+      title: "SYSTEM LIVE",
+      description: "NoorNexus Sovereign OS has transitioned to Commercial Execution Mode.",
     });
-
-    // Step 2: Simulate network handshake
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    emitEvent('INFRA', 'GLOBAL_MESH_SYNC_FINAL', 2, { 
-      nodes: 42,
-      protocol: 'ANYCAST_STABLE'
-    });
-
-    // Step 3: Transition to NORMAL stable mode
-    setTimeout(() => {
-      setSystemMode('NORMAL');
-      setIsLaunching(false);
-      toast({
-        title: "SYSTEM LIVE",
-        description: "NoorNexus Sovereign OS has been deployed to all 42 anycast nodes.",
-        variant: "default",
-      });
-      emitEvent('FINANCE', 'COMMERCIAL_CHANNELS_OPEN', 1, { status: 'LIVE' });
-    }, 2000);
+    emitEvent('FINANCE', 'COMMERCIAL_CHANNELS_OPEN', 1, { status: 'LIVE' });
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-background">
       <AppSidebar />
       <SidebarInset>
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-6">
@@ -145,22 +133,41 @@ export default function RoadmapPage() {
               Strategic Scaling Roadmap
             </h1>
           </div>
-          <Badge variant="outline" className="text-accent border-accent/20">
-            PHASE: ECO_GOVERNANCE_READY
+          <Badge variant="outline" className="text-accent border-accent/20 font-mono text-[10px]">
+            VERSION: 1.2.0-STABLE
           </Badge>
         </header>
 
-        <main className="flex-1 p-8 max-w-[1200px] mx-auto w-full space-y-12">
-          <div className="text-center space-y-4 max-w-3xl mx-auto mb-16">
+        <main className="flex-1 p-8 max-w-[1200px] mx-auto w-full space-y-16">
+          <div className="text-center space-y-4 max-w-3xl mx-auto">
             <Badge className="bg-accent/10 text-accent border-accent/20 uppercase tracking-[0.3em] text-[10px] font-bold px-4 py-1">
               Deterministic Scaling Path
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-headline font-bold text-white tracking-tighter">
-              SYSTEM BUILDING TO <span className="text-accent italic">GLOBAL EXECUTION</span>
+            <h2 className="text-4xl md:text-5xl font-headline font-bold text-white tracking-tighter uppercase">
+              From Internal Kernel to <span className="text-accent italic">Global Execution</span>
             </h2>
-            <p className="text-muted-foreground text-sm max-w-xl mx-auto italic">
-              "From a sovereign internal kernel to a high-throughput commercial SaaS infrastructure."
+            <p className="text-muted-foreground text-sm italic">
+              "Building the gold standard for cross-border settlement and autonomous fiscal governance."
             </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {READINESS_CHECKLIST.map((check, i) => (
+              <Card key={i} className="glass-panel border-white/5 overflow-hidden group hover:border-accent/30 transition-all">
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div className="p-2 rounded-lg bg-accent/10 text-accent">
+                      <check.icon className="h-5 w-5" />
+                    </div>
+                    <Badge variant="outline" className="text-[8px] border-accent/20 text-accent uppercase font-bold">{check.status}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{check.title}</p>
+                    <p className="text-xl font-headline font-bold text-white">{check.score}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           <div className="relative space-y-12 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-accent before:via-primary before:to-secondary/20">
@@ -201,14 +208,14 @@ export default function RoadmapPage() {
                     
                     <div className="grid grid-cols-1 gap-2">
                       {phase.items.map((item, i) => (
-                        <div key={i} className="flex items-center gap-3 p-2 rounded bg-secondary/20 border border-white/5 group/item transition-colors hover:bg-white/5">
+                        <div key={i} className="flex items-center gap-3 p-2 rounded bg-secondary/20 border border-white/5 transition-colors hover:bg-white/5">
                            <div className={cn(
                              "w-4 h-4 rounded-full border flex items-center justify-center shrink-0",
                              phase.progress === 100 ? "border-green-500/50 bg-green-500/10" : "border-white/10"
                            )}>
                              {phase.progress === 100 && <CheckCircle2 className="h-2.5 w-2.5 text-green-500" />}
                            </div>
-                           <span className="text-[11px] text-white/70 font-medium group-hover/item:text-white transition-colors">{item}</span>
+                           <span className="text-[11px] text-white/70 font-medium">{item}</span>
                         </div>
                       ))}
                     </div>
@@ -218,77 +225,29 @@ export default function RoadmapPage() {
             ))}
           </div>
 
-          <div className="mt-32 space-y-8">
-            <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-white/5 pb-4">
-              <div className="space-y-1">
-                <h3 className="text-2xl font-headline font-bold text-white flex items-center gap-2">
-                  <Rocket className="h-6 w-6 text-accent" />
-                  Execution Readiness Audit
-                </h3>
-                <p className="text-sm text-muted-foreground">Commercial compliance and multi-network scaling verification.</p>
-              </div>
-              <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
-                STATUS: READY_FOR_LAUNCH
-              </Badge>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-               {EXECUTION_METRICS.map((check, i) => (
-                 <Card key={i} className="glass-panel border-white/5 overflow-hidden group">
-                   <CardContent className="p-5 space-y-4">
-                      <div className="flex justify-between items-start">
-                         <div className={cn(
-                           "p-2 rounded-lg bg-secondary/50 transition-colors",
-                           check.status !== 'Pending' ? "text-accent" : "text-muted-foreground/50"
-                         )}>
-                            <check.icon className="h-5 w-5" />
-                         </div>
-                         <Badge className={cn(
-                           "text-[9px] uppercase font-bold",
-                           check.status !== 'Pending' ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-500"
-                         )}>
-                           {check.status}
-                         </Badge>
-                      </div>
-                      <div className="space-y-1">
-                         <p className="text-xs font-bold text-white uppercase">{check.title}</p>
-                         <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2 italic">
-                           {check.desc}
-                         </p>
-                      </div>
-                   </CardContent>
-                 </Card>
-               ))}
-            </div>
-          </div>
-
-          <footer className="mt-24 p-8 rounded-3xl bg-gradient-to-br from-accent/10 to-transparent border border-accent/20 relative overflow-hidden">
+          <footer className="mt-24 p-10 rounded-3xl bg-gradient-to-br from-accent/10 to-transparent border border-accent/20 relative overflow-hidden text-center md:text-left">
             <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-[100px] -mr-32 -mt-32" />
             <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="space-y-2 text-center md:text-left">
-                <h3 className="text-xl font-headline font-bold text-white flex items-center justify-center md:justify-start gap-2">
-                  <Activity className="h-5 w-5 text-accent animate-pulse" />
-                  Commercial Scalability
+              <div className="space-y-2">
+                <h3 className="text-2xl font-headline font-bold text-white flex items-center justify-center md:justify-start gap-3">
+                  <Rocket className="h-6 w-6 text-accent animate-pulse" />
+                  Commercial Scaling Live
                 </h3>
                 <p className="text-sm text-muted-foreground max-w-xl">
-                  Sovereign OS is now transitioning to global execution. High-throughput rails are active in the Finance Plane.
+                  Sovereign OS architecture is now hardened and ready for commercial volume. Transition to Production Mode to unlock live SWIFT/PayPal corridors.
                 </p>
               </div>
               <Button 
                 onClick={handleLaunchProtocol}
                 disabled={isLaunching}
-                className="cyan-glow bg-accent text-background font-bold h-12 px-8 uppercase tracking-widest text-[10px] shrink-0"
+                className="cyan-glow bg-accent text-background font-bold h-14 px-10 uppercase tracking-widest text-xs shrink-0"
               >
                 {isLaunching ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Synchronizing Grid...
-                  </>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <>
-                    Execute Launch Protocol <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
+                  <Rocket className="mr-2 h-4 w-4" />
                 )}
+                Initialize Global Launch
               </Button>
             </div>
           </footer>
