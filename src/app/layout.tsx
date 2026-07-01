@@ -7,6 +7,8 @@ import { KernelProvider } from "@/components/kernel/KernelProvider";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { FirebaseErrorListener } from "@/components/FirebaseErrorListener";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { MobileExperienceHub } from "@/components/layout/MobileExperienceHub";
+import { GlobalQuickAccess } from "@/components/layout/GlobalQuickAccess";
 import Script from 'next/script';
 
 export const metadata: Metadata = {
@@ -79,6 +81,8 @@ export default function RootLayout({
             <AuthGuard>
               <SidebarProvider>
                 {children}
+                <MobileExperienceHub />
+                <GlobalQuickAccess />
               </SidebarProvider>
             </AuthGuard>
             <Toaster />

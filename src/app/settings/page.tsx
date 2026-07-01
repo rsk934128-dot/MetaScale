@@ -42,7 +42,7 @@ export default function SettingsPage() {
               <TabsTrigger value="config" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">System Parameters</TabsTrigger>
               <TabsTrigger value="install" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full flex gap-2">
                 <Download className="h-3 w-3" /> Install App
-              </Badge>
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="config">
