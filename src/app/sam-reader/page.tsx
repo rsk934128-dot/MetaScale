@@ -27,7 +27,10 @@ import {
   Sparkles,
   Zap,
   CheckCircle2,
-  TrendingDown
+  TrendingDown,
+  Info,
+  Activity as ActivityIcon,
+  ShieldHalf
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +39,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { useToast } from "@/hooks/use-toast";
-import { analyzeForensicHistory } from "@/ai/flows/forensic-audit-analyst";
+import { runForensicCognition } from "@/ai/flows/forensic-analyst";
 
 const MOCK_AUDIT_LOGS = [
   { id: "AUD-01", type: "CRITICAL", node: "NODE-04", msg: "HMAC Signature mismatch on PIS rail.", timestamp: Date.now() - 5000, plane: "SECURITY" },
@@ -54,7 +57,7 @@ export default function SAMReaderPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedLog, setSelectedLog] = useState<any>(null);
-  const [forensicReport, setForensicReport] = useState<any>(null);
+  const [cognitionResult, setCognitionResult] = useState<any>(null);
   
   const { emitEvent } = useKernel();
   const { toast } = useToast();
@@ -80,17 +83,24 @@ export default function SAMReaderPage() {
     }, 2000);
   };
 
-  const handleRunForensicAI = async () => {
+  const handleRunCognitiveAnalysis = async () => {
+    if (!selectedLog) {
+      toast({ variant: "destructive", title: "Select a log entry first." });
+      return;
+    }
+    
     setIsAnalyzing(true);
-    emitEvent('SECURITY', 'AI_FORENSIC_PATTERN_ANALYSIS', 2, { scope: 'HISTORICAL_6M' });
+    setCognitionResult(null);
+    emitEvent('SECURITY', 'AI_COGNITIVE_RCA_INITIATED', 2, { logId: selectedLog.id });
     
     try {
-      const result = await analyzeForensicHistory({
-        logs: logs,
-        query: "Find any security patterns related to Node-04 and HMAC failures."
+      const result = await runForensicCognition({
+        currentIncident: selectedLog.msg,
+        historicalLogs: logs,
+        context: "Phase 4 Commercial Execution. Multi-node mesh monitoring active."
       });
-      setForensicReport(result);
-      toast({ title: "Forensic Analysis Complete", description: "AI detected 1 recurring pattern." });
+      setCognitionResult(result);
+      toast({ title: "Root Cause Identified", description: "Forensic intelligence engine analysis complete." });
     } catch (error) {
       toast({ variant: "destructive", title: "AI Analysis Failed" });
     } finally {
@@ -107,70 +117,25 @@ export default function SAMReaderPage() {
           <div className="flex-1">
             <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-accent">
               <FileSearch className="h-5 w-5 text-accent" />
-              SAM Reader <span className="text-muted-foreground/50 font-normal">| Security Audit Mesh</span>
+              SAM Reader <span className="text-muted-foreground/50 font-normal">| Forensic Intelligence</span>
             </h1>
           </div>
           <div className="flex items-center gap-3">
-             <Button 
-                variant="outline" 
-                size="sm" 
-                className="border-primary/30 text-primary font-bold text-[10px] h-8 px-4 blue-glow"
-                onClick={handleRunForensicAI}
-                disabled={isAnalyzing}
-             >
-                {isAnalyzing ? <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <BrainCircuit className="h-3.5 w-3.5 mr-1.5" />}
-                Run AI Forensics
-             </Button>
              <Button size="sm" onClick={handleSync} disabled={isSyncing} className="cyan-glow bg-accent text-background font-bold text-[10px] h-8 px-4">
                 {isSyncing ? <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Radar className="h-3.5 w-3.5 mr-1.5" />}
-                Scan Mesh
+                Sync Signals
              </Button>
           </div>
         </header>
 
         <main className="flex-1 p-8 max-w-[1600px] mx-auto w-full space-y-8">
-          {/* Proactive AI Insight Banner */}
-          {forensicReport && (
-            <Card className="glass-panel border-l-4 border-l-primary bg-primary/5 animate-fade-in overflow-hidden relative">
-               <div className="absolute top-0 right-0 p-4 opacity-5"><Sparkles className="h-20 w-20 text-white" /></div>
-               <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/20 text-primary">
-                           <ShieldAlert className="h-5 w-5" />
-                        </div>
-                        <div>
-                           <CardTitle className="text-lg font-headline italic uppercase tracking-tighter text-white">AI Pattern Detection: High Risk Alert</CardTitle>
-                           <p className="text-[10px] uppercase font-bold text-primary mt-0.5">MESH_HEALTH_INDEX: {forensicReport.healthIndex}%</p>
-                        </div>
-                     </div>
-                     <Badge variant="outline" className="border-red-500/30 text-red-400 font-mono">DRIFT_DETECTED</Badge>
-                  </div>
-               </CardHeader>
-               <CardContent className="space-y-4">
-                  <p className="text-sm text-white/80 leading-relaxed italic border-l-2 border-primary/30 pl-4">
-                     "{forensicReport.summary}"
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                     {forensicReport.detectedPatterns.map((p: any, i: number) => (
-                        <div key={i} className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-2">
-                           <div className="flex justify-between">
-                              <span className="text-[9px] font-bold text-muted-foreground uppercase">{p.pattern}</span>
-                              <Badge className="text-[8px] bg-red-500/20 text-red-400 uppercase">{p.riskLevel}</Badge>
-                           </div>
-                           <p className="text-[11px] text-white/90">{p.recommendation}</p>
-                        </div>
-                     ))}
-                  </div>
-               </CardContent>
-            </Card>
-          )}
-
+          
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
             <div className="space-y-2">
-              <h2 className="text-3xl font-headline font-bold tracking-tighter uppercase italic">Forensic <span className="text-accent">Audit Logs</span></h2>
+              <Badge className="bg-accent/10 text-accent border-accent/20 uppercase tracking-[0.3em] text-[10px] font-bold px-3 py-1">Cognitive Memory Enabled</Badge>
+              <h2 className="text-3xl font-headline font-bold tracking-tighter uppercase italic">Security <span className="text-accent">Audit Mesh</span></h2>
               <p className="text-muted-foreground text-sm italic max-w-2xl">
-                "Reading deterministic security traces and identity bindings across the global anycast grid."
+                "Autonomous forensic reasoning layer for deterministic root cause analysis across the Sovereign mesh."
               </p>
             </div>
             
@@ -203,14 +168,14 @@ export default function SAMReaderPage() {
 
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
             {/* Audit Feed */}
-            <div className="xl:col-span-8">
-               <Card className="glass-panel border-white/5 flex flex-col h-[650px] overflow-hidden">
+            <div className="xl:col-span-7">
+               <Card className="glass-panel border-white/5 flex flex-col h-[650px] overflow-hidden shadow-2xl">
                   <CardHeader className="border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
                      <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2">
                         <Terminal className="h-4 w-4 text-accent" />
                         Live Trace Terminal
                      </CardTitle>
-                     <Badge variant="outline" className="text-[8px] font-mono border-green-500/30 text-green-400 animate-pulse">LISTENING...</Badge>
+                     <Badge variant="outline" className="text-[8px] font-mono border-green-500/30 text-green-400">ACTIVE_LISTEN</Badge>
                   </CardHeader>
                   <CardContent className="p-0 flex-1 flex flex-col">
                      <ScrollArea className="flex-1">
@@ -223,8 +188,8 @@ export default function SAMReaderPage() {
                              <div 
                                key={log.id} 
                                className={cn(
-                                 "p-4 cursor-pointer transition-all hover:bg-white/5 group flex items-start gap-4",
-                                 selectedLog?.id === log.id ? "bg-accent/5 border-l-4 border-l-accent" : "border-l-4 border-l-transparent"
+                                 "p-4 cursor-pointer transition-all hover:bg-white/5 group flex items-start gap-4 border-l-4",
+                                 selectedLog?.id === log.id ? "bg-accent/10 border-l-accent" : "border-l-transparent"
                                )}
                                onClick={() => setSelectedLog(log)}
                              >
@@ -234,7 +199,7 @@ export default function SAMReaderPage() {
                                   log.type === 'WARNING' ? "text-yellow-500 border-yellow-500/20" : 
                                   "text-blue-400 border-blue-400/20"
                                 )}>
-                                   {log.type === 'CRITICAL' ? <ShieldAlert className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
+                                   {log.type === 'CRITICAL' ? <ShieldAlert className="h-4 w-4" /> : <ActivityIcon className="h-4 w-4" />}
                                 </div>
                                 <div className="flex-1 min-w-0 space-y-1">
                                    <div className="flex justify-between items-center">
@@ -245,11 +210,7 @@ export default function SAMReaderPage() {
                                      "text-sm font-bold truncate",
                                      log.type === 'CRITICAL' ? 'text-red-400' : 'text-white'
                                    )}>{log.msg}</p>
-                                   <div className="flex items-center gap-2">
-                                      <Badge variant="ghost" className="text-[7px] p-0 font-mono uppercase opacity-50">{log.plane} PLANE</Badge>
-                                      <span className="text-[7px] text-muted-foreground/30">•</span>
-                                      <span className="text-[7px] text-muted-foreground/50 uppercase italic font-bold">Trace Secure (P42)</span>
-                                   </div>
+                                   <Badge variant="ghost" className="text-[7px] p-0 font-mono uppercase opacity-50">{log.plane} PLANE</Badge>
                                 </div>
                              </div>
                            ))}
@@ -259,65 +220,106 @@ export default function SAMReaderPage() {
                </Card>
             </div>
 
-            {/* Inspector Panel */}
-            <div className="xl:col-span-4 space-y-6">
-               <Card className="glass-panel border-accent/20 bg-accent/5 shadow-2xl h-fit">
-                  <CardHeader className="p-6 border-b border-white/10">
+            {/* Cognitive Inspector Panel */}
+            <div className="xl:col-span-5 space-y-6">
+               <Card className="glass-panel border-accent/20 bg-accent/5 shadow-2xl h-fit relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-5"><BrainCircuit className="h-32 w-32 text-accent" /></div>
+                  <CardHeader className="p-6 border-b border-white/10 relative z-10">
                      <div className="flex items-center justify-between">
                         <CardTitle className="text-sm uppercase tracking-[0.2em] flex items-center gap-2 text-accent">
-                           <Fingerprint className="h-4 w-4" />
-                           Audit Inspector
+                           <BrainCircuit className="h-4 w-4" />
+                           Forensic Engine
                         </CardTitle>
                         {selectedLog && (
-                          <Badge className={cn(
-                            "text-[8px] font-bold",
-                            selectedLog.type === 'CRITICAL' ? 'bg-red-500 text-white' : 'bg-accent text-background'
-                          )}>{selectedLog.type}</Badge>
+                          <Button 
+                             size="sm" 
+                             className="h-8 bg-accent text-background font-bold text-[10px] cyan-glow"
+                             onClick={handleRunCognitiveAnalysis}
+                             disabled={isAnalyzing}
+                          >
+                             {isAnalyzing ? <RefreshCw className="h-3 h-3 animate-spin mr-1.5" /> : <Sparkles className="h-3 h-3 mr-1.5" />}
+                             Root Cause Analysis
+                          </Button>
                         )}
                      </div>
                   </CardHeader>
-                  <CardContent className="p-6">
+                  <CardContent className="p-6 relative z-10">
                      {selectedLog ? (
                        <div className="space-y-6 animate-fade-in">
-                          <div className="space-y-1">
-                             <p className="text-[9px] uppercase font-bold text-muted-foreground">Detailed Directive</p>
-                             <p className="text-lg font-headline font-bold text-white italic leading-tight">
+                          <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                             <p className="text-[9px] uppercase font-bold text-muted-foreground">Target Instruction</p>
+                             <p className="text-sm font-bold text-white italic leading-tight">
                                 "{selectedLog.msg}"
                              </p>
                           </div>
 
-                          <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-4 font-mono text-[10px] leading-relaxed">
-                             <div className="flex justify-between border-b border-white/5 pb-2">
-                                <span className="text-muted-foreground uppercase">Trace ID</span>
-                                <span className="text-accent">{selectedLog.id}</span>
-                             </div>
-                             <div className="flex justify-between border-b border-white/5 pb-2">
-                                <span className="text-muted-foreground uppercase">Source Node</span>
-                                <span className="text-white">{selectedLog.node} (UK_CORRIDOR)</span>
-                             </div>
-                             <div className="flex justify-between border-b border-white/5 pb-2">
-                                <span className="text-muted-foreground uppercase">Security Seal</span>
-                                <span className="text-green-400">VALID_SHA256</span>
-                             </div>
-                             <div className="flex justify-between">
-                                <span className="text-muted-foreground uppercase">Kernel Priority</span>
-                                <span className={cn(selectedLog.type === 'CRITICAL' ? 'text-red-400' : 'text-accent')}>LEVEL_0{selectedLog.type === 'CRITICAL' ? 1 : 2}</span>
-                             </div>
-                          </div>
+                          {isAnalyzing ? (
+                            <div className="py-12 flex flex-col items-center justify-center space-y-4">
+                               <Loader2 className="h-10 w-10 animate-spin text-accent" />
+                               <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-accent animate-pulse">Consulting Cognitive Memory...</p>
+                            </div>
+                          ) : cognitionResult ? (
+                            <div className="space-y-6 animate-fade-in">
+                               <div className="space-y-2">
+                                  <p className="text-[10px] text-accent uppercase font-bold flex items-center gap-2">
+                                     <ActivityIcon className="h-3 w-3" /> Root Cause Analysis
+                                  </p>
+                                  <p className="text-xs text-white/90 leading-relaxed italic border-l-2 border-accent/30 pl-4">
+                                     "{cognitionResult.rootCauseAnalysis}"
+                                  </p>
+                               </div>
 
-                          <div className="space-y-3">
-                             <Button className="w-full h-10 bg-accent text-background font-bold text-[10px] uppercase tracking-widest cyan-glow">
-                                <Lock className="mr-2 h-3 w-3" /> Authorize Forensic Trace
-                             </Button>
-                             <Button variant="ghost" className="w-full h-10 border border-white/5 text-[10px] font-bold uppercase tracking-widest hover:bg-white/5">
-                                <Eye className="mr-2 h-3 w-3" /> View Source Metadata
-                             </Button>
-                          </div>
+                               <div className="grid grid-cols-2 gap-4">
+                                  <div className="p-3 rounded-lg bg-secondary/30 border border-white/5 space-y-1">
+                                     <p className="text-[9px] uppercase font-bold text-muted-foreground">Historical Pattern</p>
+                                     <div className="flex items-center gap-2">
+                                        <Badge className={cn("text-[8px] uppercase", cognitionResult.patternMatch.isRecurring ? "bg-red-500/20 text-red-400" : "bg-green-500/20 text-green-400")}>
+                                          {cognitionResult.patternMatch.isRecurring ? "Recurring" : "Unique"}
+                                        </Badge>
+                                        <span className="text-[10px] font-mono text-white">{cognitionResult.patternMatch.similarityScore}% Match</span>
+                                     </div>
+                                  </div>
+                                  <div className="p-3 rounded-lg bg-secondary/30 border border-white/5 space-y-1">
+                                     <p className="text-[9px] uppercase font-bold text-muted-foreground">Risk Vector</p>
+                                     <Badge className={cn(
+                                       "text-[8px] uppercase px-3",
+                                       cognitionResult.riskLevel === 'CRITICAL' ? "bg-red-500 text-white" : "bg-yellow-500 text-black"
+                                     )}>{cognitionResult.riskLevel}</Badge>
+                                  </div>
+                               </div>
+
+                               <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 space-y-2">
+                                  <p className="text-[10px] text-primary uppercase font-bold flex items-center gap-2">
+                                     <Zap className="h-3 w-3" /> Recommended Strategy
+                                  </p>
+                                  <p className="text-xs text-white leading-relaxed font-bold">
+                                     {cognitionResult.recommendedStrategy}
+                                  </p>
+                               </div>
+
+                               <div className="flex justify-between items-center pt-4 border-t border-white/5">
+                                  <div className="flex items-center gap-2 text-[9px] font-bold text-muted-foreground uppercase">
+                                     <ShieldCheck className="h-3 w-3 text-green-400" /> Confidence: {cognitionResult.confidenceIndex}%
+                                  </div>
+                                  <Button className="h-8 bg-primary text-white font-bold text-[9px] uppercase px-4 blue-glow">
+                                     Authorize Fix
+                                  </Button>
+                               </div>
+                            </div>
+                          ) : (
+                            <div className="h-60 flex flex-col items-center justify-center text-center space-y-4 opacity-20">
+                               <Cpu className="h-12 w-12 text-accent" />
+                               <p className="text-xs uppercase font-bold tracking-[0.3em]">Select a log to initialize cognitive engine</p>
+                            </div>
+                          )}
                        </div>
                      ) : (
-                       <div className="h-60 flex flex-col items-center justify-center text-center space-y-4 opacity-20">
-                          <Activity className="h-12 w-12 text-accent animate-logo-spin" />
-                          <p className="text-xs uppercase font-bold tracking-[0.3em]">Awaiting Selection...</p>
+                       <div className="h-80 flex flex-col items-center justify-center text-center space-y-6 opacity-20">
+                          <Radar className="h-16 w-16 text-accent animate-logo-spin" />
+                          <div className="space-y-1">
+                             <p className="text-sm font-bold uppercase tracking-[0.5em]">Awaiting Selection</p>
+                             <p className="text-[10px] uppercase font-bold tracking-[0.2em] italic">Mesh monitor is active and listening...</p>
+                          </div>
                        </div>
                      )}
                   </CardContent>
@@ -326,15 +328,15 @@ export default function SAMReaderPage() {
                <Card className="glass-panel border-white/5">
                   <CardHeader className="p-4 border-b border-white/5 bg-white/5">
                      <CardTitle className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-                        <Radar className="h-3.5 w-3.5 text-accent" />
-                        Grid Health Indices
+                        <ShieldHalf className="h-3.5 w-3.5 text-accent" />
+                        Forensic Integrity Indices
                      </CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 space-y-4">
                      {[
-                       { label: "Signature Guard", status: "Optimal", color: "text-green-400" },
-                       { label: "NoorNexus Pulse", status: "Active", color: "text-primary" },
-                       { label: "P43 Logic Compliance", status: "100%", color: "text-accent" }
+                       { label: "Memory Density", status: "94.2%", color: "text-accent" },
+                       { label: "RCA Latency", status: "1.2s", color: "text-green-400" },
+                       { label: "Pattern Library", status: "14.2k", color: "text-primary" }
                      ].map((idx, i) => (
                        <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-black/20 border border-white/5">
                           <span className="text-[9px] font-bold uppercase text-muted-foreground">{idx.label}</span>
@@ -343,20 +345,13 @@ export default function SAMReaderPage() {
                      ))}
                   </CardContent>
                </Card>
-
-               <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20 space-y-2 text-center shadow-inner group cursor-pointer hover:bg-primary/10 transition-all">
-                  <Cpu className="h-8 w-8 text-primary mx-auto mb-2 opacity-50 group-hover:animate-logo-spin" />
-                  <p className="text-[10px] text-primary font-bold uppercase tracking-widest">
-                     System is autonomously archiving forensic snapshots every 60s.
-                  </p>
-               </div>
             </div>
           </div>
         </main>
 
         <footer className="p-6 border-t border-white/5 text-center">
            <p className="text-[9px] font-bold uppercase tracking-[0.5em] text-muted-foreground opacity-30 italic">
-              NoorNexus SAM Reader v1.2.0-stable • Institutional Guard
+              NoorNexus Cognitive Layer v1.2.0-stable • Forensic RAG Architecture
            </p>
         </footer>
       </SidebarInset>
