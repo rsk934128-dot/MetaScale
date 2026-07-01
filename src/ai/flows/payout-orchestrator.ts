@@ -5,7 +5,7 @@
  * 
  * - orchestratePayout - Handles OAuth2 token exchange, payout batch execution, and PIS/AIS rails.
  * - Integration of "Telegram Wallet" (TON Ecosystem) logic for peer-to-peer mesh transfers.
- * - NEW: Added Memo/Tag support for CEX and address validation for external TON wallets.
+ * - NEW: Added Institutional Custody Bridge logic and Directive Level metadata.
  */
 
 import { ai } from '@/ai/genkit';
@@ -33,10 +33,9 @@ const PayoutOutputSchema = z.object({
   refundEligible: z.boolean().default(true),
   destinationType: z.enum(['P2P', 'EXTERNAL_WALLET', 'CEX_EXCHANGE', 'MERCHANT']).optional(),
   institutionalMetadata: z.object({
-    id: z.string(),
-    bic: z.string().optional(),
-    region: z.string().optional(),
-    compliance: z.string().optional(),
+    custodyNode: z.string().describe('External custodian vault identifier.'),
+    auditSignature: z.string().describe('SHA-256 integrity seal for the transaction.'),
+    compliancePass: z.boolean(),
   }).optional(),
 });
 
@@ -63,15 +62,13 @@ EXECUTION PARAMETERS:
 1. Simulate OAuth 2.0 token exchange for the specified gateway.
 2. If gateway is TELEGRAM_WALLET:
    - Identify if recipient is a username (@), a phone number, or a TON Wallet address (starts with EQ/UQ).
-   - If it is a TON Address AND a Memo is provided, mark destinationType as 'CEX_EXCHANGE' (Likely Binance, Bybit, or OKX).
-   - If it is a TON Address without Memo, mark as 'EXTERNAL_WALLET' (Non-custodial like Tonkeeper).
-   - If it's a username/phone, mark as 'P2P'.
-   - Simulate a TON Blockchain escrow transfer with SHA-256 payload signing.
-3. Generate a unique 64-character TxHash (simulating a blockchain transaction hash).
-4. Link this TxHash to the Internal Batch ID for the Finance Plane ledger.
-5. If the amount exceeds \$1,000, mark directiveLevel as 'IMPERIAL'.
-6. Provide a detailed execution log reflecting Anycast validation and Memo attachment if present.
-7. Set refundEligible to true for escrow-based transfers.`,
+   - If it is a TON Address AND a Memo is provided, mark destinationType as 'CEX_EXCHANGE'.
+   - mark destinationType as appropriate.
+3. Apply Custody-Execution Separation logic: 
+   - Assign a Custody Node (e.g., ANCHORAGE_V2_VAULT) to the institutionalMetadata.
+   - Generate an auditSignature (SHA-256).
+4. If amount > $1000, set directiveLevel to 'IMPERIAL'. Otherwise 'CITIZEN'.
+5. Provide a detailed execution log reflecting Anycast validation and Memo attachment if present.`,
 });
 
 const payoutFlow = ai.defineFlow(
@@ -83,7 +80,6 @@ const payoutFlow = ai.defineFlow(
   async (input) => {
     const { output } = await payoutPrompt(input);
     
-    // Fallback Hash generation if LLM misses it
     if (output && !output.txHash) {
       output.txHash = `0x${Math.random().toString(16).substr(2, 64)}`;
     }

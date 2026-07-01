@@ -25,6 +25,20 @@
       },
       "required": ["uid", "email", "kernelId", "accountNumber", "teamId"]
     },
+    "VerificationDoc": {
+      "title": "Identity Verification Document",
+      "description": "Regulatory documents submitted for Stablecoin CIP compliance.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "type": { "type": "string", "enum": ["NID", "TIN", "PASSPORT"] },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
+        "submittedAt": { "type": "number" },
+        "metadata": { "type": "object" }
+      }
+    },
     "UBILEvent": {
       "title": "UBIL Webhook Event",
       "description": "A secure banking event received via UBIL Webhook node.",
@@ -52,20 +66,6 @@
         "brand": { "type": "string" },
         "balance": { "type": "number" },
         "status": { "type": "string" }
-      }
-    },
-    "SovereignEvent": {
-      "title": "Sovereign Event",
-      "description": "Deterministic kernel event log.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "plane": { "type": "string", "enum": ["CIVIC", "FINANCE", "SECURITY", "INFRA"] },
-        "type": { "type": "string" },
-        "priority": { "type": "number" },
-        "timestamp": { "type": "number" },
-        "payload": { "type": "object" },
-        "status": { "type": "string", "enum": ["QUEUED", "PROCESSING", "COMPLETED", "FAILED", "REJECTED", "ROLLED_BACK"] }
       }
     }
   },
