@@ -2,19 +2,21 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { KernelState, SovereignEvent, SystemMode, PlaneType, PlaneState } from '@/lib/kernel/types';
+import { KernelState, SovereignEvent, SystemMode, PlaneType, PlaneState, HeartbeatStatus } from '@/lib/kernel/types';
 import { resolveEventPriority, isTransitionAllowed } from '@/lib/kernel/priority-engine';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useUser } from '@/firebase';
-import { collection, doc, setDoc, query, orderBy, limit, addDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, query, orderBy, limit, addDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { sendTelegramMessage } from '@/lib/telegram';
 
 interface KernelContextType extends KernelState {
   emitEvent: (plane: PlaneType, type: string, priority: number, payload: any) => void;
   setSystemMode: (mode: SystemMode) => void;
   processNextEvent: () => void;
   rollbackEvent: (eventId: string) => void;
+  heartbeat: HeartbeatStatus[];
 }
 
 const KernelContext = createContext<KernelContextType | undefined>(undefined);
@@ -38,6 +40,11 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
 
   const [localMode, setLocalMode] = useState<SystemMode>('NORMAL');
   const [uptime, setUptime] = useState(0);
+  const [heartbeat, setHeartbeat] = useState<HeartbeatStatus[]>([
+    { nodeId: 'NODE-04-UK', latency: 8, status: 'ONLINE', lastCheck: Date.now() },
+    { nodeId: 'NODE-22-ASIA', latency: 42, status: 'ONLINE', lastCheck: Date.now() },
+    { nodeId: 'NODE-01-US', latency: 15, status: 'ONLINE', lastCheck: Date.now() },
+  ]);
 
   const eventsQuery = useMemo(() => {
     if (!firestore) return null;
@@ -46,12 +53,27 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
 
   const { data: remoteEvents } = useCollection<SovereignEvent>(eventsQuery);
 
+  // Background Heartbeat Loop (Simulated Proactive Monitoring)
   useEffect(() => {
     const timer = setInterval(() => {
       setUptime(prev => prev + 1);
+      
+      // Every 30 seconds, simulate a heartbeat check
+      if (uptime > 0 && uptime % 30 === 0) {
+        setHeartbeat(prev => prev.map(node => {
+          const newLatency = Math.max(5, node.latency + (Math.random() * 10 - 5));
+          const newStatus = newLatency > 60 ? 'DEGRADED' : 'ONLINE';
+          
+          if (newStatus === 'DEGRADED' && node.status === 'ONLINE') {
+            emitEvent('INFRA', 'HEARTBEAT_LATENCY_WARNING', 3, { nodeId: node.nodeId, latency: newLatency });
+          }
+          
+          return { ...node, latency: Number(newLatency.toFixed(2)), status: newStatus, lastCheck: Date.now() };
+        }));
+      }
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [uptime]);
 
   const emitEvent = useCallback(async (plane: PlaneType, type: string, priority: number, payload: any) => {
     const systemSeal = generateSystemSeal();
@@ -84,13 +106,12 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
           const userSnap = await getDoc(userRef);
           const userData = userSnap.data();
 
-          // Telegram Alert Logic for Critical/Finance/Security failures
-          if (resolvedPriority <= 2 || type.includes('EMERGENCY') || type.includes('COMMERCIAL') || type.includes('FAILED')) {
+          if (resolvedPriority <= 2 || type.includes('EMERGENCY') || type.includes('FAILED') || type.includes('WARNING')) {
             const notifRef = collection(firestore, 'users', user.uid, 'notifications');
             const notification = {
               id: systemSeal,
               title: `Kernel Trigger: ${type}`,
-              message: `Priority ${resolvedPriority} event detected in ${plane} plane.`,
+              message: `Priority ${resolvedPriority} event detected in ${plane} plane. Payload: ${JSON.stringify(payload)}`,
               type: resolvedPriority === 1 ? 'CRITICAL' : 'WARNING',
               read: false,
               timestamp: Date.now(),
@@ -98,19 +119,9 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
             addDoc(notifRef, notification);
 
             if (userData?.telegramLinked && userData?.telegramChatId) {
-              const BOT_TOKEN = "7827860503:AAEVNXEe3mPUtPudIBT_S5aE1aHr56efaiA";
               const alertEmoji = resolvedPriority === 1 ? "🚨" : "⚠️";
-              const text = `<b>${alertEmoji} KERNEL ALERT</b>\n\n<b>Type:</b> ${type}\n<b>Plane:</b> ${plane}\n<b>Priority:</b> ${resolvedPriority}\n<b>Seal:</b> <code>${systemSeal}</code>\n\n<b>Payload:</b> <code>${JSON.stringify(payload).substring(0, 100)}...</code>\n\n<i>System Mode: ${localMode}</i>`;
-              
-              fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  chat_id: userData.telegramChatId,
-                  text: text,
-                  parse_mode: 'HTML'
-                }),
-              }).catch(e => console.error("Telegram notify failed"));
+              const text = `<b>${alertEmoji} KERNEL ALERT</b>\n\n<b>Type:</b> ${type}\n<b>Plane:</b> ${plane}\n<b>Priority:</b> ${resolvedPriority}\n<b>Seal:</b> <code>${systemSeal}</code>\n\n<b>Payload:</b> <code>${JSON.stringify(payload)}</code>\n\n<i>System Mode: ${localMode}</i>`;
+              await sendTelegramMessage(userData.telegramChatId, text);
             }
           }
         } catch (err) {
@@ -119,7 +130,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    if (priority <= 2 || type.includes('PAYOUT') || type.includes('LAUNCH')) {
+    if (priority <= 2 || type.includes('PAYOUT') || type.includes('HEARTBEAT')) {
       toast({
         title: `Kernel Event: ${type}`,
         description: `Source: ${plane} | Seal: ${systemSeal}`,
@@ -140,7 +151,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     if (!nextQueued) return;
 
     const eventRef = doc(firestore, 'events', nextQueued.id);
-    setDoc(eventRef, { ...nextQueued, status: 'COMPLETED' }, { merge: true }).catch(async (error) => {
+    updateDoc(eventRef, { status: 'COMPLETED' }).catch(async (error) => {
       const permissionError = new FirestorePermissionError({
         path: eventRef.path,
         operation: 'update',
@@ -153,7 +164,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
   const rollbackEvent = useCallback((eventId: string) => {
     if (!firestore) return;
     const eventRef = doc(firestore, 'events', eventId);
-    setDoc(eventRef, { status: 'ROLLED_BACK' }, { merge: true }).catch(async (error) => {
+    updateDoc(eventRef, { status: 'ROLLED_BACK' }).catch(async (error) => {
       const permissionError = new FirestorePermissionError({
         path: eventRef.path,
         operation: 'update',
@@ -171,7 +182,8 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     emitEvent,
     setSystemMode,
     processNextEvent,
-    rollbackEvent
+    rollbackEvent,
+    heartbeat
   };
 
   return (

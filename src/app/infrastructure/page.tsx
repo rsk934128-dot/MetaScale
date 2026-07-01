@@ -20,7 +20,8 @@ import {
   Terminal,
   Unplug,
   Loader2,
-  Play
+  Play,
+  HeartPulse
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,7 @@ import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { useKernel } from "@/components/kernel/KernelProvider";
 
 const MOCK_NODES = Array.from({ length: 42 }, (_, i) => ({
   id: `NODE-${i + 1 < 10 ? '0' : ''}${i + 1}`,
@@ -38,6 +40,7 @@ const MOCK_NODES = Array.from({ length: 42 }, (_, i) => ({
 }));
 
 export default function InfrastructureMeshPage() {
+  const { heartbeat } = useKernel();
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationResult, setSimulationResult] = useState<{node04: number, avg: number} | null>(null);
@@ -59,8 +62,9 @@ export default function InfrastructureMeshPage() {
     setSimulationResult(null);
     
     setTimeout(() => {
+      const node04Heartbeat = heartbeat.find(h => h.nodeId === 'NODE-04-UK');
       setSimulationResult({
-        node04: 8.4,
+        node04: node04Heartbeat?.latency || 8.4,
         avg: 42.8
       });
       setIsSimulating(false);
@@ -161,7 +165,6 @@ export default function InfrastructureMeshPage() {
                         )}>
                            <Server className="h-4 w-4" />
                         </div>
-                        {/* Tooltip on hover */}
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-background border rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity z-50 w-24 text-[8px] pointer-events-none">
                            <p className="font-bold">{node.id}</p>
                            <p className="text-muted-foreground">Load: {node.load}%</p>
@@ -243,22 +246,25 @@ export default function InfrastructureMeshPage() {
                <Card className="glass-panel border-accent/20 bg-accent/5">
                   <CardHeader className="p-4 border-b border-white/5">
                     <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest text-accent">
-                      <ShieldCheck className="h-4 w-4" />
-                      Infrastructure Audit
+                      <HeartPulse className="h-4 w-4" />
+                      Proactive Heartbeat
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 space-y-4">
                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-[10px] font-bold uppercase">
-                           <span className="text-muted-foreground">Consensus Engine</span>
-                           <span className="text-green-400">NOMINAL</span>
-                        </div>
-                        <div className="flex justify-between items-center text-[10px] font-bold uppercase">
-                           <span className="text-muted-foreground">Self-Healing</span>
-                           <span className="text-white">ARMED</span>
-                        </div>
+                        {heartbeat.map((node) => (
+                           <div key={node.nodeId} className="flex justify-between items-center p-2 rounded-lg bg-black/40 border border-white/5">
+                              <span className="text-[9px] font-bold uppercase text-white/70">{node.nodeId}</span>
+                              <Badge variant="outline" className={cn(
+                                "text-[8px] font-mono",
+                                node.status === 'ONLINE' ? "text-green-400 border-green-500/20" : "text-yellow-400 border-yellow-500/20"
+                              )}>
+                                 {node.latency}ms
+                              </Badge>
+                           </div>
+                        ))}
                         <div className="p-2 rounded border border-accent/20 bg-accent/5 text-[9px] text-accent italic leading-relaxed">
-                           "All 42 nodes are currently reporting sub-15ms sync times with the Level 0 Global Ledger."
+                           "Heartbeat worker is probing all core corridors every 30s. Automated Telegram alerts are ENABLED."
                         </div>
                      </div>
                   </CardContent>
@@ -284,28 +290,6 @@ export default function InfrastructureMeshPage() {
                               <Badge variant="outline" className="text-[8px] border-accent/20 text-accent">{p.status}</Badge>
                            </div>
                         ))}
-                     </div>
-                  </CardContent>
-               </Card>
-
-               <Card className="glass-panel border-white/5">
-                  <CardHeader className="p-4">
-                     <CardTitle className="text-xs uppercase">Compute Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 pt-0">
-                     <div className="space-y-2">
-                        <div className="flex justify-between text-[9px] font-bold uppercase">
-                           <span>EU-Node (Node-04)</span>
-                           <span>64%</span>
-                        </div>
-                        <Progress value={64} className="h-1 bg-white/5 [&>div]:bg-accent" />
-                     </div>
-                     <div className="space-y-2">
-                        <div className="flex justify-between text-[9px] font-bold uppercase">
-                           <span>Asia-Node (Node-22)</span>
-                           <span>28%</span>
-                        </div>
-                        <Progress value={28} className="h-1 bg-white/5 [&>div]:bg-primary" />
                      </div>
                   </CardContent>
                </Card>

@@ -15,7 +15,8 @@ export type IncidentCategory =
   | 'INFRA_FAILURE'
   | 'ADMIN_ABUSE'
   | 'LATENCY_SPIKE'
-  | 'METRIC_THRESHOLD_EXCEEDED';
+  | 'METRIC_THRESHOLD_EXCEEDED'
+  | 'HEARTBEAT_FAILURE';
 
 export interface SovereignEvent {
   id: string;
@@ -66,6 +67,13 @@ export interface SystemAlert {
   timestamp: number;
   status: 'ACTIVE' | 'ACKNOWLEDGED' | 'RESOLVED';
   category: string;
+}
+
+export interface HeartbeatStatus {
+  nodeId: string;
+  latency: number;
+  status: 'ONLINE' | 'DEGRADED' | 'OFFLINE';
+  lastCheck: number;
 }
 
 /**

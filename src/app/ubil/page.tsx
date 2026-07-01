@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -34,7 +35,9 @@ import {
   FolderArchive,
   HeartPulse,
   Radar,
-  ShieldHalf
+  ShieldHalf,
+  Wifi,
+  CloudLightning
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,17 +48,17 @@ import { collection, query, orderBy, limit, doc, setDoc } from "firebase/firesto
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { createYapilyConsent } from "@/ai/flows/yapily-banking-flow";
+import { useKernel } from "@/components/kernel/KernelProvider";
+import { Progress } from "@/components/ui/progress";
 
 export default function UBILMainframePage() {
+  const { heartbeat, emitEvent } = useKernel();
   const [search, setSearch] = useState("");
   const [isSimulating, setIsSimulating] = useState(false);
   const [isTestRunning, setIsTestRunning] = useState(false);
   const [isHealthChecking, setIsHealthChecking] = useState(false);
   const [isVerifyingAmex, setIsVerifyingAmex] = useState(false);
   const [showIntegrityReport, setShowIntegrityReport] = useState(false);
-  const [simPreset, setSimPreset] = useState("Txn Success");
-  const [simAmount, setSimAmount] = useState("25000.00");
-  const [simBank, setSimBank] = useState("Brac Bank");
   const [isSignatureValid, setIsSignatureValid] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([
@@ -66,13 +69,12 @@ export default function UBILMainframePage() {
   const firestore = useFirestore();
 
   useEffect(() => {
-    // Initializing System Logs
     const timer = setTimeout(() => {
       setLogs(prev => [
         "> System Status: Projects 42-44 verified in Knowledge Bank.",
         "> Project 45 (Eco Governance) rails identified and active.",
+        "> Heartbeat Monitor: Proactive Pulse active on 3 core nodes.",
         "> Amex UK Node status: PERMANENT_VERIFIED.",
-        "> Fiscal Recycler: Active (Recycling 42.5% Yield)",
         "> Ready for Global Health & Integrity Check...",
         ...prev
       ]);
@@ -96,8 +98,8 @@ export default function UBILMainframePage() {
       { msg: "> Validating Project 43 (Syntax Logic)... OK (SDK v1.2 Ready)", delay: 600 },
       { msg: "> Validating Project 44 (Data Enrichment)... OK (92.4% Density)", delay: 600 },
       { msg: "> Checking Project 45 (Eco Governance)... OK (Yield Recycle Active)", delay: 800 },
-      { msg: "> Stress Testing Smart Router... OK (27.5ms Avg Latency)", delay: 800 },
-      { msg: "> Checking Forensic Security Seals... OK (0x82 Protocol Guard)", delay: 600 },
+      { msg: "> Heartbeat Probe: NODE-04 Latency @ 8.4ms", delay: 400 },
+      { msg: "> Forensic Security Seals... OK (0x82 Protocol Guard)", delay: 600 },
       { msg: "! FINAL STATUS: SYSTEM INTEGRITY 100% - SOVEREIGN GRID SECURE", delay: 1000 }
     ];
 
@@ -107,45 +109,7 @@ export default function UBILMainframePage() {
     }
 
     setIsHealthChecking(false);
-    toast({ title: "Global Health Check PASSED", description: "All operational planes including P45 are in OPTIMAL state." });
-  };
-
-  const dispatchSimulation = async () => {
-    setIsSimulating(true);
-    const eventId = `UBIL_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-    const timestamp = Date.now();
-    
-    setLogs(prev => [`>>> INCOMING HANDSHAKE: [${simPreset}] FROM ${simBank}`, ...prev]);
-
-    if (!isSignatureValid) {
-      setLogs(prev => [`! CRITICAL: Signature Mismatch detected in ${eventId}`, `! TRACE: ACCESS_DENIED_0x82 at offset 42`, ...prev]);
-    }
-
-    const eventData = {
-      id: eventId,
-      type: simPreset === 'Txn Success' ? 'TXN_SUCCESS' : 'AUTH_FAILED',
-      amount: parseFloat(simAmount),
-      currency: 'BDT',
-      senderBank: simBank,
-      status: isSignatureValid ? 'SUCCESS' : 'BLOCKED',
-      signatureStatus: isSignatureValid ? 'VALID' : 'INVALID',
-      securityTag: isSignatureValid ? null : 'OFFSET_42_MISMATCH',
-      idempKey: "idemp_" + Math.random().toString(36).substr(2, 6),
-      timestamp: timestamp,
-      path: 'HANDSHAKE_SIMULATOR'
-    };
-
-    if (firestore) {
-      await setDoc(doc(firestore, 'ubil_events', eventId), eventData);
-    }
-
-    setTimeout(() => {
-      setIsSimulating(false);
-      toast({ 
-        title: isSignatureValid ? "HANDSHAKE SUCCESS" : "SECURITY BLOCK", 
-        variant: isSignatureValid ? "default" : "destructive" 
-      });
-    }, 800);
+    toast({ title: "Global Health Check PASSED" });
   };
 
   const handleAmexVerify = async () => {
@@ -280,6 +244,30 @@ export default function UBILMainframePage() {
         </header>
 
         <main className="flex-1 p-6 max-w-[1600px] mx-auto w-full space-y-6">
+          {/* Heartbeat Monitor Strip */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+             {heartbeat.map((node) => (
+               <Card key={node.nodeId} className="glass-panel border-l-4 border-l-accent overflow-hidden">
+                  <CardContent className="p-4 flex items-center justify-between">
+                     <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "p-2 rounded-lg bg-accent/10 border border-accent/20",
+                          node.status === 'DEGRADED' && "bg-yellow-500/10 border-yellow-500/20 text-yellow-500",
+                          node.status === 'ONLINE' && "text-accent"
+                        )}>
+                           <HeartPulse className={cn("h-4 w-4", node.status === 'ONLINE' && "animate-pulse")} />
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-bold text-white uppercase tracking-widest">{node.nodeId}</p>
+                           <p className="text-[9px] text-muted-foreground uppercase">{node.status} • {node.latency}ms</p>
+                        </div>
+                     </div>
+                     <Wifi className={cn("h-4 w-4", node.status === 'ONLINE' ? "text-green-500" : "text-yellow-500")} />
+                  </CardContent>
+               </Card>
+             ))}
+          </div>
+
           {showIntegrityReport && (
             <Card className="glass-panel border-l-4 border-l-green-500 bg-green-500/5 animate-fade-in mb-6 overflow-hidden">
                <div className="absolute top-0 right-0 p-4 opacity-10"><Award className="h-20 w-20 text-green-400" /></div>
@@ -310,9 +298,6 @@ export default function UBILMainframePage() {
                            <p className="text-xl font-headline font-bold text-white">{s.val}</p>
                         </div>
                      ))}
-                  </div>
-                  <div className="mt-6 p-4 rounded-xl bg-secondary/20 border border-white/10 text-[11px] text-white/80 italic leading-relaxed">
-                    "Project 45 Eco Governance is now recycling 42.5% of yield. All nodes reporting optimal profitability. AML/CFT Screening is active across the 42-node mesh."
                   </div>
                </CardContent>
             </Card>
@@ -350,14 +335,20 @@ export default function UBILMainframePage() {
               <Card className="glass-panel border-white/5 bg-secondary/10">
                  <CardHeader className="p-4">
                     <CardTitle className="text-xs uppercase flex items-center gap-2">
-                       <Radar className="h-4 w-4 text-primary" /> System Proximity
+                       <Radar className="h-4 w-4 text-primary" /> Proactive Monitoring
                     </CardTitle>
                  </CardHeader>
-                 <CardContent className="p-4 pt-0 space-y-4 text-center">
-                    <div className="w-24 h-24 rounded-full border-4 border-accent/20 border-t-accent animate-spin mx-auto flex items-center justify-center">
-                       <Globe className="h-8 w-8 text-accent animate-pulse" />
+                 <CardContent className="p-4 pt-0 space-y-4">
+                    <div className="space-y-2">
+                       <div className="flex justify-between text-[9px] font-bold uppercase">
+                          <span>Mesh Health</span>
+                          <span className="text-accent">98.4%</span>
+                       </div>
+                       <Progress value={98.4} className="h-1 bg-white/5 [&>div]:bg-accent" />
                     </div>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-[0.2em]">Node-04 Active • UK Corridor</p>
+                    <p className="text-[9px] text-muted-foreground italic leading-relaxed">
+                       "Heartbeat worker is probing all core corridors every 30s. Anycast failover is ARMED."
+                    </p>
                  </CardContent>
               </Card>
             </div>
@@ -409,9 +400,6 @@ export default function UBILMainframePage() {
                                </div>
                                <p className={cn("text-[11px] font-bold truncate", event.isPermanentRecord ? "text-accent" : "text-white")}>{event.id}</p>
                                <p className="text-[10px] text-muted-foreground">{event.senderBank || 'System Node'}</p>
-                               {event.integrationPath && (
-                                 <Badge variant="ghost" className="absolute top-4 right-4 text-[7px] font-bold uppercase opacity-30 group-hover:opacity-100">{event.integrationPath}</Badge>
-                               )}
                             </div>
                           ))}
                        </div>
@@ -430,58 +418,24 @@ export default function UBILMainframePage() {
                                 </div>
                             </div>
                             
-                            <Tabs defaultValue="forensics" className="w-full">
-                                <TabsList className="bg-secondary/40 p-1 mb-6 h-10 w-full justify-start rounded-xl">
-                                    <TabsTrigger value="forensics" className="text-[9px] uppercase font-bold flex-1">Forensics</TabsTrigger>
-                                    <TabsTrigger value="routing" className="text-[9px] uppercase font-bold flex-1">Routing</TabsTrigger>
-                                    <TabsTrigger value="metadata" className="text-[9px] uppercase font-bold flex-1">Metadata</TabsTrigger>
-                                </TabsList>
+                            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-2 opacity-10"><Zap className="h-10 w-10 text-primary" /></div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[10px] font-bold text-primary uppercase">Integration Path</span>
+                                    <Badge className="bg-primary/20 text-primary uppercase text-[8px]">{selectedEvent.integrationPath || 'DIRECT_API'}</Badge>
+                                </div>
+                                <p className="text-[11px] text-white/90 italic leading-relaxed border-l-2 border-primary/30 pl-4">
+                                    "{selectedEvent.routingReason || 'Project 42-45 verification audit successfully mapped node to Sovereign Grid.'}"
+                                </p>
+                            </div>
 
-                                <TabsContent value="forensics" className="space-y-6 m-0">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
-                                            <p className="text-[8px] uppercase font-bold text-muted-foreground">Integrity Status</p>
-                                            <p className="text-[10px] font-mono text-green-400 font-bold">AUTHENTIC_100%</p>
-                                        </div>
-                                        <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
-                                            <p className="text-[8px] uppercase font-bold text-muted-foreground">Signature Guard</p>
-                                            <Badge className="bg-green-500/20 text-green-400 text-[8px]">VALID_HMAC</Badge>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-2">
-                                        <p className="text-[8px] uppercase font-bold text-muted-foreground">Security Hash (SHA-256)</p>
-                                        <p className="text-[10px] font-mono text-accent break-all leading-relaxed">{selectedEvent.securitySignature || '8f2e9c203b5d1298c47e8a91102b8e...'}</p>
-                                    </div>
-                                </TabsContent>
-
-                                <TabsContent value="routing" className="space-y-6 m-0">
-                                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3 relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 p-2 opacity-10"><Zap className="h-10 w-10 text-primary" /></div>
-                                        <div className="flex justify-between items-center">
-                                           <span className="text-[10px] font-bold text-primary uppercase">Integration Path</span>
-                                           <Badge className="bg-primary/20 text-primary uppercase text-[8px]">{selectedEvent.integrationPath || 'DIRECT_API'}</Badge>
-                                        </div>
-                                        <p className="text-[11px] text-white/90 italic leading-relaxed border-l-2 border-primary/30 pl-4">
-                                            "{selectedEvent.routingReason || 'Project 42-45 verification audit successfully mapped node to Sovereign Grid.'}"
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-green-500/5 border border-green-500/20 text-[10px] text-green-400 font-bold">
-                                        <CheckCircle2 className="h-4 w-4" />
-                                        DETERMINISTIC FINALITY OK
-                                    </div>
-                                </TabsContent>
-
-                                <TabsContent value="metadata" className="space-y-4 m-0">
-                                    <div className="p-5 rounded-xl bg-black/60 border border-white/10 font-mono text-[10px] text-white/60 space-y-2 leading-relaxed">
-                                        <p>"origin_plane": "INFRASTRUCTURE",</p>
-                                        <p>"source_node": "{selectedEvent.senderBank || 'API_GATEWAY'}",</p>
-                                        <p>"timestamp": {selectedEvent.timestamp},</p>
-                                        <p>"idemp_key": "{selectedEvent.idempKey || 'null'}",</p>
-                                        <p>"auth_mode": "OAUTH2_P43",</p>
-                                        <p>"status": "PERMANENT_RECORD"</p>
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
+                            <div className="p-5 rounded-xl bg-black/60 border border-white/10 font-mono text-[10px] text-white/60 space-y-2 leading-relaxed">
+                                <p>"origin_plane": "INFRASTRUCTURE",</p>
+                                <p>"source_node": "{selectedEvent.senderBank || 'API_GATEWAY'}",</p>
+                                <p>"timestamp": {selectedEvent.timestamp},</p>
+                                <p>"auth_mode": "OAUTH2_P43",</p>
+                                <p>"status": "PERMANENT_RECORD"</p>
+                            </div>
                          </div>
                        ) : (
                          <div className="h-full flex flex-col items-center justify-center text-center space-y-6 opacity-20">
@@ -502,16 +456,16 @@ export default function UBILMainframePage() {
         
         <footer className="p-4 border-t bg-secondary/5 text-center flex items-center justify-center gap-6">
            <Badge variant="ghost" className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground/30 italic">
-              Sheikh Code Exchange (Project 42)
+              Project 42: Bank Connectivity
            </Badge>
            <Badge variant="ghost" className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground/30 italic">
-              AI Syntax Architect (Project 43)
+              Project 43: AI Syntax Architect
            </Badge>
            <Badge variant="ghost" className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground/30 italic">
-              Data Enrichment (Project 44)
+              Project 44: Data Enrichment
            </Badge>
            <Badge variant="ghost" className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground/30 italic">
-              Eco Governance (Project 45)
+              Project 45: Eco Governance
            </Badge>
         </footer>
       </SidebarInset>
