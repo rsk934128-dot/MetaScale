@@ -24,7 +24,8 @@ export type IncidentCategory =
   | 'GOVERNANCE_VIOLATION'
   | 'POLICY_ENFORCEMENT'
   | 'BRIDGE_BREACH'
-  | 'SYNC_DRIFT';
+  | 'SYNC_DRIFT'
+  | 'PREDICTIVE_ANOMALY';
 
 export interface SovereignEvent {
   id: string;
@@ -108,4 +109,5 @@ export type FinanceEventType =
   | 'GOVERNANCE_BLOCK'
   | 'BRIDGE_INBOUND_RECEIVED'
   | 'BRIDGE_OUTBOUND_DISPATCHED'
-  | 'BRIDGE_SYNC_STABILIZED';
+  | 'BRIDGE_SYNC_STABILIZED'
+  | 'PREDICTIVE_RISK_CHECK';

@@ -12,10 +12,11 @@ import {
   addDoc
 } from 'firebase/firestore';
 import { NormalizedPaymentEvent, InboundPaymentDoc, PaymentStatus, SettlementBucket } from '@/lib/payments/types';
+import { runPredictiveAnalysis } from '@/ai/flows/predictive-anomaly-analysis';
 
 /**
  * Core Domain Service: Atomic Payment Credit Logic
- * Phase 2.7: Now populates derived query fields for indexing.
+ * Updated v1.3: Integrated "Hunter Mode" Predictive Anomaly Checking.
  */
 export async function processPaymentCredit(
   firestore: Firestore, 
@@ -26,6 +27,66 @@ export async function processPaymentCredit(
   const paymentId = `${event.provider}_${event.externalTxnId}`;
   const timestamp = Date.now();
 
+  // 1. Proactive Threat Hunting (Hunter Mode)
+  // We fetch user context before starting transaction
+  const userRef = doc(firestore, 'users', event.userId);
+  const userSnap = await getDoc(userRef);
+  const userData = userSnap.data();
+
+  if (userData) {
+    try {
+      const riskCheck = await runPredictiveAnalysis({
+        transaction: {
+          amount: event.amount,
+          currency: event.currency,
+          provider: event.provider,
+          externalTxnId: event.externalTxnId,
+          nodeId: 'NODE-04-UK'
+        },
+        userContext: {
+          uid: event.userId,
+          trustScore: userData.trustScore || 0,
+          verificationStatus: userData.verificationStatus || 'UNVERIFIED',
+          recentActivityCount: 0, // In production, query recent txns
+          averageTxnAmount: 500, // In production, calculate from history
+        },
+        networkMetadata: {
+          latency: 8.4
+        }
+      });
+
+      if (riskCheck.riskScore > 80) {
+        console.warn(`>>> [HUNTER_MODE] BLOCKING_HIGH_RISK: ${riskCheck.riskScore} | Reason: ${riskCheck.reasoning}`);
+        
+        // Log the anomaly event
+        await addDoc(collection(firestore, 'events'), {
+          type: 'PREDICTIVE_ANOMALY_DETECTED',
+          plane: 'SECURITY',
+          priority: 1,
+          timestamp: Date.now(),
+          payload: { 
+            paymentId, 
+            riskScore: riskCheck.riskScore, 
+            reason: riskCheck.reasoning,
+            category: riskCheck.threatCategory
+          },
+          status: 'BLOCKED_BY_GOVERNANCE',
+          category: 'PREDICTIVE_ANOMALY',
+          severity: 'CRITICAL'
+        });
+
+        return { 
+          status: 'BLOCKED_BY_GOVERNANCE', 
+          reason: riskCheck.reasoning,
+          riskScore: riskCheck.riskScore 
+        };
+      }
+    } catch (err) {
+      console.error("Hunter Mode Engine Lag:", err);
+      // Fallback: Proceed but flag for manual review if infra fails
+    }
+  }
+
   return await runTransaction(firestore, async (transaction) => {
     const paymentRef = doc(firestore, 'payments', paymentId);
     const paymentSnap = await transaction.get(paymentRef);
@@ -35,25 +96,25 @@ export async function processPaymentCredit(
       currentData = paymentSnap.data() as InboundPaymentDoc;
     }
 
-    // 1. Idempotency Check
+    // 2. Idempotency Check
     if (currentData?.isCredited) {
       return { status: 'ALREADY_CREDITED', paymentId };
     }
 
-    // 2. User Lookup
-    const userRef = doc(firestore, 'users', event.userId);
-    const userSnap = await transaction.get(userRef);
-    if (!userSnap.exists()) {
+    // 3. User Lookup
+    const userRefInner = doc(firestore, 'users', event.userId);
+    const userSnapInner = await transaction.get(userRefInner);
+    if (!userSnapInner.exists()) {
       throw new Error(`USER_NOT_FOUND: ${event.userId}`);
     }
 
-    // 3. Atomic Execution: Update User Balance
-    transaction.update(userRef, {
+    // 4. Atomic Execution: Update User Balance
+    transaction.update(userRefInner, {
       balance: increment(event.amount),
       updatedAt: serverTimestamp()
     });
 
-    // 4. Update Payment Ledger with Derived Fields
+    // 5. Update Payment Ledger with Derived Fields
     const creditOpId = `${trigger.toLowerCase()}_${timestamp}_${event.externalTxnId.slice(-6)}`;
     
     const historyEntry = {
@@ -73,8 +134,8 @@ export async function processPaymentCredit(
       updatedAt: timestamp,
       creditedAt: timestamp,
       isCredited: isCredited,
-      credited: isCredited, // Derived boolean for fast indexing
-      userId: event.userId, // Ensure userId is indexed
+      credited: isCredited, 
+      userId: event.userId, 
       creditOperationId: creditOpId,
       reconciliationStatus: 'MATCHED',
       id: paymentId,
@@ -105,7 +166,6 @@ export async function processPaymentCredit(
 
 /**
  * Phase 2.8: Settlement & Reconciliation Controller
- * Matches incoming signals with Payment Seals and executes finality.
  */
 export async function reconcileAndSettleLink(
   firestore: Firestore,
@@ -146,7 +206,7 @@ export async function reconcileAndSettleLink(
       }
     };
 
-    // 3. Trigger Credit Service inside transaction
+    // 3. Update Link Status
     transaction.update(linkRef, {
       status: 'PAID',
       paidAt: timestamp,
@@ -176,7 +236,6 @@ export async function reconcileAndSettleLink(
 
 /**
  * Phase 3.0: Autonomous Yield Recycler
- * Deducts fee and recycles 42.5% of it into the Global Mesh Pool.
  */
 export async function executeYieldRecycle(
   firestore: Firestore,

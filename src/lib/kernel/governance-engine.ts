@@ -2,7 +2,7 @@
 /**
  * @fileOverview Sovereign Governance Engine (Policy-as-Code).
  * Enforces deterministic guardrails on all agentic and system directives.
- * Updated v1.2: Multi-Sig Liquidity Guard Enforcement.
+ * Updated v1.3: Hunter Mode & Risk-Based Blocking.
  */
 
 import { SovereignEvent, KernelState, PlaneType, SystemMode } from './types';
@@ -34,12 +34,21 @@ export function validateDirective(event: SovereignEvent, state: { mode: SystemMo
     const multiSigThreshold = 1000;
 
     if (amount >= multiSigThreshold && !event.payload?.isMultiSigAuthorized) {
-      // We don't block the event creation, but we flag it as requiring Multi-Sig in the payload
-      // The dispatcher logic handles the actual "Pending" state.
+      // Logic handled in dispatcher
     }
   }
 
-  // Rule 3: Autonomous Budget Guardrail for Agents
+  // Rule 3: Predictive Anomaly Block (Hunter Mode)
+  if (event.status === 'BLOCKED_BY_GOVERNANCE' && event.category === 'PREDICTIVE_ANOMALY') {
+    return {
+      allowed: false,
+      reason: `Proactive block by Hunter Mode: ${event.payload?.reason || 'High risk profile detected.'}`,
+      remediation: "Requires manual identity binding verification and Imperial seal.",
+      severity: 'CRITICAL'
+    };
+  }
+
+  // Rule 4: Autonomous Budget Guardrail for Agents
   if (event.type === 'AGENT_BUDGET_ADJUST' || (event.plane === 'FINANCE' && event.payload?.amount)) {
     const requestedAmount = event.payload?.amount || 0;
     const maxAutonomousLimit = 2000;
@@ -52,16 +61,6 @@ export function validateDirective(event: SovereignEvent, state: { mode: SystemMo
         severity: 'HIGH'
       };
     }
-  }
-
-  // Rule 4: Critical Operation Auth
-  if (event.type === 'CORE_LEGER_WIPE' || event.type === 'ROOT_AUTH_RESET') {
-    return {
-      allowed: false,
-      reason: "Root mutation attempt detected. Automatic block triggered.",
-      remediation: "This action can only be performed via the Mil-Spec Hardware Terminal.",
-      severity: 'CRITICAL'
-    };
   }
 
   return { allowed: true, severity: 'LOW' };

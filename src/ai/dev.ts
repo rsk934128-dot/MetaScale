@@ -25,3 +25,4 @@ import '@/ai/flows/p2p-market-analyst.ts';
 import '@/ai/flows/forensic-audit-analyst.ts';
 import '@/ai/flows/daily-integrity-report-flow.ts';
 import '@/ai/flows/forensic-analyst.ts';
+import '@/ai/flows/predictive-anomaly-analysis.ts';
