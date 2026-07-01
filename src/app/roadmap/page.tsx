@@ -17,8 +17,8 @@ import {
   Layers,
   Activity,
   Server,
-  Key,
-  ShieldAlert,
+  Key, 
+  ShieldAlert, 
   ArrowRight,
   TrendingUp,
   Users,
@@ -38,6 +38,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { useKernel } from "@/components/kernel/KernelProvider";
