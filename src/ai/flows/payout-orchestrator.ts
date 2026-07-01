@@ -63,8 +63,8 @@ EXECUTION PARAMETERS:
 1. Simulate OAuth 2.0 token exchange for the specified gateway.
 2. If gateway is TELEGRAM_WALLET:
    - Identify if recipient is a username (@), a phone number, or a TON Wallet address (starts with EQ/UQ).
-   - If a Memo is provided, mark destinationType as 'CEX_EXCHANGE' or 'MERCHANT'.
-   - If recipient is a TON Address without Memo, mark as 'EXTERNAL_WALLET'.
+   - If it is a TON Address AND a Memo is provided, mark destinationType as 'CEX_EXCHANGE' (Likely Binance, Bybit, or OKX).
+   - If it is a TON Address without Memo, mark as 'EXTERNAL_WALLET' (Non-custodial like Tonkeeper).
    - If it's a username/phone, mark as 'P2P'.
    - Simulate a TON Blockchain escrow transfer with SHA-256 payload signing.
 3. Generate a unique 64-character TxHash (simulating a blockchain transaction hash).

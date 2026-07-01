@@ -38,7 +38,9 @@ import {
   CheckCircle2,
   Fingerprint,
   Tag,
-  Info
+  Info,
+  Mail,
+  FlaskConical
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -89,6 +91,7 @@ export default function FinancialIntelligence() {
   const [isPayoutProcessing, setIsPayoutProcessing] = useState(false);
   const [recipientError, setRecipientError] = useState("");
   const [recipientType, setRecipientType] = useState<string>("NONE");
+  const [showCardNumbers, setShowCardNumbers] = useState(false);
 
   // Sandbox State
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
@@ -138,6 +141,12 @@ export default function FinancialIntelligence() {
   const handleGlobalPayout = async () => {
     if (!payoutRecipient || !payoutAmount || !profile || !user?.uid || !firestore || recipientError) {
       toast({ variant: "destructive", title: "Action Blocked", description: "সবগুলো তথ্য সঠিকভাবে প্রদান করুন।" });
+      return;
+    }
+
+    // Memo check for CEX transfers
+    if (recipientType === 'TON_WALLET' && !payoutMemo) {
+      toast({ variant: "destructive", title: "Memo Required", description: "এক্সচেঞ্জে (Binance/CEX) ফান্ড পাঠাতে মেমো বাধ্যতামূলক।" });
       return;
     }
 
@@ -326,7 +335,11 @@ export default function FinancialIntelligence() {
                                </CardTitle>
                                <CardDescription className="text-[10px] uppercase tracking-widest">PayPal | Priyo Pay | Telegram Wallet (TON)</CardDescription>
                             </div>
-                            <TooltipProvider>
+                            <div className="flex items-center gap-2">
+                               <Badge className="bg-accent/20 text-accent text-[8px] font-bold uppercase tracking-widest">
+                                 <FlaskConical className="mr-1 h-3 w-3" /> Bridge Test Active
+                               </Badge>
+                               <TooltipProvider>
                                <Tooltip>
                                   <TooltipTrigger asChild>
                                      <div className="flex items-center gap-2 px-3 py-1 rounded bg-accent/10 border border-accent/20 cursor-help">
@@ -335,10 +348,11 @@ export default function FinancialIntelligence() {
                                      </div>
                                   </TooltipTrigger>
                                   <TooltipContent className="bg-background border-white/10 max-w-xs">
-                                     <p className="text-[10px] italic">নিশ্চিত করুন যে আপনি সঠিক TON নেটওয়ার্ক ব্যবহার করছেন। ভুল নেটওয়ার্কে (যেমন- ERC20) ফান্ড পাঠালে তা পুনরুদ্ধার করা সম্ভব নয়।</p>
+                                     <p className="text-[10px] italic">নিশ্চিত করুন যে আপনি সঠিক TON নেটওয়ার্ক ব্যবহার করছেন। এক্সচেঞ্জে ফান্ড পাঠানোর সময় মেমো অবশ্যই দিবেন।</p>
                                   </TooltipContent>
                                </Tooltip>
                             </TooltipProvider>
+                            </div>
                          </div>
                       </CardHeader>
                       <CardContent className="space-y-6">
@@ -383,20 +397,25 @@ export default function FinancialIntelligence() {
                             </div>
                          </div>
 
-                         {payoutGateway === 'TELEGRAM_WALLET' && (
+                         {(payoutGateway === 'TELEGRAM_WALLET' || recipientType === 'TON_WALLET') && (
                            <div className="space-y-2 animate-fade-in">
                               <div className="flex justify-between items-center">
                                  <Label className="text-[10px] font-bold opacity-60 flex items-center gap-2">
-                                    <Tag className="h-3 w-3" /> Memo / Tag (Optional for Exchange)
+                                    <Tag className="h-3 w-3" /> Memo / Tag (Mandatory for Binance/CEX)
                                  </Label>
-                                 <Badge variant="ghost" className="text-[8px] opacity-40">REQUIRED FOR CEX</Badge>
+                                 <Badge variant="outline" className={cn("text-[8px]", recipientType === 'TON_WALLET' ? "border-red-500/50 text-red-400" : "opacity-40")}>
+                                    {recipientType === 'TON_WALLET' ? "REQUIRED_FOR_CEX" : "OPTIONAL"}
+                                 </Badge>
                               </div>
                               <Input 
                                  placeholder="e.g. 104291823" 
-                                 className="bg-secondary/30 border-white/5 h-10 text-xs font-mono"
+                                 className={cn("bg-secondary/30 border-white/5 h-10 text-xs font-mono", recipientType === 'TON_WALLET' && !payoutMemo && "border-red-500/30")}
                                  value={payoutMemo}
                                  onChange={(e) => setPayoutMemo(e.target.value)}
                               />
+                              {recipientType === 'TON_WALLET' && !payoutMemo && (
+                                <p className="text-[9px] text-red-400 italic">এক্সচেঞ্জে ডিপোজিট করার জন্য বাইনান্স থেকে দেওয়া মেমো বা ট্যাগটি এখানে লিখুন।</p>
+                              )}
                            </div>
                          )}
 
@@ -418,7 +437,7 @@ export default function FinancialIntelligence() {
                             <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
                             <p className="text-[10px] text-muted-foreground leading-relaxed italic">
                               {payoutGateway === 'TELEGRAM_WALLET' ? 
-                                "টেলিগ্রাম ওয়ালেট বা এক্সটার্নাল TON অ্যাড্রেসে টাকা পাঠানোর সময় মেমো (যদি থাকে) চেক করে নিন। এটি একটি নিরাপদ TON এসক্রো করিডোর ব্যবহার করবে।" :
+                                "বাইনান্স বা অন্য এক্সচেঞ্জে পাঠানোর সময় মেমো চেক করে নিন। ভুল মেমো দিলে আপনার ফান্ড রিফান্ড পাওয়া অসম্ভব হতে পারে।" :
                                 "আপনার ফান্ড ডিটারমিনিস্টিক রেলের মাধ্যমে ১-১০ সেকেন্ডের মধ্যে প্রাপকের কাছে পৌঁছে যাবে।"
                               }
                             </p>
@@ -430,7 +449,7 @@ export default function FinancialIntelligence() {
                              payoutGateway === 'TELEGRAM_WALLET' ? "bg-accent text-background hover:bg-accent/90" : "bg-[#6366f1] hover:bg-[#4f46e5] text-white"
                            )}
                            onClick={handleGlobalPayout}
-                           disabled={isPayoutProcessing || isThrottled || !!recipientError || !payoutAmount}
+                           disabled={isPayoutProcessing || isThrottled || !!recipientError || !payoutAmount || (recipientType === 'TON_WALLET' && !payoutMemo)}
                          >
                             {isPayoutProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                             {isPayoutProcessing ? "Orchestrating Payout..." : "Authorize Disbursement"}

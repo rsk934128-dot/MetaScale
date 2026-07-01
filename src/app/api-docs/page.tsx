@@ -25,7 +25,8 @@ import {
   ShieldX,
   BookOpen,
   FileCode,
-  Milestone
+  Milestone,
+  Tag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -210,15 +211,21 @@ export default function APIDocsPage() {
                      </CardContent>
                   </Card>
 
-                  <Card className="glass-panel border-white/5">
-                     <CardHeader><CardTitle className="text-lg flex items-center gap-2 uppercase tracking-tighter"><FileCode className="h-5 w-5 text-primary" /> Signature Logic</CardTitle></CardHeader>
+                  <Card className="glass-panel border-white/5 bg-accent/5">
+                     <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2 uppercase tracking-tighter">
+                           <Tag className="h-5 w-5 text-accent" />
+                           Exchange Deposit (Memo)
+                        </CardTitle>
+                     </CardHeader>
                      <CardContent className="space-y-4">
-                        <div className="p-4 rounded-xl bg-black/40 border border-white/5 font-mono text-[10px] leading-relaxed text-white/70">
-                           <p className="text-primary">// Header: X-Sovereign-Signature</p>
-                           <p>const signature = crypto</p>
-                           <p>  .createHmac(&apos;sha256&apos;, YOUR_SECRET)</p>
-                           <p>  .update(JSON.stringify(payload))</p>
-                           <p>  .digest(&apos;hex&apos;);</p>
+                        <p className="text-xs text-muted-foreground italic">
+                           Binance, OKX বা Bybit-এর মতো এক্সচেঞ্জে TON বা USDT পাঠানোর সময় **Memo/Tag** ব্যবহার করা বাধ্যতামূলক। 
+                        </p>
+                        <div className="p-4 rounded-xl bg-black/40 border border-red-500/20 font-mono text-[10px] leading-relaxed text-red-400">
+                           <p>! WARNING: Sending to CEX without a memo</p>
+                           <p>! status: FUND_RECOVERY_IMPOSSIBLE</p>
+                           <p>! Action: Use mandatory 'payoutMemo' parameter.</p>
                         </div>
                      </CardContent>
                   </Card>
