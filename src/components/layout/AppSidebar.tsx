@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -34,7 +33,9 @@ import {
   Sparkles,
   Braces,
   BrainCircuit,
-  FileSearch
+  FileSearch,
+  Smartphone,
+  MessageSquare
 } from "lucide-react";
 import {
   Sidebar,
@@ -95,6 +96,7 @@ const securityNav = [
 const infraNav = [
   { icon: Network, label: "42-Node Mesh", href: "/infrastructure" },
   { icon: Unplug, label: "UBIL Mainframe", href: "/ubil" },
+  { icon: Smartphone, label: "SMS Reader", href: "/sms-reader" },
   { icon: Cpu, label: "AI Council", href: "/agents" },
   { icon: Database, label: "Knowledge Bank", href: "/library" },
   { icon: Mail, label: "Communication Plane", href: "/communications" },
