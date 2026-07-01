@@ -91,7 +91,7 @@ const yapilyInstitutionsFlow = ai.defineFlow(
     outputSchema: z.array(YapilyInstitutionSchema),
   },
   async (input) => {
-    // Simulated mapping of 14,000 banks
+    // Simulated mapping of 14,000 banks across the mesh
     return [
       { id: 'barclays', name: 'Barclays', countries: ['GB'], features: ['INITIATE_DOMESTIC_PERIODIC_PAYMENT', 'READ_ACCOUNTS'] },
       { id: 'hsbc-uk', name: 'HSBC UK', countries: ['GB'], features: ['INITIATE_DOMESTIC_SINGLE_PAYMENT', 'READ_ACCOUNTS'] },
