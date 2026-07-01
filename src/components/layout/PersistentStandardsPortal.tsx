@@ -20,7 +20,7 @@ export function PersistentStandardsPortal() {
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
   const isVisible = pathname === '/shurukkha-standard';
-  const targetUrl = "https://noor-nexus-omega.vercel.app/shurukkha-standard";
+  const targetUrl = "https://noor-nexus-rubel.vercel.app/";
 
   return (
     <div 
