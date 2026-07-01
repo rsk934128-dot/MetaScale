@@ -2,7 +2,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ShieldCheck, Globe, Loader2, RefreshCw, ExternalLink, Maximize2, Zap, Shield } from "lucide-react";
@@ -19,8 +19,10 @@ export function PersistentStandardsPortal() {
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const isVisible = pathname === '/shurukkha-standard';
   const targetUrl = "https://noor-nexus-rubel.vercel.app/";
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Transition effect for visibility
   useEffect(() => {
@@ -31,6 +33,26 @@ export function PersistentStandardsPortal() {
       setShowContent(false);
     }
   }, [isVisible]);
+
+  // Fail-safe: If the iframe hasn't reported 'load' within 10 seconds, force hide loader
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (isVisible && isLoading) {
+      timeout = setTimeout(() => {
+        console.warn("Sovereign OS: Iframe load timeout reached. Forcing display.");
+        setIsLoading(false);
+      }, 10000); // 10 second threshold
+    }
+    return () => clearTimeout(timeout);
+  }, [isVisible, isLoading]);
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setLoadError(false);
+    if (iframeRef.current) {
+      iframeRef.current.src = targetUrl;
+    }
+  };
 
   return (
     <div 
@@ -62,13 +84,8 @@ export function PersistentStandardsPortal() {
                 variant="outline" 
                 size="sm" 
                 className="h-8 border-white/10 text-[10px] uppercase font-bold px-2 md:px-3 hover:bg-accent/10 hover:text-accent transition-colors"
-                onClick={() => {
-                  const iframe = document.getElementById('persistent-standard-iframe') as HTMLIFrameElement;
-                  if (iframe) {
-                    setIsLoading(true);
-                    iframe.src = targetUrl;
-                  }
-                }}
+                onClick={handleRefresh}
+                disabled={isLoading}
               >
                 <RefreshCw className={cn("mr-1.5 h-3.5 w-3.5", isLoading && "animate-spin")} />
                 <span className="hidden xs:inline">Sync Mesh Node</span>
@@ -89,14 +106,24 @@ export function PersistentStandardsPortal() {
                   <div className="absolute inset-0 bg-accent/20 rounded-full blur-2xl animate-pulse" />
                   <Loader2 className="h-12 w-12 animate-spin text-accent relative z-10" strokeWidth={3} />
                 </div>
-                <div className="space-y-2 text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.5em] text-accent animate-pulse">Establishing Secure Tunnel</p>
-                  <p className="text-[8px] font-mono text-muted-foreground uppercase opacity-50 tracking-widest">ENCRYPTION: AES-256-GCM • NODE: 04</p>
+                <div className="space-y-4 text-center">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.5em] text-accent animate-pulse">Establishing Secure Tunnel</p>
+                    <p className="text-[8px] font-mono text-muted-foreground uppercase opacity-50 tracking-widest">ENCRYPTION: AES-256-GCM • NODE: 04</p>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    className="text-[9px] uppercase font-bold text-muted-foreground/50 hover:text-accent"
+                    onClick={() => setIsLoading(false)}
+                  >
+                    Skip Waiting
+                  </Button>
                 </div>
               </div>
             )}
             
             <iframe
+              ref={iframeRef}
               id="persistent-standard-iframe"
               src={targetUrl}
               className={cn(
@@ -104,9 +131,28 @@ export function PersistentStandardsPortal() {
                 isLoading ? "opacity-0" : "opacity-100"
               )}
               onLoad={() => setIsLoading(false)}
+              onError={() => {
+                setLoadError(true);
+                setIsLoading(false);
+              }}
               title="Shurukkha Standard Portal"
-              allow="geolocation; microphone; camera; midi; encrypted-media; autoplay"
+              allow="geolocation; microphone; camera; midi; encrypted-media; autoplay; payment"
+              sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads"
             />
+
+            {/* Error State Overlay */}
+            {loadError && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background p-6 text-center space-y-4">
+                <Shield className="h-12 w-12 text-red-500/50" />
+                <div className="space-y-2">
+                  <h3 className="text-lg font-bold text-white uppercase">Connection Interrupted</h3>
+                  <p className="text-xs text-muted-foreground italic">The remote node is not responding or has blocked embedding.</p>
+                </div>
+                <Button onClick={handleRefresh} className="bg-accent text-background font-bold">
+                  Retry Handshake
+                </Button>
+              </div>
+            )}
 
             {/* Subtle Overlay for Mil-Spec feel */}
             <div className="absolute inset-0 pointer-events-none border-t border-white/5 shadow-[inset_0_1px_20px_rgba(0,0,0,0.5)]" />
