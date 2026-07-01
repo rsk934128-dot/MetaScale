@@ -10,7 +10,6 @@ import {
   Send, 
   Wallet, 
   RefreshCw, 
-  Zap as PriyoIcon,
   Loader2,
   Activity,
   ArrowUpRight,
@@ -37,7 +36,9 @@ import {
   Undo2,
   History,
   CheckCircle2,
-  Fingerprint
+  Fingerprint,
+  Tag,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +55,7 @@ import { PaymentLinkManager } from "@/components/finance/PaymentLinkManager";
 import { orchestratePayout } from "@/ai/flows/payout-orchestrator";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function FinancialIntelligence() {
   const { user } = useUser();
@@ -75,40 +77,48 @@ export default function FinancialIntelligence() {
   // Recent Transactions for Reversal/Refund View
   const transactionsQuery = useMemo(() => {
     if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, 'events'), where('plane', '==', 'FINANCE'), orderBy('timestamp', 'desc'), limit(10));
+    return query(collection(firestore, 'events'), where('plane', '==', 'FINANCE'), orderBy('timestamp', 'desc'), limit(15));
   }, [firestore, user?.uid]);
   const { data: recentTxns } = useCollection<any>(transactionsQuery);
 
-  // Form State
-  const [targetAccount, setTargetAccount] = useState("");
-  const [transferAmount, setTransferAmount] = useState("");
-  const [isTransferring, setIsTransferring] = useState(false);
-  const [isIssuingCard, setIsIssuingCard] = useState(false);
-  const [showCardNumbers, setShowCardNumbers] = useState(false);
-  
-  // Payout State
+  // Payout Form State
   const [payoutRecipient, setPayoutRecipient] = useState("");
   const [payoutAmount, setPayoutAmount] = useState("");
+  const [payoutMemo, setPayoutMemo] = useState("");
   const [payoutGateway, setPayoutGateway] = useState<'PAYPAL' | 'PRIYO_PAY' | 'PAYONEER' | 'TELEGRAM_WALLET'>('PRIYO_PAY');
   const [isPayoutProcessing, setIsPayoutProcessing] = useState(false);
   const [recipientError, setRecipientError] = useState("");
+  const [recipientType, setRecipientType] = useState<string>("NONE");
 
   // Sandbox State
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
   const [connectedAccount, setConnectedAccount] = useState<any>(null);
 
-  // Input Validation (Regex)
+  // Advanced Input Validation (Regex) for TON
   useEffect(() => {
     if (!payoutRecipient) {
       setRecipientError("");
+      setRecipientType("NONE");
       return;
     }
+
     if (payoutGateway === 'TELEGRAM_WALLET') {
-      const tgRegex = /^(@[a-zA-Z0-9_]{5,32}|\+?[0-9]{10,15})$/;
-      if (!tgRegex.test(payoutRecipient)) {
-        setRecipientError("ভুল ফরম্যাট! @username বা আন্তর্জাতিক ফোন নম্বর দিন।");
-      } else {
+      const tgUsernameRegex = /^@[a-zA-Z0-9_]{5,32}$/;
+      const phoneRegex = /^\+?[0-9]{10,15}$/;
+      const tonAddressRegex = /^[a-zA-Z0-9_-]{48}$/;
+
+      if (tgUsernameRegex.test(payoutRecipient)) {
         setRecipientError("");
+        setRecipientType("P2P_USER");
+      } else if (phoneRegex.test(payoutRecipient)) {
+        setRecipientError("");
+        setRecipientType("P2P_PHONE");
+      } else if (tonAddressRegex.test(payoutRecipient)) {
+        setRecipientError("");
+        setRecipientType("TON_WALLET");
+      } else {
+        setRecipientError("ভুল ফরম্যাট! @ইউজারনেম, ফোন অথবা সঠিক TON অ্যাড্রেস দিন।");
+        setRecipientType("INVALID");
       }
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -138,14 +148,15 @@ export default function FinancialIntelligence() {
     }
 
     setIsPayoutProcessing(true);
-    emitEvent('FINANCE', 'PAYOUT_INITIATED', 2, { gateway: payoutGateway, amount: amountNum });
+    emitEvent('FINANCE', 'PAYOUT_INITIATED', 2, { gateway: payoutGateway, amount: amountNum, recipientType });
 
     try {
       const result = await orchestratePayout({
         gateway: payoutGateway,
         recipientInfo: payoutRecipient,
         amount: amountNum,
-        currency: 'USD'
+        currency: 'USD',
+        memo: payoutMemo
       });
 
       if (result.status === 'SUCCESS' || result.status === 'PENDING') {
@@ -159,9 +170,11 @@ export default function FinancialIntelligence() {
           status: 'COMPLETED',
           amount: amountNum,
           recipient: payoutRecipient,
+          memo: payoutMemo,
           gateway: payoutGateway,
           batchId: result.batchId,
           txHash: result.txHash,
+          destinationType: result.destinationType,
           refundEligible: result.refundEligible,
           timestamp: Date.now()
         });
@@ -170,10 +183,11 @@ export default function FinancialIntelligence() {
 
         toast({ 
           title: "Payout Dispatched", 
-          description: `Transaction ID: ${result.batchId.substring(0, 8)}... হ্যাশ ম্যাপিং সফল।` 
+          description: `Destination: ${result.destinationType || 'Standard'}. ট্রানজ্যাকশন হ্যাশ সংরক্ষিত।` 
         });
         setPayoutAmount("");
         setPayoutRecipient("");
+        setPayoutMemo("");
       } else {
         throw new Error("Gateway Handshake Failed");
       }
@@ -305,10 +319,27 @@ export default function FinancialIntelligence() {
                 <TabsContent value="payout" className="space-y-6 animate-fade-in">
                    <Card className="glass-panel border-l-4 border-l-[#6366f1] bg-[#6366f1]/5 shadow-2xl">
                       <CardHeader>
-                         <CardTitle className="text-sm flex items-center gap-2 uppercase text-[#818cf8]">
-                            <Building2 className="h-4 w-4" /> Global Settlement Payout
-                         </CardTitle>
-                         <CardDescription className="text-[10px] uppercase tracking-widest">PayPal | Priyo Pay | Telegram Wallet (TON)</CardDescription>
+                         <div className="flex justify-between items-start">
+                            <div>
+                               <CardTitle className="text-sm flex items-center gap-2 uppercase text-[#818cf8]">
+                                  <Building2 className="h-4 w-4" /> Global Settlement Payout
+                               </CardTitle>
+                               <CardDescription className="text-[10px] uppercase tracking-widest">PayPal | Priyo Pay | Telegram Wallet (TON)</CardDescription>
+                            </div>
+                            <TooltipProvider>
+                               <Tooltip>
+                                  <TooltipTrigger asChild>
+                                     <div className="flex items-center gap-2 px-3 py-1 rounded bg-accent/10 border border-accent/20 cursor-help">
+                                        <Globe className="h-3 w-3 text-accent" />
+                                        <span className="text-[8px] font-bold text-accent uppercase">TON Network Only</span>
+                                     </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-background border-white/10 max-w-xs">
+                                     <p className="text-[10px] italic">নিশ্চিত করুন যে আপনি সঠিক TON নেটওয়ার্ক ব্যবহার করছেন। ভুল নেটওয়ার্কে (যেমন- ERC20) ফান্ড পাঠালে তা পুনরুদ্ধার করা সম্ভব নয়।</p>
+                                  </TooltipContent>
+                               </Tooltip>
+                            </TooltipProvider>
+                         </div>
                       </CardHeader>
                       <CardContent className="space-y-6">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -321,6 +352,7 @@ export default function FinancialIntelligence() {
                                    setPayoutGateway(e.target.value);
                                    setPayoutRecipient("");
                                    setRecipientError("");
+                                   setPayoutMemo("");
                                  }}
                                >
                                   <option value="PRIYO_PAY">Priyo Pay (USD)</option>
@@ -331,7 +363,7 @@ export default function FinancialIntelligence() {
                             </div>
                             <div className="space-y-2">
                                <Label className="text-[10px] font-bold opacity-60">
-                                 {payoutGateway === 'TELEGRAM_WALLET' ? 'Telegram ID / Phone Number' : 'Recipient Email'}
+                                 {payoutGateway === 'TELEGRAM_WALLET' ? 'Recipient ID / TON Address' : 'Recipient Email'}
                                </Label>
                                <div className="relative">
                                   {payoutGateway === 'TELEGRAM_WALLET' ? (
@@ -340,15 +372,34 @@ export default function FinancialIntelligence() {
                                     <Mail className={cn("absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4", recipientError ? "text-red-400" : "text-primary/50")} />
                                   )}
                                   <Input 
-                                    placeholder={payoutGateway === 'TELEGRAM_WALLET' ? "@username or +880..." : "recipient@example.com"} 
+                                    placeholder={payoutGateway === 'TELEGRAM_WALLET' ? "@username, +880... or EQ..." : "recipient@example.com"} 
                                     className={cn("pl-10 bg-secondary/30 border-white/5 h-11 text-sm", recipientError && "border-red-500/50 focus:ring-red-500")}
                                     value={payoutRecipient}
                                     onChange={(e) => setPayoutRecipient(e.target.value)}
                                   />
                                </div>
                                {recipientError && <p className="text-[9px] text-red-400 font-bold uppercase tracking-tighter">{recipientError}</p>}
+                               {recipientType !== "NONE" && !recipientError && <p className="text-[9px] text-green-400 font-bold uppercase tracking-tighter">Detected: {recipientType}</p>}
                             </div>
                          </div>
+
+                         {payoutGateway === 'TELEGRAM_WALLET' && (
+                           <div className="space-y-2 animate-fade-in">
+                              <div className="flex justify-between items-center">
+                                 <Label className="text-[10px] font-bold opacity-60 flex items-center gap-2">
+                                    <Tag className="h-3 w-3" /> Memo / Tag (Optional for Exchange)
+                                 </Label>
+                                 <Badge variant="ghost" className="text-[8px] opacity-40">REQUIRED FOR CEX</Badge>
+                              </div>
+                              <Input 
+                                 placeholder="e.g. 104291823" 
+                                 className="bg-secondary/30 border-white/5 h-10 text-xs font-mono"
+                                 value={payoutMemo}
+                                 onChange={(e) => setPayoutMemo(e.target.value)}
+                              />
+                           </div>
+                         )}
+
                          <div className="space-y-2">
                             <Label className="text-[10px] font-bold opacity-60">Amount to Send (USD)</Label>
                             <div className="relative">
@@ -367,7 +418,7 @@ export default function FinancialIntelligence() {
                             <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
                             <p className="text-[10px] text-muted-foreground leading-relaxed italic">
                               {payoutGateway === 'TELEGRAM_WALLET' ? 
-                                "টেলিগ্রাম ওয়ালেটে টাকা পাঠালে প্রাপক সরাসরি তার টেলিগ্রাম অ্যাপে নোটিফিকেশন পাবেন। এটি একটি সিকিউর TON এসক্রো করিডোর ব্যবহার করবে।" :
+                                "টেলিগ্রাম ওয়ালেট বা এক্সটার্নাল TON অ্যাড্রেসে টাকা পাঠানোর সময় মেমো (যদি থাকে) চেক করে নিন। এটি একটি নিরাপদ TON এসক্রো করিডোর ব্যবহার করবে।" :
                                 "আপনার ফান্ড ডিটারমিনিস্টিক রেলের মাধ্যমে ১-১০ সেকেন্ডের মধ্যে প্রাপকের কাছে পৌঁছে যাবে।"
                               }
                             </p>
@@ -379,7 +430,7 @@ export default function FinancialIntelligence() {
                              payoutGateway === 'TELEGRAM_WALLET' ? "bg-accent text-background hover:bg-accent/90" : "bg-[#6366f1] hover:bg-[#4f46e5] text-white"
                            )}
                            onClick={handleGlobalPayout}
-                           disabled={isPayoutProcessing || isThrottled || !!recipientError}
+                           disabled={isPayoutProcessing || isThrottled || !!recipientError || !payoutAmount}
                          >
                             {isPayoutProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                             {isPayoutProcessing ? "Orchestrating Payout..." : "Authorize Disbursement"}
@@ -398,7 +449,7 @@ export default function FinancialIntelligence() {
                          <CardDescription className="text-[10px]">View recent settlement statuses and initiate reversals if eligible.</CardDescription>
                       </CardHeader>
                       <CardContent className="p-0">
-                         <ScrollArea className="h-[400px]">
+                         <ScrollArea className="h-[500px]">
                             <div className="divide-y divide-white/5">
                                {recentTxns?.filter(t => t.type === 'OUTBOUND_PAYOUT').map((txn: any) => (
                                  <div key={txn.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-all">
@@ -407,15 +458,20 @@ export default function FinancialIntelligence() {
                                           {txn.gateway === 'TELEGRAM_WALLET' ? <MessageSquare className="h-4 w-4 text-accent" /> : <DollarSign className="h-4 w-4 text-primary" />}
                                        </div>
                                        <div className="space-y-0.5">
-                                          <p className="text-xs font-bold text-white uppercase">${txn.amount} USD</p>
-                                          <p className="text-[9px] text-muted-foreground uppercase">{txn.recipient} • {txn.gateway}</p>
+                                          <div className="flex items-center gap-2">
+                                             <p className="text-xs font-bold text-white uppercase">${txn.amount} USD</p>
+                                             {txn.destinationType && <Badge variant="outline" className="text-[7px] border-white/10 text-white/40 uppercase">{txn.destinationType}</Badge>}
+                                          </div>
+                                          <p className="text-[9px] text-muted-foreground uppercase truncate w-48">{txn.recipient} {txn.memo ? `• Memo: ${txn.memo}` : ''}</p>
                                           <p className="text-[8px] font-mono text-accent/50 truncate w-32">Hash: {txn.txHash?.substring(0, 16)}...</p>
                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                        <Badge className={cn(
                                          "text-[8px] uppercase font-bold",
-                                         txn.status === 'COMPLETED' ? "bg-green-500/20 text-green-400" : "bg-blue-500/20 text-blue-400"
+                                         txn.status === 'COMPLETED' ? "bg-green-500/20 text-green-400" : 
+                                         txn.status === 'REFUNDED' ? "bg-yellow-500/20 text-yellow-500" :
+                                         "bg-blue-500/20 text-blue-400"
                                        )}>
                                          {txn.status}
                                        </Badge>
@@ -441,7 +497,39 @@ export default function FinancialIntelligence() {
                    </Card>
                 </TabsContent>
                 
-                {/* Cards and Links content omitted for brevity but retained in final app structure */}
+                <TabsContent value="cards" className="space-y-6 animate-fade-in">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {virtualCards?.map((card: any) => (
+                        <Card key={card.id} className="relative aspect-[1.6/1] rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-800 border-none shadow-2xl p-6 overflow-hidden group">
+                           <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-150 transition-transform"><Globe className="h-32 w-32" /></div>
+                           <div className="h-full flex flex-col justify-between relative z-10">
+                              <div className="flex justify-between items-start">
+                                 <div className="p-2 rounded bg-white/10 border border-white/20"><Zap className="h-5 w-5 text-white" /></div>
+                                 <Badge className="bg-white/20 text-white border-white/10 uppercase text-[8px] font-bold">{card.brand}</Badge>
+                              </div>
+                              <div>
+                                 <p className="text-xl font-mono font-bold text-white tracking-widest">
+                                    {showCardNumbers ? card.cardNumber : `**** **** **** ${card.cardNumber.slice(-4)}`}
+                                 </p>
+                                 <div className="flex justify-between items-end mt-4">
+                                    <div className="space-y-1">
+                                       <p className="text-[8px] uppercase font-bold text-white/50">Exp Date</p>
+                                       <p className="text-xs font-bold text-white">{card.expiry}</p>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-white/60 hover:text-white" onClick={() => setShowCardNumbers(!showCardNumbers)}>
+                                       {showCardNumbers ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </Button>
+                                 </div>
+                              </div>
+                           </div>
+                        </Card>
+                      ))}
+                      <Button variant="outline" className="aspect-[1.6/1] border-dashed border-white/10 hover:border-accent/40 bg-white/5 flex flex-col gap-2 h-auto rounded-2xl">
+                         <Plus className="h-6 w-6 text-accent" />
+                         <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">Issue New Card</span>
+                      </Button>
+                   </div>
+                </TabsContent>
               </Tabs>
             </div>
 
@@ -469,6 +557,8 @@ export default function FinancialIntelligence() {
                    </div>
                 </CardContent>
               </Card>
+
+              <PaymentLinkManager />
 
               <Card className="glass-panel border-white/5 bg-secondary/10">
                  <CardHeader className="p-4">

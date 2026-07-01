@@ -5,7 +5,7 @@
  * 
  * - orchestratePayout - Handles OAuth2 token exchange, payout batch execution, and PIS/AIS rails.
  * - Integration of "Telegram Wallet" (TON Ecosystem) logic for peer-to-peer mesh transfers.
- * - NEW: Added TxHash generation and Reversal eligibility flags for P45 Governance.
+ * - NEW: Added Memo/Tag support for CEX and address validation for external TON wallets.
  */
 
 import { ai } from '@/ai/genkit';
@@ -13,9 +13,10 @@ import { z } from 'genkit';
 
 const PayoutInputSchema = z.object({
   gateway: z.enum(['PAYPAL', 'PRIYO_PAY', 'PAYONEER', 'TELEGRAM_WALLET']),
-  recipientInfo: z.string().describe('Recipient email, Telegram ID, or phone number.'),
+  recipientInfo: z.string().describe('Recipient email, Telegram ID, TON Address, or phone number.'),
   amount: z.number(),
   currency: z.string().default('USD'),
+  memo: z.string().optional().describe('Optional Memo/Tag for Centralized Exchanges or reference.'),
   credentials: z.object({
     clientId: z.string().optional(),
     clientSecret: z.string().optional(),
@@ -30,6 +31,7 @@ const PayoutOutputSchema = z.object({
   routingToken: z.string().describe('System routing seal for tracing.'),
   directiveLevel: z.string().describe('Governance clearance level used for execution.'),
   refundEligible: z.boolean().default(true),
+  destinationType: z.enum(['P2P', 'EXTERNAL_WALLET', 'CEX_EXCHANGE', 'MERCHANT']).optional(),
   institutionalMetadata: z.object({
     id: z.string(),
     bic: z.string().optional(),
@@ -55,16 +57,21 @@ const payoutPrompt = ai.definePrompt({
 GATEWAY: {{{gateway}}}
 RECIPIENT: {{{recipientInfo}}}
 AMOUNT: {{{amount}}} {{{currency}}}
+MEMO: {{{memo}}}
 
 EXECUTION PARAMETERS:
 1. Simulate OAuth 2.0 token exchange for the specified gateway.
-2. If gateway is PAYPAL, use the /v1/payments/payouts batch structure.
-3. If gateway is TELEGRAM_WALLET, simulate a TON Blockchain escrow transfer.
-4. Generate a unique 64-character TxHash (simulating a blockchain transaction hash).
-5. Link this TxHash to the Internal Batch ID for the Finance Plane ledger.
-6. If the amount exceeds \$1,000, mark directiveLevel as 'IMPERIAL'.
-7. Provide a detailed execution log reflecting Anycast validation.
-8. Set refundEligible to true if the gateway supports escrow (like TELEGRAM_WALLET).`,
+2. If gateway is TELEGRAM_WALLET:
+   - Identify if recipient is a username (@), a phone number, or a TON Wallet address (starts with EQ/UQ).
+   - If a Memo is provided, mark destinationType as 'CEX_EXCHANGE' or 'MERCHANT'.
+   - If recipient is a TON Address without Memo, mark as 'EXTERNAL_WALLET'.
+   - If it's a username/phone, mark as 'P2P'.
+   - Simulate a TON Blockchain escrow transfer with SHA-256 payload signing.
+3. Generate a unique 64-character TxHash (simulating a blockchain transaction hash).
+4. Link this TxHash to the Internal Batch ID for the Finance Plane ledger.
+5. If the amount exceeds \$1,000, mark directiveLevel as 'IMPERIAL'.
+6. Provide a detailed execution log reflecting Anycast validation and Memo attachment if present.
+7. Set refundEligible to true for escrow-based transfers.`,
 });
 
 const payoutFlow = ai.defineFlow(
