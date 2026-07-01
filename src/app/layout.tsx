@@ -15,8 +15,18 @@ import { PersistentStandardsPortal } from "@/components/layout/PersistentStandar
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: 'Sovereign OS | Deterministic Infrastructure',
-  description: 'Mission-critical operating system for civic and financial infrastructure',
+  title: 'Sovereign OS | Global Fintech & Civic Infrastructure',
+  description: 'FusionPay Sovereign OS provides deterministic infrastructure for global settlements, civic intelligence, and AI-native financial mesh.',
+  keywords: ['Fintech', 'Sovereign OS', 'Global Payout', 'AI Banking', 'ISO 20022', 'NoorNexus'],
+  authors: [{ name: 'Sheikh Farid', url: 'https://noornexus.com' }],
+  openGraph: {
+    title: 'Sovereign OS | Deterministic Infrastructure',
+    description: 'Mission-critical operating system for digital civilizations.',
+    url: 'https://sko-v1.vercel.app',
+    siteName: 'Sovereign OS',
+    locale: 'en_US',
+    type: 'website',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -40,6 +50,25 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Structured Data (Schema.org) for Google
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Sovereign OS",
+    "operatingSystem": "Web, iOS, Android",
+    "applicationCategory": "FinanceApplication",
+    "author": {
+      "@type": "Organization",
+      "name": "NoorNexus"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0.00",
+      "priceCurrency": "USD"
+    },
+    "description": "Deterministic financial engine for global settlements and civic infrastructure management."
+  };
+
   return (
     <html lang="en" className="dark">
       <head>
@@ -47,13 +76,18 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         
+        {/* Google Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+
         {/* Google Consent Mode Initialization */}
         <Script id="google-consent-mode" strategy="beforeInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             
-            // Set default consent for all regions
             gtag('consent', 'default', {
               'ad_storage': 'denied',
               'ad_user_data': 'denied',
@@ -73,8 +107,9 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-
-            gtag('config', 'G-N53RC4L541');
+            gtag('config', 'G-N53RC4L541', {
+              page_path: window.location.pathname,
+            });
           `}
         </Script>
       </head>
