@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview Sovereign Intelligence Agent (Gemini-Powered Agentic Engine).
- * Implements Tool Use (Function Calling) to interact with the Sovereign Kernel.
+ * Sovereign Intelligence Agent (Gemini-Powered Agentic Engine).
+ * Implements Tool Use (Function Calling) with Human-in-the-Loop (HITL) safety.
  */
 
 import { ai } from '@/ai/genkit';
@@ -27,8 +27,7 @@ const getPaymentStatusTool = ai.defineTool(
     }),
   },
   async (input) => {
-    // In a production app, we would query Firestore here. 
-    // For the prototype, we return deterministic simulated data.
+    // Mock data for prototype
     return {
       status: 'PAID_NOT_CREDITED',
       timestamp: Date.now() - 3600000,
@@ -61,6 +60,46 @@ const getMeshIntegrityTool = ai.defineTool(
   }
 );
 
+/**
+ * HITL Tool: Remediate Stuck Payments
+ * Requires explicit confirmation for high-value or sensitive operations.
+ */
+const remediateStuckPaymentTool = ai.defineTool(
+  {
+    name: 'remediateStuckPayment',
+    description: 'আটকে থাকা পেমেন্টগুলো (PAID but not CREDITED) রিকভার করে। হাই-ভ্যালু লেনদেনের জন্য অবশ্যই ইউজারের অনুমতি লাগবে।',
+    inputSchema: z.object({
+      transactionId: z.string().describe('The ID of the transaction to recover.'),
+      confirmed: z.boolean().optional().describe('Set to true only if the user has manually clicked the authorize button.'),
+    }),
+    outputSchema: z.object({
+      status: z.enum(['SUCCESS', 'PENDING_APPROVAL', 'FAILED']),
+      message: z.string(),
+      transactionId: z.string().optional(),
+    }),
+  },
+  async (input) => {
+    // In production, we'd fetch the actual amount from Firestore. 
+    // Simulating a high-value check (> $100).
+    const isHighValue = true; 
+
+    if (isHighValue && !input.confirmed) {
+      return {
+        status: 'PENDING_APPROVAL',
+        message: `ট্রানজেকশন ${input.transactionId} রিকভার করার জন্য আপনার ম্যানুয়াল অনুমতির প্রয়োজন। এটি একটি গুরুত্বপূর্ণ অপারেশন।`,
+        transactionId: input.transactionId
+      };
+    }
+
+    // Actual remediation logic would go here (e.g., Firestore transaction)
+    return {
+      status: 'SUCCESS',
+      message: `সফলভাবে রিকভার হয়েছে: ${input.transactionId}। ইউজারের ব্যালেন্সে ফান্ড ক্রেডিট করা হয়েছে।`,
+      transactionId: input.transactionId
+    };
+  }
+);
+
 // --- Chat Flow Implementation ---
 
 const ChatMessageSchema = z.object({
@@ -78,28 +117,30 @@ const CommandChatOutputSchema = z.object({
   response: z.string().describe('The AI response.'),
   suggestedActions: z.array(z.string()),
   toolsCalled: z.array(z.string()).optional(),
+  pendingAction: z.object({
+    type: z.string(),
+    data: z.any()
+  }).optional(),
 });
 
 const commandChatPrompt = ai.definePrompt({
   name: 'commandChatPrompt',
   input: { schema: CommandChatInputSchema },
   output: { schema: CommandChatOutputSchema },
-  tools: [getPaymentStatusTool, getMeshIntegrityTool],
+  tools: [getPaymentStatusTool, getMeshIntegrityTool, remediateStuckPaymentTool],
   system: `You are the FusionPay Sovereign Intelligence Agent (Node-04). 
 Your core mission is to act as a technical co-pilot for the Sovereign OS.
 
 CAPABILITIES:
 1. Explain fintech architecture (ISO 20022, DPE, UBIL).
-2. Check payment status using the getPaymentStatus tool.
-3. Check mesh health using the getMeshIntegrity tool.
-4. Help with compliance and verification queries.
+2. Check payment status using getPaymentStatus.
+3. Check mesh health using getMeshIntegrity.
+4. Remediate stuck payments using remediateStuckPayment.
 
-GUIDELINES:
-- Keep your tone professional, authoritative, and futuristic.
-- If a user asks about a stuck payment, use the getPaymentStatus tool.
-- If they ask about system status, use getMeshIntegrity.
-- Always mention that you are operating via Node-04 (UK Corridor).
-- Support Bengali and English seamlessly.`,
+HITL SAFETY RULES:
+- When using 'remediateStuckPayment', if the output is 'PENDING_APPROVAL', explicitly tell the user they need to click the 'Authorize' button that will appear in the chat. 
+- Do NOT try to bypass the approval.
+- Always maintain your tone as professional and authoritative.`,
   prompt: `
 {{#if history}}
 HISTORY:
@@ -132,7 +173,7 @@ const marketingCommandChatFlow = ai.defineFlow(
     } catch (err) {
       console.error("AI Node Execution Failure:", err);
       return {
-        response: "Node-04 is experiencing a reasoning lag. Switching to safe-buffer mode. Your request has been logged.",
+        response: "Node-04 is experiencing a reasoning lag. Switching to safe-buffer mode.",
         suggestedActions: ["Retry Sync", "Check Infra Plane"]
       };
     }

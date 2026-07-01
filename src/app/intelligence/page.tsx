@@ -21,23 +21,27 @@ import {
   Target,
   Briefcase,
   Bot,
-  Cpu
+  Cpu,
+  Lock,
+  CheckCircle2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { marketingCommandChat, type CommandChatOutput } from "@/ai/flows/marketing-command-chat";
+import { marketingCommandChat } from "@/ai/flows/marketing-command-chat";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useKernel } from "@/components/kernel/KernelProvider";
 
 export default function IntelligenceLayerPage() {
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [chatHistory, setChatHistory] = useState<{role: 'user' | 'model', text: string}[]>([]);
+  const [chatHistory, setChatHistory] = useState<{role: 'user' | 'model', text: string, pendingApproval?: string}[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { emitEvent } = useKernel();
 
   useEffect(() => {
     if (chatHistory.length === 0) {
@@ -54,38 +58,59 @@ export default function IntelligenceLayerPage() {
     }
   }, [chatHistory, isLoading]);
 
-  const handleQuery = async () => {
-    if (!query.trim()) return;
+  const handleQuery = async (overrideQuery?: string) => {
+    const finalQuery = overrideQuery || query;
+    if (!finalQuery.trim()) return;
 
-    const userMsg = query;
-    setQuery("");
-    setChatHistory(prev => [...prev, { role: 'user', text: userMsg }]);
+    if (!overrideQuery) {
+      setChatHistory(prev => [...prev, { role: 'user', text: finalQuery }]);
+      setQuery("");
+    }
+    
     setIsLoading(true);
 
     try {
       const result = await marketingCommandChat({
-        query: userMsg,
-        history: chatHistory,
-        context: "Sovereign OS Context: Phase 4 Commercial Execution. Active Tools: getPaymentStatus, getMeshIntegrity. Location: Node-04 UK.",
+        query: finalQuery,
+        history: chatHistory.map(({ role, text }) => ({ role, text })),
+        context: "Sovereign OS Context: Phase 4 Commercial Execution. HITL Safety Active. Location: Node-04 UK.",
       });
       
-      setChatHistory(prev => [...prev, { role: 'model', text: result.response }]);
+      // Detect if the result implies a pending approval
+      // Gemini might return "PENDING_APPROVAL" as part of the tool call result text 
+      // or we can detect patterns in the response.
+      const needsApproval = result.response.includes("PENDING_APPROVAL") || result.response.includes("ম্যানুয়াল অনুমতির প্রয়োজন");
+      const transactionId = result.response.match(/PAY_SEAL_[A-Z0-9]+/)?.[0] || result.response.match(/TXN_[A-Z0-9]+/)?.[0];
+
+      setChatHistory(prev => [...prev, { 
+        role: 'model', 
+        text: result.response,
+        pendingApproval: needsApproval ? transactionId : undefined
+      }]);
       
       if (result.toolsCalled && result.toolsCalled.length > 0) {
         toast({
-          title: "Tool Invoked",
-          description: `Kernel accessed via ${result.toolsCalled.join(', ')}`,
+          title: "Kernel Accessed",
+          description: `Tools: ${result.toolsCalled.join(', ')}`,
         });
       }
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Intelligence Failure",
-        description: "The AI node encountered a serious reasoning breach. Tracing Node-04...",
+        description: "The AI node encountered a reasoning lag. Tracing Node-04...",
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleAuthorize = async (txnId: string) => {
+    setIsLoading(true);
+    emitEvent('SECURITY', 'AI_ACTION_AUTHORIZED', 2, { transactionId: txnId });
+    
+    // We send a follow-up directive with confirmation
+    await handleQuery(`Authorize remediation for ${txnId} now. confirmed: true`);
   };
 
   return (
@@ -102,7 +127,7 @@ export default function IntelligenceLayerPage() {
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="hidden sm:flex text-green-400 border-green-500/20 animate-pulse text-[10px]">
-              <Cpu className="mr-2 h-3 w-3" /> AGENTIC_MODE: ACTIVE
+              <Lock className="mr-2 h-3 w-3" /> HITL_MODE: ACTIVE
             </Badge>
             <Badge variant="outline" className="text-primary border-primary/20 text-[10px]">
               NODE: 04_UK
@@ -116,7 +141,7 @@ export default function IntelligenceLayerPage() {
               <ScrollArea className="flex-1 p-4 md:p-8" ref={scrollRef}>
                 <div className="space-y-8 pb-10">
                   {chatHistory.map((msg, i) => (
-                    <div key={i} className={cn("flex", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+                    <div key={i} className={cn("flex flex-col", msg.role === 'user' ? 'items-end' : 'items-start')}>
                       <div className={cn(
                         "max-w-[85%] p-5 rounded-3xl text-sm leading-relaxed shadow-2xl relative group",
                         msg.role === 'user' 
@@ -130,6 +155,25 @@ export default function IntelligenceLayerPage() {
                           </div>
                         )}
                         <p className="whitespace-pre-wrap">{msg.text}</p>
+                        
+                        {/* HITL Authorization Button */}
+                        {msg.pendingApproval && (
+                          <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
+                             <div className="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex gap-3">
+                                <ShieldCheck className="h-4 w-4 text-yellow-500 shrink-0" />
+                                <p className="text-[10px] text-yellow-500/80 italic leading-relaxed">
+                                   "এই রিম্যাডিয়েশনটি কার্যকর করার জন্য আপনার সিকিউরিটি পারমিশন প্রয়োজন।"
+                                </p>
+                             </div>
+                             <Button 
+                               className="w-full bg-accent text-background font-bold uppercase tracking-widest text-[10px] h-10 cyan-glow"
+                               onClick={() => handleAuthorize(msg.pendingApproval!)}
+                               disabled={isLoading}
+                             >
+                                <Zap className="mr-2 h-4 w-4" /> Authorize Recovery
+                             </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -137,7 +181,7 @@ export default function IntelligenceLayerPage() {
                     <div className="flex justify-start">
                       <div className="bg-secondary/40 border border-white/5 p-5 rounded-3xl rounded-tl-none flex items-center gap-3">
                         <Loader2 className="h-4 w-4 animate-spin text-accent" />
-                        <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-muted-foreground">Accessing Sovereign Tools...</span>
+                        <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-muted-foreground">Reasoning...</span>
                       </div>
                     </div>
                   )}
@@ -156,12 +200,12 @@ export default function IntelligenceLayerPage() {
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleQuery()}
                   />
-                  <Button size="icon" className="h-12 w-12 absolute right-1.5 bg-accent hover:bg-accent/90 text-background rounded-xl shadow-lg cyan-glow" onClick={handleQuery} disabled={isLoading}>
+                  <Button size="icon" className="h-12 w-12 absolute right-1.5 bg-accent hover:bg-accent/90 text-background rounded-xl shadow-lg cyan-glow" onClick={() => handleQuery()} disabled={isLoading}>
                     <Send className="h-5 w-5" />
                   </Button>
                 </div>
                 <p className="text-[9px] text-center text-muted-foreground mt-4 uppercase tracking-widest opacity-40">
-                  Powered by NoorNexus Agentic Kernel v1.2 • Gemini 1.5 Flash
+                  Powered by NoorNexus Agentic Kernel v1.2 • HITL Safety Enabled
                 </p>
               </div>
             </div>
@@ -171,15 +215,15 @@ export default function IntelligenceLayerPage() {
             <Card className="glass-panel border-accent/20 bg-accent/5">
               <CardHeader className="pb-2 p-4 border-b border-white/5">
                 <CardTitle className="text-[10px] uppercase tracking-widest text-accent flex items-center gap-2">
-                  <Activity className="h-3.5 w-3.5" /> Agent Capabilities
+                  <ShieldCheck className="h-3.5 w-3.5" /> Safety Protocols
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 space-y-3">
                 {[
-                  { label: "Tool Access", val: "GRANTED", color: "text-green-400" },
-                  { label: "Ledger Read", val: "LEVEL_0", color: "text-accent" },
-                  { label: "Self-Healing", val: "READY", color: "text-primary" },
-                  { label: "Function Call", val: "ACTIVE", color: "text-green-400" }
+                  { label: "HITL Gate", val: "ACTIVE", color: "text-green-400" },
+                  { label: "Write Access", val: "RESTRICTED", color: "text-yellow-400" },
+                  { label: "Audit Trace", val: "ENABLED", color: "text-accent" },
+                  { label: "Kernel Guard", val: "STRICT", color: "text-red-400" }
                 ].map((item, i) => (
                   <div key={i} className="flex justify-between items-center p-2.5 rounded-xl bg-black/40 border border-white/5">
                     <span className="text-[9px] text-muted-foreground font-bold uppercase">{item.label}</span>
@@ -189,31 +233,10 @@ export default function IntelligenceLayerPage() {
               </CardContent>
             </Card>
 
-            <Card className="glass-panel border-white/5">
-               <CardHeader className="p-4 border-b border-white/5">
-                  <CardTitle className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-                     <Target className="h-3.5 w-3.5 text-primary" /> Active Directives
-                  </CardTitle>
-               </CardHeader>
-               <CardContent className="p-4 space-y-3">
-                  {[
-                    "Monitor PAY_SEAL status",
-                    "Verify node-level health",
-                    "Generate forensic reports",
-                    "Analyze liquidity drifts"
-                  ].map((log, i) => (
-                    <div key={i} className="flex items-center gap-2.5 text-[9px] text-white/60 italic">
-                       <ShieldCheck className="h-3 w-3 text-accent shrink-0" />
-                       <span className="truncate">{log}</span>
-                    </div>
-                  ))}
-               </CardContent>
-            </Card>
-
-            <div className="p-5 rounded-2xl bg-primary/5 border border-primary/20 text-center space-y-3 shadow-inner">
-               <Sparkles className="h-6 w-6 text-primary mx-auto animate-pulse" />
-               <p className="text-[9px] text-primary font-bold uppercase tracking-widest leading-relaxed">
-                  Your AI Strategist is now an Agent. It can execute system-level queries to resolve operational opacity.
+            <div className="p-5 rounded-2xl bg-accent/5 border border-accent/20 text-center space-y-3 shadow-inner">
+               <Lock className="h-6 w-6 text-accent mx-auto animate-pulse" />
+               <p className="text-[9px] text-accent font-bold uppercase tracking-widest leading-relaxed">
+                  "Human-in-the-Loop protection is now governing all ledger write operations. Your manual authorization is required for critical fixes."
                </p>
             </div>
           </div>
@@ -222,3 +245,4 @@ export default function IntelligenceLayerPage() {
     </div>
   );
 }
+
