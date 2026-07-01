@@ -155,7 +155,7 @@ const marketingCommandChatFlow = ai.defineFlow(
     } catch (err) {
       console.error("AI Reasoning Lag:", err);
       return {
-        response: "সম্মানিত সিটিজেন, Node-04 রিজনিং নোডে সাময়িক ল্যাগ শনাক্ত হয়েছে। তবে চিন্তার কিছু নেই, আপনার কমান্ডটি কিউতে আছে। অনুগ্রহ করে ২-৩ সেকেন্ড পর আবার ইনস্ট্রাকশন দিন।",
+        response: "এআই নোড বর্তমানে হাই-লোড প্রসেসিং এ আছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।",
         suggestedActions: ["Retry Request", "Check Node-04 Status"]
       };
     }

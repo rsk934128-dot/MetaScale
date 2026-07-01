@@ -89,13 +89,10 @@ export default function IntelligenceLayerPage() {
         pendingApproval: needsApproval ? transactionId : undefined
       }]);
     } catch (error) {
-      // Graceful error message within the chat instead of toast
       setChatHistory(prev => [...prev, { 
         role: 'model', 
-        text: "দুঃখিত, Node-04 বর্তমানে হাই-লুড মোডে আছে। আপনার রিকোয়েস্টটি পুনরায় প্রসেস করার চেষ্টা করছি..." 
+        text: "এআই নোড বর্তমানে হাই-লোড প্রসেসিং এ আছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।" 
       }]);
-      // Attempt retry once
-      setTimeout(() => handleQuery(finalQuery), 2000);
     } finally {
       setIsLoading(false);
     }

@@ -64,7 +64,7 @@ export default function SyntaxArchitectPage() {
       toast({ 
         variant: "destructive", 
         title: "Reasoning Timeout", 
-        description: "Node-04 recovery logic active. Please try again." 
+        description: "Node-04 recovery logic active." 
       });
     } finally {
       setIsArchitecting(false);
