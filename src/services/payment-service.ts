@@ -14,7 +14,7 @@ import { NormalizedPaymentEvent, InboundPaymentDoc, PaymentStatus } from '@/lib/
 /**
  * Core Domain Service: Atomic Payment Credit Logic
  * Ensures exactly-once credit and handles state transitions.
- * Accessible by Webhook and Manual Replay.
+ * Accessible by Webhook, Manual Replay, and Automated Cron.
  */
 export async function processPaymentCredit(
   firestore: Firestore, 
@@ -59,7 +59,9 @@ export async function processPaymentCredit(
       status: 'CREDITED' as PaymentStatus,
       timestamp: timestamp,
       trigger: trigger,
-      reason: trigger === 'MANUAL' ? `Manual replay by admin ${adminUid}` : 'Automated webhook credit',
+      reason: trigger === 'MANUAL' ? `Manual replay by admin ${adminUid}` : 
+              trigger === 'RECONCILIATION' ? 'System automated self-healing' : 
+              'Automated webhook credit',
       replayedBy: adminUid
     };
 
@@ -72,14 +74,18 @@ export async function processPaymentCredit(
       creditOperationId: creditOpId,
       reconciliationStatus: 'MATCHED',
       id: paymentId,
-      statusHistory: currentData ? [...(currentData.statusHistory || []), historyEntry] : [historyEntry]
+      statusHistory: currentData ? [...(currentData.statusHistory || []), historyEntry] : [historyEntry],
+      // Reset retry fields on success
+      replayCount: 0,
+      lastError: ""
     };
 
     if (!paymentSnap.exists()) {
       transaction.set(paymentRef, { 
         ...update, 
         createdAt: timestamp,
-        anomalyFlags: []
+        anomalyFlags: [],
+        replayCount: 0
       });
     } else {
       transaction.update(paymentRef, update);

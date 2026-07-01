@@ -46,6 +46,13 @@ export interface InboundPaymentDoc extends NormalizedPaymentEvent {
   creditOperationId?: string;
   reconciliationStatus: ReconciliationStatus;
   anomalyFlags: AnomalyFlag[];
+  
+  // Phase 2.6: Self-healing fields
+  replayCount: number;
+  lastReplayAttemptAt?: number;
+  nextReplayAttemptAt?: number;
+  lastError?: string;
+  
   statusHistory: {
     status: PaymentStatus;
     timestamp: number;

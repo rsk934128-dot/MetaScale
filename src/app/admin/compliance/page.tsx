@@ -17,7 +17,10 @@ import {
   RotateCcw,
   ShieldCheck,
   Zap,
-  Info
+  Info,
+  Play,
+  Terminal,
+  Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,11 +32,15 @@ import { useFirestore, useCollection, useUser } from "@/firebase";
 import { collection, query, orderBy, limit, doc, updateDoc, where } from "firebase/firestore";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { processPaymentCredit } from "@/services/payment-service";
+import { runAutomatedReconciliation } from "@/services/reconciliation-cron";
 import { cn } from "@/lib/utils";
 
 export default function AdminCompliancePage() {
   const [search, setSearch] = useState("");
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [isCronRunning, setIsCronRunning] = useState(false);
+  const [cronLogs, setCronLogs] = useState<string[]>([]);
+  
   const { toast } = useToast();
   const { emitEvent } = useKernel();
   const firestore = useFirestore();
@@ -84,7 +91,6 @@ export default function AdminCompliancePage() {
     setIsProcessing(payment.id);
     
     try {
-      // Use the centralized domain service for Exactly-once replay
       const result = await processPaymentCredit(firestore, payment, 'MANUAL', user.uid);
       
       emitEvent('FINANCE', 'MANUAL_CREDIT_REPLAY', 2, { 
@@ -104,6 +110,28 @@ export default function AdminCompliancePage() {
       });
     } finally {
       setIsProcessing(null);
+    }
+  };
+
+  const triggerMeshScan = async () => {
+    if (!firestore) return;
+    setIsCronRunning(true);
+    setCronLogs(["Starting automated mesh scan...", "Mode: DETECT_AND_REPLAY"]);
+    
+    try {
+      const results = await runAutomatedReconciliation(firestore, 'DETECT_AND_REPLAY');
+      setCronLogs(prev => [...results.logs, ...prev, `Scan finished. Replayed: ${results.replayed}, Failed: ${results.failed}`]);
+      
+      emitEvent('FINANCE', 'MESH_RECONCILIATION_RUN', 3, { 
+        scanned: results.scanned,
+        replayed: results.replayed 
+      });
+
+      toast({ title: "Mesh Scan Complete", description: `${results.replayed} payments recovered.` });
+    } catch (err: any) {
+      setCronLogs(prev => [`[FATAL] ${err.message}`, ...prev]);
+    } finally {
+      setIsCronRunning(false);
     }
   };
 
@@ -188,97 +216,122 @@ export default function AdminCompliancePage() {
                     </h2>
                     <p className="text-xs text-muted-foreground italic">"Paid events missing internal wallet credit - Repairing Fast Path."</p>
                   </div>
-                  <Button variant="outline" size="sm" className="text-[10px] uppercase font-bold border-white/10"><RefreshCw className="mr-2 h-3.5 w-3.5" /> Re-scan Mesh</Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-[10px] uppercase font-bold border-white/10 cyan-glow"
+                    onClick={triggerMeshScan}
+                    disabled={isCronRunning}
+                  >
+                    {isCronRunning ? <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Play className="mr-2 h-3.5 w-3.5" />}
+                    Re-scan Mesh
+                  </Button>
                </div>
 
-               <Card className="glass-panel border-red-500/20 bg-red-500/5">
-                  <CardHeader className="border-b border-red-500/10 bg-red-500/5">
-                     <div className="flex justify-between items-center">
-                        <CardTitle className="text-sm flex items-center gap-2 text-red-400 uppercase tracking-widest">
-                           <AlertTriangle className="h-4 w-4" />
-                           Stuck Payments (PAID && !CREDITED)
-                        </CardTitle>
-                        <Badge variant="outline" className="text-[8px] border-red-500/30 text-red-400 uppercase">Action Required</Badge>
-                     </div>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                     {anomaliesLoading ? (
-                       <div className="p-12 flex justify-center"><Loader2 className="h-8 w-8 animate-spin opacity-20" /></div>
-                     ) : anomalies?.length === 0 ? (
-                       <div className="p-20 text-center space-y-4">
-                          <ShieldCheck className="h-12 w-12 text-green-500/20 mx-auto" />
-                          <p className="italic text-xs text-muted-foreground uppercase tracking-widest">No anomalies detected in the current cycle.</p>
-                       </div>
-                     ) : (
-                       <div className="divide-y divide-red-500/10">
-                          {anomalies.map((p: any) => (
-                            <div key={p.id} className="p-6 flex items-center justify-between group hover:bg-red-500/10 transition-all">
-                               <div className="flex gap-4">
-                                  <div className="p-3 rounded-lg bg-black/40 border border-red-500/20 text-red-400"><History className="h-5 w-5" /></div>
-                                  <div className="space-y-1">
-                                     <p className="text-sm font-bold text-white uppercase">{p.provider} • ${p.amount} {p.currency}</p>
-                                     <p className="text-[10px] font-mono text-muted-foreground/60">TxnID: {p.externalTxnId}</p>
-                                     <div className="flex gap-2 items-center">
-                                        <Badge variant="outline" className="text-[7px] border-red-500/20 text-red-400 uppercase">Uncredited</Badge>
-                                        <span className="text-[8px] text-muted-foreground italic font-mono uppercase tracking-tighter">
-                                          Lag: {Math.floor((Date.now() - p.updatedAt) / 60000)} mins
-                                        </span>
-                                     </div>
+               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-6">
+                    <Card className="glass-panel border-red-500/20 bg-red-500/5">
+                        <CardHeader className="border-b border-red-500/10 bg-red-500/5">
+                          <div className="flex justify-between items-center">
+                              <CardTitle className="text-sm flex items-center gap-2 text-red-400 uppercase tracking-widest">
+                                <AlertTriangle className="h-4 w-4" />
+                                Stuck Payments (PAID && !CREDITED)
+                              </CardTitle>
+                              <Badge variant="outline" className="text-[8px] border-red-500/30 text-red-400 uppercase">Action Required</Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                          {anomaliesLoading ? (
+                            <div className="p-12 flex justify-center"><Loader2 className="h-8 w-8 animate-spin opacity-20" /></div>
+                          ) : anomalies?.length === 0 ? (
+                            <div className="p-20 text-center space-y-4">
+                                <ShieldCheck className="h-12 w-12 text-green-500/20 mx-auto" />
+                                <p className="italic text-xs text-muted-foreground uppercase tracking-widest">No anomalies detected in the current cycle.</p>
+                            </div>
+                          ) : (
+                            <div className="divide-y divide-red-500/10">
+                                {anomalies.map((p: any) => (
+                                  <div key={p.id} className="p-6 flex items-center justify-between group hover:bg-red-500/10 transition-all">
+                                      <div className="flex gap-4">
+                                        <div className="p-3 rounded-lg bg-black/40 border border-red-500/20 text-red-400"><History className="h-5 w-5" /></div>
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-bold text-white uppercase">{p.provider} • ${p.amount} {p.currency}</p>
+                                            <div className="flex gap-2 items-center">
+                                              <Badge variant="outline" className="text-[7px] border-red-500/20 text-red-400 uppercase">Uncredited</Badge>
+                                              <span className="text-[8px] text-muted-foreground italic font-mono uppercase tracking-tighter">
+                                                Retries: {p.replayCount || 0}
+                                              </span>
+                                            </div>
+                                            {p.lastError && <p className="text-[8px] text-red-400/60 font-mono line-clamp-1 italic">Last Err: {p.lastError}</p>}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <Button 
+                                            size="sm" 
+                                            className="bg-accent text-background font-bold text-[10px] cyan-glow px-6"
+                                            onClick={() => handleManualReplay(p)}
+                                            disabled={isProcessing === p.id}
+                                        >
+                                            {isProcessing === p.id ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : <RotateCcw className="h-3 w-3 mr-1.5" />}
+                                            Safe Replay
+                                        </Button>
+                                      </div>
                                   </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                   <Button 
-                                      size="sm" 
-                                      className="bg-accent text-background font-bold text-[10px] cyan-glow px-6"
-                                      onClick={() => handleManualReplay(p)}
-                                      disabled={isProcessing === p.id}
-                                   >
-                                      {isProcessing === p.id ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : <RotateCcw className="h-3 w-3 mr-1.5" />}
-                                      Safe Replay
-                                   </Button>
-                                </div>
+                                ))}
+                            </div>
+                          )}
+                        </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="space-y-6">
+                    <Card className="glass-panel border-white/5 bg-black/40 h-[400px] flex flex-col">
+                        <CardHeader className="border-b border-white/5 pb-3">
+                          <CardTitle className="text-xs uppercase flex items-center gap-2">
+                             <Terminal className="h-4 w-4 text-accent" />
+                             Scan Terminal
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0 flex-1 overflow-hidden">
+                          <ScrollArea className="h-full p-4">
+                            <div className="space-y-1.5 font-mono text-[9px]">
+                               {cronLogs.length === 0 ? (
+                                 <p className="text-muted-foreground italic">Ready for mesh synchronization...</p>
+                               ) : cronLogs.map((log, i) => (
+                                 <p key={i} className={cn(
+                                   "pl-2 border-l border-white/10",
+                                   log.includes('SUCCESS') ? 'text-green-400' : log.includes('ERROR') ? 'text-red-400' : 'text-white/60'
+                                 )}>
+                                   &gt; {log}
+                                 </p>
+                               ))}
+                            </div>
+                          </ScrollArea>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card className="glass-panel border-white/5 bg-secondary/10">
+                      <CardHeader className="p-4 border-b border-white/5">
+                          <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2">
+                            <Activity className="h-4 w-4 text-primary" />
+                            Self-Healing Stats
+                          </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-3">
+                          {[
+                            "Auto-Recovery: ENABLED",
+                            "Backoff Strategy: EXPONENTIAL",
+                            "Retry Limit: 5 ATTEMPTS",
+                            "Mesh Integrity: 100%"
+                          ].map((stat, i) => (
+                            <div key={i} className="flex items-center gap-2 text-[10px] text-white/60 italic">
+                               <div className="w-1 h-1 rounded-full bg-primary" />
+                               {stat}
                             </div>
                           ))}
-                       </div>
-                     )}
-                  </CardContent>
-               </Card>
-
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="glass-panel border-white/5 bg-secondary/10">
-                     <CardHeader className="p-4 border-b border-white/5">
-                        <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2">
-                           <Info className="h-4 w-4 text-primary" />
-                           Reconciliation Protocol
-                        </CardTitle>
-                     </CardHeader>
-                     <CardContent className="p-4 space-y-3">
-                        <p className="text-[11px] text-white/70 italic leading-relaxed">
-                           "Safe Replay" function uses the same transactional logic as webhooks. It checks for <strong>isCredited</strong> status before any balance update, ensuring exactly-once credit even in manual mode.
-                        </p>
-                     </CardContent>
-                  </Card>
-                  <Card className="glass-panel border-white/5">
-                     <CardHeader className="p-4 border-b border-white/5">
-                        <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2">
-                           <ShieldCheck className="h-4 w-4 text-green-400" />
-                           Integrity Invariants
-                        </CardTitle>
-                     </CardHeader>
-                     <CardContent className="p-4 space-y-2">
-                        {[
-                           "Double-credit protection: ENABLED",
-                           "Client-side write boundary: LOCKED",
-                           "Atomic ledger transition: ACTIVE",
-                           "Redaction policy: ENFORCED"
-                        ].map((rule, i) => (
-                           <div key={i} className="flex items-center gap-2 text-[10px] text-white/60">
-                              <div className="w-1 h-1 rounded-full bg-green-500" />
-                              {rule}
-                           </div>
-                        ))}
-                     </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </div>
                </div>
             </TabsContent>
           </Tabs>
