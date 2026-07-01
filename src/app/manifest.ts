@@ -8,10 +8,12 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Deterministic infrastructure for digital civilizations',
     start_url: '/',
     display: 'standalone',
+    display_override: ['window-controls-overlay', 'minimal-ui'],
     background_color: '#13151a',
     theme_color: '#00f2ff',
     orientation: 'portrait',
     scope: '/',
+    categories: ['finance', 'productivity', 'utilities'],
     icons: [
       {
         src: '/icon',

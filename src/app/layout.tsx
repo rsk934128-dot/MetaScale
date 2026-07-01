@@ -10,6 +10,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import { MobileExperienceHub } from "@/components/layout/MobileExperienceHub";
 import { GlobalQuickAccess } from "@/components/layout/GlobalQuickAccess";
 import { StandardsQuickButton } from "@/components/layout/StandardsQuickButton";
+import { SystemPermissionGuard } from "@/components/layout/SystemPermissionGuard";
 import Script from 'next/script';
 
 export const metadata: Metadata = {
@@ -85,6 +86,7 @@ export default function RootLayout({
                 <MobileExperienceHub />
                 <GlobalQuickAccess />
                 <StandardsQuickButton />
+                <SystemPermissionGuard />
               </SidebarProvider>
             </AuthGuard>
             <Toaster />
