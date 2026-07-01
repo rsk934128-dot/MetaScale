@@ -112,7 +112,7 @@ export default function RemittanceCorridorPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-8">
-               <Card className="glass-panel border-white/5 relative overflow-hidden min-h-[350px] md:min-h-[450px] flex flex-col shadow-2xl">
+               <Card className="glass-panel border-white/5 relative overflow-hidden min-h-[450px] md:min-h-[500px] flex flex-col shadow-2xl">
                   <div className="absolute inset-0 opacity-5 md:opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #00f2ff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
                   <CardHeader className="relative z-10 border-b border-white/5 bg-white/5 p-4 md:p-6">
                      <CardTitle className="text-[10px] md:text-sm uppercase tracking-widest flex items-center gap-2">
@@ -122,41 +122,41 @@ export default function RemittanceCorridorPage() {
                   </CardHeader>
                   <CardContent className="flex-1 relative z-10 flex flex-col items-center justify-center p-6 md:p-12">
                      <div className="w-full flex items-center justify-between gap-4 md:gap-12">
-                        <div className="flex flex-col items-center gap-2 md:gap-4">
-                           <div className="w-12 h-12 md:w-24 md:h-24 rounded-2xl md:rounded-3xl bg-accent/10 border-2 border-accent flex items-center justify-center">
-                              <Globe className="h-6 w-6 md:h-10 md:w-10 text-accent" />
+                        <div className="flex flex-col items-center gap-4 md:gap-6">
+                           <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-3xl bg-accent/10 border-2 border-accent flex items-center justify-center transition-all group-hover:scale-110">
+                              <Globe className="h-8 w-8 md:h-10 md:w-10 text-accent" />
                            </div>
-                           <p className="text-[7px] md:text-xs font-bold text-white uppercase tracking-widest">MY</p>
+                           <p className="text-[9px] md:text-xs font-bold text-white uppercase tracking-widest">MY</p>
                         </div>
                         
                         <div className="flex-1 h-0.5 bg-gradient-to-r from-accent to-green-500 relative flex items-center justify-center">
-                           <div className="absolute -top-8 hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-background border border-white/10 shadow-2xl">
+                           <div className="absolute -top-10 flex items-center gap-2 px-3 py-1 rounded-full bg-background border border-white/10 shadow-2xl">
                               <Zap className="h-3 w-3 text-accent animate-pulse" />
                               <span className="text-[8px] font-bold text-white uppercase">Instant</span>
                            </div>
-                           <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white absolute animate-ping" />
+                           <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-white absolute animate-ping shadow-[0_0_15px_white]" />
                         </div>
 
-                        <div className="flex flex-col items-center gap-2 md:gap-4">
-                           <div className="w-12 h-12 md:w-24 md:h-24 rounded-2xl md:rounded-3xl bg-green-500/10 border-2 border-green-500 flex items-center justify-center">
-                              <Building2 className="h-6 w-6 md:h-10 md:w-10 text-green-500" />
+                        <div className="flex flex-col items-center gap-4 md:gap-6">
+                           <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-3xl bg-green-500/10 border-2 border-green-500 flex items-center justify-center transition-all group-hover:scale-110">
+                              <Building2 className="h-8 w-8 md:h-10 md:w-10 text-green-500" />
                            </div>
-                           <p className="text-[7px] md:text-xs font-bold text-white uppercase tracking-widest">BD</p>
+                           <p className="text-[9px] md:text-xs font-bold text-white uppercase tracking-widest">BD</p>
                         </div>
                      </div>
 
-                     <div className="mt-12 md:mt-20 w-full grid grid-cols-3 gap-2 md:gap-6">
-                        <div className="p-2 md:p-4 rounded-xl md:rounded-2xl bg-black/40 border border-white/5 text-center">
-                           <p className="text-[6px] md:text-[9px] uppercase font-bold text-muted-foreground">Cipher</p>
-                           <p className="text-[7px] md:text-xs text-white font-mono">AES-256</p>
+                     <div className="mt-16 md:mt-24 w-full grid grid-cols-3 gap-3 md:gap-6">
+                        <div className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-black/40 border border-white/5 text-center">
+                           <p className="text-[7px] md:text-[9px] uppercase font-bold text-muted-foreground">Cipher</p>
+                           <p className="text-[9px] md:text-xs text-white font-mono">AES-256</p>
                         </div>
-                        <div className="p-2 md:p-4 rounded-xl md:rounded-2xl bg-black/40 border border-white/5 text-center">
-                           <p className="text-[6px] md:text-[9px] uppercase font-bold text-muted-foreground">Node</p>
-                           <p className="text-[7px] md:text-xs text-green-400 font-bold uppercase">SEC_OK</p>
+                        <div className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-black/40 border border-white/5 text-center">
+                           <p className="text-[7px] md:text-[9px] uppercase font-bold text-muted-foreground">Node</p>
+                           <p className="text-[9px] md:text-xs text-green-400 font-bold uppercase">SEC_OK</p>
                         </div>
-                        <div className="p-2 md:p-4 rounded-xl md:rounded-2xl bg-black/40 border border-white/5 text-center">
-                           <p className="text-[6px] md:text-[9px] uppercase font-bold text-muted-foreground">Ping</p>
-                           <p className="text-[7px] md:text-xs text-white">8ms</p>
+                        <div className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-black/40 border border-white/5 text-center">
+                           <p className="text-[7px] md:text-[9px] uppercase font-bold text-muted-foreground">Ping</p>
+                           <p className="text-[9px] md:text-xs text-white">8ms</p>
                         </div>
                      </div>
                   </CardContent>
@@ -189,4 +189,3 @@ export default function RemittanceCorridorPage() {
     </div>
   );
 }
-
