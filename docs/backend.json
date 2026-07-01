@@ -19,6 +19,8 @@
         "plan": { "type": "string", "enum": ["FREE", "PRO", "ENTERPRISE"] },
         "verificationStatus": { "type": "string", "enum": ["UNVERIFIED", "PENDING", "VERIFIED", "FLAGGED"] },
         "trustScore": { "type": "number" },
+        "telegramChatId": { "type": "string" },
+        "telegramLinked": { "type": "boolean" },
         "createdAt": { "type": "object" }
       },
       "required": ["uid", "email", "kernelId", "accountNumber", "teamId"]

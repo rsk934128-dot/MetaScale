@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -11,14 +12,23 @@ import {
   CheckCircle2, 
   Zap, 
   Eye,
-  ArrowRight
+  ArrowRight,
+  MessageSquare,
+  Send,
+  ExternalLink,
+  ShieldCheck,
+  Smartphone,
+  Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { analyzeCommunication } from "@/ai/flows/communication-intelligence";
 import { useKernel } from "@/components/kernel/KernelProvider";
+import { useUser, useFirestore, useDoc } from "@/firebase";
+import { generateTelegramLink, setTelegramWebhook } from "@/lib/telegram";
+import { doc } from "firebase/firestore";
 
 const MOCK_EMAILS = [
   { id: '1', sender: 'alerts@infra.gov', subject: 'Sector 7 Node Latency Spike', body: 'Immediate attention required. Latency has exceeded 200ms in the anycast mesh.' },
@@ -27,11 +37,17 @@ const MOCK_EMAILS = [
 ];
 
 export default function CommunicationPlanePage() {
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isWebookLoading, setIsWebhookLoading] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [intelligenceReport, setIntelligenceReport] = useState<any>(null);
   const { toast } = useToast();
   const { emitEvent } = useKernel();
+
+  const userRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
+  const { data: profile } = useDoc<any>(userRef);
 
   const handleSyncGmail = () => {
     setIsSyncing(true);
@@ -43,6 +59,18 @@ export default function CommunicationPlanePage() {
         description: "Successfully fetched 3 mission-critical messages.",
       });
     }, 2000);
+  };
+
+  const handleSetWebhook = async () => {
+    setIsWebhookLoading(true);
+    const url = window.location.origin;
+    const res = await setTelegramWebhook(url);
+    if (res?.ok) {
+      toast({ title: "Webhook Secured", description: "Telegram bot is now inter-linked with the Sovereign Kernel." });
+    } else {
+      toast({ variant: "destructive", title: "Webhook Failed", description: "Could not establish secure callback." });
+    }
+    setIsWebhookLoading(false);
   };
 
   const handleRunAnalysis = async (email: any) => {
@@ -93,20 +121,64 @@ export default function CommunicationPlanePage() {
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
-          <div className="flex justify-between items-end">
-            <div>
-              <h2 className="text-3xl font-headline font-bold mb-2">Message Intelligence</h2>
-              <p className="text-muted-foreground">Intercepting and analyzing mission-critical communications via Anycast-bound Gmail API.</p>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-8">
+              {/* Telegram Gateway Section */}
+              <Card className="glass-panel border-l-4 border-l-accent bg-accent/5 overflow-hidden">
+                <div className="absolute top-0 right-0 p-4">
+                  <Badge variant={profile?.telegramLinked ? "default" : "outline"} className={profile?.telegramLinked ? "bg-green-500/20 text-green-400" : "animate-pulse"}>
+                    {profile?.telegramLinked ? "GATEWAY_ACTIVE" : "AWAITING_LINK"}
+                  </Badge>
+                </div>
+                <CardHeader>
+                  <CardTitle className="text-xl font-headline italic uppercase tracking-tighter flex items-center gap-3">
+                    <MessageSquare className="h-6 w-6 text-accent" />
+                    Telegram Alert Gateway
+                  </CardTitle>
+                  <CardDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground">@Coolrubelbank2bot • Security Sync</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <p className="text-sm text-white/80 leading-relaxed italic">
+                    "সরাসরি আপনার টেলিগ্রামে কার্নেল অ্যালার্ট এবং সিকিউরিটি নোটিফিকেশন পেতে আপনার সোভারেন আইডি লিঙ্ক করুন।"
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-3">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-accent uppercase">
+                        <ShieldCheck className="h-3.5 w-3.5" /> Identity Status
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground">Mesh Binding</span>
+                        <span className={profile?.telegramLinked ? "text-green-400 font-bold" : "text-red-400 font-bold"}>{profile?.telegramLinked ? "BOUND" : "UNLINKED"}</span>
+                      </div>
+                      {profile?.telegramLinked && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">Chat ID</span>
+                          <span className="text-[10px] font-mono text-white/50">{profile.telegramChatId}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Button asChild className="h-11 bg-accent text-background font-bold uppercase tracking-widest text-[10px] cyan-glow">
+                        <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
+                          <Zap className="mr-2 h-4 w-4" /> Initialize Gateway
+                        </a>
+                      </Button>
+                      <Button variant="outline" className="h-11 border-white/5 bg-white/5 text-[10px] font-bold uppercase tracking-widest" onClick={handleSetWebhook} disabled={isWebookLoading}>
+                        {isWebookLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                        Secure Webhook
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card className="glass-panel border-l-4 border-l-primary">
                 <CardHeader>
                   <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest">
                     <Mail className="h-4 w-4 text-primary" />
-                    Synced Messages
+                    Synced Gmail Messages
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -184,21 +256,21 @@ export default function CommunicationPlanePage() {
               <Card className="glass-panel border-primary/20">
                 <CardHeader className="p-4">
                   <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-tighter">
-                    <Zap className="h-4 w-4 text-primary" />
-                    Gmail Webhook Status
+                    <Bot className="h-4 w-4 text-primary" />
+                    Bot Configuration
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-3">
                   <div className="flex justify-between items-center text-[10px] font-bold">
-                    <span className="text-muted-foreground">Encryption Status</span>
-                    <span className="text-green-400">AES-256 Active</span>
+                    <span className="text-muted-foreground">Bot User</span>
+                    <span className="text-accent">@Coolrubelbank2bot</span>
                   </div>
                   <div className="flex justify-between items-center text-[10px] font-bold">
-                    <span className="text-muted-foreground">Sync Latency</span>
-                    <span className="text-white">124ms</span>
+                    <span className="text-muted-foreground">Polling Status</span>
+                    <span className="text-green-400">WEBHOOK_ACTIVE</span>
                   </div>
                   <div className="p-2 rounded bg-primary/5 border border-primary/20 text-[9px] text-primary italic">
-                    Anycast routing is optimizing communication paths through Node-04 (UK).
+                    Tele-Gateway is optimizing notification paths via Anycast Node-04.
                   </div>
                 </CardContent>
               </Card>

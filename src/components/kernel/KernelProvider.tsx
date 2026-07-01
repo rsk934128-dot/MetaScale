@@ -6,7 +6,7 @@ import { KernelState, SovereignEvent, SystemMode, PlaneType, PlaneState } from '
 import { resolveEventPriority, isTransitionAllowed } from '@/lib/kernel/priority-engine';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useUser } from '@/firebase';
-import { collection, doc, setDoc, query, orderBy, limit, addDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, query, orderBy, limit, addDoc, getDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -38,7 +38,6 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
   const [localMode, setLocalMode] = useState<SystemMode>('NORMAL');
   const [uptime, setUptime] = useState(0);
 
-  // Firestore sync for events - path mapped to root 'events' collection
   const eventsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'events'), orderBy('timestamp', 'desc'), limit(50));
@@ -53,7 +52,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(timer);
   }, []);
 
-  const emitEvent = useCallback((plane: PlaneType, type: string, priority: number, payload: any) => {
+  const emitEvent = useCallback(async (plane: PlaneType, type: string, priority: number, payload: any) => {
     const systemSeal = generateSystemSeal();
     const resolvedPriority = resolveEventPriority({ plane, priority } as any, localMode);
     
@@ -68,7 +67,6 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     };
 
     if (firestore) {
-      // Writing to 'events' as per backend.json
       const eventRef = doc(firestore, 'events', systemSeal);
       setDoc(eventRef, newEvent).catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -79,19 +77,40 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
         errorEmitter.emit('permission-error', permissionError);
       });
 
-      if (user?.uid && (resolvedPriority <= 2 || type.includes('EMERGENCY'))) {
-        const notifRef = collection(firestore, 'users', user.uid, 'notifications');
-        const notification = {
-          id: systemSeal,
-          title: `Kernel Trigger: ${type}`,
-          message: `Priority ${resolvedPriority} event detected in ${plane} plane.`,
-          type: resolvedPriority === 1 ? 'CRITICAL' : 'WARNING',
-          read: false,
-          timestamp: Date.now(),
-        };
-        addDoc(notifRef, notification).catch(async (err) => {
-          // contextual error handled silently
-        });
+      if (user?.uid) {
+        const userRef = doc(firestore, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.data();
+
+        // Add internal notification
+        if (resolvedPriority <= 2 || type.includes('EMERGENCY')) {
+          const notifRef = collection(firestore, 'users', user.uid, 'notifications');
+          const notification = {
+            id: systemSeal,
+            title: `Kernel Trigger: ${type}`,
+            message: `Priority ${resolvedPriority} event detected in ${plane} plane.`,
+            type: resolvedPriority === 1 ? 'CRITICAL' : 'WARNING',
+            read: false,
+            timestamp: Date.now(),
+          };
+          addDoc(notifRef, notification);
+
+          // TRIGGER TELEGRAM ALERT
+          if (userData?.telegramLinked && userData?.telegramChatId) {
+            const BOT_TOKEN = "7827860503:AAEVNXEe3mPUtPudIBT_S5aE1aHr56efaiA";
+            const text = `<b>🚨 KERNEL ALERT</b>\n\n<b>Type:</b> ${type}\n<b>Plane:</b> ${plane}\n<b>Priority:</b> ${resolvedPriority}\n<b>Seal:</b> <code>${systemSeal}</code>\n\n<i>System Mode: ${localMode}</i>`;
+            
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: userData.telegramChatId,
+                text: text,
+                parse_mode: 'HTML'
+              }),
+            }).catch(e => console.error("Telegram notify failed"));
+          }
+        }
       }
     }
 
