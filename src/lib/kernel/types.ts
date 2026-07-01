@@ -18,7 +18,9 @@ export type IncidentCategory =
   | 'METRIC_THRESHOLD_EXCEEDED'
   | 'HEARTBEAT_FAILURE'
   | 'LIQUIDITY_DRIFT'
-  | 'YIELD_RECYCLE_FAIL';
+  | 'YIELD_RECYCLE_FAIL'
+  | 'AGENT_DIRECTIVE_BLOCK'
+  | 'BUDGET_OVERRUN';
 
 export interface SovereignEvent {
   id: string;
@@ -97,4 +99,5 @@ export type FinanceEventType =
   | 'STRATEGY_REPORT_GENERATED'
   | 'VIRTUAL_CARD_ISSUED'
   | 'LIQUIDITY_SHIFT_EXECUTED'
-  | 'AUTO_YIELD_RECYCLED';
+  | 'AUTO_YIELD_RECYCLED'
+  | 'AGENT_DIRECTIVE_SYNCED';

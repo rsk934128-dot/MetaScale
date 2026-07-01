@@ -88,7 +88,8 @@ export function AgentControlCenter() {
       agentId, 
       agentName: agentToToggle.name,
       priority: 'CRITICAL',
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      syncToLedger: true
     });
 
     toast({
@@ -145,7 +146,8 @@ export function AgentControlCenter() {
     emitEvent('SECURITY', 'CLUSTER_EMERGENCY_HALT', 1, { 
       reason: 'MANUAL_OVERRIDE',
       timestamp: Date.now(),
-      scope: 'GLOBAL'
+      scope: 'GLOBAL',
+      syncToLedger: true
     });
 
     toast({

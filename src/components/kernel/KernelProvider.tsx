@@ -76,6 +76,19 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
       const eventRef = doc(firestore, 'events', systemSeal);
       setDoc(eventRef, newEvent).catch(() => {});
 
+      // Agent Ledger Sync: If payload has syncToLedger, push to UBIL Core
+      if (payload?.syncToLedger) {
+        const ubilRef = doc(firestore, 'ubil_events', `AGENT_${systemSeal}`);
+        setDoc(ubilRef, {
+           id: systemSeal,
+           type: 'AGENT_DIRECTIVE_SYNCED',
+           status: 'SUCCESS',
+           timestamp: Date.now(),
+           routingReason: `Agent Decision Sync: ${type}`,
+           payload: payload
+        }).catch(() => {});
+      }
+
       if (user?.uid) {
         try {
           const userRef = doc(firestore, 'users', user.uid);
