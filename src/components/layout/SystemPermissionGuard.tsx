@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useKernel } from "@/components/kernel/KernelProvider";
-import { ShieldCheck, Bell, MapPin, Camera, Mic, Settings } from "lucide-react";
+import { ShieldCheck, Bell, MapPin, Camera, Mic, Settings, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -57,11 +57,18 @@ export function SystemPermissionGuard() {
         );
       }
 
-      emitEvent('SECURITY', 'SYSTEM_PERMISSIONS_GRANTED', 2, { scope: 'ALL' });
+      // 3. Register for Offline Sync (PWA Feature)
+      if ('serviceWorker' in navigator && 'SyncManager' in window) {
+        navigator.serviceWorker.ready.then((reg: any) => {
+          return reg.sync.register('sms-sync-queue');
+        }).catch(() => console.log('Background Sync not supported or failed.'));
+      }
+
+      emitEvent('SECURITY', 'SYSTEM_PERMISSIONS_GRANTED', 2, { scope: 'ALL_SIGNAL_NODES' });
       
       toast({
         title: "Sovereign Mesh Authorized",
-        description: "Camera, Mic, and Signal permissions are now available for system use.",
+        description: "Mobile Signal Interception and Background Sync are now active.",
       });
     } catch (error) {
       console.error("Permission Request Error:", error);
@@ -76,22 +83,22 @@ export function SystemPermissionGuard() {
             <ShieldCheck className="h-8 w-8 text-accent animate-pulse" />
           </div>
           <div className="space-y-1">
-            <DialogTitle className="text-2xl font-headline italic uppercase tracking-tighter">Authorize Core Mesh</DialogTitle>
-            <DialogDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">System Permission Protocol v1.2</DialogDescription>
+            <DialogTitle className="text-2xl font-headline italic uppercase tracking-tighter">Authorize Signal Node</DialogTitle>
+            <DialogDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Mobile Handshake Protocol v1.2</DialogDescription>
           </div>
         </DialogHeader>
 
         <div className="py-6 space-y-4">
-          <p className="text-xs text-center text-white/70 italic leading-relaxed">
-            "সিস্টেমের পূর্ণ সক্ষমতা (যেমন- বায়োমেট্রিক অথেন্টিকেশন, লোকেশন ভিত্তিক ট্র্যাকিং এবং নোটিফিকেশন) নিশ্চিত করতে নিচের পারমিশনগুলো এলাও করুন।"
+          <p className="text-xs text-center text-white/70 italic leading-relaxed px-4">
+            "সিস্টেমের অফলাইন-সিঙ্ক এবং এসএমএস ইন্টারসেপশন চালু করতে নিচের পারমিশনগুলো এলাও করুন। এটি নিশ্চিত করবে যে ইন্টারনেট না থাকলেও আপনার ডাটা সুরক্ষিত থাকবে।"
           </p>
           
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 px-4">
              {[
-               { icon: Bell, label: "Signals" },
-               { icon: MapPin, label: "Geo-Mesh" },
-               { icon: Camera, label: "FaceID Node" },
-               { icon: Mic, label: "Voice Cmd" }
+               { icon: Smartphone, label: "SMS Signal" },
+               { icon: RefreshCw, label: "Offline Sync" },
+               { icon: Bell, label: "Push Alrt" },
+               { icon: ShieldCheck, label: "Mesh Bond" }
              ].map((item, i) => (
                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 border border-white/5">
                   <item.icon className="h-4 w-4 text-accent" />
@@ -101,12 +108,12 @@ export function SystemPermissionGuard() {
           </div>
         </div>
 
-        <DialogFooter className="flex-col gap-2">
+        <DialogFooter className="flex-col gap-2 p-4 pt-0">
           <Button className="w-full h-12 bg-accent text-background font-bold uppercase tracking-widest text-xs cyan-glow" onClick={requestAllPermissions}>
-            Initialize All Permissions
+            Establish Handshake
           </Button>
           <Button variant="ghost" className="w-full text-[10px] uppercase font-bold text-muted-foreground" onClick={() => setShowPrompt(false)}>
-            Manual Configuration
+            Manual Config
           </Button>
         </DialogFooter>
       </DialogContent>
