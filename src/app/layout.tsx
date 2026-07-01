@@ -70,7 +70,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -80,6 +80,32 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+
+        {/* Global Extension Error Suppression Script */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const suppressErrors = (event) => {
+                  const message = event.message || (event.reason && event.reason.message) || "";
+                  const source = event.filename || "";
+                  if (
+                    message.includes('MetaMask') || 
+                    message.includes('nkbihfbeogaeaoehlefnkodbefgpgknn') ||
+                    source.includes('extension') ||
+                    message.includes('failed to connect')
+                  ) {
+                    if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+                    if (event.preventDefault) event.preventDefault();
+                    return true;
+                  }
+                };
+                window.addEventListener('error', suppressErrors, true);
+                window.addEventListener('unhandledrejection', suppressErrors, true);
+              })();
+            `
+          }}
         />
 
         {/* Google Consent Mode Initialization */}
