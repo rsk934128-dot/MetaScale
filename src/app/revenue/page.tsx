@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -25,7 +24,9 @@ import {
   Globe,
   Network,
   Fingerprint,
-  Lock
+  Lock,
+  Sparkles,
+  Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
@@ -37,12 +38,23 @@ import { useFirestore, useCollection } from "@/firebase";
 import { collection, query, orderBy, limit } from "firebase/firestore";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 export default function RevenuePage() {
   const { emitEvent } = useKernel();
   const { toast } = useToast();
   const firestore = useFirestore();
   const [isExporting, setIsExporting] = useState(false);
+  const [isGeneratingAIReport, setIsGeneratingAIReport] = useState(false);
+  const [aiReport, setAiReport] = useState<string | null>(null);
+  const [showReportDialog, setShowReportDialog] = useState(false);
 
   // Live Sync with Finance Events for Audit Log
   const eventsQuery = useMemo(() => {
@@ -52,10 +64,32 @@ export default function RevenuePage() {
 
   const { data: liveEvents, loading: eventsLoading } = useCollection<any>(eventsQuery);
 
-  const totalRevenue = useMemo(() => {
-    // Mock sum of successful payouts or revenue links
-    return 12450000; // Constant ARR for prototype baseline
-  }, []);
+  const handleGenerateAIReport = async () => {
+    setIsGeneratingAIReport(true);
+    emitEvent('FINANCE', 'AI_AUDIT_REPORT_INITIATED', 3, { mode: 'AGENTIC' });
+
+    try {
+      // Simulate AI Report Generation based on system data
+      // In production, this would call a dedicated Genkit flow
+      setTimeout(() => {
+        setAiReport(`
+**FORENSIC AUDIT REPORT: NODE-04 (UK)**
+**STATUS: NOMINAL**
+
+1. **Liquidity Health:** Global yield at 3.5% with $428k in TON Wallet Mesh. No drift detected.
+2. **Transaction Integrity:** 100% of seals are valid. No duplicate credits found in last 24h.
+3. **Anomalies:** One "PAID_NOT_CREDITED" signal detected (PAY_SEAL_X92). Auto-healing is recommended.
+4. **Conclusion:** System is operating within Sovereign Kernel v1.2 parameters.
+        `);
+        setIsGeneratingAIReport(false);
+        setShowReportDialog(true);
+        toast({ title: "AI Audit Ready", description: "Forensic summary generated via Node-04." });
+      }, 3000);
+    } catch (e) {
+      toast({ variant: "destructive", title: "AI Failure" });
+      setIsGeneratingAIReport(false);
+    }
+  };
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -85,10 +119,20 @@ export default function RevenuePage() {
               Sovereign Revenue Operations <Badge variant="outline" className="ml-2 border-accent/20 text-accent text-[8px]">AUDIT_READY</Badge>
             </h1>
           </div>
-          <div className="flex items-center gap-2">
-             <Button size="sm" className="bg-accent text-background font-bold text-[10px] cyan-glow" onClick={handleExport} disabled={isExporting}>
+          <div className="flex items-center gap-3">
+             <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-accent/20 text-accent font-bold text-[10px] h-9 cyan-glow" 
+                onClick={handleGenerateAIReport} 
+                disabled={isGeneratingAIReport}
+             >
+                {isGeneratingAIReport ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Bot className="mr-1.5 h-3.5 w-3.5" />}
+                AI Audit
+             </Button>
+             <Button size="sm" className="bg-accent text-background font-bold text-[10px] h-9" onClick={handleExport} disabled={isExporting}>
                 {isExporting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <FileText className="mr-1.5 h-3.5 w-3.5" />}
-                Generate Audit Deck
+                Generate Deck
              </Button>
           </div>
         </header>
@@ -196,6 +240,39 @@ export default function RevenuePage() {
             </div>
           </div>
         </main>
+
+        {/* AI Report Dialog */}
+        <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+          <DialogContent className="max-w-2xl glass-panel border-accent/20 bg-background/95 p-0 overflow-hidden">
+             <div className="bg-accent/10 p-8 border-b border-white/10 text-center">
+                <div className="mx-auto w-16 h-16 rounded-2xl bg-accent/20 flex items-center justify-center mb-4">
+                   <Sparkles className="h-8 w-8 text-accent animate-pulse" />
+                </div>
+                <DialogTitle className="text-2xl font-headline italic uppercase tracking-tighter">AI Forensic Summary</DialogTitle>
+                <DialogDescription className="text-[10px] uppercase tracking-[0.4em] font-bold text-accent/60">Generated by Node-04 Sovereign Agent</DialogDescription>
+             </div>
+             
+             <div className="p-8">
+                <div className="p-6 rounded-3xl bg-black/60 border border-white/10 italic text-sm text-white/90 leading-relaxed font-body shadow-inner">
+                   <pre className="whitespace-pre-wrap font-sans">{aiReport}</pre>
+                </div>
+                <div className="mt-8 flex gap-3">
+                   <Button className="flex-1 h-12 bg-accent text-background font-bold uppercase tracking-widest text-[10px] cyan-glow" onClick={() => setShowReportDialog(false)}>
+                      Archive Report
+                   </Button>
+                   <Button variant="outline" className="flex-1 h-12 border-white/10 text-[10px] font-bold uppercase tracking-widest" onClick={() => window.print()}>
+                      <Download className="mr-2 h-4 w-4" /> Export PDF
+                   </Button>
+                </div>
+             </div>
+          </DialogContent>
+        </Dialog>
+
+        <footer className="p-6 border-t border-white/5 text-center">
+           <p className="text-[9px] font-bold uppercase tracking-[0.5em] text-muted-foreground opacity-30 italic">
+              NoorNexus Agentic Revenue Ops v1.2.0 • Institutional Infrastructure
+           </p>
+        </footer>
       </SidebarInset>
     </div>
   );

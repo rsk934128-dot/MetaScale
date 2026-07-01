@@ -1,13 +1,67 @@
 'use server';
 /**
- * @fileOverview A RAG-powered chat flow for marketing intelligence.
- * It uses campaign data and document context to answer complex marketing queries.
- *
- * - marketingCommandChat - Main function for the intelligence chat.
+ * @fileOverview Sovereign Intelligence Agent (Gemini-Powered Agentic Engine).
+ * Implements Tool Use (Function Calling) to interact with the Sovereign Kernel.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+
+// --- System Tools (Function Calling) ---
+
+/**
+ * Tool to fetch the current state of a payment seal.
+ */
+const getPaymentStatusTool = ai.defineTool(
+  {
+    name: 'getPaymentStatus',
+    description: 'Retrieves the deterministic status of a specific payment seal from the Sovereign Ledger.',
+    inputSchema: z.object({
+      sealId: z.string().describe('The seal ID starting with PAY_SEAL_ or TXN_'),
+    }),
+    outputSchema: z.object({
+      status: z.string(),
+      timestamp: z.number(),
+      amount: z.number(),
+      reason: z.string().optional(),
+    }),
+  },
+  async (input) => {
+    // In a production app, we would query Firestore here. 
+    // For the prototype, we return deterministic simulated data.
+    return {
+      status: 'PAID_NOT_CREDITED',
+      timestamp: Date.now() - 3600000,
+      amount: 450.00,
+      reason: 'Awaiting Node-04 manual verification due to high velocity.',
+    };
+  }
+);
+
+/**
+ * Tool to check global mesh integrity.
+ */
+const getMeshIntegrityTool = ai.defineTool(
+  {
+    name: 'getMeshIntegrity',
+    description: 'Checks the health and sync status of all 42 Anycast nodes.',
+    inputSchema: z.object({}),
+    outputSchema: z.object({
+      activeNodes: z.number(),
+      latency: z.string(),
+      status: z.string(),
+    }),
+  },
+  async () => {
+    return {
+      activeNodes: 42,
+      latency: '8.4ms',
+      status: 'OPTIMAL',
+    };
+  }
+);
+
+// --- Chat Flow Implementation ---
 
 const ChatMessageSchema = z.object({
   role: z.enum(['user', 'model']),
@@ -15,52 +69,55 @@ const ChatMessageSchema = z.object({
 });
 
 const CommandChatInputSchema = z.object({
-  query: z.string().describe('The user question about marketing data or strategy.'),
-  history: z.array(ChatMessageSchema).optional().describe('Chat history for context.'),
-  context: z.string().optional().describe('Additional context from indexed documents or campaign reports.'),
+  query: z.string().describe('The user question or directive.'),
+  history: z.array(ChatMessageSchema).optional(),
+  context: z.string().optional(),
 });
-export type CommandChatInput = z.infer<typeof CommandChatInputSchema>;
 
 const CommandChatOutputSchema = z.object({
-  response: z.string().describe('The AI response to the user query.'),
-  suggestedActions: z.array(z.string()).describe('List of actionable next steps.'),
-  dataPoints: z.array(z.object({
-    label: z.string(),
-    value: z.string(),
-  })).optional().describe('Key metrics related to the query.'),
+  response: z.string().describe('The AI response.'),
+  suggestedActions: z.array(z.string()),
+  toolsCalled: z.array(z.string()).optional(),
 });
-export type CommandChatOutput = z.infer<typeof CommandChatOutputSchema>;
-
-export async function marketingCommandChat(input: CommandChatInput): Promise<CommandChatOutput> {
-  return marketingCommandChatFlow(input);
-}
 
 const commandChatPrompt = ai.definePrompt({
   name: 'commandChatPrompt',
   input: { schema: CommandChatInputSchema },
   output: { schema: CommandChatOutputSchema },
-  config: {
-    temperature: 0.7,
-    topP: 0.9,
-  },
-  system: "You are the Sovereign OS Intelligence Engine (Node-04). You operate under Project 45 Eco Governance standards. Use the provided context and history to give deterministic, strategic advice. Keep your tone professional, authoritative, and slightly futuristic.",
+  tools: [getPaymentStatusTool, getMeshIntegrityTool],
+  system: `You are the FusionPay Sovereign Intelligence Agent (Node-04). 
+Your core mission is to act as a technical co-pilot for the Sovereign OS.
+
+CAPABILITIES:
+1. Explain fintech architecture (ISO 20022, DPE, UBIL).
+2. Check payment status using the getPaymentStatus tool.
+3. Check mesh health using the getMeshIntegrity tool.
+4. Help with compliance and verification queries.
+
+GUIDELINES:
+- Keep your tone professional, authoritative, and futuristic.
+- If a user asks about a stuck payment, use the getPaymentStatus tool.
+- If they ask about system status, use getMeshIntegrity.
+- Always mention that you are operating via Node-04 (UK Corridor).
+- Support Bengali and English seamlessly.`,
   prompt: `
 {{#if history}}
-CHAT HISTORY:
+HISTORY:
 {{#each history}}
 - {{role}}: {{text}}
 {{/each}}
 {{/if}}
 
 {{#if context}}
-KNOWLEDGE CONTEXT:
-{{{context}}}
+SYSTEM_CONTEXT: {{{context}}}
 {{/if}}
 
-USER QUERY: {{{query}}}
-
-Provide a detailed response as a strategic advisor. If data is unavailable, provide logical reasoning based on Sovereign OS protocols. Generate 2-3 specific suggestedActions.`,
+USER_DIRECTIVE: {{{query}}}`,
 });
+
+export async function marketingCommandChat(input: z.infer<typeof CommandChatInputSchema>): Promise<z.infer<typeof CommandChatOutputSchema>> {
+  return marketingCommandChatFlow(input);
+}
 
 const marketingCommandChatFlow = ai.defineFlow(
   {
@@ -71,26 +128,12 @@ const marketingCommandChatFlow = ai.defineFlow(
   async (input) => {
     try {
       const { output } = await commandChatPrompt(input);
-      
-      if (!output) {
-        return {
-          response: "Sovereign Intelligence Node-04 is currently in a reasoning state. I have established a temporary buffer. Please re-state your directive.",
-          suggestedActions: ["Retry Sync", "Check Network Plane"]
-        };
-      }
-      
-      return output;
+      return output!;
     } catch (err) {
-      console.error("Node-04 Connectivity Breach:", err);
-      
-      // Fallback response to avoid hard UI failure
+      console.error("AI Node Execution Failure:", err);
       return {
-        response: "The Sovereign AI node is recovering from a latency spike in the Anycast mesh (Node-04). I am currently operating in limited reasoning mode. Your query has been logged for processing.",
-        suggestedActions: ["Initialize Node-04", "Refresh Kernel"],
-        dataPoints: [
-          { label: "Status", value: "RECOVERING" },
-          { label: "Mesh Load", value: "98.4%" }
-        ]
+        response: "Node-04 is experiencing a reasoning lag. Switching to safe-buffer mode. Your request has been logged.",
+        suggestedActions: ["Retry Sync", "Check Infra Plane"]
       };
     }
   }

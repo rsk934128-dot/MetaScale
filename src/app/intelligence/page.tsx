@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { 
@@ -19,7 +19,9 @@ import {
   ChevronRight,
   TrendingUp,
   Target,
-  Briefcase
+  Briefcase,
+  Bot,
+  Cpu
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,17 +36,23 @@ export default function IntelligenceLayerPage() {
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<{role: 'user' | 'model', text: string}[]>([]);
-  const [lastResult, setLastResult] = useState<CommandChatOutput | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (chatHistory.length === 0) {
       setChatHistory([{
         role: 'model',
-        text: "PROJECT 45: ECO GOVERNANCE ACTIVE. I have initialized the Sovereign Fiscal Command. Your current transaction yield is 3.5% ($4,500/day). I am now monitoring AML/CFT screening across all 42 nodes. Shall we review the 'Liquidity Recycling Policy' or authorize a 'Compute Shift' to Node-04 for maximum profitability?"
+        text: "সম্মানিত সিটিজেন, আমি Sovereign Intelligence Agent (Node-04)। আমি সরাসরি আপনার 'UBIL Mainframe' এবং 'Audit Ledger'-এর সাথে সংযুক্ত। আপনি কি কোনো পেমেন্টের অবস্থা জানতে চান নাকি সিস্টেমের হেলথ চেক করতে চান? আমি আপনার জন্য অডিট রিপোর্টও জেনারেট করতে পারি।"
       }]);
     }
   }, []);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo(0, scrollRef.current.scrollHeight);
+    }
+  }, [chatHistory, isLoading]);
 
   const handleQuery = async () => {
     if (!query.trim()) return;
@@ -58,25 +66,26 @@ export default function IntelligenceLayerPage() {
       const result = await marketingCommandChat({
         query: userMsg,
         history: chatHistory,
-        context: "Sovereign OS context: Project 45 Eco Governance in progress. Focus: Yield recycling, AML/CFT compliance hub, and dynamic compute allocation. 42 nodes operational. Revenue yield 3.5%. Current Node: Node-04 UK Corridor.",
+        context: "Sovereign OS Context: Phase 4 Commercial Execution. Active Tools: getPaymentStatus, getMeshIntegrity. Location: Node-04 UK.",
       });
       
-      setLastResult(result);
       setChatHistory(prev => [...prev, { role: 'model', text: result.response }]);
+      
+      if (result.toolsCalled && result.toolsCalled.length > 0) {
+        toast({
+          title: "Tool Invoked",
+          description: `Kernel accessed via ${result.toolsCalled.join(', ')}`,
+        });
+      }
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Intelligence Failure",
-        description: "The Sovereign AI node encountered a serious reasoning breach. Tracing Node-04...",
+        description: "The AI node encountered a serious reasoning breach. Tracing Node-04...",
       });
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleAction = (action: string) => {
-    setQuery(action);
-    // Auto-trigger if needed or just set query
   };
 
   return (
@@ -86,14 +95,14 @@ export default function IntelligenceLayerPage() {
         <header className="sticky top-0 z-30 flex h-16 items-center gap-2 md:gap-4 border-b bg-background/80 backdrop-blur px-4 md:px-6">
           <SidebarTrigger />
           <div className="flex-1 truncate">
-            <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 text-primary">
-              <BrainCircuit className="h-4 w-4 md:h-5 md:w-5 text-primary shrink-0" />
-              <span className="truncate uppercase italic tracking-tighter">Sovereign Intelligence Layer</span>
+            <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 text-accent">
+              <Bot className="h-4 w-4 md:h-5 md:w-5 text-accent shrink-0 animate-pulse" />
+              <span className="truncate uppercase italic tracking-tighter">Sovereign AI Agent</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="hidden sm:flex text-accent border-accent/20 animate-pulse text-[10px]">
-              <TrendingUp className="mr-2 h-3 w-3" /> P45_FISCAL_MODE: ENABLED
+            <Badge variant="outline" className="hidden sm:flex text-green-400 border-green-500/20 animate-pulse text-[10px]">
+              <Cpu className="mr-2 h-3 w-3" /> AGENTIC_MODE: ACTIVE
             </Badge>
             <Badge variant="outline" className="text-primary border-primary/20 text-[10px]">
               NODE: 04_UK
@@ -103,21 +112,21 @@ export default function IntelligenceLayerPage() {
 
         <main className="flex-1 p-4 md:p-8 max-w-[1400px] mx-auto w-full grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-8 h-[calc(100vh-4rem)] overflow-hidden">
           <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden">
-            <div className="flex-1 overflow-hidden relative glass-panel rounded-2xl border-white/5 flex flex-col bg-black/20">
-              <ScrollArea className="flex-1 p-4 md:p-6">
-                <div className="space-y-6">
+            <div className="flex-1 overflow-hidden relative glass-panel rounded-3xl border-white/5 flex flex-col bg-black/40 shadow-2xl">
+              <ScrollArea className="flex-1 p-4 md:p-8" ref={scrollRef}>
+                <div className="space-y-8 pb-10">
                   {chatHistory.map((msg, i) => (
                     <div key={i} className={cn("flex", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                       <div className={cn(
-                        "max-w-[85%] p-4 rounded-2xl text-xs md:text-sm leading-relaxed shadow-xl border",
+                        "max-w-[85%] p-5 rounded-3xl text-sm leading-relaxed shadow-2xl relative group",
                         msg.role === 'user' 
-                        ? 'bg-primary border-primary/50 text-white' 
-                        : 'bg-secondary/40 border-white/5 text-white/90'
+                        ? 'bg-accent text-background font-bold rounded-tr-none' 
+                        : 'bg-secondary/50 border border-white/5 text-white/90 rounded-tl-none'
                       )}>
                         {msg.role === 'model' && (
-                          <div className="flex items-center gap-2 mb-2 pb-1 border-b border-white/5 opacity-50">
-                            <Zap className="h-3 w-3 text-accent" />
-                            <span className="text-[8px] uppercase font-bold tracking-widest">Sovereign Strategist (Node-04)</span>
+                          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5 opacity-50">
+                            <Bot className="h-3.5 w-3.5 text-accent" />
+                            <span className="text-[8px] uppercase font-bold tracking-widest">Sovereign Strategist (P45)</span>
                           </div>
                         )}
                         <p className="whitespace-pre-wrap">{msg.text}</p>
@@ -126,38 +135,34 @@ export default function IntelligenceLayerPage() {
                   ))}
                   {isLoading && (
                     <div className="flex justify-start">
-                      <div className="bg-secondary/40 border border-white/5 p-4 rounded-2xl flex items-center gap-3">
+                      <div className="bg-secondary/40 border border-white/5 p-5 rounded-3xl rounded-tl-none flex items-center gap-3">
                         <Loader2 className="h-4 w-4 animate-spin text-accent" />
-                        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground">Intercepting Packet Trajectories...</span>
+                        <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-muted-foreground">Accessing Sovereign Tools...</span>
                       </div>
                     </div>
                   )}
                 </div>
               </ScrollArea>
               
-              <div className="p-4 border-t border-white/5 bg-background/50 backdrop-blur-sm">
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'model' && (
-                    <div className="flex flex-wrap gap-2">
-                       {/* Contextual actions could go here */}
-                    </div>
-                  )}
-                </div>
-                <div className="relative flex items-center gap-2">
-                  <div className="absolute left-3 p-1 rounded bg-accent/10 border border-accent/20">
-                     <Briefcase className="h-3 w-3 text-accent" />
+              <div className="p-6 border-t border-white/5 bg-background/50 backdrop-blur-xl">
+                <div className="relative flex items-center gap-3">
+                  <div className="absolute left-4 p-1.5 rounded-xl bg-accent/10 border border-accent/20">
+                     <Zap className="h-4 w-4 text-accent" />
                   </div>
                   <Input 
-                    placeholder="Authorize Recycle Policy or Compute Shift..." 
-                    className="flex-1 h-12 text-xs bg-secondary/30 border-white/10 pl-11 pr-12 rounded-xl focus:border-primary/50 transition-all"
+                    placeholder="Check status of PAY_SEAL_X92..." 
+                    className="flex-1 h-14 text-sm bg-secondary/40 border-white/10 pl-14 pr-16 rounded-2xl focus:border-accent/50 transition-all shadow-inner"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleQuery()}
                   />
-                  <Button size="icon" className="h-10 w-10 absolute right-1 bg-primary hover:bg-primary/90 text-white rounded-lg shadow-lg" onClick={handleQuery} disabled={isLoading}>
-                    <Send className="h-4 w-4" />
+                  <Button size="icon" className="h-12 w-12 absolute right-1.5 bg-accent hover:bg-accent/90 text-background rounded-xl shadow-lg cyan-glow" onClick={handleQuery} disabled={isLoading}>
+                    <Send className="h-5 w-5" />
                   </Button>
                 </div>
+                <p className="text-[9px] text-center text-muted-foreground mt-4 uppercase tracking-widest opacity-40">
+                  Powered by NoorNexus Agentic Kernel v1.2 • Gemini 1.5 Flash
+                </p>
               </div>
             </div>
           </div>
@@ -165,19 +170,18 @@ export default function IntelligenceLayerPage() {
           <div className="hidden lg:block space-y-6 overflow-y-auto pr-2 h-full">
             <Card className="glass-panel border-accent/20 bg-accent/5">
               <CardHeader className="pb-2 p-4 border-b border-white/5">
-                <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest text-accent">
-                  <Activity className="h-4 w-4 text-accent" />
-                  P45 Fiscal Index
+                <CardTitle className="text-[10px] uppercase tracking-widest text-accent flex items-center gap-2">
+                  <Activity className="h-3.5 w-3.5" /> Agent Capabilities
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 space-y-3">
                 {[
-                  { label: "Yield Recycle", val: "42.5%", color: "text-green-400" },
-                  { label: "Compliance Score", val: "100%", color: "text-primary" },
-                  { label: "Node Profitability", val: "OPTIMAL", color: "text-accent" },
-                  { label: "AML Screening", val: "ACTIVE", color: "text-green-400" }
+                  { label: "Tool Access", val: "GRANTED", color: "text-green-400" },
+                  { label: "Ledger Read", val: "LEVEL_0", color: "text-accent" },
+                  { label: "Self-Healing", val: "READY", color: "text-primary" },
+                  { label: "Function Call", val: "ACTIVE", color: "text-green-400" }
                 ].map((item, i) => (
-                  <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-black/40 border border-white/5 group hover:border-accent/30 transition-all cursor-default">
+                  <div key={i} className="flex justify-between items-center p-2.5 rounded-xl bg-black/40 border border-white/5">
                     <span className="text-[9px] text-muted-foreground font-bold uppercase">{item.label}</span>
                     <span className={cn("text-[10px] font-bold font-mono", item.color)}>{item.val}</span>
                   </div>
@@ -188,28 +192,28 @@ export default function IntelligenceLayerPage() {
             <Card className="glass-panel border-white/5">
                <CardHeader className="p-4 border-b border-white/5">
                   <CardTitle className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-                     <Target className="h-3 w-3 text-primary" /> Governance Focus
+                     <Target className="h-3.5 w-3.5 text-primary" /> Active Directives
                   </CardTitle>
                </CardHeader>
-               <CardContent className="p-4 space-y-2">
+               <CardContent className="p-4 space-y-3">
                   {[
-                    "AML/CFT Hub synchronization",
-                    "Yield recycling policy set",
-                    "Dynamic compute allocation",
-                    "Global audit trail indexed"
+                    "Monitor PAY_SEAL status",
+                    "Verify node-level health",
+                    "Generate forensic reports",
+                    "Analyze liquidity drifts"
                   ].map((log, i) => (
-                    <div key={i} className="flex items-center gap-2 text-[9px] text-white/60 italic">
-                       <ShieldCheck className="h-2.5 w-2.5 text-primary shrink-0" />
+                    <div key={i} className="flex items-center gap-2.5 text-[9px] text-white/60 italic">
+                       <ShieldCheck className="h-3 w-3 text-accent shrink-0" />
                        <span className="truncate">{log}</span>
                     </div>
                   ))}
                </CardContent>
             </Card>
 
-            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2 text-center shadow-inner">
-               <Sparkles className="h-6 w-6 text-primary mx-auto opacity-50" />
+            <div className="p-5 rounded-2xl bg-primary/5 border border-primary/20 text-center space-y-3 shadow-inner">
+               <Sparkles className="h-6 w-6 text-primary mx-auto animate-pulse" />
                <p className="text-[9px] text-primary font-bold uppercase tracking-widest leading-relaxed">
-                  System is now autonomously recycling yield and optimizing node-level compute power via Gemini Flash.
+                  Your AI Strategist is now an Agent. It can execute system-level queries to resolve operational opacity.
                </p>
             </div>
           </div>
