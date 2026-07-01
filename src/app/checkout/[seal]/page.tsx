@@ -26,6 +26,7 @@ import { Logo } from "@/components/ui/logo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { reconcileAndSettleLink, processPaymentCredit } from "@/services/payment-service";
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -61,68 +62,35 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
     try {
-      const timestamp = Date.now();
-      const paymentId = `SIMULATED_${sealId}`;
+      const externalTxnId = `SIM_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-      // 1. Update the payment link status
-      await updateDoc(doc(firestore, 'payment_links', sealId), { 
-        status: 'PAID', 
-        paidAt: timestamp,
-        paymentMethod: selectedMethod 
-      });
+      // 1. Call the Central Settlement Controller
+      const reconResult = await reconcileAndSettleLink(
+        firestore,
+        sealId,
+        'SIMULATION_RAIL',
+        externalTxnId
+      );
 
-      // 2. Create the Ledger Entry for Automation
-      // Setting bucket to READY_FOR_REPLAY triggers the Kernel Autonomous Worker
-      await setDoc(doc(firestore, 'payments', paymentId), {
-        id: paymentId,
-        orderId: sealId,
-        userId: link.creatorId, // Merchant who created the link
-        externalTxnId: sealId,
-        provider: 'STRIPE',
-        amount: link.amount,
-        currency: 'USD',
-        status: 'PAID',
-        isCredited: false,
-        credited: false,
-        eventTime: timestamp,
-        updatedAt: timestamp,
-        settlementBucket: 'READY_FOR_REPLAY',
-        manualReviewRequired: false,
-        replayCount: 0,
-        anomalyFlags: [],
-        statusHistory: [{
-          status: 'PAID',
-          timestamp: timestamp,
-          trigger: 'WEBHOOK',
-          reason: 'Instant checkout authorized'
-        }]
-      });
-
-      // 3. Log to UBIL Events
-      await setDoc(doc(firestore, 'ubil_events', `TXN_${sealId}`), {
-        id: `TXN_${sealId}`,
-        type: 'TXN_SUCCESS',
-        amount: link.amount,
-        currency: 'USD',
-        status: 'SUCCESS',
-        timestamp: timestamp,
-        senderName: "Public Checkout",
-        senderBank: selectedMethod.toUpperCase(),
-        merchantId: link.creatorId,
-        seal: sealId,
-        routingReason: "Instant authorization via Simulation Rail."
-      });
-
-      setIsPaid(true);
-      toast({ 
-        title: "Authorization Successful", 
-        description: "ব্যালেন্স স্বয়ংক্রিয়ভাবে আপডেট করা হচ্ছে (Autonomous Update Active)।",
-      });
+      if (reconResult.status === 'READY_FOR_CREDIT') {
+        // 2. Execute finality credit
+        await processPaymentCredit(
+          firestore, 
+          reconResult.normalizedEvent!, 
+          'WEBHOOK'
+        );
+        
+        setIsPaid(true);
+        toast({ 
+          title: "Deterministic Finality Established", 
+          description: "সেটেলমেন্ট কন্ট্রোলার সফলভাবে ব্যালেন্স আপডেট করেছে (T+0)।",
+        });
+      }
     } catch (error: any) {
-      console.error("Payment Error:", error);
+      console.error("Settlement Error:", error);
       toast({ 
         variant: "destructive", 
-        title: "Settlement Error", 
+        title: "Reconciliation Failed", 
         description: error.message || "Handshake interrupted by Security Protocol." 
       });
     } finally {
@@ -235,8 +203,8 @@ export default function CheckoutPage() {
                     <Check className="h-12 w-12 text-green-500" strokeWidth={3} />
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-2xl font-headline font-bold text-white uppercase italic tracking-tighter">सफल भुगतान (Settled)</h3>
-                    <p className="text-xs text-muted-foreground">আপনার পেমেন্ট রিসিভ হয়েছে। আমাদের এআই অটোমেশন এখন ব্যালেন্স আপডেট করছে।</p>
+                    <h3 className="text-2xl font-headline font-bold text-white uppercase italic tracking-tighter">সফল भुगतान (Settled)</h3>
+                    <p className="text-xs text-muted-foreground">আপনার পেমেন্ট রিসিভ হয়েছে। আমাদের সেটেলমেন্ট কন্ট্রোলার সফলভাবে ব্যালেন্স আপডেট করেছে।</p>
                   </div>
                   <Button asChild className="w-full h-12 bg-white text-background font-bold uppercase text-[10px]">
                      <Link href="/">Back to Core</Link>
