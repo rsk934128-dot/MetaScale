@@ -37,6 +37,17 @@
         "eventTime": { "type": "number" },
         "updatedAt": { "type": "number" }
       }
+    },
+    "ReadinessCheckpoint": {
+      "title": "Launch Readiness State",
+      "description": "System preflight validation results.",
+      "type": "object",
+      "properties": {
+        "checkId": { "type": "string" },
+        "category": { "type": "string" },
+        "status": { "type": "string", "enum": ["PASS", "WARN", "BLOCK"] },
+        "lastVerifiedAt": { "type": "number" }
+      }
     }
   },
   "auth": {
@@ -44,7 +55,8 @@
   },
   "firestore": {
     "/users/{userId}": { "schema": "UserProfile" },
-    "/payments/{paymentId}": { "schema": "InboundPayment" }
+    "/payments/{paymentId}": { "schema": "InboundPayment" },
+    "/readiness/{checkId}": { "schema": "ReadinessCheckpoint" }
   },
   "indexes": {
     "required_composite": [
