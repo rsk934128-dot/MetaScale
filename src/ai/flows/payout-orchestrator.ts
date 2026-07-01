@@ -43,6 +43,11 @@ const payoutPrompt = ai.definePrompt({
   name: 'payoutPrompt',
   input: { schema: PayoutInputSchema },
   output: { schema: PayoutOutputSchema },
+  config: {
+    safetySettings: [
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+    ],
+  },
   prompt: `You are the Sovereign Financial Disbursement Agent operating under SHURUKKHA-OS v1.2.
 GATEWAY: {{{gateway}}}
 RECIPIENT: {{{recipientEmail}}}
@@ -55,7 +60,7 @@ EXECUTION PARAMETERS:
 4. If gateway is PAYONEER, simulate Yapily Open Banking PIS (Payment Initiation) via Payoneer-EU (ID: payoneer, BIC: PAYNUS33XXX).
 5. For PAYONEER, ensure PSD2 compliance check and SCA (Strong Customer Authentication) redirect simulation.
 6. Generate a unique Sovereign Mesh routing token (e.g., FALLBACK_P180_9...).
-7. Append an "Imperial Directive" seal if the amount exceeds $1,000, if the routing path is unindexed, or if using European PIS rails.
+7. Append an "Imperial Directive" seal if the amount exceeds \$1,000, if the routing path is unindexed, or if using European PIS rails.
 8. Provide a technical execution log for the Finance Plane ledger reflecting Anycast validation.`,
 });
 

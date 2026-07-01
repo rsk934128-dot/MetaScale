@@ -30,6 +30,12 @@ const civicIncidentPrompt = ai.definePrompt({
   name: 'civicIncidentPrompt',
   input: { schema: IncidentInputSchema },
   output: { schema: IncidentAnalysisOutputSchema },
+  config: {
+    safetySettings: [
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+    ],
+  },
   prompt: `You are the SHURUKKHA-OS Civic Response Intelligence Agent.
 Analyze the following incident report:
 

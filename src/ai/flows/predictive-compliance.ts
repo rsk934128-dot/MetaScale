@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Predictive Compliance & Self-Healing Engine.
@@ -41,6 +40,11 @@ const compliancePredictorPrompt = ai.definePrompt({
   name: 'compliancePredictorPrompt',
   input: { schema: PredictiveComplianceInputSchema },
   output: { schema: PredictiveComplianceOutputSchema },
+  config: {
+    safetySettings: [
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+    ],
+  },
   prompt: `You are the SEIP Regulatory Intelligence & Self-Healing Agent.
 Analyze the entity's documentation and active enforcement blocks for jurisdiction: {{{jurisdiction}}}.
 

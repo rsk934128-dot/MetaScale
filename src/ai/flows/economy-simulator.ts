@@ -59,6 +59,11 @@ const economySimulatorPrompt = ai.definePrompt({
     policyText: z.string(),
   }) },
   output: { schema: EconomyOutputSchema },
+  config: {
+    safetySettings: [
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+    ],
+  },
   prompt: `You are the SEG-MLC Global Economic Governor.
 Analyze the state of the Digital Economic Civilization.
 

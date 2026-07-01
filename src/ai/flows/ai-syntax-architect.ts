@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Project 43: AI Syntax Architect.
@@ -28,6 +27,11 @@ const syntaxPrompt = ai.definePrompt({
   name: 'syntaxPrompt',
   input: { schema: SyntaxInputSchema },
   output: { schema: SyntaxOutputSchema },
+  config: {
+    safetySettings: [
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+    ],
+  },
   prompt: `You are the Project 43 AI Syntax Architect for NoorNexus Sovereign OS.
 Your core mission is to convert human intentions into formal, deterministic system commands or SDK snippets.
 
