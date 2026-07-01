@@ -30,7 +30,10 @@ import {
   AlertTriangle,
   XCircle,
   FileSearch,
-  Shield
+  Shield,
+  Lightbulb,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -108,6 +111,33 @@ const READINESS_MATRIX = [
   { category: "Compliance", item: "Gated Launch Protocol", status: "PASS", icon: ShieldCheck }
 ];
 
+const SOLVED_PROBLEMS = [
+  { 
+    title: "Double Credit Prevention", 
+    solution: "Exactly-Once Ledger Logic via Firestore Transactions.",
+    icon: CheckCircle,
+    color: "text-green-400"
+  },
+  { 
+    title: "Stuck Payment Recovery", 
+    solution: "Automated Self-healing Cron with Exponential Backoff.",
+    icon: RefreshCw,
+    color: "text-accent"
+  },
+  { 
+    title: "Regulatory Compliance", 
+    solution: "Integrated Identity Binding (NID/TIN) for CIP rules.",
+    icon: ShieldCheck,
+    color: "text-blue-400"
+  },
+  { 
+    title: "Human Error in Ops", 
+    solution: "Embedded Incident Runbooks for guided problem resolution.",
+    icon: Lightbulb,
+    color: "text-yellow-400"
+  }
+];
+
 export default function RoadmapPage() {
   const [isLaunching, setIsLaunching] = useState(false);
   const [preflightStep, setPreflightStep] = useState<string | null>(null);
@@ -181,6 +211,26 @@ export default function RoadmapPage() {
               "Phase 2.8: Building the operational playbooks for institutional reliability."
             </p>
           </div>
+
+          {/* Solved Problems Section */}
+          <section className="space-y-8">
+             <h3 className="text-xl font-headline font-bold uppercase tracking-widest text-white border-l-4 border-l-accent pl-4">What We Solve</h3>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {SOLVED_PROBLEMS.map((problem, i) => (
+                  <Card key={i} className="glass-panel border-white/5 hover:border-accent/30 transition-all">
+                     <CardHeader className="pb-2">
+                        <problem.icon className={cn("h-6 w-6 mb-2", problem.color)} />
+                        <CardTitle className="text-sm font-bold uppercase tracking-tight">{problem.title}</CardTitle>
+                     </CardHeader>
+                     <CardContent>
+                        <p className="text-xs text-muted-foreground leading-relaxed italic">
+                           {problem.solution}
+                        </p>
+                     </CardContent>
+                  </Card>
+                ))}
+             </div>
+          </section>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
              <div className="xl:col-span-2 space-y-8">
