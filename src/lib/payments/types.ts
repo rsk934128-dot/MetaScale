@@ -8,7 +8,10 @@ export type PaymentStatus =
   | 'CREDITED'  // Internal side-effect (wallet update) completed
   | 'SETTLED'   // Final reconciliation done
   | 'FAILED' 
-  | 'EXPIRED';
+  | 'EXPIRED'
+  | 'ROLLED_BACK';
+
+export type ReconciliationStatus = 'PENDING' | 'MATCHED' | 'MISMATCHED' | 'INVESTIGATING';
 
 export interface NormalizedPaymentEvent {
   orderId: string;
@@ -19,7 +22,7 @@ export interface NormalizedPaymentEvent {
   currency: string;
   status: PaymentStatus;
   eventTime: number;
-  providerEventId?: string; // Unique ID from provider for this specific delivery
+  providerEventId?: string;
   metadata?: Record<string, any>;
 }
 
@@ -37,14 +40,15 @@ export interface InboundPaymentDoc {
   paidAt?: number;
   creditedAt?: number;
   settledAt?: number;
-  isCredited: boolean; // Exactly-once side-effect guard
-  creditOperationId?: string; // Link to the specific credit event
+  isCredited: boolean;
+  creditOperationId?: string;
+  reconciliationStatus: ReconciliationStatus;
+  anomalyFlags: string[];
   metadata: Record<string, any>;
-  anomalyFlag?: boolean;
-}
-
-export interface WebhookResponse {
-  received: boolean;
-  status: number;
-  error?: string;
+  statusHistory: {
+    status: PaymentStatus;
+    timestamp: number;
+    reason?: string;
+    trigger?: 'WEBHOOK' | 'RECONCILIATION' | 'MANUAL';
+  }[];
 }
