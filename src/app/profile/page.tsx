@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser, useFirestore, useDoc, useAuth } from '@/firebase';
+import { useUser, useFirestore, useDoc } from '@/firebase';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,14 +22,26 @@ import {
   CreditCard,
   Building2,
   Globe,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Loader2,
+  Lock,
+  Send
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
 import { useState, useMemo } from 'react';
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useKernel } from '@/components/kernel/KernelProvider';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -41,6 +53,10 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const { emitEvent } = useKernel();
   
+  const [isLimitDialogOpen, setIsLimitDialogOpen] = useState(false);
+  const [isSubmittingLimit, setIsSubmittingLimit] = useState(false);
+  const [limitForm, setLimitForm] = useState({ requestedAmount: "", reason: "" });
+
   const userRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: profile } = useDoc<any>(userRef);
 
@@ -51,6 +67,43 @@ export default function ProfilePage() {
     { name: "National ID", status: "APPROVED", date: "May 19, 2025", icon: Fingerprint },
     { name: "Proof of Income", status: "IN REVIEW", date: "May 18, 2025", icon: FileText, pending: true },
   ];
+
+  const handleRequestLimit = async () => {
+    if (!firestore || !user?.uid || !limitForm.requestedAmount) {
+      toast({ variant: "destructive", title: "Missing Data", description: "প্রার্থিত পরিমাণ উল্লেখ করুন।" });
+      return;
+    }
+
+    setIsSubmittingLimit(true);
+    try {
+      const requestData = {
+        userId: user.uid,
+        userEmail: user.email,
+        requestedAmount: limitForm.requestedAmount,
+        reason: limitForm.reason,
+        status: 'PENDING',
+        timestamp: Date.now()
+      };
+
+      await addDoc(collection(firestore, 'limit_requests'), requestData);
+      
+      emitEvent('FINANCE', 'LIMIT_INCREASE_REQUESTED', 3, { 
+        userId: user.uid, 
+        amount: limitForm.requestedAmount 
+      });
+
+      toast({ 
+        title: "Request Submitted", 
+        description: "আপনার আবেদনটি পর্যালোচনার জন্য নোড-০৪ এ পাঠানো হয়েছে।" 
+      });
+      setIsLimitDialogOpen(false);
+      setLimitForm({ requestedAmount: "", reason: "" });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Submission Failed", description: "সিস্টেম এরর। আবার চেষ্টা করুন।" });
+    } finally {
+      setIsSubmittingLimit(false);
+    }
+  };
 
   const getStatusBadge = () => {
     const status = profile?.verificationStatus || 'VERIFIED';
@@ -142,7 +195,7 @@ export default function ProfilePage() {
                 <Card className="glass-panel border-accent/20 bg-accent/5">
                    <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest text-accent">
-                         <Zap className="h-4 w-4" /> Settlement Capability
+                         <Zap className="h-4 w-4 /> Settlement Capability
                       </CardTitle>
                    </CardHeader>
                    <CardContent className="space-y-4">
@@ -160,7 +213,10 @@ export default function ProfilePage() {
                             <span className="text-green-400">GRANTED</span>
                          </div>
                       </div>
-                      <Button className="w-full h-11 bg-accent text-background font-bold uppercase text-[10px] tracking-widest cyan-glow">
+                      <Button 
+                        className="w-full h-11 bg-accent text-background font-bold uppercase text-[10px] tracking-widest cyan-glow"
+                        onClick={() => setIsLimitDialogOpen(true)}
+                      >
                          Request Higher Limits
                       </Button>
                    </CardContent>
@@ -181,6 +237,66 @@ export default function ProfilePage() {
              </div>
           </div>
         </main>
+
+        {/* Request Higher Limit Dialog */}
+        <Dialog open={isLimitDialogOpen} onOpenChange={setIsLimitDialogOpen}>
+          <DialogContent className="max-w-md glass-panel border-accent/20 bg-background/95 p-0 overflow-hidden">
+             <div className="bg-accent/10 p-8 border-b border-white/10 text-center">
+                <div className="mx-auto w-16 h-16 rounded-2xl bg-accent/20 flex items-center justify-center mb-4">
+                   <TrendingUp className="h-8 w-8 text-accent animate-pulse" />
+                </div>
+                <DialogTitle className="text-2xl font-headline italic uppercase tracking-tighter">Limit Escalation</DialogTitle>
+                <DialogDescription className="text-[10px] uppercase tracking-[0.4em] font-bold text-accent/60">Institutional Capacity Request</DialogDescription>
+             </div>
+             
+             <div className="p-8 space-y-6">
+                <div className="space-y-4">
+                   <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">Requested Daily Limit (USD)</Label>
+                      <Input 
+                         type="number"
+                         placeholder="e.g. 250000" 
+                         className="bg-secondary/30 border-white/5 h-11 text-sm font-headline"
+                         value={limitForm.requestedAmount}
+                         onChange={(e) => setLimitForm({...limitForm, requestedAmount: e.target.value})}
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">Business Justification</Label>
+                      <Textarea 
+                         placeholder="Explain your volume requirements..." 
+                         className="bg-secondary/30 border-white/5 min-h-[100px] text-xs resize-none"
+                         value={limitForm.reason}
+                         onChange={(e) => setLimitForm({...limitForm, reason: e.target.value})}
+                      />
+                   </div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-black/40 border border-white/5 flex gap-3">
+                   <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
+                   <p className="text-[9px] text-muted-foreground leading-relaxed italic">
+                      Your request will be processed by the Sovereign Compliance Oracle. Authorization typically takes 2-4 hours.
+                   </p>
+                </div>
+
+                <Button 
+                   className="w-full h-12 bg-accent text-background font-bold uppercase tracking-widest text-xs cyan-glow"
+                   onClick={handleRequestLimit}
+                   disabled={isSubmittingLimit}
+                >
+                   {isSubmittingLimit ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                   {isSubmittingLimit ? "Processing..." : "Authorize Request"}
+                </Button>
+             </div>
+
+             <div className="bg-secondary/30 p-4 border-t border-white/5 text-center">
+                <div className="flex items-center justify-center gap-2 opacity-40">
+                   <Lock className="h-3 w-3 text-accent" />
+                   <span className="text-[8px] uppercase font-bold tracking-widest">Kernel Authorization Bound</span>
+                </div>
+             </div>
+          </DialogContent>
+        </Dialog>
       </SidebarInset>
     </div>
   );
