@@ -3,7 +3,7 @@ export type SystemMode = 'NORMAL' | 'EMERGENCY' | 'LOCKDOWN' | 'RECOVERY';
 
 export type PlaneType = 'CIVIC' | 'FINANCE' | 'SECURITY' | 'INFRA' | 'OPERATIONS';
 
-export type EventStatus = 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REJECTED' | 'ROLLED_BACK';
+export type EventStatus = 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REJECTED' | 'ROLLED_BACK' | 'BLOCKED_BY_GOVERNANCE';
 
 export type IncidentSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 
@@ -20,7 +20,9 @@ export type IncidentCategory =
   | 'LIQUIDITY_DRIFT'
   | 'YIELD_RECYCLE_FAIL'
   | 'AGENT_DIRECTIVE_BLOCK'
-  | 'BUDGET_OVERRUN';
+  | 'BUDGET_OVERRUN'
+  | 'GOVERNANCE_VIOLATION'
+  | 'POLICY_ENFORCEMENT';
 
 export interface SovereignEvent {
   id: string;
@@ -100,4 +102,5 @@ export type FinanceEventType =
   | 'VIRTUAL_CARD_ISSUED'
   | 'LIQUIDITY_SHIFT_EXECUTED'
   | 'AUTO_YIELD_RECYCLED'
-  | 'AGENT_DIRECTIVE_SYNCED';
+  | 'AGENT_DIRECTIVE_SYNCED'
+  | 'GOVERNANCE_BLOCK';

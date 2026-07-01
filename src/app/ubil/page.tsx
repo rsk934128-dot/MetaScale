@@ -79,7 +79,7 @@ export default function UBILMainframePage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Listen for autonomous engine and agent events to log in console
+  // Listen for autonomous engine, agent, and governance events
   useEffect(() => {
     if (!events || events.length === 0) return;
     
@@ -89,10 +89,16 @@ export default function UBILMainframePage() {
         `> [AUTONOMOUS] Settled ${latestEvent.payload.count} পেন্ডিং পেমেন্ট।`,
         ...prev
       ]);
+    } else if (latestEvent.type === 'GOVERNANCE_VIOLATION') {
+      setLogs(prev => [
+        `! [GOVERNANCE_BLOCK] Policy Violation Detected: ${latestEvent.payload.blockedEvent}`,
+        `! [REASON] ${latestEvent.payload.reason}`,
+        `! [REMEDIATION] ${latestEvent.payload.remediation}`,
+        ...prev
+      ]);
     } else if (latestEvent.type.includes('AGENT_')) {
       setLogs(prev => [
         `> [AGENT_COUNCIL] Directive: ${latestEvent.type} | Target: ${latestEvent.payload.agentName || 'GLOBAL'}`,
-        `> [SYNC] Seal: ${latestEvent.id.substring(0, 14)}... recorded in ledger.`,
         ...prev
       ]);
     }
@@ -178,6 +184,8 @@ export default function UBILMainframePage() {
                            "pl-1 border-l-2 py-0.5 border-white/5",
                            log.includes('[AUTONOMOUS]') ? "text-green-400" : 
                            log.includes('[AGENT_COUNCIL]') ? "text-accent" :
+                           log.includes('[GOVERNANCE_BLOCK]') ? "text-red-500 font-bold" :
+                           log.startsWith('!') ? "text-red-400 italic pl-4" :
                            "text-white/60"
                          )}>
                            {log}
@@ -217,8 +225,8 @@ export default function UBILMainframePage() {
                               onClick={() => setSelectedEvent(event)}
                             >
                                <div className="flex justify-between items-start mb-1">
-                                  <Badge variant={event.type === 'AGENT_DIRECTIVE_SYNCED' ? 'secondary' : 'default'} className="text-[7px] md:text-[8px] px-1 md:px-2 py-0">
-                                    {event.type === 'AGENT_DIRECTIVE_SYNCED' ? 'AGENT' : event.status}
+                                  <Badge variant={event.type.includes('BLOCK') ? 'destructive' : event.type === 'AGENT_DIRECTIVE_SYNCED' ? 'secondary' : 'default'} className="text-[7px] md:text-[8px] px-1 md:px-2 py-0">
+                                    {event.type.includes('BLOCK') ? 'POLICY' : event.type === 'AGENT_DIRECTIVE_SYNCED' ? 'AGENT' : event.status}
                                   </Badge>
                                   <span className="text-[7px] md:text-[8px] text-muted-foreground font-mono">{new Date(event.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                                </div>
@@ -235,18 +243,21 @@ export default function UBILMainframePage() {
                           <div className="flex items-center justify-between border-b border-white/10 pb-4">
                              <div className="min-w-0">
                                 <h4 className="text-base md:text-lg font-headline italic font-bold uppercase text-accent truncate">
-                                  {selectedEvent.type === 'AGENT_DIRECTIVE_SYNCED' ? 'Agent Council' : 'Ledger Inspector'}
+                                  {selectedEvent.type.includes('BLOCK') ? 'Policy Enforcement' : selectedEvent.type === 'AGENT_DIRECTIVE_SYNCED' ? 'Agent Council' : 'Ledger Inspector'}
                                 </h4>
                              </div>
-                             {selectedEvent.type === 'AGENT_DIRECTIVE_SYNCED' ? <BrainCircuit className="h-5 w-5 text-accent" /> : <Fingerprint className="h-5 w-5 text-accent" />}
+                             {selectedEvent.type.includes('BLOCK') ? <ShieldAlert className="h-5 w-5 text-red-500" /> : selectedEvent.type === 'AGENT_DIRECTIVE_SYNCED' ? <BrainCircuit className="h-5 w-5 text-accent" /> : <Fingerprint className="h-5 w-5 text-accent" />}
                           </div>
-                          <div className="p-3 md:p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2">
+                          <div className={cn(
+                            "p-3 md:p-4 rounded-xl border space-y-2",
+                            selectedEvent.type.includes('BLOCK') ? "bg-red-500/10 border-red-500/30" : "bg-primary/5 border-primary/20"
+                          )}>
                               <p className="text-[10px] md:text-[11px] text-white/90 italic leading-relaxed">
                                   "{selectedEvent.routingReason || 'Mapped to Sovereign Grid.'}"
                               </p>
                           </div>
                           <div className="grid grid-cols-1 gap-4">
-                             {selectedEvent.type !== 'AGENT_DIRECTIVE_SYNCED' ? (
+                             {selectedEvent.type !== 'AGENT_DIRECTIVE_SYNCED' && !selectedEvent.type.includes('BLOCK') ? (
                                <div className="grid grid-cols-2 gap-4">
                                  <div className="p-3 rounded-lg bg-secondary/20 border border-white/5">
                                     <p className="text-[8px] font-bold text-muted-foreground uppercase">Amount</p>
@@ -259,7 +270,7 @@ export default function UBILMainframePage() {
                                </div>
                              ) : (
                                <div className="p-4 rounded-xl bg-black/40 border border-white/10 font-mono text-[10px] space-y-2">
-                                  <p className="text-accent uppercase">// Agent Directive Trace</p>
+                                  <p className="text-accent uppercase">// {selectedEvent.type.includes('BLOCK') ? 'Policy Violation Trace' : 'Agent Directive Trace'}</p>
                                   <pre className="text-white/60 whitespace-pre-wrap">
                                     {JSON.stringify(selectedEvent.payload, null, 2)}
                                   </pre>

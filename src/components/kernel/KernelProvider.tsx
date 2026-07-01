@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { KernelState, SovereignEvent, SystemMode, PlaneType, PlaneState, HeartbeatStatus } from '@/lib/kernel/types';
 import { resolveEventPriority, isTransitionAllowed } from '@/lib/kernel/priority-engine';
+import { validateDirective } from '@/lib/kernel/governance-engine';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useUser } from '@/firebase';
 import { collection, doc, setDoc, query, orderBy, limit, addDoc, getDoc, updateDoc } from 'firebase/firestore';
@@ -55,7 +56,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
 
   const { data: remoteEvents } = useCollection<SovereignEvent>(eventsQuery);
 
-  // --- CORE FUNCTIONS (Defined before use in hooks) ---
+  // --- CORE FUNCTIONS ---
 
   const emitEvent = useCallback(async (plane: PlaneType, type: string, priority: number, payload: any) => {
     const systemSeal = generateSystemSeal();
@@ -72,11 +73,61 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
       userId: user?.uid || 'SYSTEM'
     };
 
+    // --- GOVERNANCE CHECK ---
+    const govCheck = validateDirective(newEvent, { mode: localMode, planes: INITIAL_PLANES });
+    
+    if (!govCheck.allowed) {
+      console.error(`>>> [GOVERNANCE_BLOCK] ${govCheck.reason}`);
+      newEvent.status = 'BLOCKED_BY_GOVERNANCE';
+      newEvent.message = govCheck.reason;
+
+      if (firestore) {
+        // Log the blocked event
+        await setDoc(doc(firestore, 'events', systemSeal), newEvent);
+        
+        // Emit a security violation event
+        const violationSeal = `VIOLATION_${Date.now()}`;
+        await setDoc(doc(firestore, 'events', violationSeal), {
+          id: violationSeal,
+          plane: 'SECURITY',
+          type: 'GOVERNANCE_VIOLATION',
+          priority: 1,
+          timestamp: Date.now(),
+          payload: { 
+            blockedEvent: type, 
+            reason: govCheck.reason, 
+            remediation: govCheck.remediation,
+            userId: user?.uid 
+          },
+          status: 'COMPLETED',
+          category: 'GOVERNANCE_VIOLATION',
+          severity: govCheck.severity
+        });
+
+        // Push to UBIL Core as a warning
+        await setDoc(doc(firestore, 'ubil_events', `GOV_${systemSeal}`), {
+          id: systemSeal,
+          type: 'GOVERNANCE_BLOCK_LOGGED',
+          status: 'BLOCKED',
+          timestamp: Date.now(),
+          routingReason: govCheck.reason,
+          payload: { remediation: govCheck.remediation }
+        });
+      }
+
+      toast({
+        variant: 'destructive',
+        title: "Governance Block",
+        description: govCheck.reason,
+      });
+      return;
+    }
+
+    // --- AUTHORIZED EXECUTION ---
     if (firestore) {
       const eventRef = doc(firestore, 'events', systemSeal);
       setDoc(eventRef, newEvent).catch(() => {});
 
-      // Agent Ledger Sync: If payload has syncToLedger, push to UBIL Core
       if (payload?.syncToLedger) {
         const ubilRef = doc(firestore, 'ubil_events', `AGENT_${systemSeal}`);
         setDoc(ubilRef, {
@@ -148,13 +199,12 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     updateDoc(doc(firestore, 'events', eventId), { status: 'ROLLED_BACK' }).catch(() => {});
   }, [firestore]);
 
-  // --- BACKGROUND LOOPS (Defined after core functions) ---
+  // --- BACKGROUND LOOPS ---
 
   useEffect(() => {
     const timer = setInterval(async () => {
       setUptime(prev => prev + 1);
       
-      // 1. Heartbeat pulse every 30s
       if (uptime > 0 && uptime % 30 === 0) {
         setHeartbeat(prev => prev.map(node => {
           const newLatency = Math.max(5, node.latency + (Math.random() * 10 - 5));
@@ -163,9 +213,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
         }));
       }
 
-      // 2. Autonomous Reconciliation Cycle every 60s
       if (isAutonomousActive && uptime > 0 && uptime % 60 === 0 && firestore) {
-        console.log(">>> [KERNEL] Triggering Autonomous Reconciliation Cycle...");
         const result = await runAutomatedReconciliation(firestore, 'DETECT_AND_REPLAY');
         if (result.replayed > 0) {
           emitEvent('FINANCE', 'AUTONOMOUS_SETTLEMENT_SUCCESS', 2, { count: result.replayed });
@@ -176,9 +224,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // 3. Autonomous Yield Optimizer every 300s (5 min)
       if (isAutonomousActive && uptime > 0 && uptime % 300 === 0 && firestore) {
-        console.log(">>> [KERNEL] Running Yield & Liquidity Drift Analysis...");
         emitEvent('FINANCE', 'LIQUIDITY_SHIFT_EXECUTED', 3, { 
           from: 'NODE-01-US', 
           to: 'NODE-22-ASIA', 
