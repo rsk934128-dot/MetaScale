@@ -17,7 +17,6 @@ import {
   RotateCcw,
   ShieldCheck,
   Zap,
-  Info,
   Play,
   Terminal,
   Activity
@@ -26,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useCollection, useUser } from "@/firebase";
@@ -46,20 +46,20 @@ export default function AdminCompliancePage() {
   const firestore = useFirestore();
   const { user } = useUser();
 
-  // 1. Documents Queue (KYB)
+  // 1. Documents Queue
   const docsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'verification_docs'), orderBy('submittedAt', 'desc'), limit(50));
   }, [firestore]);
   const { data: remoteDocs, loading: docsLoading } = useCollection<any>(docsQuery);
 
-  // 2. Reconciliation Queue (PAID but !isCredited)
+  // 2. Optimized Anomaly Queue (Phase 2.7: Using derived buckets)
   const anomaliesQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, 'payments'), 
-      where('isCredited', '==', false),
-      where('status', '==', 'PAID'),
+      where('manualReviewRequired', '==', true),
+      orderBy('updatedAt', 'desc'),
       limit(20)
     );
   }, [firestore]);
@@ -68,15 +68,12 @@ export default function AdminCompliancePage() {
   const handleVerify = async (docData: any, status: 'APPROVED' | 'REJECTED') => {
     if (!firestore) return;
     setIsProcessing(docData.id);
-    
     try {
       await updateDoc(doc(firestore, 'verification_docs', docData.id), { status });
-      const userRef = doc(firestore, 'users', docData.userId);
-      await updateDoc(userRef, { 
+      await updateDoc(doc(firestore, 'users', docData.userId), { 
         verificationStatus: status === 'APPROVED' ? 'VERIFIED' : 'FLAGGED',
         trustScore: status === 'APPROVED' ? 98.4 : 45.0
       });
-
       emitEvent('SECURITY', 'DOCUMENT_VERIFICATION_RESOLVED', 2, { docId: docData.id, status });
       toast({ title: status === 'APPROVED' ? "Approved" : "Rejected" });
     } catch (err) {
@@ -89,25 +86,12 @@ export default function AdminCompliancePage() {
   const handleManualReplay = async (payment: any) => {
     if (!firestore || !user?.uid) return;
     setIsProcessing(payment.id);
-    
     try {
       const result = await processPaymentCredit(firestore, payment, 'MANUAL', user.uid);
-      
-      emitEvent('FINANCE', 'MANUAL_CREDIT_REPLAY', 2, { 
-        paymentId: payment.id, 
-        opId: result.operationId 
-      });
-
-      toast({ 
-        title: "Manual Replay Success", 
-        description: `Operation ID: ${result.operationId}` 
-      });
+      emitEvent('FINANCE', 'MANUAL_CREDIT_REPLAY', 2, { paymentId: payment.id, opId: result.operationId });
+      toast({ title: "Manual Replay Success" });
     } catch (err: any) {
-      toast({ 
-        variant: "destructive", 
-        title: "Replay Failed", 
-        description: err.message 
-      });
+      toast({ variant: "destructive", title: "Replay Failed", description: err.message });
     } finally {
       setIsProcessing(null);
     }
@@ -117,17 +101,11 @@ export default function AdminCompliancePage() {
     if (!firestore) return;
     setIsCronRunning(true);
     setCronLogs(["Starting automated mesh scan...", "Mode: DETECT_AND_REPLAY"]);
-    
     try {
       const results = await runAutomatedReconciliation(firestore, 'DETECT_AND_REPLAY');
-      setCronLogs(prev => [...results.logs, ...prev, `Scan finished. Replayed: ${results.replayed}, Failed: ${results.failed}`]);
-      
-      emitEvent('FINANCE', 'MESH_RECONCILIATION_RUN', 3, { 
-        scanned: results.scanned,
-        replayed: results.replayed 
-      });
-
-      toast({ title: "Mesh Scan Complete", description: `${results.replayed} payments recovered.` });
+      setCronLogs(prev => [...results.logs, ...prev, `Scan finished. Replayed: ${results.replayed}`]);
+      emitEvent('FINANCE', 'MESH_RECONCILIATION_RUN', 3, { scanned: results.scanned, replayed: results.replayed });
+      toast({ title: "Mesh Scan Complete" });
     } catch (err: any) {
       setCronLogs(prev => [`[FATAL] ${err.message}`, ...prev]);
     } finally {
@@ -214,7 +192,7 @@ export default function AdminCompliancePage() {
                        <Zap className="h-6 w-6 text-accent" />
                        Fiscal Reconciliation
                     </h2>
-                    <p className="text-xs text-muted-foreground italic">"Paid events missing internal wallet credit - Repairing Fast Path."</p>
+                    <p className="text-xs text-muted-foreground italic">"Optimized Scan Bucket: READY_FOR_REPLAY"</p>
                   </div>
                   <Button 
                     variant="outline" 
@@ -235,7 +213,7 @@ export default function AdminCompliancePage() {
                           <div className="flex justify-between items-center">
                               <CardTitle className="text-sm flex items-center gap-2 text-red-400 uppercase tracking-widest">
                                 <AlertTriangle className="h-4 w-4" />
-                                Stuck Payments (PAID && !CREDITED)
+                                Review Required (FATAL/STUCK)
                               </CardTitle>
                               <Badge variant="outline" className="text-[8px] border-red-500/30 text-red-400 uppercase">Action Required</Badge>
                           </div>
@@ -246,7 +224,7 @@ export default function AdminCompliancePage() {
                           ) : anomalies?.length === 0 ? (
                             <div className="p-20 text-center space-y-4">
                                 <ShieldCheck className="h-12 w-12 text-green-500/20 mx-auto" />
-                                <p className="italic text-xs text-muted-foreground uppercase tracking-widest">No anomalies detected in the current cycle.</p>
+                                <p className="italic text-xs text-muted-foreground uppercase tracking-widest">Mesh Integrity Optimal.</p>
                             </div>
                           ) : (
                             <div className="divide-y divide-red-500/10">
@@ -255,27 +233,25 @@ export default function AdminCompliancePage() {
                                       <div className="flex gap-4">
                                         <div className="p-3 rounded-lg bg-black/40 border border-red-500/20 text-red-400"><History className="h-5 w-5" /></div>
                                         <div className="space-y-1">
-                                            <p className="text-sm font-bold text-white uppercase">{p.provider} • ${p.amount} {p.currency}</p>
+                                            <p className="text-sm font-bold text-white uppercase">{p.provider} • ${p.amount}</p>
                                             <div className="flex gap-2 items-center">
-                                              <Badge variant="outline" className="text-[7px] border-red-500/20 text-red-400 uppercase">Uncredited</Badge>
-                                              <span className="text-[8px] text-muted-foreground italic font-mono uppercase tracking-tighter">
+                                              <Badge variant="outline" className="text-[7px] border-red-500/20 text-red-400 uppercase">{p.settlementBucket}</Badge>
+                                              <span className="text-[8px] text-muted-foreground italic font-mono uppercase">
                                                 Retries: {p.replayCount || 0}
                                               </span>
                                             </div>
-                                            {p.lastError && <p className="text-[8px] text-red-400/60 font-mono line-clamp-1 italic">Last Err: {p.lastError}</p>}
+                                            {p.lastError && <p className="text-[8px] text-red-400/60 font-mono line-clamp-1 italic">Err: {p.lastError}</p>}
                                         </div>
                                       </div>
-                                      <div className="flex items-center gap-3">
-                                        <Button 
-                                            size="sm" 
-                                            className="bg-accent text-background font-bold text-[10px] cyan-glow px-6"
-                                            onClick={() => handleManualReplay(p)}
-                                            disabled={isProcessing === p.id}
-                                        >
-                                            {isProcessing === p.id ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : <RotateCcw className="h-3 w-3 mr-1.5" />}
-                                            Safe Replay
-                                        </Button>
-                                      </div>
+                                      <Button 
+                                          size="sm" 
+                                          className="bg-accent text-background font-bold text-[10px] cyan-glow px-6"
+                                          onClick={() => handleManualReplay(p)}
+                                          disabled={isProcessing === p.id}
+                                      >
+                                          {isProcessing === p.id ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : <RotateCcw className="h-3 w-3 mr-1.5" />}
+                                          Force Replay
+                                      </Button>
                                   </div>
                                 ))}
                             </div>
@@ -296,40 +272,15 @@ export default function AdminCompliancePage() {
                           <ScrollArea className="h-full p-4">
                             <div className="space-y-1.5 font-mono text-[9px]">
                                {cronLogs.length === 0 ? (
-                                 <p className="text-muted-foreground italic">Ready for mesh synchronization...</p>
+                                 <p className="text-muted-foreground italic">Terminal ready...</p>
                                ) : cronLogs.map((log, i) => (
-                                 <p key={i} className={cn(
-                                   "pl-2 border-l border-white/10",
-                                   log.includes('SUCCESS') ? 'text-green-400' : log.includes('ERROR') ? 'text-red-400' : 'text-white/60'
-                                 )}>
+                                 <p key={i} className={cn("pl-2 border-l border-white/10", log.includes('SUCCESS') ? 'text-green-400' : 'text-white/60')}>
                                    &gt; {log}
                                  </p>
                                ))}
                             </div>
                           </ScrollArea>
                         </CardContent>
-                    </Card>
-                    
-                    <Card className="glass-panel border-white/5 bg-secondary/10">
-                      <CardHeader className="p-4 border-b border-white/5">
-                          <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2">
-                            <Activity className="h-4 w-4 text-primary" />
-                            Self-Healing Stats
-                          </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4 space-y-3">
-                          {[
-                            "Auto-Recovery: ENABLED",
-                            "Backoff Strategy: EXPONENTIAL",
-                            "Retry Limit: 5 ATTEMPTS",
-                            "Mesh Integrity: 100%"
-                          ].map((stat, i) => (
-                            <div key={i} className="flex items-center gap-2 text-[10px] text-white/60 italic">
-                               <div className="w-1 h-1 rounded-full bg-primary" />
-                               {stat}
-                            </div>
-                          ))}
-                      </CardContent>
                     </Card>
                   </div>
                </div>

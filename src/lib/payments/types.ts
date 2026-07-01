@@ -22,6 +22,11 @@ export type AnomalyFlag =
   | 'INVALID_TRANSITION' 
   | 'SIGNATUREFAILUREREVIEW';
 
+/**
+ * Phase 2.7: Optimized Query Buckets
+ */
+export type SettlementBucket = 'DONE' | 'READY_FOR_REPLAY' | 'WAITING_BACKOFF' | 'FATAL' | 'PENDING_PROVIDER';
+
 export interface NormalizedPaymentEvent {
   orderId: string;
   userId: string;
@@ -53,6 +58,12 @@ export interface InboundPaymentDoc extends NormalizedPaymentEvent {
   nextReplayAttemptAt?: number;
   lastError?: string;
   
+  // Phase 2.7: Derived Query Fields (Index Helpers)
+  credited: boolean; // Helper for (!isCredited) queries
+  manualReviewRequired: boolean; // Flag for admin focus
+  settlementBucket: SettlementBucket; // High-performance query bucket
+  primaryAnomaly?: AnomalyFlag;
+
   statusHistory: {
     status: PaymentStatus;
     timestamp: number;

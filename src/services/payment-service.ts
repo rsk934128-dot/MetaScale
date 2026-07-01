@@ -9,12 +9,29 @@ import {
   increment,
   getDoc
 } from 'firebase/firestore';
-import { NormalizedPaymentEvent, InboundPaymentDoc, PaymentStatus } from '@/lib/payments/types';
+import { NormalizedPaymentEvent, InboundPaymentDoc, PaymentStatus, SettlementBucket } from '@/lib/payments/types';
+
+/**
+ * Helper to determine the query bucket for a payment
+ */
+function deriveSettlementBucket(doc: Partial<InboundPaymentDoc>): SettlementBucket {
+  if (doc.isCredited) return 'DONE';
+  if (doc.status !== 'PAID') return 'PENDING_PROVIDER';
+  
+  const replayCount = doc.replayCount || 0;
+  if (replayCount >= 5) return 'FATAL';
+  
+  const now = Date.now();
+  if (!doc.nextReplayAttemptAt || doc.nextReplayAttemptAt <= now) {
+    return 'READY_FOR_REPLAY';
+  }
+  
+  return 'WAITING_BACKOFF';
+}
 
 /**
  * Core Domain Service: Atomic Payment Credit Logic
- * Ensures exactly-once credit and handles state transitions.
- * Accessible by Webhook, Manual Replay, and Automated Cron.
+ * Phase 2.7: Now populates derived query fields for indexing.
  */
 export async function processPaymentCredit(
   firestore: Firestore, 
@@ -34,7 +51,7 @@ export async function processPaymentCredit(
       currentData = paymentSnap.data() as InboundPaymentDoc;
     }
 
-    // 1. Idempotency Check: Never credit twice
+    // 1. Idempotency Check
     if (currentData?.isCredited) {
       return { status: 'ALREADY_CREDITED', paymentId };
     }
@@ -52,7 +69,7 @@ export async function processPaymentCredit(
       updatedAt: serverTimestamp()
     });
 
-    // 4. Update Payment Ledger
+    // 4. Update Payment Ledger with Derived Fields
     const creditOpId = `${trigger.toLowerCase()}_${timestamp}_${event.externalTxnId.slice(-6)}`;
     
     const historyEntry = {
@@ -65,19 +82,22 @@ export async function processPaymentCredit(
       replayedBy: adminUid
     };
 
+    const isCredited = true;
     const update: Partial<InboundPaymentDoc> = {
       ...event,
       status: 'CREDITED',
       updatedAt: timestamp,
       creditedAt: timestamp,
-      isCredited: true,
+      isCredited: isCredited,
+      credited: isCredited, // Derived boolean
       creditOperationId: creditOpId,
       reconciliationStatus: 'MATCHED',
       id: paymentId,
       statusHistory: currentData ? [...(currentData.statusHistory || []), historyEntry] : [historyEntry],
-      // Reset retry fields on success
       replayCount: 0,
-      lastError: ""
+      lastError: "",
+      manualReviewRequired: false,
+      settlementBucket: 'DONE' // Final bucket
     };
 
     if (!paymentSnap.exists()) {
@@ -85,7 +105,6 @@ export async function processPaymentCredit(
         ...update, 
         createdAt: timestamp,
         anomalyFlags: [],
-        replayCount: 0
       });
     } else {
       transaction.update(paymentRef, update);

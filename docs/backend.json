@@ -9,59 +9,33 @@
         "uid": { "type": "string" },
         "displayName": { "type": "string" },
         "email": { "type": "string" },
-        "mobile": { "type": "string" },
-        "photoURL": { "type": "string" },
         "kernelId": { "type": "string" },
-        "teamId": { "type": "string" },
         "accountNumber": { "type": "string" },
         "balance": { "type": "number" },
         "role": { "type": "string", "enum": ["ADMIN", "OPERATOR", "CITIZEN"] },
         "plan": { "type": "string", "enum": ["FREE", "PRO", "ENTERPRISE"] },
         "verificationStatus": { "type": "string", "enum": ["UNVERIFIED", "PENDING", "VERIFIED", "FLAGGED"] },
         "trustScore": { "type": "number" },
-        "telegramChatId": { "type": "string" },
-        "telegramLinked": { "type": "boolean" },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
-      },
-      "required": ["uid", "email", "kernelId", "accountNumber", "teamId"]
+      }
     },
     "InboundPayment": {
       "title": "Inbound Payment Ledger",
-      "description": "Normalized ledger for all incoming deposits and settlements with reconciliation fields.",
+      "description": "Normalized ledger with Phase 2.7 indexing fields.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "orderId": { "type": "string" },
-        "userId": { "type": "string" },
-        "externalTxnId": { "type": "string" },
-        "provider": { "type": "string", "enum": ["STRIPE", "BKASH", "BINANCE_PAY"] },
-        "amount": { "type": "number" },
-        "currency": { "type": "string" },
         "status": { "type": "string" },
         "isCredited": { "type": "boolean" },
-        "creditOperationId": { "type": "string" },
-        "reconciliationStatus": { "type": "string", "enum": ["NOT_REQUIRED", "PENDING", "MATCHED", "MISMATCHED"] },
-        "anomalyFlags": { "type": "array", "items": { "type": "string" } },
+        "credited": { "type": "boolean", "description": "Derived field for fast indexing." },
+        "manualReviewRequired": { "type": "boolean" },
+        "settlementBucket": { "type": "string", "enum": ["DONE", "READY_FOR_REPLAY", "WAITING_BACKOFF", "FATAL"] },
+        "replayCount": { "type": "number" },
+        "nextReplayAttemptAt": { "type": "number" },
+        "anomalyFlags": { "type": "array" },
         "eventTime": { "type": "number" },
-        "createdAt": { "type": "number" },
-        "updatedAt": { "type": "number" },
-        "statusHistory": { "type": "array" }
-      },
-      "required": ["id", "userId", "provider", "status", "isCredited"]
-    },
-    "VerificationDoc": {
-      "title": "Identity Verification Document",
-      "description": "Regulatory documents submitted for Stablecoin CIP compliance.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "userName": { "type": "string" },
-        "type": { "type": "string", "enum": ["NID", "TIN", "PASSPORT"] },
-        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
-        "submittedAt": { "type": "number" },
-        "metadata": { "type": "object" }
+        "updatedAt": { "type": "number" }
       }
     }
   },
@@ -69,8 +43,14 @@
     "providers": ["google.com", "password"]
   },
   "firestore": {
-    "/users/{userId}": { "schema": "UserProfile", "description": "Extended user profile information." },
-    "/payments/{paymentId}": { "schema": "InboundPayment", "description": "Central ledger for all incoming payments." },
-    "/verification_docs/{docId}": { "schema": "VerificationDoc", "description": "User submitted verification documents." }
+    "/users/{userId}": { "schema": "UserProfile" },
+    "/payments/{paymentId}": { "schema": "InboundPayment" }
+  },
+  "indexes": {
+    "required_composite": [
+      { "collection": "payments", "fields": ["settlementBucket", "updatedAt desc"] },
+      { "collection": "payments", "fields": ["manualReviewRequired", "updatedAt desc"] },
+      { "collection": "verification_docs", "fields": ["submittedAt desc"] }
+    ]
   }
 }
