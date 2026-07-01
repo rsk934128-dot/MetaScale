@@ -4,8 +4,10 @@
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { SettingsContainer } from "@/components/settings/SettingsContainer";
-import { Settings as SettingsIcon, ShieldCheck, Zap } from "lucide-react";
+import { PWAInstaller } from "@/components/settings/PWAInstaller";
+import { Settings as SettingsIcon, ShieldCheck, Zap, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function SettingsPage() {
   return (
@@ -27,15 +29,30 @@ export default function SettingsPage() {
           </div>
         </header>
 
-        <main className="flex-1 p-8 max-w-[1200px] mx-auto w-full">
+        <main className="flex-1 p-8 max-w-[1200px] mx-auto w-full space-y-8">
           <div className="mb-8">
-            <h2 className="text-3xl font-headline font-bold mb-2">OS Configuration</h2>
+            <h2 className="text-3xl font-headline font-bold mb-2 uppercase tracking-tighter italic">OS <span className="text-accent">Configuration</span></h2>
             <p className="text-muted-foreground">
               Manage deterministic execution policies, global thresholds, and sovereign security protocols.
             </p>
           </div>
           
-          <SettingsContainer />
+          <Tabs defaultValue="config" className="space-y-8">
+            <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1">
+              <TabsTrigger value="config" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">System Parameters</TabsTrigger>
+              <TabsTrigger value="install" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full flex gap-2">
+                <Download className="h-3 w-3" /> Install App
+              </Badge>
+            </TabsList>
+
+            <TabsContent value="config">
+              <SettingsContainer />
+            </TabsContent>
+
+            <TabsContent value="install" className="animate-fade-in">
+              <PWAInstaller />
+            </TabsContent>
+          </Tabs>
         </main>
       </SidebarInset>
     </div>
