@@ -34,7 +34,10 @@ import {
   UserCheck,
   ShieldX,
   Smartphone,
-  Globe
+  Globe,
+  Sparkles,
+  BrainCircuit,
+  DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +53,7 @@ import { processPaymentCredit } from "@/services/payment-service";
 import { runAutomatedReconciliation } from "@/services/reconciliation-cron";
 import { cn } from "@/lib/utils";
 import { OperationalMetric, SystemAlert } from "@/lib/kernel/types";
+import { analyzeForensicHistory } from "@/ai/flows/forensic-audit-analyst";
 
 export default function AdminCompliancePage() {
   const [search, setSearch] = useState("");
@@ -57,6 +61,8 @@ export default function AdminCompliancePage() {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [isCronRunning, setIsCronRunning] = useState(false);
   const [selectedAnomalyId, setSelectedAnomalyId] = useState<string | null>(null);
+  const [isAnalyzingHistory, setIsAnalyzingHistory] = useState(false);
+  const [smartInsights, setSmartInsights] = useState<any>(null);
   
   const { toast } = useToast();
   const { emitEvent, mode } = useKernel();
@@ -142,6 +148,30 @@ export default function AdminCompliancePage() {
     }
   };
 
+  const handleRunForensicAnalysis = async () => {
+    if (!globalActivity) return;
+    setIsAnalyzingHistory(true);
+    try {
+      const result = await analyzeForensicHistory({
+        logs: globalActivity.map((ev: any) => ({
+          id: ev.id,
+          type: ev.type,
+          node: "NODE-04",
+          msg: JSON.stringify(ev.payload),
+          timestamp: ev.timestamp,
+          plane: ev.plane
+        })),
+        query: "Provide smart insights for administrative oversight."
+      });
+      setSmartInsights(result);
+      toast({ title: "Audit Insights Generated", description: "Mesh health is stable." });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Analysis Failed" });
+    } finally {
+      setIsAnalyzingHistory(false);
+    }
+  };
+
   const filteredCitizens = useMemo(() => {
     if (!citizens) return [];
     return citizens.filter(c => 
@@ -162,7 +192,17 @@ export default function AdminCompliancePage() {
               Sovereign Command Center
             </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-primary/20 text-primary font-bold text-[10px] h-8 blue-glow"
+                onClick={handleRunForensicAnalysis}
+                disabled={isAnalyzingHistory}
+            >
+                {isAnalyzingHistory ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <Sparkles className="h-3 w-3 mr-1.5" />}
+                Generate Smart Insights
+            </Button>
             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">System Live</span>
           </div>
@@ -170,6 +210,39 @@ export default function AdminCompliancePage() {
 
         <main className="flex-1 p-8 max-w-[1600px] mx-auto w-full space-y-8">
           
+          {/* Proactive Insights Panel */}
+          {smartInsights && (
+            <Card className="glass-panel border-accent/20 bg-accent/5 overflow-hidden animate-fade-in">
+               <CardHeader className="border-b border-white/5 py-4">
+                  <CardTitle className="text-xs flex items-center gap-2 text-accent uppercase tracking-widest">
+                     <BrainCircuit className="h-4 w-4" />
+                     Administrative Smart Insights
+                  </CardTitle>
+               </CardHeader>
+               <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                     <div className="md:col-span-1 space-y-2 border-r border-white/5 pr-8">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Mesh Health Index</p>
+                        <p className="text-4xl font-headline font-bold text-white">{smartInsights.healthIndex}%</p>
+                        <Badge className={smartInsights.isDriftDetected ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}>
+                           {smartInsights.isDriftDetected ? 'DRIFT DETECTED' : 'STATE STABLE'}
+                        </Badge>
+                     </div>
+                     <div className="md:col-span-3 space-y-4">
+                        <p className="text-xs text-white/90 leading-relaxed italic border-l-2 border-accent/30 pl-4">
+                           "{smartInsights.summary}"
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                           {smartInsights.proactiveFixes.map((fix: string, i: number) => (
+                              <Badge key={i} variant="outline" className="text-[8px] border-white/10 text-muted-foreground">FIX: {fix}</Badge>
+                           ))}
+                        </div>
+                     </div>
+                  </div>
+               </CardContent>
+            </Card>
+          )}
+
           {/* KPI Dashboard */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
              {operationalMetrics.map((metric) => (
@@ -324,7 +397,7 @@ export default function AdminCompliancePage() {
                </Card>
             </TabsContent>
 
-            {/* Tab 4: Anomalies (Existing Logic) */}
+            {/* Tab 4: Anomalies */}
             <TabsContent value="anomalies" className="space-y-6">
                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                   <div className="lg:col-span-8 space-y-6">

@@ -22,7 +22,12 @@ import {
   ShieldCheck,
   Radar,
   Eye,
-  AlertTriangle
+  AlertTriangle,
+  BrainCircuit,
+  Sparkles,
+  Zap,
+  CheckCircle2,
+  TrendingDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +36,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { useToast } from "@/hooks/use-toast";
+import { analyzeForensicHistory } from "@/ai/flows/forensic-audit-analyst";
 
 const MOCK_AUDIT_LOGS = [
   { id: "AUD-01", type: "CRITICAL", node: "NODE-04", msg: "HMAC Signature mismatch on PIS rail.", timestamp: Date.now() - 5000, plane: "SECURITY" },
@@ -38,6 +44,7 @@ const MOCK_AUDIT_LOGS = [
   { id: "AUD-03", type: "WARNING", node: "NODE-01", msg: "Latency threshold exceeded (85ms).", timestamp: Date.now() - 45000, plane: "INFRA" },
   { id: "AUD-04", type: "CRITICAL", node: "NODE-04", msg: "Unidentified IP attempt on Root Auth.", timestamp: Date.now() - 120000, plane: "SECURITY" },
   { id: "AUD-05", type: "INFO", node: "NODE-12", msg: "Yield recycling policy applied successfully.", timestamp: Date.now() - 300000, plane: "FINANCE" },
+  { id: "AUD-06", type: "CRITICAL", node: "NODE-04", msg: "Repeated HMAC failure on Node-04. Potential probe.", timestamp: Date.now() - 600000, plane: "SECURITY" },
 ];
 
 export default function SAMReaderPage() {
@@ -45,7 +52,9 @@ export default function SAMReaderPage() {
   const [filter, setFilter] = useState<"ALL" | "CRITICAL" | "WARNING" | "INFO">("ALL");
   const [logs, setLogs] = useState(MOCK_AUDIT_LOGS);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedLog, setSelectedLog] = useState<any>(null);
+  const [forensicReport, setForensicReport] = useState<any>(null);
   
   const { emitEvent } = useKernel();
   const { toast } = useToast();
@@ -71,6 +80,24 @@ export default function SAMReaderPage() {
     }, 2000);
   };
 
+  const handleRunForensicAI = async () => {
+    setIsAnalyzing(true);
+    emitEvent('SECURITY', 'AI_FORENSIC_PATTERN_ANALYSIS', 2, { scope: 'HISTORICAL_6M' });
+    
+    try {
+      const result = await analyzeForensicHistory({
+        logs: logs,
+        query: "Find any security patterns related to Node-04 and HMAC failures."
+      });
+      setForensicReport(result);
+      toast({ title: "Forensic Analysis Complete", description: "AI detected 1 recurring pattern." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "AI Analysis Failed" });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       <AppSidebar />
@@ -84,9 +111,16 @@ export default function SAMReaderPage() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-             <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
-                TRACING_NODE: NODE-04-UK
-             </Badge>
+             <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-primary/30 text-primary font-bold text-[10px] h-8 px-4 blue-glow"
+                onClick={handleRunForensicAI}
+                disabled={isAnalyzing}
+             >
+                {isAnalyzing ? <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <BrainCircuit className="h-3.5 w-3.5 mr-1.5" />}
+                Run AI Forensics
+             </Button>
              <Button size="sm" onClick={handleSync} disabled={isSyncing} className="cyan-glow bg-accent text-background font-bold text-[10px] h-8 px-4">
                 {isSyncing ? <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Radar className="h-3.5 w-3.5 mr-1.5" />}
                 Scan Mesh
@@ -95,6 +129,43 @@ export default function SAMReaderPage() {
         </header>
 
         <main className="flex-1 p-8 max-w-[1600px] mx-auto w-full space-y-8">
+          {/* Proactive AI Insight Banner */}
+          {forensicReport && (
+            <Card className="glass-panel border-l-4 border-l-primary bg-primary/5 animate-fade-in overflow-hidden relative">
+               <div className="absolute top-0 right-0 p-4 opacity-5"><Sparkles className="h-20 w-20 text-white" /></div>
+               <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                     <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/20 text-primary">
+                           <ShieldAlert className="h-5 w-5" />
+                        </div>
+                        <div>
+                           <CardTitle className="text-lg font-headline italic uppercase tracking-tighter text-white">AI Pattern Detection: High Risk Alert</CardTitle>
+                           <p className="text-[10px] uppercase font-bold text-primary mt-0.5">MESH_HEALTH_INDEX: {forensicReport.healthIndex}%</p>
+                        </div>
+                     </div>
+                     <Badge variant="outline" className="border-red-500/30 text-red-400 font-mono">DRIFT_DETECTED</Badge>
+                  </div>
+               </CardHeader>
+               <CardContent className="space-y-4">
+                  <p className="text-sm text-white/80 leading-relaxed italic border-l-2 border-primary/30 pl-4">
+                     "{forensicReport.summary}"
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     {forensicReport.detectedPatterns.map((p: any, i: number) => (
+                        <div key={i} className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-2">
+                           <div className="flex justify-between">
+                              <span className="text-[9px] font-bold text-muted-foreground uppercase">{p.pattern}</span>
+                              <Badge className="text-[8px] bg-red-500/20 text-red-400 uppercase">{p.riskLevel}</Badge>
+                           </div>
+                           <p className="text-[11px] text-white/90">{p.recommendation}</p>
+                        </div>
+                     ))}
+                  </div>
+               </CardContent>
+            </Card>
+          )}
+
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
             <div className="space-y-2">
               <h2 className="text-3xl font-headline font-bold tracking-tighter uppercase italic">Forensic <span className="text-accent">Audit Logs</span></h2>
