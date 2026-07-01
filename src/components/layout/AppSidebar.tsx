@@ -35,7 +35,8 @@ import {
   BrainCircuit,
   FileSearch,
   Smartphone,
-  MessageSquare
+  MessageSquare,
+  ArrowRightLeft
 } from "lucide-react";
 import {
   Sidebar,
@@ -75,16 +76,16 @@ const civicNav = [
 
 const financialNav = [
   { icon: DollarSign, label: "Fiscal Command", href: "/finance" },
+  { icon: ArrowRightLeft, label: "Remit Corridor", href: "/corridor" },
   { icon: Scale, label: "P45: Eco Governance", href: "/economy" },
-  { icon: Gavel, label: "Compliance & KYB", href: "/compliance" },
   { icon: Activity, label: "Revenue Ops", href: "/revenue" },
 ];
 
 const projectNav = [
   { icon: Milestone, label: "System Roadmap", href: "/roadmap" },
+  { icon: ShieldCheck, label: "Verification Center", href: "/profile" },
   { icon: ShieldCheck, label: "Shurukkha Standard", href: "/shurukkha-standard" },
   { icon: Braces, label: "P43: Syntax Architect", href: "/syntax" },
-  { icon: Database, label: "P44: Data Enrichment", href: "/enrichment" },
 ];
 
 const securityNav = [
@@ -136,7 +137,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="border-r border-border/50 shadow-2xl">
-      <SidebarHeader className="p-6 flex flex-row items-center justify-between">
+      <SidebarHeader className="p-6 flex flex-row items-center justify-between border-b border-white/5 bg-background/50">
         <Link href="/" className="flex items-center gap-2 group">
           <Logo size="sm" className="transition-transform group-hover:scale-110" />
           <span className="font-headline font-bold text-xl tracking-tight text-white uppercase italic">Sovereign</span>
@@ -171,7 +172,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {projectNav.map((item) => (
-                <SidebarMenuItem key={item.href}>
+                <SidebarMenuItem key={item.label + item.href}>
                   <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
                     <Link 
                       href={item.href} 
@@ -189,10 +190,10 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="uppercase tracking-widest text-[10px] font-bold opacity-50">Civic Intelligence</SidebarGroupLabel>
+          <SidebarGroupLabel className="uppercase tracking-widest text-[10px] font-bold opacity-50">Financial Sovereign</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {civicNav.map((item) => (
+              {financialNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
                     <Link 
@@ -211,10 +212,10 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="uppercase tracking-widest text-[10px] font-bold opacity-50">Financial Sovereign</SidebarGroupLabel>
+          <SidebarGroupLabel className="uppercase tracking-widest text-[10px] font-bold opacity-50">Civic Intelligence</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {financialNav.map((item) => (
+              {civicNav.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={item.label}>
                     <Link 
