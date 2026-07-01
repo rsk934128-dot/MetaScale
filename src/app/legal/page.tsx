@@ -26,7 +26,8 @@ import {
   Shield,
   UserCheck,
   Table as TableIcon,
-  Mail
+  Mail,
+  CheckCircle2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -110,10 +111,36 @@ export default function LegalBoundPage() {
             </p>
           </div>
 
+          {/* Rebranding Notice */}
+          <div className="p-5 rounded-2xl bg-accent/5 border border-accent/20 relative overflow-hidden animate-fade-in shadow-2xl">
+             <div className="absolute top-0 right-0 p-4 opacity-10">
+                <RefreshCw className="h-20 w-20 text-accent" />
+             </div>
+             <div className="flex items-start gap-5 relative z-10">
+                <div className="p-3 rounded-xl bg-accent/20 border border-accent/30 text-accent shrink-0">
+                   <Info className="h-6 w-6" />
+                </div>
+                <div className="space-y-2">
+                   <h4 className="text-lg font-headline font-bold text-white uppercase italic tracking-tighter">System Notice: TON Wallet is now DeFi Account</h4>
+                   <p className="text-sm text-muted-foreground leading-relaxed italic">
+                      We've renamed TON Wallet to better separate two products inside one Wallet app: the custodial Crypto Wallet and the self-custodial <span className="text-accent font-bold">DeFi Account</span> for more advanced interaction with the TON ecosystem.
+                   </p>
+                   <div className="flex flex-wrap items-center gap-4 pt-2">
+                      <div className="flex items-center gap-2 text-green-400 text-[10px] font-bold uppercase tracking-widest">
+                         <CheckCircle2 className="h-4 w-4" /> No Action Required
+                      </div>
+                      <p className="text-[10px] text-white/40 uppercase tracking-widest">
+                         Assets, Keys, and History Unchanged.
+                      </p>
+                   </div>
+                </div>
+             </div>
+          </div>
+
           <Tabs defaultValue="terms" className="space-y-8">
             <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1 w-full md:w-auto">
-              <TabsTrigger value="terms" className="flex-1 md:flex-none text-[10px] uppercase font-bold tracking-widest px-8">Terms of Use</TabsTrigger>
-              <TabsTrigger value="privacy" className="flex-1 md:flex-none text-[10px] uppercase font-bold tracking-widest px-8">Privacy Policy</TabsTrigger>
+              <TabsTrigger value="terms" className="flex-1 md:flex-none text-[10px] uppercase font-bold tracking-widest px-8 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Terms of Use</TabsTrigger>
+              <TabsTrigger value="privacy" className="flex-1 md:flex-none text-[10px] uppercase font-bold tracking-widest px-8 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Privacy Policy</TabsTrigger>
             </TabsList>
 
             <TabsContent value="terms" className="space-y-12 animate-fade-in">
@@ -156,7 +183,7 @@ export default function LegalBoundPage() {
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
                     <p>
-                      DeFi Account is a self-custody solution. It is an interface that enables users to interact with The Open Network blockchain (“TON Blockchain”). DeFi Account does not own, control, or operate the blockchain.
+                      <span className="text-white font-bold">DeFi Account</span> is a self-custody solution supported by TON Space Ltd. It is an interface that enables users to interact with The Open Network blockchain (“TON Blockchain”). DeFi Account does not own, control, or operate the blockchain.
                     </p>
                     <div className="space-y-2">
                       <p className="font-bold text-white/80">Eligibility:</p>
@@ -209,7 +236,7 @@ export default function LegalBoundPage() {
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
                     <p>
-                      You are solely responsible for configuring and using DeFi Account securely. This includes protecting your Recovery Phrase and Passcode.
+                      You are solely responsible for configuring and using <span className="text-white font-bold">DeFi Account</span> securely. This includes protecting your Recovery Phrase and Passcode.
                     </p>
                     <ul className="list-disc pl-6 space-y-2 text-[12px]">
                       <li>Maintain up-to-date software.</li>
@@ -232,9 +259,9 @@ export default function LegalBoundPage() {
                       </div>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
+                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-6 pb-6 px-4">
                     <p>
-                      DeFi Account is a non-custodial wallet. We do not store, retain, or have access to your private keys.
+                      <span className="text-white font-bold">DeFi Account</span> is a non-custodial wallet. We do not store, retain, or have access to your private keys.
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                       <div className="p-3 rounded-lg bg-white/5 border border-white/10">
@@ -263,7 +290,7 @@ export default function LegalBoundPage() {
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
                     <p>
-                      We provide access to Third-Party Utilities like Omniston, Getgems, and various Earn Interfaces (TON, USDe, Gold, ETH, BTC, USDT).
+                      We provide access to Third-Party Utilities like Omniston, Getgems, and various Earn Interfaces.
                     </p>
                     <div className="p-3 rounded bg-purple-500/5 border border-purple-500/10 text-[11px] italic">
                       Transactions occur directly between you and the third-party protocol via smart contracts. We do not take custody of your assets.
@@ -285,7 +312,7 @@ export default function LegalBoundPage() {
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
                     <p>
-                      DeFi Account is provided on an “as is” basis. Total aggregate liability is limited to the amount paid in the last 12 months or $5,000.
+                      <span className="text-white font-bold">DeFi Account</span> is provided on an “as is” basis. Total aggregate liability is limited to $5,000.
                     </p>
                     <div className="p-4 rounded-lg bg-black/40 border border-white/5 font-mono text-[10px] space-y-2">
                       <p className="text-primary uppercase font-bold">Class Action Waiver:</p>
@@ -358,7 +385,7 @@ export default function LegalBoundPage() {
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-6 pb-6 px-4">
                     <p>
-                      DeFi Account is a non-custodial wallet. We do not collect private keys or wallet seeds. We will never request these.
+                      <span className="text-white font-bold">DeFi Account</span> is a non-custodial wallet. We do not collect private keys or wallet seeds. We will never request these.
                     </p>
                     
                     <div className="space-y-4">
@@ -391,10 +418,6 @@ export default function LegalBoundPage() {
                         ))}
                       </div>
                     </div>
-
-                    <p className="text-[12px] p-3 rounded bg-accent/5 border border-accent/10">
-                      We do not collect biometric data. If enabled, it is stored locally on your device by the OS provider.
-                    </p>
                   </AccordionContent>
                 </AccordionItem>
 
@@ -425,86 +448,6 @@ export default function LegalBoundPage() {
                         </div>
                       ))}
                     </div>
-                    <p className="text-xs mt-4">To exercise these rights, contact us via @wallet_supportbot.</p>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="privacy-3" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
-                  <AccordionTrigger className="hover:no-underline py-6">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-primary">
-                        <Globe className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">3. Disclosure & Transfers</p>
-                        <p className="text-xs text-muted-foreground">Third parties and cross-border data</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
-                    <p>
-                      We share technical info with service providers for maintenance and security. Limited info (wallet address, IP) is shared with Third-Party Utility providers you explicitly request.
-                    </p>
-                    <div className="p-3 rounded bg-primary/5 border border-primary/20">
-                      <p className="font-bold text-white/80 uppercase text-[10px] mb-2 tracking-widest">Cross-border Transfers</p>
-                      <p className="text-[11px] leading-relaxed">
-                        Your Information may be processed in countries other than your own. We implement contractual safeguards to ensure a level of protection consistent with legal standards.
-                      </p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="privacy-4" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
-                  <AccordionTrigger className="hover:no-underline py-6">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-accent/10 border border-accent/20 text-accent">
-                        <ShieldCheck className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">4. Protection & Retention</p>
-                        <p className="text-xs text-muted-foreground">Security measures and data persistence</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
-                    <p>
-                      We implement technical and organizational measures (encryption, access controls) to protect your info.
-                    </p>
-                    <div className="p-4 rounded-xl bg-black/40 border border-white/5 flex gap-4">
-                      <div className="p-2 rounded-lg bg-accent/20 h-fit"><History className="h-5 w-5 text-accent" /></div>
-                      <div className="space-y-1">
-                        <p className="font-bold text-white/90 uppercase text-[10px]">Data Persistence</p>
-                        <p className="text-[11px] italic">
-                          "Due to the immutable nature of blockchain, wallet addresses and transaction history cannot be deleted or modified."
-                        </p>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="privacy-5" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
-                  <AccordionTrigger className="hover:no-underline py-6">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-red-400/10 border border-red-400/20 text-red-400">
-                        <Mail className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">5. Contact & Updates</p>
-                        <p className="text-xs text-muted-foreground">Contact bot and policy revisions</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
-                    <p>
-                      DeFi Account is not directed to individuals under 13. We do not knowingly process Personal Information of children.
-                    </p>
-                    <div className="p-4 rounded-xl bg-secondary/30 border border-white/5 space-y-2">
-                      <p className="font-bold text-white/80">How to Contact Us</p>
-                      <p className="text-[11px]">Via @wallet_supportbot for data processing issues or exercising rights.</p>
-                    </div>
-                    <p className="text-[11px] italic text-muted-foreground">
-                      We may update this policy periodically. Material changes will be notified via in-app notices or email.
-                    </p>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
@@ -519,7 +462,7 @@ export default function LegalBoundPage() {
                   Identity Re-Verification Required
                 </h4>
                 <p className="text-xs text-muted-foreground">
-                  Your legal binding status expires in 24 hours. A fresh cryptographic handshake is necessary to maintain mesh access.
+                  Your legal binding status expires periodically. A fresh cryptographic handshake is necessary to maintain mesh access.
                 </p>
               </div>
               <Button 
