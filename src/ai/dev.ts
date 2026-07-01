@@ -23,3 +23,4 @@ import '@/ai/flows/ai-syntax-architect.ts';
 import '@/ai/flows/liquidity-drift-analysis.ts';
 import '@/ai/flows/p2p-market-analyst.ts';
 import '@/ai/flows/forensic-audit-analyst.ts';
+import '@/ai/flows/daily-integrity-report-flow.ts';

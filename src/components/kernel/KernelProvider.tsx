@@ -10,13 +10,16 @@ import { collection, doc, setDoc, query, orderBy, limit, addDoc, getDoc, updateD
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { sendTelegramMessage } from '@/lib/telegram';
+import { generateDailyPulse } from '@/ai/flows/daily-integrity-report-flow';
 
 interface KernelContextType extends KernelState {
   emitEvent: (plane: PlaneType, type: string, priority: number, payload: any) => void;
   setSystemMode: (mode: SystemMode) => void;
   processNextEvent: () => void;
   rollbackEvent: (eventId: string) => void;
+  startAutonomousWorker: () => void;
   heartbeat: HeartbeatStatus[];
+  isAutonomousActive: boolean;
 }
 
 const KernelContext = createContext<KernelContextType | undefined>(undefined);
@@ -40,6 +43,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
 
   const [localMode, setLocalMode] = useState<SystemMode>('NORMAL');
   const [uptime, setUptime] = useState(0);
+  const [isAutonomousActive, setIsAutonomousActive] = useState(false);
   const [heartbeat, setHeartbeat] = useState<HeartbeatStatus[]>([
     { nodeId: 'NODE-04-UK', latency: 8, status: 'ONLINE', lastCheck: Date.now() },
     { nodeId: 'NODE-22-ASIA', latency: 42, status: 'ONLINE', lastCheck: Date.now() },
@@ -71,9 +75,15 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
           return { ...node, latency: Number(newLatency.toFixed(2)), status: newStatus, lastCheck: Date.now() };
         }));
       }
+
+      // Autonomous Cycle Simulation
+      if (isAutonomousActive && uptime % 60 === 0) {
+        // Discovery Phase every minute in prototype
+        emitEvent('INFRA', 'AUTONOMOUS_DISCOVERY_SCAN', 4, { mode: 'ACTIVE', results: 'Scanning for endpoints...' });
+      }
     }, 1000);
     return () => clearInterval(timer);
-  }, [uptime]);
+  }, [uptime, isAutonomousActive]);
 
   const emitEvent = useCallback(async (plane: PlaneType, type: string, priority: number, payload: any) => {
     const systemSeal = generateSystemSeal();
@@ -106,7 +116,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
           const userSnap = await getDoc(userRef);
           const userData = userSnap.data();
 
-          if (resolvedPriority <= 2 || type.includes('EMERGENCY') || type.includes('FAILED') || type.includes('WARNING')) {
+          if (resolvedPriority <= 2 || type.includes('EMERGENCY') || type.includes('FAILED') || type.includes('WARNING') || type === 'DAILY_INTEGRITY_PULSE') {
             const notifRef = collection(firestore, 'users', user.uid, 'notifications');
             const notification = {
               id: systemSeal,
@@ -119,8 +129,12 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
             addDoc(notifRef, notification);
 
             if (userData?.telegramLinked && userData?.telegramChatId) {
-              const alertEmoji = resolvedPriority === 1 ? "🚨" : "⚠️";
-              const text = `<b>${alertEmoji} KERNEL ALERT</b>\n\n<b>Type:</b> ${type}\n<b>Plane:</b> ${plane}\n<b>Priority:</b> ${resolvedPriority}\n<b>Seal:</b> <code>${systemSeal}</code>\n\n<b>Payload:</b> <code>${JSON.stringify(payload)}</code>\n\n<i>System Mode: ${localMode}</i>`;
+              // For daily pulse, we send the formatted text instead of JSON
+              const alertEmoji = resolvedPriority === 1 ? "🚨" : "📊";
+              const header = type === 'DAILY_INTEGRITY_PULSE' ? '' : `<b>${alertEmoji} KERNEL ALERT</b>\n\n<b>Type:</b> ${type}\n<b>Plane:</b> ${plane}\n\n`;
+              const content = type === 'DAILY_INTEGRITY_PULSE' ? payload.report : `<b>Payload:</b> <code>${JSON.stringify(payload)}</code>`;
+              
+              const text = `${header}${content}`;
               await sendTelegramMessage(userData.telegramChatId, text);
             }
           }
@@ -130,7 +144,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    if (priority <= 2 || type.includes('PAYOUT') || type.includes('HEARTBEAT')) {
+    if (priority <= 2 || type.includes('PAYOUT') || type.includes('HEARTBEAT') || type === 'DAILY_INTEGRITY_PULSE') {
       toast({
         title: `Kernel Event: ${type}`,
         description: `Source: ${plane} | Seal: ${systemSeal}`,
@@ -138,6 +152,11 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
       });
     }
   }, [firestore, localMode, toast, user?.uid]);
+
+  const startAutonomousWorker = useCallback(() => {
+    setIsAutonomousActive(true);
+    emitEvent('INFRA', 'AUTONOMOUS_WORKER_INITIALIZED', 2, { status: 'STARTED', cycle: '24H_ACTIVE' });
+  }, [emitEvent]);
 
   const setSystemMode = useCallback((newMode: SystemMode) => {
     if (localMode === newMode) return;
@@ -183,7 +202,9 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     setSystemMode,
     processNextEvent,
     rollbackEvent,
-    heartbeat
+    startAutonomousWorker,
+    heartbeat,
+    isAutonomousActive
   };
 
   return (

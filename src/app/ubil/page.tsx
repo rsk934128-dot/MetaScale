@@ -37,7 +37,10 @@ import {
   Radar,
   ShieldHalf,
   Wifi,
-  CloudLightning
+  CloudLightning,
+  Rocket,
+  Clock,
+  Send
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,16 +53,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { createYapilyConsent } from "@/ai/flows/yapily-banking-flow";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { Progress } from "@/components/ui/progress";
+import { generateDailyPulse } from "@/ai/flows/daily-integrity-report-flow";
 
 export default function UBILMainframePage() {
-  const { heartbeat, emitEvent } = useKernel();
+  const { heartbeat, emitEvent, startAutonomousWorker, isAutonomousActive } = useKernel();
   const [search, setSearch] = useState("");
-  const [isSimulating, setIsSimulating] = useState(false);
   const [isTestRunning, setIsTestRunning] = useState(false);
   const [isHealthChecking, setIsHealthChecking] = useState(false);
   const [isVerifyingAmex, setIsVerifyingAmex] = useState(false);
   const [showIntegrityReport, setShowIntegrityReport] = useState(false);
-  const [isSignatureValid, setIsSignatureValid] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([
     "UBIL Core: Mainframe Terminal ACTIVE, listening...",
@@ -89,6 +91,28 @@ export default function UBILMainframePage() {
 
   const { data: remoteEvents, loading } = useCollection<any>(eventsQuery);
 
+  const handleStartAutonomous = () => {
+    startAutonomousWorker();
+    setLogs(prev => [`$ nn-cli --start-autonomous --cycle=24H`, `> Autonomous Sovereign Worker Started...`, ...prev]);
+    toast({ title: "Autonomous Engine Active", description: "Discovery & Heartbeat loops initialized." });
+  };
+
+  const handleManualPulse = async () => {
+    setLogs(prev => [`$ nn-cli --generate-report --scope=DAILY`, `> Synthesizing Daily Integrity Pulse...`, ...prev]);
+    try {
+        const report = await generateDailyPulse({
+            activeNodes: 42,
+            newConnections: 12,
+            totalTransactions: 1450,
+            yieldRecycled: 42.5
+        });
+        emitEvent('FINANCE', 'DAILY_INTEGRITY_PULSE', 2, { report });
+        toast({ title: "Pulse Dispatched", description: "Daily report sent to Telegram Gateway." });
+    } catch (e) {
+        toast({ variant: "destructive", title: "Report Failed" });
+    }
+  };
+
   const runGlobalHealthCheck = async () => {
     setIsHealthChecking(true);
     setLogs(prev => [`$ nn-cli --health-check --all-planes`, ...prev]);
@@ -110,84 +134,6 @@ export default function UBILMainframePage() {
 
     setIsHealthChecking(false);
     toast({ title: "Global Health Check PASSED" });
-  };
-
-  const handleAmexVerify = async () => {
-    setIsVerifyingAmex(true);
-    setLogs(prev => [`$ nn-cli --node-verify amex-ob_uk --status`, ...prev]);
-    
-    setTimeout(async () => {
-      const recordId = `LOG_AMEX_UK_2026_06_30_001`;
-      setLogs(prev => [`> Status: ACTIVE_READY (Verified by NoorNexus Kernel)`, ...prev]);
-      
-      const record = {
-        id: recordId,
-        type: 'NODE_VERIFICATION',
-        senderBank: 'American Express UK',
-        status: 'SUCCESS',
-        integrationPath: 'DIRECT_API',
-        routingReason: 'Amex UK node verified for PIS/AIS operations.',
-        handshakeStatus: 'ACTIVE_READY',
-        timestamp: Date.now(),
-        isPermanentRecord: true,
-        securitySignature: 'SHA-256: 8f2e9c...8e',
-      };
-      
-      if (firestore) {
-        await setDoc(doc(firestore, 'ubil_events', recordId), record);
-      }
-
-      setIsVerifyingAmex(false);
-      toast({ title: "Amex UK Node Verified" });
-    }, 1200);
-  };
-
-  const runTestTriggerScript = async () => {
-    setIsTestRunning(true);
-    setShowIntegrityReport(false);
-    setLogs(prev => [`> Starting Sequential Routing Stress Test...`, ...prev]);
-    
-    const testRequests = [
-        { type: "single_payment", desc: "Small Payout" },
-        { type: "bulk_payment", desc: "Corporate Salary" },
-        { type: "international_transfer", desc: "SWIFT Wire Simulation" },
-        { type: "custom_ui_required", desc: "Amex Priority Link", institutionId: 'amex-ob_uk' }
-    ];
-
-    for (let i = 0; i < testRequests.length; i++) {
-        const req = testRequests[i];
-        const eventId = `STRESS_TEST_${i+1}`;
-        
-        const response = await createYapilyConsent({
-            institutionId: req.institutionId || 'barclays',
-            callbackUrl: 'https://noornexus.com/callback',
-            scope: 'PIS',
-            userId: 'user_tester_01',
-            requestType: req.type as any
-        });
-
-        const eventData = {
-            id: eventId,
-            type: req.type.toUpperCase(),
-            senderBank: req.institutionId === 'amex-ob_uk' ? 'Amex UK' : 'Yapily Node',
-            status: 'SUCCESS',
-            integrationPath: response.integrationPath,
-            routingReason: response.routingReason,
-            timestamp: Date.now(),
-        };
-
-        if (firestore) {
-            await setDoc(doc(firestore, 'ubil_events', eventId), eventData);
-        }
-
-        setLogs(prev => [`> Request ${i+1}: Routed to ${response.integrationPath} [${req.desc}]`, ...prev]);
-        await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-    setIsTestRunning(false);
-    setShowIntegrityReport(true);
-    setLogs(prev => [`> Project 42-45 Integrity Report: 100% SUCCESS ARCHIVED.`, ...prev]);
-    toast({ title: "Test Trigger Script Complete" });
   };
 
   const filteredEvents = useMemo(() => {
@@ -214,39 +160,46 @@ export default function UBILMainframePage() {
              <Button 
                 variant="outline" 
                 size="sm" 
-                className="border-green-500/30 text-green-400 font-bold text-[10px] h-8 hidden md:flex"
-                onClick={runGlobalHealthCheck}
-                disabled={isHealthChecking}
+                className={cn(
+                    "border-accent/30 text-accent font-bold text-[10px] h-8",
+                    isAutonomousActive && "border-green-500 text-green-400 bg-green-500/5 animate-pulse"
+                )}
+                onClick={handleStartAutonomous}
+                disabled={isAutonomousActive}
              >
-                {isHealthChecking ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <ShieldHalf className="mr-2 h-3 w-3" />}
-                Global Health Check
+                <Rocket className="mr-2 h-3.5 w-3.5" />
+                {isAutonomousActive ? "Engine Active" : "Activate Autonomous Engine"}
              </Button>
              <Button 
                 variant="outline" 
                 size="sm" 
-                className="border-accent/30 text-accent font-bold text-[10px] h-8"
-                onClick={handleAmexVerify}
-                disabled={isVerifyingAmex}
+                className="border-primary/30 text-primary font-bold text-[10px] h-8 hidden md:flex"
+                onClick={handleManualPulse}
              >
-                {isVerifyingAmex ? <RefreshCw className="mr-2 h-3 w-3 animate-spin" /> : <ShieldCheck className="mr-2 h-3 w-3" />}
-                Verify Amex Node
-             </Button>
-             <Button 
-                size="sm" 
-                className="bg-primary hover:bg-primary/90 text-white font-bold text-[10px] h-8 px-4"
-                onClick={runTestTriggerScript}
-                disabled={isTestRunning}
-             >
-                {isTestRunning ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-                Run Stress Test
+                <Send className="mr-2 h-3.5 w-3.5" />
+                Generate Pulse
              </Button>
           </div>
         </header>
 
         <main className="flex-1 p-6 max-w-[1600px] mx-auto w-full space-y-6">
-          {/* Heartbeat Monitor Strip */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-             {heartbeat.map((node) => (
+          {/* Autonomous Status Strip */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+             <Card className="glass-panel border-l-4 border-l-accent overflow-hidden">
+                <CardContent className="p-4 flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-accent/10 text-accent">
+                         <Clock className="h-4 w-4" />
+                      </div>
+                      <div>
+                         <p className="text-[10px] font-bold text-white uppercase tracking-widest">Autonomous Cycle</p>
+                         <p className="text-[9px] text-muted-foreground uppercase">{isAutonomousActive ? "24H ACTIVE" : "IDLE"}</p>
+                      </div>
+                   </div>
+                   {isAutonomousActive && <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-ping" />}
+                </CardContent>
+             </Card>
+             {heartbeat.slice(0, 3).map((node) => (
                <Card key={node.nodeId} className="glass-panel border-l-4 border-l-accent overflow-hidden">
                   <CardContent className="p-4 flex items-center justify-between">
                      <div className="flex items-center gap-3">
@@ -262,60 +215,25 @@ export default function UBILMainframePage() {
                            <p className="text-[9px] text-muted-foreground uppercase">{node.status} • {node.latency}ms</p>
                         </div>
                      </div>
-                     <Wifi className={cn("h-4 w-4", node.status === 'ONLINE' ? "text-green-500" : "text-yellow-500")} />
                   </CardContent>
                </Card>
              ))}
           </div>
 
-          {showIntegrityReport && (
-            <Card className="glass-panel border-l-4 border-l-green-500 bg-green-500/5 animate-fade-in mb-6 overflow-hidden">
-               <div className="absolute top-0 right-0 p-4 opacity-10"><Award className="h-20 w-20 text-green-400" /></div>
-               <CardHeader className="p-6">
-                  <div className="flex items-center gap-4">
-                     <div className="p-3 rounded-2xl bg-green-500/20 text-green-400 cyan-glow">
-                        <ShieldCheck className="h-8 w-8" />
-                     </div>
-                     <div>
-                        <CardTitle className="text-xl font-headline italic uppercase tracking-tighter text-white">Full Grid Integrity Report (P42-P45)</CardTitle>
-                        <p className="text-[10px] uppercase font-bold tracking-[0.4em] text-green-500 mt-1">DETERMINISTIC_FINALITY: ACHIEVED</p>
-                     </div>
-                  </div>
-               </CardHeader>
-               <CardContent className="px-6 pb-6">
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                     {[
-                        { label: "Success Rate", val: "100%", icon: CheckCircle2 },
-                        { label: "Avg Latency", val: "27.5ms", icon: Zap },
-                        { label: "Eco Governance", val: "ACTIVE", icon: ShieldHalf },
-                        { label: "Nodes Sync", val: "14,200", icon: Globe },
-                        { label: "Sovereignty", val: "MIL-SPEC", icon: ShieldCheck }
-                     ].map((s, i) => (
-                        <div key={i} className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1 group hover:border-green-500/30 transition-all">
-                           <p className="text-[9px] uppercase font-bold text-muted-foreground flex items-center gap-2">
-                              <s.icon className="h-3 w-3 text-green-500/50" /> {s.label}
-                           </p>
-                           <p className="text-xl font-headline font-bold text-white">{s.val}</p>
-                        </div>
-                     ))}
-                  </div>
-               </CardContent>
-            </Card>
-          )}
-
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-4 space-y-6">
-              <Card className="glass-panel border-accent/20 bg-accent/5 h-fit">
-                  <CardHeader className="p-4 border-b border-white/5">
+              <Card className="glass-panel border-accent/20 bg-accent/5 h-fit shadow-2xl">
+                  <CardHeader className="p-4 border-b border-white/5 flex flex-row items-center justify-between">
                   <CardTitle className="text-xs uppercase flex items-center gap-2">
                       <Terminal className="h-4 w-4 text-accent" />
-                      Mainframe Console
+                      Autonomous Console
                   </CardTitle>
+                  <Badge variant="outline" className="text-[8px] font-mono border-accent/30 text-accent">P45_AUTONOMOUS</Badge>
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="p-4 bg-black/60 font-mono text-[10px] space-y-2 h-[450px] overflow-y-auto scrollbar-hide">
                        <p className="text-accent uppercase font-bold sticky top-0 bg-black/60 pb-1 flex items-center gap-2 border-b border-white/5 mb-3">
-                          <Activity className="h-3 w-3" /> CORE_EXECUTION_PULSE:
+                          <Activity className="h-3 w-3" /> SYSTEM_WORKER_LOGS:
                        </p>
                        {logs.map((log, i) => (
                          <p key={i} className={cn(
@@ -335,20 +253,25 @@ export default function UBILMainframePage() {
               <Card className="glass-panel border-white/5 bg-secondary/10">
                  <CardHeader className="p-4">
                     <CardTitle className="text-xs uppercase flex items-center gap-2">
-                       <Radar className="h-4 w-4 text-primary" /> Proactive Monitoring
+                       <Radar className="h-4 w-4 text-primary" /> Daily Integrity Routine
                     </CardTitle>
                  </CardHeader>
                  <CardContent className="p-4 pt-0 space-y-4">
-                    <div className="space-y-2">
-                       <div className="flex justify-between text-[9px] font-bold uppercase">
-                          <span>Mesh Health</span>
-                          <span className="text-accent">98.4%</span>
-                       </div>
-                       <Progress value={98.4} className="h-1 bg-white/5 [&>div]:bg-accent" />
+                    <div className="space-y-3">
+                       {[
+                         { time: "00:00 - 06:00", label: "Discovery Scan", status: "READY" },
+                         { time: "24/7", label: "Heartbeat Monitor", status: "ACTIVE" },
+                         { time: "23:59", label: "Integrity Pulse", status: "SCHEDULED" }
+                       ].map((r, i) => (
+                         <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-black/40 border border-white/5">
+                            <div>
+                               <p className="text-[9px] font-bold text-white/70 uppercase">{r.label}</p>
+                               <p className="text-[8px] text-muted-foreground">{r.time}</p>
+                            </div>
+                            <Badge variant="ghost" className="text-[8px] font-mono text-accent">{r.status}</Badge>
+                         </div>
+                       ))}
                     </div>
-                    <p className="text-[9px] text-muted-foreground italic leading-relaxed">
-                       "Heartbeat worker is probing all core corridors every 30s. Anycast failover is ARMED."
-                    </p>
                  </CardContent>
               </Card>
             </div>
@@ -359,7 +282,7 @@ export default function UBILMainframePage() {
                   <div>
                     <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
                       <Database className="h-4 w-4 text-accent" />
-                      Forensic Audit Ledger
+                      Live Audit Ledger
                     </CardTitle>
                     <CardDescription className="text-[10px]">Deterministic synchronization with Sovereign L0 Nodes</CardDescription>
                   </div>
@@ -453,21 +376,6 @@ export default function UBILMainframePage() {
             </div>
           </div>
         </main>
-        
-        <footer className="p-4 border-t bg-secondary/5 text-center flex items-center justify-center gap-6">
-           <Badge variant="ghost" className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground/30 italic">
-              Project 42: Bank Connectivity
-           </Badge>
-           <Badge variant="ghost" className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground/30 italic">
-              Project 43: AI Syntax Architect
-           </Badge>
-           <Badge variant="ghost" className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground/30 italic">
-              Project 44: Data Enrichment
-           </Badge>
-           <Badge variant="ghost" className="text-[9px] font-bold uppercase tracking-[0.4em] text-muted-foreground/30 italic">
-              Project 45: Eco Governance
-           </Badge>
-        </footer>
       </SidebarInset>
     </div>
   );
