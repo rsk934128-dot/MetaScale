@@ -7,7 +7,9 @@ import {
   runTransaction, 
   serverTimestamp, 
   increment,
-  getDoc
+  getDoc,
+  collection,
+  addDoc
 } from 'firebase/firestore';
 import { NormalizedPaymentEvent, InboundPaymentDoc, PaymentStatus, SettlementBucket } from '@/lib/payments/types';
 
@@ -145,10 +147,6 @@ export async function reconcileAndSettleLink(
     };
 
     // 3. Trigger Credit Service inside transaction
-    // Note: We'll use a nested pattern or simple update if within transaction
-    // But since processPaymentCredit uses its own transaction, we'll return
-    // the instruction to credit after this link check passes.
-    
     transaction.update(linkRef, {
       status: 'PAID',
       paidAt: timestamp,
@@ -173,5 +171,53 @@ export async function reconcileAndSettleLink(
       status: 'READY_FOR_CREDIT', 
       normalizedEvent 
     };
+  });
+}
+
+/**
+ * Phase 3.0: Autonomous Yield Recycler
+ * Deducts fee and recycles 42.5% of it into the Global Mesh Pool.
+ */
+export async function executeYieldRecycle(
+  firestore: Firestore,
+  amount: number,
+  userId: string
+) {
+  const feeRate = 0.035; // 3.5%
+  const recycleRate = 0.425; // 42.5%
+  const totalFee = amount * feeRate;
+  const recycleAmount = totalFee * recycleRate;
+  const timestamp = Date.now();
+
+  return await runTransaction(firestore, async (transaction) => {
+    // 1. Global Pool Reference
+    const poolRef = doc(firestore, 'infra', 'liquidity_pool');
+    const poolSnap = await transaction.get(poolRef);
+    
+    if (!poolSnap.exists()) {
+      transaction.set(poolRef, { balance: recycleAmount, lastRefill: timestamp });
+    } else {
+      transaction.update(poolRef, { 
+        balance: increment(recycleAmount),
+        lastRefill: timestamp
+      });
+    }
+
+    // 2. Audit Log
+    const logRef = collection(firestore, 'events');
+    await addDoc(logRef, {
+      type: 'AUTO_YIELD_RECYCLED',
+      plane: 'FINANCE',
+      status: 'COMPLETED',
+      payload: { 
+        sourceTxnAmount: amount, 
+        feeTaken: totalFee, 
+        recycledToMesh: recycleAmount 
+      },
+      timestamp: timestamp,
+      userId: userId
+    });
+
+    return { status: 'SUCCESS', recycled: recycleAmount };
   });
 }

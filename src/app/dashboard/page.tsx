@@ -27,7 +27,8 @@ import {
   ShieldCheck,
   Server,
   ChevronRight,
-  CreditCard
+  CreditCard,
+  Scale
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -41,7 +42,7 @@ import { useFirestore, useCollection } from "@/firebase";
 import { collection, query, orderBy, limit } from "firebase/firestore";
 
 export default function SovereignControlPlane() {
-  const { mode, setSystemMode, events, emitEvent, processNextEvent } = useKernel();
+  const { mode, setSystemMode, events, emitEvent, processNextEvent, isAutonomousActive } = useKernel();
   const [isSyncing, setIsSyncing] = useState(false);
   const firestore = useFirestore();
 
@@ -77,6 +78,11 @@ export default function SovereignControlPlane() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            {isAutonomousActive && (
+               <Badge variant="outline" className="hidden sm:flex border-green-500/20 text-green-400 text-[8px] font-mono animate-pulse">
+                  <Scale className="mr-1 h-3 w-3" /> FISCAL_OPTIMIZER: ACTIVE
+               </Badge>
+            )}
             <Button size="sm" onClick={handleSyncAllNodes} disabled={isSyncing} className="cyan-glow text-[10px] font-bold h-8 bg-accent text-background px-2 md:px-3">
               {isSyncing ? <RefreshCw className="h-3 w-3 animate-spin mr-1 md:mr-1.5" /> : <Zap className="h-3 w-3 mr-1 md:mr-1.5" />}
               <span className="hidden xs:inline">Sync Mesh</span>
@@ -212,4 +218,3 @@ export default function SovereignControlPlane() {
     </div>
   );
 }
-

@@ -33,12 +33,13 @@ import {
   AlertTriangle, 
   BrainCircuit, 
   Save, 
-  CheckCircle2 
+  CheckCircle2,
+  ArrowRightLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { 
   Area, 
   AreaChart, 
@@ -54,6 +55,8 @@ import { analyzeLiquidityDrift } from "@/ai/flows/liquidity-drift-analysis";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useKernel } from "@/components/kernel/KernelProvider";
+import { useFirestore, useCollection } from "@/firebase";
+import { collection, query, orderBy, limit } from "firebase/firestore";
 import { 
   Dialog, 
   DialogContent, 
@@ -64,6 +67,7 @@ import {
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const stabilityData = [
   { time: "00:00", micro: 88, meso: 82, macro: 90 },
@@ -98,12 +102,24 @@ export default function Project45EconomyPage() {
   const [reserveBalance, setReserveBalance] = useState(125000);
   
   const [recycleRate, setRecycleRate] = useState(42.5);
-  const [tempRate, setTempRate] = useState(42.5);
+  const [tempRate, setTempRate] = useState(tempRate || 42.5);
   const [isAdjustingRecycle, setIsAdjustingRecycle] = useState(false);
   const [isSavingRecycle, setIsSavingRecycle] = useState(false);
 
   const { toast } = useToast();
-  const { emitEvent } = useKernel();
+  const { emitEvent, isAutonomousActive } = useKernel();
+  const firestore = useFirestore();
+
+  // Live Sync with Fiscal Events
+  const eventsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'events'), orderBy('timestamp', 'desc'), limit(15));
+  }, [firestore]);
+  const { data: liveEvents } = useCollection<any>(eventsQuery);
+
+  const fiscalEvents = useMemo(() => {
+    return liveEvents?.filter(e => e.type === 'AUTO_YIELD_RECYCLED' || e.type === 'LIQUIDITY_SHIFT_EXECUTED') || [];
+  }, [liveEvents]);
 
   const handleRunSimulation = async () => {
     setIsSimulating(true);
@@ -210,8 +226,8 @@ export default function Project45EconomyPage() {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
-              FISCAL_READY: ACTIVE
+            <Badge variant="outline" className={cn("border-accent/20 text-accent font-mono text-[10px]", isAutonomousActive && "border-green-500 text-green-400")}>
+              {isAutonomousActive ? "AUTONOMOUS_MODE: ACTIVE" : "FISCAL_READY: IDLE"}
             </Badge>
             <Button size="sm" onClick={handleRunSimulation} disabled={isSimulating} className="cyan-glow text-xs font-bold bg-accent text-background px-4">
               {isSimulating ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : <Rocket className="h-3.5 w-3.5 mr-1.5" />}
@@ -253,7 +269,7 @@ export default function Project45EconomyPage() {
                 <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Deterministic Yield</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="text-3xl font-bold text-white">3.5%</div>
+                <div className="text-3xl font-bold">3.5%</div>
                 <p className="text-[9px] text-primary font-bold mt-2 uppercase">System Take Rate</p>
               </CardContent>
             </Card>
@@ -262,7 +278,7 @@ export default function Project45EconomyPage() {
                 <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Liquidity Deepness</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="text-3xl font-bold text-white">$4.2M</div>
+                <div className="text-3xl font-bold">$4.2M</div>
                 <p className="text-[9px] text-blue-400 font-bold mt-2 uppercase">Global Mesh Reserve</p>
               </CardContent>
             </Card>
@@ -405,20 +421,29 @@ export default function Project45EconomyPage() {
               </Card>
 
               <Card className="glass-panel border-white/5">
-                 <CardHeader className="p-4 border-b border-white/5">
+                 <CardHeader className="p-4 border-b border-white/5 bg-white/5">
                     <CardTitle className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-                       <ShieldAlert className="h-3 w-3 text-red-400" /> Compliance Hub
+                       <History className="h-3.5 w-3.5 text-accent" /> Autonomous Log
                     </CardTitle>
                  </CardHeader>
-                 <CardContent className="p-4 pt-0 space-y-3">
-                    <div className="p-2 rounded bg-secondary/30 text-[9px] text-white/70 italic border border-white/5 flex justify-between items-center">
-                       <span>AML/CFT Screening</span>
-                       <Badge className="bg-green-500/20 text-green-400 text-[7px]">ACTIVE</Badge>
-                    </div>
-                    <div className="p-2 rounded bg-secondary/30 text-[9px] text-white/70 italic border border-white/5 flex justify-between items-center">
-                       <span>ISO 20022 Audit</span>
-                       <Badge className="bg-blue-400/20 text-blue-400 text-[7px]">OPTIMAL</Badge>
-                    </div>
+                 <CardContent className="p-0">
+                    <ScrollArea className="h-[300px]">
+                       <div className="divide-y divide-white/5">
+                          {fiscalEvents.length === 0 ? (
+                            <div className="p-10 text-center text-[9px] uppercase text-muted-foreground opacity-30">Awaiting fiscal signals...</div>
+                          ) : fiscalEvents.map((e, i) => (
+                            <div key={i} className="p-3 space-y-1 group hover:bg-white/5">
+                               <div className="flex justify-between items-center">
+                                  <Badge variant="ghost" className="text-[7px] p-0 font-bold text-accent uppercase">{e.type.replace('_', ' ')}</Badge>
+                                  <span className="text-[8px] font-mono text-muted-foreground">{new Date(e.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                               </div>
+                               <p className="text-[10px] text-white/70 italic line-clamp-1">
+                                  {e.type === 'AUTO_YIELD_RECYCLED' ? `Recycled $${e.payload.recycledToMesh.toFixed(2)} to Global Mesh.` : e.payload.reason}
+                               </p>
+                            </div>
+                          ))}
+                       </div>
+                    </ScrollArea>
                  </CardContent>
               </Card>
 

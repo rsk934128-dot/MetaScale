@@ -55,35 +55,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
 
   const { data: remoteEvents } = useCollection<SovereignEvent>(eventsQuery);
 
-  // Background Loop (Heartbeat & Automation)
-  useEffect(() => {
-    const timer = setInterval(async () => {
-      setUptime(prev => prev + 1);
-      
-      // Heartbeat pulse every 30s
-      if (uptime > 0 && uptime % 30 === 0) {
-        setHeartbeat(prev => prev.map(node => {
-          const newLatency = Math.max(5, node.latency + (Math.random() * 10 - 5));
-          const newStatus = newLatency > 60 ? 'DEGRADED' : 'ONLINE';
-          return { ...node, latency: Number(newLatency.toFixed(2)), status: newStatus, lastCheck: Date.now() };
-        }));
-      }
-
-      // Autonomous Reconciliation Cycle every 60s
-      if (isAutonomousActive && uptime > 0 && uptime % 60 === 0 && firestore) {
-        console.log(">>> [KERNEL] Triggering Autonomous Reconciliation Cycle...");
-        const result = await runAutomatedReconciliation(firestore, 'DETECT_AND_REPLAY');
-        if (result.replayed > 0) {
-          emitEvent('FINANCE', 'AUTONOMOUS_SETTLEMENT_SUCCESS', 2, { count: result.replayed });
-          toast({
-            title: "Autonomous Setllement",
-            description: `Successfully self-healed ${result.replayed} payment(s).`,
-          });
-        }
-      }
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [uptime, isAutonomousActive, firestore, toast]);
+  // --- CORE FUNCTIONS (Defined before use in hooks) ---
 
   const emitEvent = useCallback(async (plane: PlaneType, type: string, priority: number, payload: any) => {
     const systemSeal = generateSystemSeal();
@@ -162,6 +134,48 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     if (!firestore) return;
     updateDoc(doc(firestore, 'events', eventId), { status: 'ROLLED_BACK' }).catch(() => {});
   }, [firestore]);
+
+  // --- BACKGROUND LOOPS (Defined after core functions) ---
+
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      setUptime(prev => prev + 1);
+      
+      // 1. Heartbeat pulse every 30s
+      if (uptime > 0 && uptime % 30 === 0) {
+        setHeartbeat(prev => prev.map(node => {
+          const newLatency = Math.max(5, node.latency + (Math.random() * 10 - 5));
+          const newStatus = newLatency > 60 ? 'DEGRADED' : 'ONLINE';
+          return { ...node, latency: Number(newLatency.toFixed(2)), status: newStatus, lastCheck: Date.now() };
+        }));
+      }
+
+      // 2. Autonomous Reconciliation Cycle every 60s
+      if (isAutonomousActive && uptime > 0 && uptime % 60 === 0 && firestore) {
+        console.log(">>> [KERNEL] Triggering Autonomous Reconciliation Cycle...");
+        const result = await runAutomatedReconciliation(firestore, 'DETECT_AND_REPLAY');
+        if (result.replayed > 0) {
+          emitEvent('FINANCE', 'AUTONOMOUS_SETTLEMENT_SUCCESS', 2, { count: result.replayed });
+          toast({
+            title: "Autonomous Settlement",
+            description: `Successfully self-healed ${result.replayed} payment(s).`,
+          });
+        }
+      }
+
+      // 3. Autonomous Yield Optimizer every 300s (5 min)
+      if (isAutonomousActive && uptime > 0 && uptime % 300 === 0 && firestore) {
+        console.log(">>> [KERNEL] Running Yield & Liquidity Drift Analysis...");
+        emitEvent('FINANCE', 'LIQUIDITY_SHIFT_EXECUTED', 3, { 
+          from: 'NODE-01-US', 
+          to: 'NODE-22-ASIA', 
+          reason: 'Predictive Demand spike in Asian corridor.' 
+        });
+      }
+
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [uptime, isAutonomousActive, firestore, toast, emitEvent]);
 
   const stateValue: KernelContextType = {
     mode: localMode,

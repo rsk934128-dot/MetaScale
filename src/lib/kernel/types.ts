@@ -16,7 +16,9 @@ export type IncidentCategory =
   | 'ADMIN_ABUSE'
   | 'LATENCY_SPIKE'
   | 'METRIC_THRESHOLD_EXCEEDED'
-  | 'HEARTBEAT_FAILURE';
+  | 'HEARTBEAT_FAILURE'
+  | 'LIQUIDITY_DRIFT'
+  | 'YIELD_RECYCLE_FAIL';
 
 export interface SovereignEvent {
   id: string;
@@ -93,4 +95,6 @@ export type FinanceEventType =
   | 'YIELD_RECYCLE_ADJUSTED'
   | 'BANK_ACCOUNT_LINKED'
   | 'STRATEGY_REPORT_GENERATED'
-  | 'VIRTUAL_CARD_ISSUED';
+  | 'VIRTUAL_CARD_ISSUED'
+  | 'LIQUIDITY_SHIFT_EXECUTED'
+  | 'AUTO_YIELD_RECYCLED';
