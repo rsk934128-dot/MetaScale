@@ -1,9 +1,11 @@
+
 'use server';
 /**
- * @fileOverview Cross-Border Disbursement Orchestrator (PayPal, Priyo Pay, Payoneer & Telegram Wallet).
+ * Cross-Border Disbursement Orchestrator (PayPal, Priyo Pay, Payoneer & Telegram Wallet).
  * 
  * - orchestratePayout - Handles OAuth2 token exchange, payout batch execution, and PIS/AIS rails.
  * - Integration of "Telegram Wallet" (TON Ecosystem) logic for peer-to-peer mesh transfers.
+ * - NEW: Added TxHash generation and Reversal eligibility flags for P45 Governance.
  */
 
 import { ai } from '@/ai/genkit';
@@ -23,9 +25,11 @@ const PayoutInputSchema = z.object({
 const PayoutOutputSchema = z.object({
   status: z.enum(['SUCCESS', 'PENDING', 'FAILED']),
   batchId: z.string(),
+  txHash: z.string().describe('Simulated blockchain or gateway transaction hash.'),
   executionLog: z.array(z.string()),
   routingToken: z.string().describe('System routing seal for tracing.'),
   directiveLevel: z.string().describe('Governance clearance level used for execution.'),
+  refundEligible: z.boolean().default(true),
   institutionalMetadata: z.object({
     id: z.string(),
     bic: z.string().optional(),
@@ -55,12 +59,12 @@ AMOUNT: {{{amount}}} {{{currency}}}
 EXECUTION PARAMETERS:
 1. Simulate OAuth 2.0 token exchange for the specified gateway.
 2. If gateway is PAYPAL, use the /v1/payments/payouts batch structure.
-3. If gateway is PRIYO_PAY, simulate the "Check -> Confirm" sequence for private system paths.
-4. If gateway is TELEGRAM_WALLET, simulate a TON Blockchain escrow transfer. The recipient info should be treated as a Telegram ID or Phone.
-5. For TELEGRAM_WALLET, include logic for "Awaiting Recipient Claim" status and ISO 20022 message padding.
-6. Generate a unique Sovereign Mesh routing token (e.g., FALLBACK_P180_9...).
-7. Append an "Imperial Directive" seal if the amount exceeds \$1,000 or if using TELEGRAM_WALLET corridors.
-8. Provide a technical execution log for the Finance Plane ledger reflecting Anycast validation.`,
+3. If gateway is TELEGRAM_WALLET, simulate a TON Blockchain escrow transfer.
+4. Generate a unique 64-character TxHash (simulating a blockchain transaction hash).
+5. Link this TxHash to the Internal Batch ID for the Finance Plane ledger.
+6. If the amount exceeds \$1,000, mark directiveLevel as 'IMPERIAL'.
+7. Provide a detailed execution log reflecting Anycast validation.
+8. Set refundEligible to true if the gateway supports escrow (like TELEGRAM_WALLET).`,
 });
 
 const payoutFlow = ai.defineFlow(
@@ -71,6 +75,12 @@ const payoutFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await payoutPrompt(input);
+    
+    // Fallback Hash generation if LLM misses it
+    if (output && !output.txHash) {
+      output.txHash = `0x${Math.random().toString(16).substr(2, 64)}`;
+    }
+    
     return output!;
   }
 );

@@ -31,11 +31,19 @@ export interface KernelState {
 }
 
 /**
- * Extended Finance Event Types
+ * Extended Finance Event Types for Global Settlement & Reversal
  */
 export type FinanceEventType = 
   | 'PAYOUT_INITIATED' 
   | 'PAYOUT_EXECUTED' 
   | 'PAYOUT_FAILED' 
   | 'TREASURY_SYNC' 
-  | 'KYB_UPDATE';
+  | 'KYB_UPDATE'
+  | 'REFUND_INITIATED'
+  | 'REVERSAL_COMPLETED'
+  | 'TX_HASH_LINKED'
+  | 'MARKETPLACE_LINK_GENERATED'
+  | 'YIELD_RECYCLE_ADJUSTED'
+  | 'BANK_ACCOUNT_LINKED'
+  | 'STRATEGY_REPORT_GENERATED'
+  | 'VIRTUAL_CARD_ISSUED';
