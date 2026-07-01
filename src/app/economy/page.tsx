@@ -1,4 +1,3 @@
-
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -102,7 +101,7 @@ export default function Project45EconomyPage() {
   const [reserveBalance, setReserveBalance] = useState(125000);
   
   const [recycleRate, setRecycleRate] = useState(42.5);
-  const [tempRate, setTempRate] = useState(tempRate || 42.5);
+  const [tempRate, setTempRate] = useState(42.5);
   const [isAdjustingRecycle, setIsAdjustingRecycle] = useState(false);
   const [isSavingRecycle, setIsSavingRecycle] = useState(false);
 
@@ -439,7 +438,7 @@ export default function Project45EconomyPage() {
                                </div>
                                <p className="text-[10px] text-white/70 italic line-clamp-1">
                                   {e.type === 'AUTO_YIELD_RECYCLED' ? `Recycled $${e.payload.recycledToMesh.toFixed(2)} to Global Mesh.` : e.payload.reason}
-                               </p>
+                                </p>
                             </div>
                           ))}
                        </div>
