@@ -16,13 +16,16 @@ import {
   ArrowRight,
   Building2,
   Check,
-  CreditCard
+  CreditCard,
+  BadgeCheck,
+  Building
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/ui/logo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -72,10 +75,10 @@ export default function CheckoutPage() {
       try {
         await updateDoc(doc(firestore, 'users', link.creatorId, 'payment_links', sealId), updateData);
       } catch (e) {
-        console.warn("User link copy update failed (expected if rule is strict)");
+        console.warn("User link copy update failed");
       }
 
-      // 3. Log to UBIL Events for Settlement (This acts as the trigger for the automated engine)
+      // 3. Log to UBIL Events
       await setDoc(doc(firestore, 'ubil_events', `TXN_${sealId}`), {
         id: `TXN_${sealId}`,
         type: 'TXN_SUCCESS',
@@ -86,13 +89,14 @@ export default function CheckoutPage() {
         senderName: "Public Checkout",
         senderBank: selectedMethod.toUpperCase(),
         merchantId: link.creatorId,
-        seal: sealId
+        seal: sealId,
+        isVerified: link.isVerified
       });
 
       setIsPaid(true);
       toast({ 
         title: "Authorization Successful", 
-        description: "Transaction finalized on the Sovereign Mesh.",
+        description: "भुगतान सफलतापूर्वक पूर्ण हुआ।",
       });
     } catch (error: any) {
       console.error("Payment Error:", error);
@@ -148,7 +152,7 @@ export default function CheckoutPage() {
                 <CreditCard className="h-8 w-8 text-accent" />
              </div>
              <CardTitle className="text-3xl font-headline font-bold uppercase italic tracking-tighter text-white">
-               {isPaid ? "Settlement Finalized" : "Authorize Payment"}
+               {isPaid ? "Settlement Finalized" : "भुगतान करें (Secure Pay)"}
              </CardTitle>
              <CardDescription className="text-[10px] uppercase font-bold tracking-[0.4em] text-muted-foreground">
                Deterministic Execution Corridor
@@ -158,15 +162,27 @@ export default function CheckoutPage() {
           <CardContent className="space-y-8 px-6 md:px-12 pb-10">
              {!isPaid ? (
                <>
-                <div className="p-8 rounded-3xl bg-secondary/30 border border-white/10 text-center space-y-2">
-                   <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Amount Due</p>
-                   <div className="flex items-baseline justify-center gap-1">
-                     <span className="text-xl font-bold text-accent">$</span>
-                     <p className="text-6xl font-headline font-bold text-white tracking-tighter">{link?.amount}</p>
+                <div className="p-8 rounded-3xl bg-secondary/30 border border-white/10 text-center space-y-4 relative">
+                   {link?.isVerified && (
+                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-accent text-background text-[10px] font-bold uppercase flex items-center gap-1.5 shadow-xl">
+                        <BadgeCheck className="h-4 w-4" /> प्रमाणित विक्रेता (Verified)
+                     </div>
+                   )}
+                   <div className="pt-2">
+                     <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Amount Due</p>
+                     <div className="flex items-baseline justify-center gap-1">
+                       <span className="text-xl font-bold text-accent">$</span>
+                       <p className="text-6xl font-headline font-bold text-white tracking-tighter">{link?.amount}</p>
+                     </div>
+                     <p className="text-sm text-accent font-bold mt-4">
+                       {link?.description}
+                     </p>
+                     {link?.isVerified && (
+                       <p className="text-[9px] text-muted-foreground mt-2 uppercase tracking-tighter flex items-center justify-center gap-1">
+                         <Building className="h-3 w-3" /> {link.merchantBank}
+                       </p>
+                     )}
                    </div>
-                   <p className="text-xs text-accent italic truncate">
-                     "{link?.description}"
-                   </p>
                 </div>
 
                 <div className="space-y-4">
@@ -188,7 +204,7 @@ export default function CheckoutPage() {
                 >
                    {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                      <span className="flex items-center gap-2">
-                        Complete Transaction <ArrowRight className="h-4 w-4" />
+                        Authorize Transaction <ArrowRight className="h-4 w-4" />
                      </span>
                    )}
                 </Button>
@@ -199,8 +215,8 @@ export default function CheckoutPage() {
                     <Check className="h-12 w-12 text-green-500" strokeWidth={3} />
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-2xl font-headline font-bold text-white uppercase italic tracking-tighter">Settled Successfully</h3>
-                    <p className="text-xs text-muted-foreground">Your transaction has been cryptographically signed and archived.</p>
+                    <h3 className="text-2xl font-headline font-bold text-white uppercase italic tracking-tighter">सफल भुगतान (Settled)</h3>
+                    <p className="text-xs text-muted-foreground">आपका लेनदेन सफलतापूर्वक प्रमाणित और सुरक्षित कर लिया गया है।</p>
                   </div>
                   <Button asChild className="w-full h-12 bg-white text-background font-bold uppercase text-[10px]">
                      <Link href="/">Back to Core</Link>
