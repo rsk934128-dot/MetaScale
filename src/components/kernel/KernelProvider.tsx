@@ -24,6 +24,7 @@ const INITIAL_PLANES: Record<PlaneType, PlaneState> = {
   FINANCE: { status: 'OPTIMAL', load: 45, latency: 12, lastSync: Date.now() },
   SECURITY: { status: 'OPTIMAL', load: 8, latency: 2, lastSync: Date.now() },
   INFRA: { status: 'OPTIMAL', load: 42, latency: 8, lastSync: Date.now() },
+  OPERATIONS: { status: 'OPTIMAL', load: 10, latency: 5, lastSync: Date.now() },
 };
 
 const generateSystemSeal = () => {
@@ -83,7 +84,8 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
           const userSnap = await getDoc(userRef);
           const userData = userSnap.data();
 
-          if (resolvedPriority <= 2 || type.includes('EMERGENCY') || type.includes('COMMERCIAL')) {
+          // Telegram Alert Logic for Critical/Finance/Security failures
+          if (resolvedPriority <= 2 || type.includes('EMERGENCY') || type.includes('COMMERCIAL') || type.includes('FAILED')) {
             const notifRef = collection(firestore, 'users', user.uid, 'notifications');
             const notification = {
               id: systemSeal,
@@ -97,7 +99,8 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
 
             if (userData?.telegramLinked && userData?.telegramChatId) {
               const BOT_TOKEN = "7827860503:AAEVNXEe3mPUtPudIBT_S5aE1aHr56efaiA";
-              const text = `<b>🚨 KERNEL ALERT</b>\n\n<b>Type:</b> ${type}\n<b>Plane:</b> ${plane}\n<b>Priority:</b> ${resolvedPriority}\n<b>Seal:</b> <code>${systemSeal}</code>\n\n<i>System Mode: ${localMode}</i>`;
+              const alertEmoji = resolvedPriority === 1 ? "🚨" : "⚠️";
+              const text = `<b>${alertEmoji} KERNEL ALERT</b>\n\n<b>Type:</b> ${type}\n<b>Plane:</b> ${plane}\n<b>Priority:</b> ${resolvedPriority}\n<b>Seal:</b> <code>${systemSeal}</code>\n\n<b>Payload:</b> <code>${JSON.stringify(payload).substring(0, 100)}...</code>\n\n<i>System Mode: ${localMode}</i>`;
               
               fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
@@ -111,7 +114,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
             }
           }
         } catch (err) {
-          console.warn("Kernel: Could not fetch user profile for notifications (offline?).", err);
+          console.warn("Kernel: Could not fetch user profile for notifications.", err);
         }
       }
     }
@@ -127,8 +130,6 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
 
   const setSystemMode = useCallback((newMode: SystemMode) => {
     if (localMode === newMode) return;
-    
-    // In current simplified prototype, we allow transition to NORMAL if launch protocol triggered
     setLocalMode(newMode);
     emitEvent('SECURITY', 'MODE_TRANSITION', 1, { from: localMode, to: newMode });
   }, [localMode, emitEvent]);

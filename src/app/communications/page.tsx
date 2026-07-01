@@ -66,7 +66,6 @@ export default function CommunicationPlanePage() {
     setIsWebhookLoading(true);
     try {
       // Note: Webhooks only work on public HTTPS URLs. 
-      // If you are developing locally, you will need a service like ngrok.
       const origin = window.location.origin;
       const res = await setTelegramWebhook(origin);
       
