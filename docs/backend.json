@@ -21,27 +21,34 @@
         "trustScore": { "type": "number" },
         "telegramChatId": { "type": "string" },
         "telegramLinked": { "type": "boolean" },
-        "createdAt": { "type": "object" }
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
       },
       "required": ["uid", "email", "kernelId", "accountNumber", "teamId"]
     },
     "InboundPayment": {
       "title": "Inbound Payment Ledger",
-      "description": "Normalized ledger for all incoming deposits and settlements.",
+      "description": "Normalized ledger for all incoming deposits and settlements with reconciliation fields.",
       "type": "object",
       "properties": {
-        "id": { "type": "string", "description": "Unified internal payment ID." },
+        "id": { "type": "string" },
         "orderId": { "type": "string" },
         "userId": { "type": "string" },
         "externalTxnId": { "type": "string" },
         "provider": { "type": "string", "enum": ["STRIPE", "BKASH", "BINANCE_PAY"] },
         "amount": { "type": "number" },
         "currency": { "type": "string" },
-        "status": { "type": "string", "enum": ["CREATED", "USER_PAYING", "PAID", "CREDITED", "FAILED", "EXPIRED"] },
+        "status": { "type": "string" },
+        "isCredited": { "type": "boolean" },
+        "creditOperationId": { "type": "string" },
+        "reconciliationStatus": { "type": "string", "enum": ["NOT_REQUIRED", "PENDING", "MATCHED", "MISMATCHED"] },
+        "anomalyFlags": { "type": "array", "items": { "type": "string" } },
         "eventTime": { "type": "number" },
-        "metadata": { "type": "object" }
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" },
+        "statusHistory": { "type": "array" }
       },
-      "required": ["id", "orderId", "userId", "provider", "status"]
+      "required": ["id", "userId", "provider", "status", "isCredited"]
     },
     "VerificationDoc": {
       "title": "Identity Verification Document",
@@ -56,21 +63,6 @@
         "submittedAt": { "type": "number" },
         "metadata": { "type": "object" }
       }
-    },
-    "UBILEvent": {
-      "title": "UBIL Webhook Event",
-      "description": "A secure banking event received via UBIL Webhook node.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "type": { "type": "string" },
-        "amount": { "type": "number" },
-        "currency": { "type": "string" },
-        "senderBank": { "type": "string" },
-        "status": { "type": "string" },
-        "timestamp": { "type": "number" }
-      },
-      "required": ["id", "type", "status", "timestamp"]
     }
   },
   "auth": {
@@ -79,8 +71,6 @@
   "firestore": {
     "/users/{userId}": { "schema": "UserProfile", "description": "Extended user profile information." },
     "/payments/{paymentId}": { "schema": "InboundPayment", "description": "Central ledger for all incoming payments." },
-    "/users/{userId}/payments/{paymentId}": { "schema": "InboundPayment", "description": "User specific payment history." },
-    "/ubil_events/{eventId}": { "schema": "UBILEvent", "description": "Registry of all NoorNexus UBIL incoming events." },
     "/verification_docs/{docId}": { "schema": "VerificationDoc", "description": "User submitted verification documents." }
   }
 }

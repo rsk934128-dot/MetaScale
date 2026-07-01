@@ -11,7 +11,16 @@ export type PaymentStatus =
   | 'EXPIRED'
   | 'ROLLED_BACK';
 
-export type ReconciliationStatus = 'PENDING' | 'MATCHED' | 'MISMATCHED' | 'INVESTIGATING';
+export type ReconciliationStatus = 'NOT_REQUIRED' | 'PENDING' | 'MATCHED' | 'MISMATCHED';
+
+export type AnomalyFlag = 
+  | 'PAIDNOTCREDITED' 
+  | 'STALE_CREATED' 
+  | 'MISMATCH_AMOUNT' 
+  | 'MISMATCH_CURRENCY' 
+  | 'DUPLICATEEXTERNALTXN' 
+  | 'INVALID_TRANSITION' 
+  | 'SIGNATUREFAILUREREVIEW';
 
 export interface NormalizedPaymentEvent {
   orderId: string;
@@ -26,15 +35,8 @@ export interface NormalizedPaymentEvent {
   metadata?: Record<string, any>;
 }
 
-export interface InboundPaymentDoc {
+export interface InboundPaymentDoc extends NormalizedPaymentEvent {
   id: string; // provider + externalTxnId
-  orderId: string;
-  userId: string;
-  externalTxnId: string;
-  provider: PaymentProvider;
-  amount: number;
-  currency: string;
-  status: PaymentStatus;
   createdAt: number;
   updatedAt: number;
   paidAt?: number;
@@ -43,12 +45,12 @@ export interface InboundPaymentDoc {
   isCredited: boolean;
   creditOperationId?: string;
   reconciliationStatus: ReconciliationStatus;
-  anomalyFlags: string[];
-  metadata: Record<string, any>;
+  anomalyFlags: AnomalyFlag[];
   statusHistory: {
     status: PaymentStatus;
     timestamp: number;
     reason?: string;
     trigger?: 'WEBHOOK' | 'RECONCILIATION' | 'MANUAL';
+    replayedBy?: string;
   }[];
 }

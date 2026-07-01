@@ -9,16 +9,18 @@ import {
   increment,
   getDoc
 } from 'firebase/firestore';
-import { NormalizedPaymentEvent, InboundPaymentDoc } from '@/lib/payments/types';
+import { NormalizedPaymentEvent, InboundPaymentDoc, PaymentStatus } from '@/lib/payments/types';
 
 /**
  * Core Domain Service: Atomic Payment Credit Logic
  * Ensures exactly-once credit and handles state transitions.
+ * Accessible by Webhook and Manual Replay.
  */
 export async function processPaymentCredit(
   firestore: Firestore, 
   event: NormalizedPaymentEvent,
-  trigger: 'WEBHOOK' | 'RECONCILIATION' | 'MANUAL' = 'WEBHOOK'
+  trigger: 'WEBHOOK' | 'RECONCILIATION' | 'MANUAL' = 'WEBHOOK',
+  adminUid?: string
 ) {
   const paymentId = `${event.provider}_${event.externalTxnId}`;
   const timestamp = Date.now();
@@ -32,26 +34,35 @@ export async function processPaymentCredit(
       currentData = paymentSnap.data() as InboundPaymentDoc;
     }
 
-    // 1. Idempotency Check
+    // 1. Idempotency Check: Never credit twice
     if (currentData?.isCredited) {
       return { status: 'ALREADY_CREDITED', paymentId };
     }
 
-    // 2. Auth/Verification (Already done in route or service)
-    // 3. User Lookup
+    // 2. User Lookup
     const userRef = doc(firestore, 'users', event.userId);
     const userSnap = await transaction.get(userRef);
     if (!userSnap.exists()) {
       throw new Error(`USER_NOT_FOUND: ${event.userId}`);
     }
 
-    // 4. Atomic Execution: Balance + Ledger
+    // 3. Atomic Execution: Update User Balance
     transaction.update(userRef, {
       balance: increment(event.amount),
       updatedAt: serverTimestamp()
     });
 
-    const creditOpId = `OP_${timestamp}_${event.externalTxnId.slice(-6)}`;
+    // 4. Update Payment Ledger
+    const creditOpId = `${trigger.toLowerCase()}_${timestamp}_${event.externalTxnId.slice(-6)}`;
+    
+    const historyEntry = {
+      status: 'CREDITED' as PaymentStatus,
+      timestamp: timestamp,
+      trigger: trigger,
+      reason: trigger === 'MANUAL' ? `Manual replay by admin ${adminUid}` : 'Automated webhook credit',
+      replayedBy: adminUid
+    };
+
     const update: Partial<InboundPaymentDoc> = {
       ...event,
       status: 'CREDITED',
@@ -61,30 +72,23 @@ export async function processPaymentCredit(
       creditOperationId: creditOpId,
       reconciliationStatus: 'MATCHED',
       id: paymentId,
-    };
-
-    // Construct status entry
-    const historyEntry = {
-      status: 'CREDITED' as const,
-      timestamp: timestamp,
-      trigger: trigger,
-      reason: trigger === 'MANUAL' ? 'Manual override by admin' : 'Automated webhook credit'
+      statusHistory: currentData ? [...(currentData.statusHistory || []), historyEntry] : [historyEntry]
     };
 
     if (!paymentSnap.exists()) {
       transaction.set(paymentRef, { 
         ...update, 
         createdAt: timestamp,
-        statusHistory: [historyEntry],
         anomalyFlags: []
       });
     } else {
-      transaction.update(paymentRef, {
-        ...update,
-        statusHistory: [...(currentData.statusHistory || []), historyEntry]
-      });
+      transaction.update(paymentRef, update);
     }
 
-    return { status: 'SUCCESS_CREDITED', paymentId, operationId: creditOpId };
+    return { 
+      status: 'SUCCESS_CREDITED', 
+      paymentId, 
+      operationId: creditOpId 
+    };
   });
 }

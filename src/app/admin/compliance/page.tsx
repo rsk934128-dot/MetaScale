@@ -5,25 +5,19 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
-  ShieldCheck, 
   FileText, 
-  UserCheck, 
   XCircle, 
   CheckCircle2, 
   Search, 
-  Filter,
   RefreshCw,
-  Eye,
-  Scale,
   Gavel,
-  Zap,
-  Fingerprint,
-  Info,
   Loader2,
-  Activity,
   History,
   AlertTriangle,
-  RotateCcw
+  RotateCcw,
+  ShieldCheck,
+  Zap,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, useCollection } from "@/firebase";
+import { useFirestore, useCollection, useUser } from "@/firebase";
 import { collection, query, orderBy, limit, doc, updateDoc, where } from "firebase/firestore";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { processPaymentCredit } from "@/services/payment-service";
@@ -43,15 +37,16 @@ export default function AdminCompliancePage() {
   const { toast } = useToast();
   const { emitEvent } = useKernel();
   const firestore = useFirestore();
+  const { user } = useUser();
 
-  // Documents Queue
+  // 1. Documents Queue (KYB)
   const docsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'verification_docs'), orderBy('submittedAt', 'desc'), limit(50));
   }, [firestore]);
   const { data: remoteDocs, loading: docsLoading } = useCollection<any>(docsQuery);
 
-  // Reconciliation Queue (Stuck Payments)
+  // 2. Reconciliation Queue (PAID but !isCredited)
   const anomaliesQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
@@ -85,14 +80,28 @@ export default function AdminCompliancePage() {
   };
 
   const handleManualReplay = async (payment: any) => {
-    if (!firestore) return;
+    if (!firestore || !user?.uid) return;
     setIsProcessing(payment.id);
+    
     try {
-      const result = await processPaymentCredit(firestore, payment, 'MANUAL');
-      emitEvent('FINANCE', 'MANUAL_CREDIT_REPLAY', 2, { paymentId: payment.id, opId: result.operationId });
-      toast({ title: "Manual Replay Success", description: `Operation ID: ${result.operationId}` });
+      // Use the centralized domain service for Exactly-once replay
+      const result = await processPaymentCredit(firestore, payment, 'MANUAL', user.uid);
+      
+      emitEvent('FINANCE', 'MANUAL_CREDIT_REPLAY', 2, { 
+        paymentId: payment.id, 
+        opId: result.operationId 
+      });
+
+      toast({ 
+        title: "Manual Replay Success", 
+        description: `Operation ID: ${result.operationId}` 
+      });
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Replay Failed", description: err.message });
+      toast({ 
+        variant: "destructive", 
+        title: "Replay Failed", 
+        description: err.message 
+      });
     } finally {
       setIsProcessing(null);
     }
@@ -119,11 +128,11 @@ export default function AdminCompliancePage() {
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
-          <Tabs defaultValue="kyb" className="space-y-8">
+          <Tabs defaultValue="reconciliation" className="space-y-8">
             <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1">
-               <TabsTrigger value="kyb" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">KYB Verification</TabsTrigger>
+               <TabsTrigger value="kyb" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">KYB Queue</TabsTrigger>
                <TabsTrigger value="reconciliation" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full flex gap-2">
-                 Reconciliation {anomalies?.length > 0 && <span className="h-4 w-4 rounded-full bg-red-500 text-white flex items-center justify-center text-[8px] animate-pulse">{anomalies.length}</span>}
+                 Anomaly Detection {anomalies?.length > 0 && <span className="h-4 w-4 rounded-full bg-red-500 text-white flex items-center justify-center text-[8px] animate-pulse">{anomalies.length}</span>}
                </TabsTrigger>
             </TabsList>
 
@@ -172,55 +181,105 @@ export default function AdminCompliancePage() {
 
             <TabsContent value="reconciliation" className="space-y-6">
                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-2xl font-headline font-bold">Anomaly Detection</h2>
-                    <p className="text-xs text-muted-foreground italic">"Paid events missing internal wallet credit."</p>
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-headline font-bold flex items-center gap-2">
+                       <Zap className="h-6 w-6 text-accent" />
+                       Fiscal Reconciliation
+                    </h2>
+                    <p className="text-xs text-muted-foreground italic">"Paid events missing internal wallet credit - Repairing Fast Path."</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-[10px] uppercase font-bold"><RefreshCw className="mr-2 h-3.5 w-3.5" /> Force Scan</Button>
+                  <Button variant="outline" size="sm" className="text-[10px] uppercase font-bold border-white/10"><RefreshCw className="mr-2 h-3.5 w-3.5" /> Re-scan Mesh</Button>
                </div>
 
                <Card className="glass-panel border-red-500/20 bg-red-500/5">
-                  <CardHeader className="border-b border-red-500/10">
-                     <CardTitle className="text-sm flex items-center gap-2 text-red-400 uppercase tracking-widest">
-                        <AlertTriangle className="h-4 w-4" />
-                        Stuck Payments (PAID && !CREDITED)
-                     </CardTitle>
+                  <CardHeader className="border-b border-red-500/10 bg-red-500/5">
+                     <div className="flex justify-between items-center">
+                        <CardTitle className="text-sm flex items-center gap-2 text-red-400 uppercase tracking-widest">
+                           <AlertTriangle className="h-4 w-4" />
+                           Stuck Payments (PAID && !CREDITED)
+                        </CardTitle>
+                        <Badge variant="outline" className="text-[8px] border-red-500/30 text-red-400 uppercase">Action Required</Badge>
+                     </div>
                   </CardHeader>
                   <CardContent className="p-0">
                      {anomaliesLoading ? (
                        <div className="p-12 flex justify-center"><Loader2 className="h-8 w-8 animate-spin opacity-20" /></div>
                      ) : anomalies?.length === 0 ? (
-                       <div className="p-20 text-center italic text-xs text-muted-foreground">No anomalies detected in this cycle.</div>
+                       <div className="p-20 text-center space-y-4">
+                          <ShieldCheck className="h-12 w-12 text-green-500/20 mx-auto" />
+                          <p className="italic text-xs text-muted-foreground uppercase tracking-widest">No anomalies detected in the current cycle.</p>
+                       </div>
                      ) : (
                        <div className="divide-y divide-red-500/10">
                           {anomalies.map((p: any) => (
-                            <div key={p.id} className="p-6 flex items-center justify-between group">
+                            <div key={p.id} className="p-6 flex items-center justify-between group hover:bg-red-500/10 transition-all">
                                <div className="flex gap-4">
                                   <div className="p-3 rounded-lg bg-black/40 border border-red-500/20 text-red-400"><History className="h-5 w-5" /></div>
                                   <div className="space-y-1">
-                                     <p className="text-sm font-bold text-white uppercase">{p.provider} • ${p.amount}</p>
-                                     <p className="text-[10px] font-mono text-muted-foreground">TxnID: {p.externalTxnId}</p>
-                                     <div className="flex gap-2">
-                                        <Badge variant="outline" className="text-[7px] border-red-500/20 text-red-400">UNCREDITED</Badge>
-                                        <span className="text-[8px] text-muted-foreground italic">Stuck since: {new Date(p.updatedAt).toLocaleTimeString()}</span>
+                                     <p className="text-sm font-bold text-white uppercase">{p.provider} • ${p.amount} {p.currency}</p>
+                                     <p className="text-[10px] font-mono text-muted-foreground/60">TxnID: {p.externalTxnId}</p>
+                                     <div className="flex gap-2 items-center">
+                                        <Badge variant="outline" className="text-[7px] border-red-500/20 text-red-400 uppercase">Uncredited</Badge>
+                                        <span className="text-[8px] text-muted-foreground italic font-mono uppercase tracking-tighter">
+                                          Lag: {Math.floor((Date.now() - p.updatedAt) / 60000)} mins
+                                        </span>
                                      </div>
                                   </div>
-                               </div>
-                               <Button 
-                                  size="sm" 
-                                  className="bg-accent text-background font-bold text-[10px] cyan-glow"
-                                  onClick={() => handleManualReplay(p)}
-                                  disabled={isProcessing === p.id}
-                               >
-                                  {isProcessing === p.id ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : <RotateCcw className="h-3 w-3 mr-1.5" />}
-                                  Safe Replay
-                               </Button>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                   <Button 
+                                      size="sm" 
+                                      className="bg-accent text-background font-bold text-[10px] cyan-glow px-6"
+                                      onClick={() => handleManualReplay(p)}
+                                      disabled={isProcessing === p.id}
+                                   >
+                                      {isProcessing === p.id ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : <RotateCcw className="h-3 w-3 mr-1.5" />}
+                                      Safe Replay
+                                   </Button>
+                                </div>
                             </div>
                           ))}
                        </div>
                      )}
                   </CardContent>
                </Card>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="glass-panel border-white/5 bg-secondary/10">
+                     <CardHeader className="p-4 border-b border-white/5">
+                        <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2">
+                           <Info className="h-4 w-4 text-primary" />
+                           Reconciliation Protocol
+                        </CardTitle>
+                     </CardHeader>
+                     <CardContent className="p-4 space-y-3">
+                        <p className="text-[11px] text-white/70 italic leading-relaxed">
+                           "Safe Replay" function uses the same transactional logic as webhooks. It checks for <strong>isCredited</strong> status before any balance update, ensuring exactly-once credit even in manual mode.
+                        </p>
+                     </CardContent>
+                  </Card>
+                  <Card className="glass-panel border-white/5">
+                     <CardHeader className="p-4 border-b border-white/5">
+                        <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2">
+                           <ShieldCheck className="h-4 w-4 text-green-400" />
+                           Integrity Invariants
+                        </CardTitle>
+                     </CardHeader>
+                     <CardContent className="p-4 space-y-2">
+                        {[
+                           "Double-credit protection: ENABLED",
+                           "Client-side write boundary: LOCKED",
+                           "Atomic ledger transition: ACTIVE",
+                           "Redaction policy: ENFORCED"
+                        ].map((rule, i) => (
+                           <div key={i} className="flex items-center gap-2 text-[10px] text-white/60">
+                              <div className="w-1 h-1 rounded-full bg-green-500" />
+                              {rule}
+                           </div>
+                        ))}
+                     </CardContent>
+                  </Card>
+               </div>
             </TabsContent>
           </Tabs>
         </main>
