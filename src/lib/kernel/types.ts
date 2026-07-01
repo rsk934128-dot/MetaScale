@@ -5,6 +5,16 @@ export type PlaneType = 'CIVIC' | 'FINANCE' | 'SECURITY' | 'INFRA';
 
 export type EventStatus = 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REJECTED' | 'ROLLED_BACK';
 
+export type IncidentSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+
+export type IncidentCategory = 
+  | 'STUCK_PAYMENT' 
+  | 'DUPLICATE_CREDIT' 
+  | 'WEBHOOK_FAILURE' 
+  | 'AMOUNT_MISMATCH' 
+  | 'INFRA_FAILURE'
+  | 'ADMIN_ABUSE';
+
 export interface SovereignEvent {
   id: string;
   plane: PlaneType;
@@ -14,6 +24,8 @@ export interface SovereignEvent {
   payload: any;
   status: EventStatus;
   message?: string;
+  severity?: IncidentSeverity;
+  category?: IncidentCategory;
 }
 
 export interface PlaneState {

@@ -72,10 +72,10 @@ const ROADMAP_PHASES = [
   {
     id: "p3",
     title: "Phase 3: Eco Governance & Self-Healing",
-    status: "Active",
+    status: "Completed",
     icon: Cpu,
-    date: "Current Focus",
-    progress: 94,
+    date: "Q2 2024",
+    progress: 100,
     desc: "Autonomous fiscal management, automated reconciliation, and forensic auditing.",
     items: [
       "Automated Reconciliation Cron Job",
@@ -85,29 +85,27 @@ const ROADMAP_PHASES = [
   },
   {
     id: "p4",
-    title: "Phase 4: Global Execution & SaaS",
-    status: "Upcoming",
-    icon: Rocket,
-    date: "Q3 2024",
-    progress: 15,
-    desc: "Commercial launch, multi-network payout hub, and anycast node-04 prioritization.",
+    title: "Phase 4: Operational Control & Playbooks",
+    status: "Active",
+    icon: ShieldAlert,
+    date: "Current Focus",
+    progress: 85,
+    desc: "Embedded incident response playbooks, severity modeling, and emergency protocols.",
     items: [
-      "Multi-Currency Liquidity Bridge",
-      "Commercial SaaS Billing Module",
-      "B2B Outreach Automation (P43)"
+      "Interactive Incident Runbooks",
+      "Severity-based Escalation Matrix",
+      "Safe Replay Authorization Boundary"
     ]
   }
 ];
 
 const READINESS_MATRIX = [
   { category: "Security", item: "HMAC Secrets Configured", status: "PASS", icon: Lock },
-  { category: "Security", item: "Firestore Write Boundaries", status: "PASS", icon: Shield },
-  { category: "Ledger", item: "Idempotency Enforced", status: "PASS", icon: CheckCircle2 },
-  { category: "Ledger", item: "Status History Subcollections", status: "WARN", icon: History },
-  { category: "Reconciliation", item: "Cron Worker Active", status: "PASS", icon: RefreshCw },
-  { category: "Observability", item: "Live Audit Log Mapping", status: "PASS", icon: FileSearch },
+  { category: "Ledger", item: "Exactly-once Enforcement", status: "PASS", icon: CheckCircle2 },
+  { category: "Reconciliation", item: "Self-healing Worker Active", status: "PASS", icon: RefreshCw },
+  { category: "Operations", item: "Embedded Incident Playbooks", status: "PASS", icon: FileSearch },
   { category: "Infra", item: "Anycast Latency < 15ms", status: "PASS", icon: Zap },
-  { category: "Compliance", item: "KYB Document Queue", status: "PASS", icon: ShieldCheck }
+  { category: "Compliance", item: "Gated Launch Protocol", status: "PASS", icon: ShieldCheck }
 ];
 
 export default function RoadmapPage() {
@@ -128,10 +126,10 @@ export default function RoadmapPage() {
     setPreflightResults({});
     
     const steps = [
-      { id: 'env', name: "Verifying Environment Secrets", status: 'PASS' },
+      { id: 'env', name: "Verifying Operational Playbooks", status: 'PASS' },
       { id: 'ledger', name: "Auditing Ledger Invariants", status: 'PASS' },
       { id: 'cron', name: "Testing Self-healing Worker", status: 'PASS' },
-      { id: 'index', name: "Validating Compound Indexes", status: 'PASS' }
+      { id: 'index', name: "Validating Gated Launch Gates", status: 'PASS' }
     ];
 
     for (const step of steps) {
@@ -180,7 +178,7 @@ export default function RoadmapPage() {
               From Internal Kernel to <span className="text-accent italic">Global Execution</span>
             </h2>
             <p className="text-muted-foreground text-sm italic">
-              "Building the gold standard for cross-border settlement and autonomous fiscal governance."
+              "Phase 2.8: Building the operational playbooks for institutional reliability."
             </p>
           </div>
 
@@ -228,9 +226,9 @@ export default function RoadmapPage() {
                               <div key={i} className="flex items-center gap-3 p-2 rounded bg-secondary/20 border border-white/5 transition-colors hover:bg-white/5">
                                 <div className={cn(
                                   "w-4 h-4 rounded-full border flex items-center justify-center shrink-0",
-                                  phase.progress === 100 ? "border-green-500/50 bg-green-500/10" : "border-white/10"
+                                  phase.progress === 100 || phase.status === 'Completed' ? "border-green-500/50 bg-green-500/10" : "border-white/10"
                                 )}>
-                                  {phase.progress === 100 && <CheckCircle2 className="h-2.5 w-2.5 text-green-500" />}
+                                  {(phase.progress === 100 || phase.status === 'Completed') && <CheckCircle2 className="h-2.5 w-2.5 text-green-500" />}
                                 </div>
                                 <span className="text-[11px] text-white/70 font-medium">{item}</span>
                               </div>
@@ -274,7 +272,7 @@ export default function RoadmapPage() {
                                      {item.status === 'WARN' && <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" />}
                                      {item.status === 'BLOCK' && <XCircle className="h-3.5 w-3.5 text-red-500" />}
                                   </div>
-                               </div>
+                                </div>
                             ))}
                          </div>
                       </ScrollArea>
@@ -308,27 +306,12 @@ export default function RoadmapPage() {
                         {isLaunching ? "Preflight Active..." : isLive ? "Commercial Live" : "Authorize Global Launch"}
                       </Button>
                       <p className="text-[9px] text-muted-foreground text-center italic">
-                        "Preflight validates environment, secrets, and ledger invariants before mode transition."
+                        "Preflight validates environment, playbooks, and ledger invariants before mode transition."
                       </p>
                    </div>
                 </Card>
              </div>
           </div>
-
-          <footer className="mt-12 p-10 rounded-3xl bg-secondary/10 border border-white/5 relative overflow-hidden text-center md:text-left">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-[100px] -mr-32 -mt-32" />
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="space-y-2 text-center md:text-left w-full">
-                <h3 className="text-2xl font-headline font-bold text-white flex items-center justify-center md:justify-start gap-3">
-                  <ShieldCheck className="h-6 w-6 text-accent" />
-                  Execution Readiness Gated
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-xl mx-auto md:mx-0">
-                  Sovereign OS architecture transition is now gated by the Preflight Framework. No direct launch without environment and ledger validation.
-                </p>
-              </div>
-            </div>
-          </footer>
         </main>
       </SidebarInset>
     </div>

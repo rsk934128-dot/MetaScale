@@ -17,7 +17,7 @@ import { processPaymentCredit } from './payment-service';
 
 /**
  * Phase 2.7: Optimized Reconciliation Engine
- * Uses 'settlementBucket' to minimize collection scanning.
+ * Phase 2.8: Incident Severity Injection
  */
 export async function runAutomatedReconciliation(
   firestore: Firestore,
@@ -33,8 +33,6 @@ export async function runAutomatedReconciliation(
   };
 
   try {
-    // Phase 2.7 Optimized Query: Using derived 'settlementBucket'
-    // Requires Composite Index: (settlementBucket, updatedAt desc)
     const stuckQuery = query(
       collection(firestore, 'payments'),
       where('settlementBucket', '==', 'READY_FOR_REPLAY'),
@@ -50,7 +48,7 @@ export async function runAutomatedReconciliation(
       results.anomaliesFound++;
 
       if (mode === 'DRY_RUN') {
-        results.logs.push(`[DRY_RUN] Candidate: ${payment.id}`);
+        results.logs.push(`[DRY_RUN] Incident Detected: ${payment.id}`);
         continue;
       }
 
@@ -59,17 +57,16 @@ export async function runAutomatedReconciliation(
         
         if (replayResult.status === 'SUCCESS_CREDITED') {
           results.replayed++;
-          results.logs.push(`[SUCCESS] Auto-replayed ${payment.id}`);
+          results.logs.push(`[SUCCESS] Self-healed Incident: ${payment.id}`);
         }
       } catch (err: any) {
         results.failed++;
-        results.logs.push(`[ERROR] Failed ${payment.id}: ${err.message}`);
+        results.logs.push(`[CRITICAL] Failed Replay ${payment.id}: ${err.message}`);
 
         const newCount = (payment.replayCount || 0) + 1;
         const backoffMs = Math.pow(2, newCount) * 5 * 60 * 1000;
         const nextAttempt = now + backoffMs;
         
-        // Update with new bucket logic
         const newBucket = newCount >= 5 ? 'FATAL' : 'WAITING_BACKOFF';
 
         await updateDoc(doc(firestore, 'payments', payment.id), {
@@ -79,12 +76,13 @@ export async function runAutomatedReconciliation(
           lastError: err.message,
           updatedAt: now,
           settlementBucket: newBucket,
-          manualReviewRequired: newBucket === 'FATAL'
+          manualReviewRequired: newBucket === 'FATAL',
+          primaryAnomaly: 'STUCK_PAYMENT'
         });
       }
     }
   } catch (globalErr: any) {
-    results.logs.push(`[FATAL] ${globalErr.message}`);
+    results.logs.push(`[FATAL_INFRA] ${globalErr.message}`);
   }
 
   return results;
