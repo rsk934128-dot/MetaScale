@@ -37,7 +37,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { useUser, useFirestore } from "@/firebase";
-import { doc, updateDoc, increment } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
@@ -55,8 +55,9 @@ export default function LegalBoundPage() {
     
     try {
       const userRef = doc(firestore, 'users', user.uid);
+      // Note: We only update lastBindingRefresh. 
+      // trustScore is protected by Security Rules and cannot be modified by the client.
       await updateDoc(userRef, { 
-        trustScore: increment(0.5),
         lastBindingRefresh: Date.now()
       });
 
@@ -71,10 +72,11 @@ export default function LegalBoundPage() {
         description: "Your legal and cryptographic identity has been re-validated with the Sovereign Mesh.",
       });
     } catch (err) {
+      console.error("Legal Handshake Error:", err);
       toast({
         variant: "destructive",
         title: "Handshake Failed",
-        description: "Failed to establish a fresh legal corridor. Try again."
+        description: "Failed to establish a fresh legal corridor. System authorization denied."
       });
     } finally {
       setIsRefreshing(false);
@@ -165,8 +167,7 @@ export default function LegalBoundPage() {
                     <CardTitle className="text-sm font-bold uppercase tracking-tight">Compliance</CardTitle>
                     <CardDescription className="text-[10px]">Governed by the laws of Seychelles.</CardDescription>
                   </CardHeader>
-                </Card>
-              </div>
+                </div>
 
               <Accordion type="single" collapsible className="w-full space-y-4">
                 <AccordionItem value="item-1" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
@@ -424,7 +425,7 @@ export default function LegalBoundPage() {
                 <AccordionItem value="privacy-2" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
                   <AccordionTrigger className="hover:no-underline py-6">
                     <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-green-400/10 border border-green-400/20 text-green-400">
+                      <div className="p-2 rounded-lg bg-green-400/10 border-green-400/20 text-green-400">
                         <UserCheck className="h-5 w-5" />
                       </div>
                       <div>
