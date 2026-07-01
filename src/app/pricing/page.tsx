@@ -99,11 +99,14 @@ export default function PricingPage() {
         title: "Upgrade Successful",
         description: `Your account has been migrated to the ${plan} tier.`,
       });
-    } catch (err) {
+    } catch (err: any) {
+      console.error("Upgrade Error:", err);
       toast({
         variant: "destructive",
         title: "Upgrade Failed",
-        description: "Kernel communication error during settlement handshake."
+        description: err.code === 'permission-denied' 
+          ? "Security Protocol Blocked: Authorization required for plan change." 
+          : "Kernel communication error during settlement handshake."
       });
     } finally {
       setIsUpgrading(false);
@@ -214,6 +217,7 @@ export default function PricingPage() {
                     variant="outline" 
                     className="w-full h-12 uppercase text-[10px] font-bold tracking-widest border-white/10"
                     disabled={profile?.plan === 'FREE' || isUpgrading}
+                    onClick={() => handleUpgrade('FREE')}
                    >
                      {profile?.plan === 'FREE' ? "Current Plan" : "Get Started"}
                    </Button>
@@ -221,7 +225,7 @@ export default function PricingPage() {
              </Card>
 
              {/* Pro Plan */}
-             <Card className="glass-panel border-accent/40 bg-accent/5 flex flex-col relative overflow-hidden group hover:border-accent transition-all shadow-[0_0_50px_rgba(0,242,255,0.1)] scale-105">
+             <Card className="glass-panel border-accent/40 bg-accent/5 flex flex-col relative overflow-hidden group hover:border-accent transition-all shadow-[0_0_50px_rgba(0,242,255,0.15)] scale-105">
                 <div className="absolute top-0 left-0 w-full h-1 bg-accent" />
                 <div className="absolute top-4 right-4">
                    <Badge className="bg-accent text-background font-bold text-[8px] uppercase tracking-widest">Popular</Badge>
@@ -304,8 +308,7 @@ export default function PricingPage() {
              <div className="flex justify-between items-end border-b border-white/5 pb-4">
                 <h3 className="text-xl font-headline font-bold uppercase tracking-widest">Full Feature Mesh</h3>
                 <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground">
-                   <Info className="h-3.5 w-3.5" />
-                   Overage rates apply after plan limits.
+                   <span className="flex items-center gap-1"><Info className="h-3.5 w-3.5" /> Overage rates apply after plan limits.</span>
                 </div>
              </div>
              <div className="overflow-x-auto">
@@ -376,8 +379,8 @@ export default function PricingPage() {
           <footer className="pt-20 border-t border-white/5 text-center space-y-6">
              <div className="flex items-center justify-center gap-4">
                 <div className="h-0.5 w-20 bg-gradient-to-r from-transparent to-accent/50" />
-                <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px] uppercase px-4">
-                   Global Settlement Mesh • ISO 20022
+                <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px] uppercase px-4 flex gap-2">
+                   <Building2 className="h-3 w-3" /> NOORNEXUS GLOBAL NODE • EST. 2024
                 </Badge>
                 <div className="h-0.5 w-20 bg-gradient-to-l from-transparent to-accent/50" />
              </div>

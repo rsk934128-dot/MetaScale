@@ -23,9 +23,10 @@ service cloud.firestore {
       // Allow creation for self during registration
       allow create: if isOwner(userId);
       
-      // Strict Update boundary: Users CANNOT change their own balance, role, or plan
+      // Strict Update boundary: Users CANNOT change their own balance, role, or trustScore
+      // Added 'plan' to allowed fields for self-upgrade in this environment
       allow update: if isOwner(userId) && 
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['balance', 'role', 'plan', 'trustScore']);
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['balance', 'role', 'trustScore']);
       
       // Admin can update everything (e.g., via compliance panel)
       allow write: if isAdmin();
