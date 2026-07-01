@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth, useFirestore } from '@/firebase';
@@ -67,6 +68,8 @@ export default function LoginPage() {
       case 'auth/operation-not-allowed': return 'এই লগইন মেথডটি এখনো এনাবেল করা হয়নি। দয়া করে ফায়ারবেস কনসোলে গিয়ে গুগল এবং ইমেইল/পাসওয়ার্ড অন করুন।';
       case 'auth/popup-blocked': return 'পপআপ ব্লক করা হয়েছে। দয়া করে ব্রাউজারের পপআপ এনাবেল করুন।';
       case 'auth/popup-closed-by-user': return 'লগইন উইন্ডোটি বন্ধ করা হয়েছে।';
+      case 'auth/cancelled-popup-request': return 'একাধিক পপআপ রিকোয়েস্টের কারণে অপারেশন বাতিল করা হয়েছে।';
+      case 'auth/internal-error': return 'অভ্যন্তরীণ ত্রুটি। দয়া করে ইন্টারনেট কানেকশন চেক করুন।';
       default: return `Error: ${errorCode}. দয়া করে আবার চেষ্টা করুন।`;
     }
   };
@@ -91,39 +94,39 @@ export default function LoginPage() {
         const isAdmin = result.user.email === ADMIN_EMAIL;
         const userRef = doc(firestore, 'users', result.user.uid);
         
-        getDoc(userRef).then((userSnap) => {
-          const userData = {
-            uid: result.user.uid,
-            displayName: result.user.displayName,
-            email: result.user.email,
-            kernelId: `SKO-${result.user.uid.substring(0, 6).toUpperCase()}`,
-            teamId: DEFAULT_TEAM_ID,
-            lastLogin: Date.now(),
-            isOnline: true,
-            role: isAdmin ? 'ADMIN' : 'CITIZEN',
-            plan: 'FREE',
-            ...(userSnap.exists() ? {} : { 
-              accountNumber: generateAccountNumber(), 
-              balance: 1000,
-              trustScore: 85.0,
-              verificationStatus: 'UNVERIFIED'
-            })
-          };
+        const userSnap = await getDoc(userRef);
+        const userData = {
+          uid: result.user.uid,
+          displayName: result.user.displayName,
+          email: result.user.email,
+          kernelId: `SKO-${result.user.uid.substring(0, 6).toUpperCase()}`,
+          teamId: DEFAULT_TEAM_ID,
+          lastLogin: Date.now(),
+          isOnline: true,
+          role: isAdmin ? 'ADMIN' : 'CITIZEN',
+          plan: 'FREE',
+          ...(userSnap.exists() ? {} : { 
+            accountNumber: generateAccountNumber(), 
+            balance: 1000,
+            trustScore: 85.0,
+            verificationStatus: 'UNVERIFIED'
+          })
+        };
 
-          setDoc(userRef, userData, { merge: true }).catch(async (err) => {
-            const permissionError = new FirestorePermissionError({
-              path: userRef.path,
-              operation: 'write',
-              requestResourceData: userData,
-            } satisfies SecurityRuleContext);
-            errorEmitter.emit('permission-error', permissionError);
-          });
+        await setDoc(userRef, userData, { merge: true }).catch(async (err) => {
+          const permissionError = new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'write',
+            requestResourceData: userData,
+          } satisfies SecurityRuleContext);
+          errorEmitter.emit('permission-error', permissionError);
         });
 
         toast({ title: "Identity Bound", description: "Sovereign Mesh link established successfully." });
         router.replace('/dashboard');
       }
     } catch (error: any) {
+      console.error("Auth Error:", error);
       toast({ variant: "destructive", title: "Auth Failed", description: getAuthErrorMessage(error.code) });
     } finally {
       setIsLoading(false);
@@ -158,7 +161,7 @@ export default function LoginPage() {
         isOnline: true,
       };
 
-      setDoc(userRef, userData).catch(async (err) => {
+      await setDoc(userRef, userData).catch(async (err) => {
         const permissionError = new FirestorePermissionError({
           path: userRef.path,
           operation: 'create',
@@ -168,7 +171,7 @@ export default function LoginPage() {
       });
 
       toast({ title: "Protocol Established", description: "কার্নেল আইডেন্টিটি তৈরি হয়েছে।" });
-      router.replace('/dashboard');
+      router.push('/dashboard');
     } catch (error: any) {
       toast({ variant: "destructive", title: "Registration Failed", description: getAuthErrorMessage(error.code) });
     } finally {
@@ -184,7 +187,7 @@ export default function LoginPage() {
       const res = await signInWithEmailAndPassword(auth, email, password);
       await updateOnlineStatus(res.user.uid);
       toast({ title: "Access Granted", description: "ডিটারমিনিস্টিক লিঙ্ক সফলভাবে তৈরি হয়েছে।" });
-      router.replace('/dashboard');
+      router.push('/dashboard');
     } catch (error: any) {
       toast({ variant: "destructive", title: "Login Failed", description: getAuthErrorMessage(error.code) });
     } finally {
