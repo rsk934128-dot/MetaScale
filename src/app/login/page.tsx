@@ -9,7 +9,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, getDoc, updateDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
@@ -70,6 +70,15 @@ export default function LoginPage() {
     }
   };
 
+  const updateOnlineStatus = async (uid: string) => {
+    if (!firestore) return;
+    const userRef = doc(firestore, 'users', uid);
+    await updateDoc(userRef, {
+      lastLogin: Date.now(),
+      isOnline: true
+    }).catch(() => {});
+  };
+
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
@@ -81,8 +90,6 @@ export default function LoginPage() {
         const isAdmin = result.user.email === ADMIN_EMAIL;
         const userRef = doc(firestore, 'users', result.user.uid);
         
-        // We don't await the profile fetch/creation to keep auth flow fast
-        // Firestore local cache handles instant identity binding
         getDoc(userRef).then((userSnap) => {
           const userData = {
             uid: result.user.uid,
@@ -90,7 +97,8 @@ export default function LoginPage() {
             email: result.user.email,
             kernelId: `SKO-${result.user.uid.substring(0, 6).toUpperCase()}`,
             teamId: DEFAULT_TEAM_ID,
-            lastLogin: serverTimestamp(),
+            lastLogin: Date.now(),
+            isOnline: true,
             role: isAdmin ? 'ADMIN' : 'CITIZEN',
             plan: 'FREE',
             ...(userSnap.exists() ? {} : { 
@@ -145,6 +153,8 @@ export default function LoginPage() {
         trustScore: 85.0,
         verificationStatus: 'UNVERIFIED',
         createdAt: serverTimestamp(),
+        lastLogin: Date.now(),
+        isOnline: true,
       };
 
       setDoc(userRef, userData).catch(async (err) => {
@@ -170,7 +180,8 @@ export default function LoginPage() {
     if (!email || !password) return;
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const res = await signInWithEmailAndPassword(auth, email, password);
+      await updateOnlineStatus(res.user.uid);
       toast({ title: "Access Granted", description: "ডিটারমিনিস্টিক লিঙ্ক সফলভাবে তৈরি হয়েছে।" });
       router.replace('/dashboard');
     } catch (error: any) {
