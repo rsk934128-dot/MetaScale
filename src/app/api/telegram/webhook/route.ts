@@ -11,6 +11,8 @@ import { sendTelegramMessage } from '@/lib/telegram';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    console.log('>>> TELEGRAM WEBHOOK INCOMING:', JSON.stringify(body));
+
     const { message } = body;
 
     if (!message || !message.text) {
@@ -20,7 +22,7 @@ export async function POST(req: Request) {
     const chatId = message.chat.id.toString();
     const text = message.text;
 
-    // Handle /start <uid> command
+    // Handle /start <uid> command from deep link
     if (text.startsWith('/start ')) {
       const userId = text.split(' ')[1];
       const { firestore } = initializeFirebase();
@@ -35,18 +37,20 @@ export async function POST(req: Request) {
             telegramLinked: true
           });
 
-          await sendTelegramMessage(chatId, `<b>✅ IDENTITY BOUND</b>\n\nCitizen: ${userSnap.data().displayName}\nKernel ID: ${userSnap.data().kernelId}\n\nYour account is now linked to the Sovereign OS Telegram Gateway.`);
+          await sendTelegramMessage(chatId, `<b>✅ IDENTITY BOUND</b>\n\nCitizen: ${userSnap.data().displayName}\nKernel ID: ${userSnap.data().kernelId}\n\nYour account is now linked to the Sovereign OS Telegram Gateway. You will receive critical alerts here.`);
         } else {
-          await sendTelegramMessage(chatId, "❌ User not found in Sovereign Mesh.");
+          await sendTelegramMessage(chatId, "❌ User not found in Sovereign Mesh. Please try initializing again from the OS dashboard.");
         }
       }
     } else if (text === '/status') {
-      await sendTelegramMessage(chatId, "<b>SYSTEM STATUS: NOMINAL</b>\nAll 42 nodes operational.");
+      await sendTelegramMessage(chatId, "<b>SYSTEM STATUS: NOMINAL</b>\n\nAll 42 nodes operational.\nAnycast Latency: 8.4ms\nSignal Plane: AES-256-GCM");
+    } else if (text === '/start') {
+       await sendTelegramMessage(chatId, "👋 Welcome to <b>Sovereign OS Gateway</b>.\n\nPlease use the <b>Initialize Gateway</b> button in your Communication Plane to link this bot with your account.");
     }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error('Webhook Error:', error);
+    console.error('Webhook Runtime Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

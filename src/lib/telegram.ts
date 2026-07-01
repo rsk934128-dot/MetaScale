@@ -32,13 +32,18 @@ export function generateTelegramLink(userId: string) {
 
 export async function setTelegramWebhook(url: string) {
   try {
+    // Ensuring the URL ends with the correct API path
+    const webhookUrl = `${url}/api/telegram/webhook`;
     const response = await fetch(`${BASE_URL}/setWebhook`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: `${url}/api/telegram/webhook` }),
+      body: JSON.stringify({ url: webhookUrl }),
     });
-    return await response.json();
+    const result = await response.json();
+    console.log('Webhook Setup Result:', result);
+    return result;
   } catch (error) {
+    console.error('Webhook Setup Error:', error);
     return null;
   }
 }

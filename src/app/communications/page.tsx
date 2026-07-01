@@ -18,7 +18,8 @@ import {
   ExternalLink,
   ShieldCheck,
   Smartphone,
-  Bot
+  Bot,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +41,7 @@ export default function CommunicationPlanePage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isWebookLoading, setIsWebhookLoading] = useState(false);
+  const [isWebhookLoading, setIsWebhookLoading] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [intelligenceReport, setIntelligenceReport] = useState<any>(null);
   const { toast } = useToast();
@@ -63,14 +64,30 @@ export default function CommunicationPlanePage() {
 
   const handleSetWebhook = async () => {
     setIsWebhookLoading(true);
-    const url = window.location.origin;
-    const res = await setTelegramWebhook(url);
-    if (res?.ok) {
-      toast({ title: "Webhook Secured", description: "Telegram bot is now inter-linked with the Sovereign Kernel." });
-    } else {
-      toast({ variant: "destructive", title: "Webhook Failed", description: "Could not establish secure callback." });
+    try {
+      // Note: Webhooks only work on public HTTPS URLs. 
+      // If you are developing locally, you will need a service like ngrok.
+      const origin = window.location.origin;
+      const res = await setTelegramWebhook(origin);
+      
+      if (res?.ok) {
+        toast({ 
+          title: "Webhook Secured", 
+          description: "Telegram bot is now inter-linked with the Sovereign Kernel." 
+        });
+        emitEvent('SECURITY', 'TELEGRAM_WEBHOOK_REGISTERED', 2, { url: origin });
+      } else {
+        toast({ 
+          variant: "destructive", 
+          title: "Webhook Failed", 
+          description: res?.description || "Could not establish secure callback." 
+        });
+      }
+    } catch (err) {
+      toast({ variant: "destructive", title: "Connection Error", description: "Kernel could not reach Telegram API." });
+    } finally {
+      setIsWebhookLoading(false);
     }
-    setIsWebhookLoading(false);
   };
 
   const handleRunAnalysis = async (email: any) => {
@@ -165,8 +182,13 @@ export default function CommunicationPlanePage() {
                           <Zap className="mr-2 h-4 w-4" /> Initialize Gateway
                         </a>
                       </Button>
-                      <Button variant="outline" className="h-11 border-white/5 bg-white/5 text-[10px] font-bold uppercase tracking-widest" onClick={handleSetWebhook} disabled={isWebookLoading}>
-                        {isWebookLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                      <Button 
+                        variant="outline" 
+                        className="h-11 border-white/5 bg-white/5 text-[10px] font-bold uppercase tracking-widest" 
+                        onClick={handleSetWebhook} 
+                        disabled={isWebhookLoading}
+                      >
+                        {isWebhookLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
                         Secure Webhook
                       </Button>
                     </div>
