@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth, useFirestore } from '@/firebase';
@@ -24,7 +23,8 @@ import {
   Key,
   Loader2,
   AlertCircle,
-  Users
+  Users,
+  ChevronLeft
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -35,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/ui/logo';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import Link from 'next/link';
 
 const ADMIN_EMAIL = 'rubels1k994@gmail.com';
 const DEFAULT_TEAM_ID = 'team_UJR6KEPUrWUszD8jdhiyjQgV';
@@ -193,6 +194,15 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full bg-background flex items-center justify-center p-4 md:p-10 relative overflow-hidden">
+      {/* Back Button */}
+      <div className="absolute top-4 left-4 md:top-8 md:left-8 z-50">
+        <Button asChild variant="ghost" className="text-muted-foreground hover:text-accent transition-colors">
+          <Link href="/">
+            <ChevronLeft className="mr-2 h-4 w-4" /> Back to Mesh
+          </Link>
+        </Button>
+      </div>
+
       <div className="absolute inset-0 z-0 pointer-events-none opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #00f2ff 1.5px, transparent 1.5px)', backgroundSize: '48px 48px' }} />
 
       <div className="relative z-10 w-full max-w-6xl flex flex-col items-center gap-8">
