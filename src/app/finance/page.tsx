@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -103,81 +104,78 @@ export default function FinancialIntelligence() {
   };
 
   const moneyMovementOptions = [
-    { icon: Users, label: "Priyo Pay User", desc: "Instant peer-to-peer" },
-    { icon: Building2, label: "US Bank", desc: "Domestic wires/ACH" },
-    { icon: Globe, label: "BD Bank", desc: "Local BEFTN/NPSB" },
-    { icon: Smartphone, label: "Mobile Wallet", desc: "bKash, Nagad, Rocket" },
-    { icon: CreditCard, label: "My Accounts", desc: "Manage settlements" }
+    { icon: Users, label: "Priyo User", desc: "Instant P2P" },
+    { icon: Building2, label: "US Bank", desc: "Wires/ACH" },
+    { icon: Globe, label: "BD Bank", desc: "BEFTN/NPSB" },
+    { icon: Smartphone, label: "Wallet", desc: "bKash/Nagad" },
+    { icon: CreditCard, label: "Accounts", desc: "Settlements" }
   ];
 
   return (
     <div className="flex min-h-screen">
       <AppSidebar />
       <SidebarInset>
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-4 md:px-6">
           <SidebarTrigger />
           <div className="flex-1 truncate">
-            <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-accent">
-              <DollarSign className="h-5 w-5 text-accent" />
+            <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 text-accent">
+              <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-accent" />
               Fiscal Command Hub
             </h1>
           </div>
-          <Badge variant="outline" className="text-xs border-accent/20 text-accent font-mono">
-            KERNEL_{mode}
-          </Badge>
         </header>
 
-        <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
+        <main className="flex-1 p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6 md:space-y-8">
           {/* Balance & Stats Strip */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
              <Card className="glass-panel border-l-4 border-l-accent overflow-hidden shadow-2xl">
-                <CardHeader className="pb-2 p-6">
+                <CardHeader className="pb-1 md:pb-2 p-4 md:p-6">
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.2em]">Main Balance</CardTitle>
-                    <Wallet className="h-4 w-4 text-accent animate-pulse" />
+                    <CardTitle className="text-[9px] md:text-[10px] uppercase font-bold text-muted-foreground tracking-[0.2em]">Balance</CardTitle>
+                    <Wallet className="h-4 w-4 text-accent" />
                   </div>
                 </CardHeader>
-                <CardContent className="px-6 pb-6">
-                   <p className="text-4xl font-headline font-bold text-white">${profile?.balance?.toLocaleString() || '0.00'}</p>
-                   <p className="text-[9px] text-accent font-bold mt-2 uppercase tracking-widest">USD_SETTLEMENT_NODE</p>
+                <CardContent className="px-4 md:px-6 pb-4 md:pb-6">
+                   <p className="text-2xl md:text-4xl font-headline font-bold text-white">${profile?.balance?.toLocaleString() || '0.00'}</p>
+                   <p className="text-[8px] md:text-[9px] text-accent font-bold mt-1 md:mt-2 uppercase">USD_SETTLEMENT_NODE</p>
                 </CardContent>
              </Card>
 
-             <Card className="glass-panel border-l-4 border-l-primary lg:col-span-2 overflow-hidden bg-primary/5">
-                <CardHeader className="pb-2 p-6">
-                    <CardTitle className="text-[10px] uppercase font-bold text-primary tracking-[0.2em] flex items-center gap-2">
-                       <TrendingUp className="h-3 w-3" /> Live Interbank Exchange (Remittance)
+             <Card className="glass-panel border-l-4 border-l-primary md:col-span-2 overflow-hidden bg-primary/5">
+                <CardHeader className="pb-1 md:pb-2 p-4 md:p-6">
+                    <CardTitle className="text-[9px] md:text-[10px] uppercase font-bold text-primary tracking-[0.2em] flex items-center gap-2">
+                       <TrendingUp className="h-3 w-3" /> Live Exchange
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="px-6 pb-6 grid grid-cols-2 gap-8">
-                   <div className="space-y-1">
-                      <p className="text-[9px] uppercase font-bold text-muted-foreground">MYR to BDT</p>
-                      <p className="text-2xl font-headline font-bold text-white">৳27.41 <span className="text-[10px] text-green-400">+0.12</span></p>
+                <CardContent className="px-4 md:px-6 pb-4 md:pb-6 grid grid-cols-2 gap-4 md:gap-8">
+                   <div className="space-y-0.5">
+                      <p className="text-[8px] md:text-[9px] uppercase font-bold text-muted-foreground">MYR/BDT</p>
+                      <p className="text-lg md:text-2xl font-headline font-bold text-white">৳27.41</p>
                    </div>
-                   <div className="space-y-1">
-                      <p className="text-[9px] uppercase font-bold text-muted-foreground">USD to BDT</p>
-                      <p className="text-2xl font-headline font-bold text-accent">৳124.50 <span className="text-[10px] text-green-400">+0.05</span></p>
+                   <div className="space-y-0.5">
+                      <p className="text-[8px] md:text-[9px] uppercase font-bold text-muted-foreground">USD/BDT</p>
+                      <p className="text-lg md:text-2xl font-headline font-bold text-accent">৳124.50</p>
                    </div>
                 </CardContent>
              </Card>
           </div>
 
           {/* Move Money Hub */}
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             <div className="flex items-center justify-between border-b border-white/5 pb-2">
-               <h2 className="text-xl font-headline font-bold uppercase italic tracking-tighter">Move <span className="text-accent">Money</span></h2>
-               <Badge variant="outline" className="text-[8px] font-bold border-accent/20 text-accent uppercase">5 Active Channels</Badge>
+               <h2 className="text-base md:text-xl font-headline font-bold uppercase italic tracking-tighter">Move <span className="text-accent">Money</span></h2>
+               <Badge variant="outline" className="text-[7px] md:text-[8px] font-bold border-accent/20 text-accent uppercase">Active Nodes</Badge>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
                {moneyMovementOptions.map((opt, i) => (
                  <Card key={i} className="glass-panel hover:border-accent/40 transition-all cursor-pointer group">
-                    <CardContent className="p-6 flex flex-col items-center text-center space-y-3">
-                       <div className="p-3 rounded-2xl bg-secondary/50 border border-white/5 group-hover:scale-110 group-hover:bg-accent/10 group-hover:border-accent/30 transition-all">
-                          <opt.icon className="h-6 w-6 text-accent" />
+                    <CardContent className="p-3 md:p-6 flex flex-col items-center text-center space-y-2 md:space-y-3">
+                       <div className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-secondary/50 border border-white/5 group-hover:scale-105 transition-all">
+                          <opt.icon className="h-4 w-4 md:h-6 md:w-6 text-accent" />
                        </div>
-                       <div className="space-y-1">
-                          <p className="text-xs font-bold text-white uppercase tracking-tight">{opt.label}</p>
-                          <p className="text-[9px] text-muted-foreground italic leading-none">{opt.desc}</p>
+                       <div className="space-y-0.5">
+                          <p className="text-[10px] md:text-xs font-bold text-white uppercase truncate">{opt.label}</p>
+                          <p className="text-[7px] md:text-[9px] text-muted-foreground italic truncate">{opt.desc}</p>
                        </div>
                     </CardContent>
                  </Card>
@@ -185,22 +183,20 @@ export default function FinancialIntelligence() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Payout Form */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
             <div className="lg:col-span-2">
                <Card className="glass-panel border-l-4 border-l-[#6366f1] bg-[#6366f1]/5 shadow-2xl overflow-hidden">
-                  <CardHeader>
-                     <CardTitle className="text-sm flex items-center gap-2 uppercase text-[#818cf8]">
-                        <Building2 className="h-4 w-4" /> Global Disbursement
+                  <CardHeader className="p-4 md:p-6">
+                     <CardTitle className="text-xs md:text-sm flex items-center gap-2 uppercase text-[#818cf8]">
+                        <Building2 className="h-4 w-4" /> Global Payout
                      </CardTitle>
-                     <CardDescription className="text-[10px] uppercase tracking-widest">Cross-border Settlement Pipeline</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-4 md:space-y-6 p-4 md:p-6 pt-0">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                           <Label className="text-[10px] font-bold opacity-60">Payout Rail</Label>
+                           <Label className="text-[9px] md:text-[10px] font-bold opacity-60 uppercase">Rail</Label>
                            <select 
-                             className="w-full bg-secondary/50 border border-white/5 rounded-md h-11 text-xs px-3 text-white focus:outline-none"
+                             className="w-full bg-secondary/50 border border-white/5 rounded-md h-10 md:h-11 text-xs px-3 text-white focus:outline-none"
                              value={payoutGateway}
                              onChange={(e: any) => setPayoutGateway(e.target.value)}
                            >
@@ -210,74 +206,63 @@ export default function FinancialIntelligence() {
                            </select>
                         </div>
                         <div className="space-y-2">
-                           <Label className="text-[10px] font-bold opacity-60">Recipient Address</Label>
+                           <Label className="text-[9px] md:text-[10px] font-bold opacity-60 uppercase">Recipient</Label>
                            <Input 
                              placeholder="email@mesh.gov or @username" 
-                             className="bg-secondary/30 border-white/5 h-11 text-sm"
+                             className="bg-secondary/30 border-white/5 h-10 md:h-11 text-xs md:text-sm"
                              value={payoutRecipient}
                              onChange={(e) => setPayoutRecipient(e.target.value)}
                            />
                         </div>
                      </div>
                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold opacity-60">Amount (USD)</Label>
+                        <Label className="text-[9px] md:text-[10px] font-bold opacity-60 uppercase">Amount (USD)</Label>
                         <Input 
                           type="number" 
                           placeholder="0.00" 
-                          className="bg-secondary/30 border-white/5 h-12 text-lg font-headline"
+                          className="bg-secondary/30 border-white/5 h-10 md:h-12 text-base md:text-lg font-headline"
                           value={payoutAmount}
                           onChange={(e) => setPayoutAmount(e.target.value)}
                         />
                      </div>
                      <Button 
-                       className="w-full font-bold h-12 uppercase text-[10px] cyan-glow bg-accent text-background"
+                       className="w-full font-bold h-10 md:h-12 uppercase text-[9px] md:text-[10px] cyan-glow bg-accent text-background"
                        onClick={handleGlobalPayout}
                        disabled={isPayoutProcessing || !payoutAmount || !payoutRecipient}
                      >
                         {isPayoutProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                        Authorize Institutional Disbursement
+                        Authorize Disbursement
                      </Button>
                   </CardContent>
                </Card>
             </div>
 
-            {/* Recent History Sidebar */}
             <div className="space-y-6">
-               <Card className="glass-panel border-white/5 h-full flex flex-col">
+               <Card className="glass-panel border-white/5 flex flex-col">
                   <CardHeader className="p-4 border-b border-white/5">
-                     <CardTitle className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-                        <History className="h-4 w-4 text-accent" /> Recent Activity
+                     <CardTitle className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
+                        <History className="h-4 w-4 text-accent" /> History
                      </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-0 flex-1">
-                     <ScrollArea className="h-[400px]">
+                  <CardContent className="p-0">
+                     <ScrollArea className="h-[300px] md:h-[400px]">
                         <div className="divide-y divide-white/5">
                            {recentTxns?.map((txn: any) => (
-                             <div key={txn.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-all">
+                             <div key={txn.id} className="p-3 md:p-4 flex items-center justify-between hover:bg-white/5">
                                 <div className="flex items-center gap-3">
                                    <div className="p-2 rounded bg-black/40 border border-white/10 text-primary">
-                                      <DollarSign className="h-4 w-4" />
+                                      <DollarSign className="h-3 w-3 md:h-4 md:w-4" />
                                    </div>
                                    <div className="space-y-0.5">
-                                      <p className="text-[11px] font-bold text-white uppercase">${txn.amount}</p>
-                                      <p className="text-[8px] text-muted-foreground font-mono">{new Date(txn.timestamp).toLocaleTimeString()}</p>
+                                      <p className="text-[10px] md:text-[11px] font-bold text-white uppercase">${txn.amount}</p>
+                                      <p className="text-[7px] md:text-[8px] text-muted-foreground font-mono">{new Date(txn.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                                    </div>
                                 </div>
-                                <Badge variant="ghost" className="text-[7px] uppercase border-white/10">{txn.status}</Badge>
+                                <Badge variant="ghost" className="text-[6px] md:text-[7px] uppercase border-white/10">{txn.status}</Badge>
                              </div>
                            ))}
                         </div>
                      </ScrollArea>
-                  </CardContent>
-               </Card>
-
-               <Card className="glass-panel border-accent/20 bg-accent/5">
-                  <CardContent className="p-4 flex items-center gap-4">
-                     <ShieldCheck className="h-8 w-8 text-accent shrink-0" />
-                     <div className="space-y-0.5">
-                        <p className="text-[10px] font-bold text-white uppercase">Compliance Check</p>
-                        <p className="text-[9px] text-muted-foreground italic">ISO 20022 messaging active on all payout rails.</p>
-                     </div>
                   </CardContent>
                </Card>
             </div>
@@ -293,3 +278,4 @@ export default function FinancialIntelligence() {
     </div>
   );
 }
+

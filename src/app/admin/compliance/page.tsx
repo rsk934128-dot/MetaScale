@@ -104,10 +104,10 @@ export default function AdminCompliancePage() {
   const { data: anomalies } = useCollection<any>(anomaliesQuery);
 
   const operationalMetrics: OperationalMetric[] = [
-    { id: 'm1', label: 'Active Citizens', value: citizens?.length || 0, type: 'GAUGE', trend: 'UP', status: 'NORMAL' },
-    { id: 'm2', label: 'Success Rate', value: '98.2%', type: 'GAUGE', trend: 'UP', status: 'NORMAL' },
-    { id: 'm3', label: 'Stuck Payouts', value: anomalies?.length || 0, type: 'COUNTER', trend: 'NEUTRAL', status: (anomalies?.length || 0) > 0 ? 'WARN' : 'NORMAL' },
-    { id: 'm4', label: 'Mesh Pulse', value: '8.4ms', type: 'GAUGE', trend: 'NEUTRAL', status: 'NORMAL' },
+    { id: 'm1', label: 'Citizens', value: citizens?.length || 0, type: 'GAUGE', trend: 'UP', status: 'NORMAL' },
+    { id: 'm2', label: 'Success', value: '98.2%', type: 'GAUGE', trend: 'UP', status: 'NORMAL' },
+    { id: 'm3', label: 'Anomalies', value: anomalies?.length || 0, type: 'COUNTER', trend: 'NEUTRAL', status: (anomalies?.length || 0) > 0 ? 'WARN' : 'NORMAL' },
+    { id: 'm4', label: 'Pulse', value: '8.4ms', type: 'GAUGE', trend: 'NEUTRAL', status: 'NORMAL' },
   ];
 
   const handleUserAction = async (userId: string, action: 'FREEZE' | 'ACTIVATE' | 'MAKE_ADMIN') => {
@@ -131,30 +131,12 @@ export default function AdminCompliancePage() {
     }
   };
 
-  const handleVerify = async (docData: any, status: 'APPROVED' | 'REJECTED') => {
-    if (!firestore) return;
-    setIsProcessing(docData.id);
-    try {
-      await updateDoc(doc(firestore, 'verification_docs', docData.id), { status });
-      await updateDoc(doc(firestore, 'users', docData.userId), { 
-        verificationStatus: status === 'APPROVED' ? 'VERIFIED' : 'FLAGGED',
-        trustScore: status === 'APPROVED' ? 98.4 : 45.0
-      });
-      emitEvent('SECURITY', 'DOCUMENT_VERIFICATION_RESOLVED', 2, { docId: docData.id, status });
-      toast({ title: status === 'APPROVED' ? "Approved" : "Rejected" });
-    } catch (err) {
-      toast({ variant: "destructive", title: "Action Failed" });
-    } finally {
-      setIsProcessing(null);
-    }
-  };
-
   const handleRunCognitiveAnalysis = async () => {
     if (!globalActivity) return;
     setIsAnalyzingHistory(true);
     try {
       const result = await runForensicCognition({
-        currentIncident: "Analyze overall system health and recent security traces.",
+        currentIncident: "Analyze overall system health.",
         historicalLogs: globalActivity.map((ev: any) => ({
           id: ev.id,
           type: ev.type,
@@ -166,7 +148,7 @@ export default function AdminCompliancePage() {
         context: "Sovereign OS Administrative Oversight."
       });
       setSmartInsights(result);
-      toast({ title: "Cognitive Insights Generated", description: "RCA complete." });
+      toast({ title: "Insights Generated" });
     } catch (err) {
       toast({ variant: "destructive", title: "Analysis Failed" });
     } finally {
@@ -183,64 +165,59 @@ export default function AdminCompliancePage() {
   }, [citizens, userSearch]);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-background">
       <AppSidebar />
       <SidebarInset>
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-4 md:px-6">
           <SidebarTrigger />
-          <div className="flex-1">
-            <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-accent">
-              <Gavel className="h-5 w-5 text-accent" />
-              Sovereign Command Center
+          <div className="flex-1 truncate">
+            <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 text-accent">
+              <Gavel className="h-4 w-4 md:h-5 md:w-5 text-accent shrink-0" />
+              <span className="truncate">Sovereign Command</span>
             </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <Button 
-                variant="outline" 
-                size="sm" 
-                className="border-primary/20 text-primary font-bold text-[10px] h-8 blue-glow"
-                onClick={handleRunCognitiveAnalysis}
-                disabled={isAnalyzingHistory}
-            >
-                {isAnalyzingHistory ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <Sparkles className="h-3 w-3 mr-1.5" />}
-                Generate Cognitive Insights
-            </Button>
-            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">System Live</span>
-          </div>
+          <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-primary/20 text-primary font-bold text-[9px] md:text-[10px] h-8 blue-glow px-2"
+              onClick={handleRunCognitiveAnalysis}
+              disabled={isAnalyzingHistory}
+          >
+              {isAnalyzingHistory ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3 mr-1" />}
+              <span className="hidden xs:inline">AI Insights</span>
+              <span className="xs:hidden">AI</span>
+          </Button>
         </header>
 
-        <main className="flex-1 p-8 max-w-[1600px] mx-auto w-full space-y-8">
+        <main className="flex-1 p-4 md:p-8 max-w-[1600px] mx-auto w-full space-y-6 md:space-y-8">
           
           {/* Cognitive Insights Panel */}
           {smartInsights && (
             <Card className="glass-panel border-accent/20 bg-accent/5 overflow-hidden animate-fade-in shadow-2xl relative">
-               <div className="absolute top-0 right-0 p-4 opacity-5"><BrainCircuit className="h-20 w-20 text-accent" /></div>
-               <CardHeader className="border-b border-white/5 py-4">
-                  <CardTitle className="text-xs flex items-center gap-2 text-accent uppercase tracking-widest">
-                     <BrainCircuit className="h-4 w-4" />
-                     Sovereign Cognitive Analysis
+               <CardHeader className="p-4 border-b border-white/5">
+                  <CardTitle className="text-[10px] md:text-xs flex items-center gap-2 text-accent uppercase tracking-widest">
+                     <BrainCircuit className="h-4 w-4" /> Cognitive Analysis
                   </CardTitle>
                </CardHeader>
-               <CardContent className="p-6 relative z-10">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                     <div className="md:col-span-1 space-y-2 border-r border-white/5 pr-8">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Confidence Index</p>
-                        <p className="text-4xl font-headline font-bold text-white">{smartInsights.confidenceIndex}%</p>
+               <CardContent className="p-4 md:p-6">
+                  <div className="flex flex-col md:flex-row gap-6">
+                     <div className="md:w-1/4 space-y-2 border-b md:border-b-0 md:border-r border-white/5 pb-4 md:pb-0 md:pr-6">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Confidence</p>
+                        <p className="text-2xl md:text-4xl font-headline font-bold text-white">{smartInsights.confidenceIndex}%</p>
                         <Badge className={smartInsights.riskLevel === 'CRITICAL' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}>
-                           RISK: {smartInsights.riskLevel}
+                           {smartInsights.riskLevel}
                         </Badge>
                      </div>
-                     <div className="md:col-span-3 space-y-4">
+                     <div className="flex-1 space-y-4">
                         <div className="space-y-1">
-                           <p className="text-[10px] font-bold text-accent uppercase">Root Cause Analysis</p>
-                           <p className="text-xs text-white/90 leading-relaxed italic border-l-2 border-accent/30 pl-4">
+                           <p className="text-[9px] font-bold text-accent uppercase">RCA</p>
+                           <p className="text-[11px] md:text-xs text-white/90 leading-relaxed italic border-l-2 border-accent/30 pl-3">
                               "{smartInsights.rootCauseAnalysis}"
                            </p>
                         </div>
-                        <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 space-y-1">
-                           <p className="text-[9px] font-bold text-primary uppercase">Recommended Strategy</p>
-                           <p className="text-[11px] text-white font-bold">{smartInsights.recommendedStrategy}</p>
+                        <div className="p-2 md:p-3 rounded-lg bg-primary/10 border border-primary/20">
+                           <p className="text-[8px] font-bold text-primary uppercase mb-1">Strategy</p>
+                           <p className="text-[10px] md:text-[11px] text-white font-bold">{smartInsights.recommendedStrategy}</p>
                         </div>
                      </div>
                   </div>
@@ -249,39 +226,33 @@ export default function AdminCompliancePage() {
           )}
 
           {/* KPI Dashboard */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
              {operationalMetrics.map((metric) => (
-               <Card key={metric.id} className={cn("glass-panel border-l-4 transition-all", metric.status === 'WARN' ? 'border-l-yellow-500' : 'border-l-accent')}>
-                 <CardContent className="p-4 flex justify-between items-end">
-                    <div className="space-y-1">
-                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{metric.label}</p>
-                       <p className="text-2xl font-headline font-bold text-white">{metric.value}</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-background/50 text-accent">
-                       <Activity className="h-4 w-4" />
+               <Card key={metric.id} className={cn("glass-panel border-l-4", metric.status === 'WARN' ? 'border-l-yellow-500' : 'border-l-accent')}>
+                 <CardContent className="p-3 md:p-4 flex justify-between items-end">
+                    <div className="space-y-0.5 min-w-0">
+                       <p className="text-[8px] md:text-[10px] font-bold text-muted-foreground uppercase truncate">{metric.label}</p>
+                       <p className="text-lg md:text-2xl font-headline font-bold text-white">{metric.value}</p>
                     </div>
                  </CardContent>
                </Card>
              ))}
           </div>
 
-          <Tabs defaultValue="citizens" className="space-y-8">
-            <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1">
-               <TabsTrigger value="citizens" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">Citizen Registry</TabsTrigger>
-               <TabsTrigger value="activity" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">Global Activity</TabsTrigger>
-               <TabsTrigger value="kyb" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">KYB Queue</TabsTrigger>
-               <TabsTrigger value="anomalies" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full flex gap-2">
-                 Anomalies {anomalies?.length > 0 && <Badge className="bg-red-500 h-4 min-w-4 flex items-center justify-center p-0 text-[8px]">{anomalies.length}</Badge>}
-               </TabsTrigger>
+          <Tabs defaultValue="citizens" className="space-y-6">
+            <TabsList className="bg-secondary/50 border border-white/5 w-full justify-start overflow-x-auto h-12 p-1">
+               <TabsTrigger value="citizens" className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest px-4 md:px-8 h-full">Citizens</TabsTrigger>
+               <TabsTrigger value="activity" className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest px-4 md:px-8 h-full">Activity</TabsTrigger>
+               <TabsTrigger value="kyb" className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest px-4 md:px-8 h-full">KYB</TabsTrigger>
+               <TabsTrigger value="anomalies" className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest px-4 md:px-8 h-full">Anomalies</TabsTrigger>
             </TabsList>
 
-            {/* Tab 1: Citizen Registry */}
-            <TabsContent value="citizens" className="space-y-6">
-               <div className="flex justify-between items-end">
-                  <h2 className="text-2xl font-headline font-bold">System Users</h2>
-                  <div className="relative w-72">
+            <TabsContent value="citizens" className="space-y-4">
+               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <h2 className="text-xl md:text-2xl font-headline font-bold">System Users</h2>
+                  <div className="relative w-full md:w-72">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search by name or email..." className="pl-10 bg-secondary/30 border-white/5" value={userSearch} onChange={e => setUserSearch(e.target.value)} />
+                    <Input placeholder="Search users..." className="pl-10 bg-secondary/30 border-white/5 h-10 text-sm" value={userSearch} onChange={e => setUserSearch(e.target.value)} />
                   </div>
                </div>
                
@@ -291,27 +262,22 @@ export default function AdminCompliancePage() {
                       {usersLoading ? (
                         <div className="p-12 flex justify-center"><Loader2 className="h-8 w-8 animate-spin opacity-20" /></div>
                       ) : filteredCitizens.map((citizen: any) => (
-                        <div key={citizen.id} className="p-6 flex items-center justify-between group hover:bg-white/5 transition-all">
+                        <div key={citizen.id} className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:bg-white/5 transition-all">
                            <div className="flex gap-4 items-center">
-                              <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-accent font-bold">
+                              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-accent font-bold">
                                 {citizen.displayName?.[0] || 'U'}
                               </div>
-                              <div className="space-y-1">
+                              <div className="space-y-1 min-w-0">
                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-bold text-white uppercase">{citizen.displayName}</span>
-                                    <Badge variant="outline" className="text-[8px] border-accent/30 text-accent uppercase">{citizen.role}</Badge>
+                                    <span className="text-sm font-bold text-white uppercase truncate">{citizen.displayName}</span>
+                                    <Badge variant="outline" className="text-[7px] border-accent/30 text-accent uppercase px-1">{citizen.role}</Badge>
                                  </div>
-                                 <p className="text-[10px] text-muted-foreground font-mono">{citizen.email}</p>
-                                 <div className="flex items-center gap-4 text-[9px] font-bold uppercase text-muted-foreground/60">
-                                    <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" /> Balance: ${citizen.balance?.toFixed(2)}</span>
-                                    <span className="flex items-center gap-1"><ShieldCheck className="h-3 w-3" /> Trust: {citizen.trustScore}</span>
-                                 </div>
+                                 <p className="text-[9px] md:text-[10px] text-muted-foreground font-mono truncate">{citizen.email}</p>
                               </div>
                            </div>
                            <div className="flex gap-2">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-accent/10 hover:text-accent" onClick={() => handleUserAction(citizen.id, 'ACTIVATE')}><UserCheck className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-red-500/10 hover:text-red-500" onClick={() => handleUserAction(citizen.id, 'FREEZE')}><ShieldX className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/10" onClick={() => handleUserAction(citizen.id, 'MAKE_ADMIN')}><Lock className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="sm" className="h-8 text-[9px] uppercase font-bold px-2 hover:bg-accent/10 text-accent" onClick={() => handleUserAction(citizen.id, 'ACTIVATE')}><UserCheck className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Activate</span></Button>
+                              <Button variant="ghost" size="sm" className="h-8 text-[9px] uppercase font-bold px-2 hover:bg-red-500/10 text-red-500" onClick={() => handleUserAction(citizen.id, 'FREEZE')}><ShieldX className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Freeze</span></Button>
                            </div>
                         </div>
                       ))}
@@ -320,35 +286,32 @@ export default function AdminCompliancePage() {
                </Card>
             </TabsContent>
 
-            {/* Tab 2: Activity Feed */}
-            <TabsContent value="activity" className="space-y-6">
-               <Card className="glass-panel border-white/5 bg-black/20">
-                  <CardHeader>
-                     <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
-                        <History className="h-4 w-4 text-accent" />
-                        Live Execution Feed
+            <TabsContent value="activity" className="space-y-4">
+               <Card className="glass-panel border-white/5 bg-black/20 overflow-hidden">
+                  <CardHeader className="p-4">
+                     <CardTitle className="text-xs md:text-sm uppercase tracking-widest flex items-center gap-2">
+                        <History className="h-4 w-4 text-accent" /> Live Feed
                      </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                     <ScrollArea className="h-[600px]">
+                     <ScrollArea className="h-[500px]">
                         <div className="divide-y divide-white/5">
                            {globalActivity?.map((ev: any) => (
-                             <div key={ev.id} className="p-4 flex items-start gap-4 group hover:bg-white/5">
+                             <div key={ev.id} className="p-3 md:p-4 flex items-start gap-3 md:gap-4 hover:bg-white/5">
                                 <div className={cn(
-                                  "p-2 rounded bg-black/40 border border-white/5",
+                                  "p-2 rounded bg-black/40 border border-white/5 shrink-0",
                                   ev.plane === 'FINANCE' ? "text-green-400" : ev.plane === 'SECURITY' ? "text-red-400" : "text-blue-400"
                                 )}>
-                                   {ev.plane === 'FINANCE' ? <DollarSign className="h-4 w-4" /> : ev.plane === 'SECURITY' ? <ShieldAlert className="h-4 w-4" /> : <ActivityIcon className="h-4 w-4" />}
+                                   {ev.plane === 'FINANCE' ? <DollarSign className="h-3 w-3 md:h-4 md:w-4" /> : ev.plane === 'SECURITY' ? <ShieldAlert className="h-3 w-3 md:h-4 md:w-4" /> : <ActivityIcon className="h-3 w-3 md:h-4 md:w-4" />}
                                 </div>
-                                <div className="flex-1 space-y-1">
+                                <div className="flex-1 min-w-0 space-y-1">
                                    <div className="flex justify-between">
-                                      <span className="text-[10px] font-bold text-white uppercase">{ev.type}</span>
-                                      <span className="text-[9px] font-mono text-muted-foreground">{new Date(ev.timestamp).toLocaleString()}</span>
+                                      <span className="text-[8px] md:text-[10px] font-bold text-white uppercase">{ev.type}</span>
+                                      <span className="text-[7px] md:text-[9px] font-mono text-muted-foreground">{new Date(ev.timestamp).toLocaleTimeString()}</span>
                                    </div>
-                                   <p className="text-[11px] text-muted-foreground italic leading-relaxed">
-                                      {JSON.stringify(ev.payload).substring(0, 150)}...
+                                   <p className="text-[10px] md:text-[11px] text-muted-foreground italic truncate">
+                                      {JSON.stringify(ev.payload)}
                                    </p>
-                                   <Badge variant="ghost" className="text-[7px] font-mono opacity-50 border-white/5">{ev.plane} PLANE • SEAL_{ev.id.substring(0, 8)}</Badge>
                                 </div>
                              </div>
                            ))}
@@ -358,66 +321,20 @@ export default function AdminCompliancePage() {
                </Card>
             </TabsContent>
 
-            {/* Tab 3: KYB Queue */}
-            <TabsContent value="kyb" className="space-y-6">
-               <div className="flex justify-between items-end">
-                  <h2 className="text-2xl font-headline font-bold">Verification Queue</h2>
-                  <div className="relative w-72">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search citizen name..." className="pl-10 bg-secondary/30 border-white/5" value={search} onChange={e => setSearch(e.target.value)} />
-                  </div>
-               </div>
-               
-               <Card className="glass-panel border-white/5">
-                  <CardContent className="p-0">
-                    {docsLoading ? (
-                      <div className="p-12 flex flex-col items-center opacity-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
-                    ) : remoteDocs?.length === 0 ? (
-                      <div className="p-20 text-center italic text-xs opacity-30">Queue is empty.</div>
-                    ) : (
-                      <div className="divide-y divide-white/5">
-                        {remoteDocs.map((doc: any) => (
-                          <div key={doc.id} className="p-6 flex items-center justify-between hover:bg-white/5 transition-all">
-                             <div className="flex gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center"><FileText className="h-6 w-6 text-accent" /></div>
-                                <div className="space-y-1">
-                                   <div className="flex items-center gap-2">
-                                      <span className="text-sm font-bold text-white uppercase">{doc.userName}</span>
-                                      <Badge className={cn("text-[8px] uppercase", doc.status === 'APPROVED' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-500')}>{doc.status}</Badge>
-                                   </div>
-                                   <p className="text-[10px] text-muted-foreground font-mono">TIN: {doc.metadata?.tin} | NID: {doc.metadata?.nid}</p>
-                                </div>
-                             </div>
-                             {doc.status === 'PENDING' && (
-                               <div className="flex gap-2">
-                                  <Button variant="outline" size="sm" className="text-[10px] border-red-500/30 text-red-400" onClick={() => handleVerify(doc, 'REJECTED')} disabled={!!isProcessing}><XCircle className="mr-1 h-3 w-3" /> Reject</Button>
-                                  <Button size="sm" className="text-[10px] bg-accent text-background" onClick={() => handleVerify(doc, 'APPROVED')} disabled={!!isProcessing}><CheckCircle2 className="mr-1 h-3 w-3" /> Approve</Button>
-                               </div>
-                             )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-               </Card>
-            </TabsContent>
-
-            {/* Tab 4: Anomalies */}
-            <TabsContent value="anomalies" className="space-y-6">
-               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  <div className="lg:col-span-8 space-y-6">
-                    <Card className="glass-panel border-red-500/20 bg-red-500/5">
-                        <CardHeader className="border-b border-red-500/10">
-                          <CardTitle className="text-sm flex items-center gap-2 text-red-400 uppercase tracking-widest">
-                            <ActivityIcon className="h-4 w-4" />
-                            Live Anomaly Feed
+            <TabsContent value="anomalies" className="space-y-4">
+               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  <div className="lg:col-span-8 space-y-4">
+                    <Card className="glass-panel border-red-500/20 bg-red-500/5 overflow-hidden">
+                        <CardHeader className="p-4 border-b border-red-500/10">
+                          <CardTitle className="text-[10px] md:text-xs flex items-center gap-2 text-red-400 uppercase tracking-widest">
+                            <ActivityIcon className="h-4 w-4" /> Live Anomaly Feed
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0">
                           {anomalies?.length === 0 ? (
                             <div className="p-20 text-center space-y-4">
-                                <ShieldCheck className="h-12 w-12 text-green-500/20 mx-auto" />
-                                <p className="italic text-xs text-muted-foreground uppercase tracking-widest">System Integrity Optimal.</p>
+                                <ShieldCheck className="h-10 w-10 text-green-500/20 mx-auto" />
+                                <p className="italic text-[10px] text-muted-foreground uppercase tracking-widest">Integrity Optimal.</p>
                             </div>
                           ) : (
                             <div className="divide-y divide-red-500/10">
@@ -425,48 +342,23 @@ export default function AdminCompliancePage() {
                                   <div 
                                     key={p.id} 
                                     className={cn(
-                                      "p-6 flex items-center justify-between group hover:bg-red-500/10 transition-all cursor-pointer border-l-4",
+                                      "p-4 md:p-6 flex items-center justify-between gap-4 hover:bg-red-500/10 cursor-pointer border-l-4",
                                       selectedAnomalyId === p.id ? "border-l-accent bg-red-500/10" : "border-l-transparent"
                                     )}
                                     onClick={() => setSelectedAnomalyId(p.id)}
                                   >
-                                      <div className="flex gap-4">
-                                        <div className="p-3 rounded-lg bg-black/40 border border-red-500/20 text-red-400"><History className="h-5 w-5" /></div>
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-bold text-white uppercase">{p.provider} • ${p.amount}</p>
-                                            <div className="flex gap-2 items-center">
-                                              <Badge variant="outline" className="text-[7px] border-red-500/20 text-red-400 uppercase">{p.settlementBucket}</Badge>
-                                              <span className="text-[8px] text-muted-foreground italic font-mono">Retries: {p.replayCount || 0}</span>
-                                            </div>
+                                      <div className="flex gap-3 md:gap-4 min-w-0">
+                                        <div className="p-2 md:p-3 rounded-lg bg-black/40 border border-red-500/20 text-red-400 shrink-0"><History className="h-4 w-4 md:h-5 md:w-5" /></div>
+                                        <div className="space-y-0.5 min-w-0">
+                                            <p className="text-xs md:text-sm font-bold text-white uppercase truncate">{p.provider} • ${p.amount}</p>
+                                            <Badge variant="outline" className="text-[6px] md:text-[7px] border-red-500/20 text-red-400 uppercase px-1">{p.settlementBucket}</Badge>
                                         </div>
                                       </div>
-                                      <ArrowRight className={cn("h-4 w-4 text-muted-foreground transition-transform", selectedAnomalyId === p.id && "translate-x-2 text-accent")} />
+                                      <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
                                   </div>
                                 ))}
                             </div>
                           )}
-                        </CardContent>
-                    </Card>
-                  </div>
-                  
-                  <div className="lg:col-span-4 space-y-6">
-                    <Card className="glass-panel border-accent/20 bg-accent/5">
-                        <CardHeader className="border-b border-white/10 pb-3">
-                           <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest text-accent">
-                              <Bell className="h-4 w-4" />
-                              Critical Signals
-                           </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4 space-y-4">
-                           <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20 flex gap-3">
-                              <Info className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
-                              <p className="text-[10px] text-muted-foreground leading-relaxed italic">
-                                "Monitoring 42 anycast nodes for signal integrity and citizen success rate."
-                              </p>
-                           </div>
-                           <Button className="w-full text-[10px] font-bold h-10 border border-white/10 uppercase" onClick={() => setIsCronRunning(!isCronRunning)}>
-                              {isCronRunning ? "Pause Auto-Heal" : "Start Auto-Heal"}
-                           </Button>
                         </CardContent>
                     </Card>
                   </div>
@@ -478,3 +370,4 @@ export default function AdminCompliancePage() {
     </div>
   );
 }
+
