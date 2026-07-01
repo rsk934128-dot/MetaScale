@@ -3,7 +3,7 @@ import { PaymentProvider, NormalizedPaymentEvent } from './types';
 import { normalizeBinanceEvent } from './binance-pay';
 
 /**
- * Provider-agnostic Gateway Router
+ * Provider-agnostic Gateway Router with Deterministic Redaction
  */
 export function normalizeEvent(provider: PaymentProvider, payload: any): NormalizedPaymentEvent {
   switch (provider) {
@@ -19,6 +19,7 @@ export function normalizeEvent(provider: PaymentProvider, payload: any): Normali
         currency: payload.data?.object?.currency?.toUpperCase() || 'USD',
         status: payload.type === 'payment_intent.succeeded' ? 'PAID' : 'FAILED',
         eventTime: Date.now(),
+        providerEventId: payload.id, // Stripe event ID
         metadata: { type: payload.type }
       };
     case 'BKASH':
@@ -31,18 +32,33 @@ export function normalizeEvent(provider: PaymentProvider, payload: any): Normali
         currency: 'BDT',
         status: payload.transactionStatus === 'Completed' ? 'PAID' : 'FAILED',
         eventTime: Date.now(),
+        providerEventId: payload.trxID,
+        metadata: { paymentID: payload.paymentID }
       };
     default:
       throw new Error(`Unsupported payment provider: ${provider}`);
   }
 }
 
+/**
+ * Deterministic Redaction Policy
+ * Ensures PII and Secrets are never stored in the ledger subcollections.
+ */
 export function redactSensitiveData(payload: any): any {
-  const redacted = { ...payload };
-  const keysToRedact = ['signature', 'authorization', 'client_secret', 'token', 'cvv'];
+  if (!payload || typeof payload !== 'object') return payload;
   
-  keysToRedact.forEach(key => {
-    if (key in redacted) redacted[key] = '[REDACTED]';
+  const redacted = { ...payload };
+  const sensitiveKeys = [
+    'signature', 'authorization', 'client_secret', 'token', 'cvv', 
+    'password', 'email', 'mobile', 'phone', 'payerEmail', 'payerMobile'
+  ];
+  
+  Object.keys(redacted).forEach(key => {
+    if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk.toLowerCase()))) {
+      redacted[key] = '[REDACTED]';
+    } else if (typeof redacted[key] === 'object') {
+      redacted[key] = redactSensitiveData(redacted[key]);
+    }
   });
   
   return redacted;
