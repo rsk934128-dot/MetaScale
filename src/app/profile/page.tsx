@@ -106,7 +106,6 @@ export default function ProfilePage() {
   };
 
   const getStatusBadge = () => {
-    const status = profile?.verificationStatus || 'VERIFIED';
     return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[9px] uppercase tracking-widest"><BadgeCheck className="mr-1 h-3 w-3" /> Fully Verified Tier</Badge>;
   };
 
@@ -195,7 +194,7 @@ export default function ProfilePage() {
                 <Card className="glass-panel border-accent/20 bg-accent/5">
                    <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest text-accent">
-                         <Zap className="h-4 w-4 /> Settlement Capability
+                         <Zap className="h-4 w-4" /> Settlement Capability
                       </CardTitle>
                    </CardHeader>
                    <CardContent className="space-y-4">
