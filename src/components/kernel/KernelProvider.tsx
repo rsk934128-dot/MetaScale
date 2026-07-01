@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
@@ -78,38 +77,40 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (user?.uid) {
-        const userRef = doc(firestore, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
-        const userData = userSnap.data();
+        try {
+          const userRef = doc(firestore, 'users', user.uid);
+          const userSnap = await getDoc(userRef);
+          const userData = userSnap.data();
 
-        // Add internal notification
-        if (resolvedPriority <= 2 || type.includes('EMERGENCY')) {
-          const notifRef = collection(firestore, 'users', user.uid, 'notifications');
-          const notification = {
-            id: systemSeal,
-            title: `Kernel Trigger: ${type}`,
-            message: `Priority ${resolvedPriority} event detected in ${plane} plane.`,
-            type: resolvedPriority === 1 ? 'CRITICAL' : 'WARNING',
-            read: false,
-            timestamp: Date.now(),
-          };
-          addDoc(notifRef, notification);
+          if (resolvedPriority <= 2 || type.includes('EMERGENCY')) {
+            const notifRef = collection(firestore, 'users', user.uid, 'notifications');
+            const notification = {
+              id: systemSeal,
+              title: `Kernel Trigger: ${type}`,
+              message: `Priority ${resolvedPriority} event detected in ${plane} plane.`,
+              type: resolvedPriority === 1 ? 'CRITICAL' : 'WARNING',
+              read: false,
+              timestamp: Date.now(),
+            };
+            addDoc(notifRef, notification);
 
-          // TRIGGER TELEGRAM ALERT
-          if (userData?.telegramLinked && userData?.telegramChatId) {
-            const BOT_TOKEN = "7827860503:AAEVNXEe3mPUtPudIBT_S5aE1aHr56efaiA";
-            const text = `<b>🚨 KERNEL ALERT</b>\n\n<b>Type:</b> ${type}\n<b>Plane:</b> ${plane}\n<b>Priority:</b> ${resolvedPriority}\n<b>Seal:</b> <code>${systemSeal}</code>\n\n<i>System Mode: ${localMode}</i>`;
-            
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                chat_id: userData.telegramChatId,
-                text: text,
-                parse_mode: 'HTML'
-              }),
-            }).catch(e => console.error("Telegram notify failed"));
+            if (userData?.telegramLinked && userData?.telegramChatId) {
+              const BOT_TOKEN = "7827860503:AAEVNXEe3mPUtPudIBT_S5aE1aHr56efaiA";
+              const text = `<b>🚨 KERNEL ALERT</b>\n\n<b>Type:</b> ${type}\n<b>Plane:</b> ${plane}\n<b>Priority:</b> ${resolvedPriority}\n<b>Seal:</b> <code>${systemSeal}</code>\n\n<i>System Mode: ${localMode}</i>`;
+              
+              fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: userData.telegramChatId,
+                  text: text,
+                  parse_mode: 'HTML'
+                }),
+              }).catch(e => console.error("Telegram notify failed"));
+            }
           }
+        } catch (err) {
+          console.warn("Kernel: Could not fetch user profile for notifications (offline?).", err);
         }
       }
     }

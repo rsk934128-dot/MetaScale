@@ -1,4 +1,3 @@
-
 'use client';
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
@@ -11,31 +10,26 @@ import {
 import { getAuth } from 'firebase/auth';
 import { firebaseConfig } from './config';
 
-let firestoreInstance: any = null;
-let authInstance: any = null;
-
 export function initializeFirebase() {
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
-  if (!firestoreInstance) {
-    try {
-      // Optimized for reliable multi-tab and bypasses potential firewall issues with long polling
-      firestoreInstance = initializeFirestore(app, {
-        localCache: persistentLocalCache({ 
-          tabManager: persistentMultipleTabManager() 
-        }),
-        experimentalForceLongPolling: true // Ensures stability in restricted networks
-      });
-    } catch (e) {
-      firestoreInstance = getFirestore(app);
-    }
+  let firestore;
+  try {
+    // Use getFirestore first to check if already initialized
+    firestore = getFirestore(app);
+  } catch (e) {
+    // If not initialized, set it up with persistence
+    firestore = initializeFirestore(app, {
+      localCache: persistentLocalCache({ 
+        tabManager: persistentMultipleTabManager() 
+      }),
+      experimentalForceLongPolling: true
+    });
   }
   
-  if (!authInstance) {
-    authInstance = getAuth(app);
-  }
+  const auth = getAuth(app);
 
-  return { app, firestore: firestoreInstance, auth: authInstance };
+  return { app, firestore, auth };
 }
 
 export * from './provider';

@@ -30,7 +30,6 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
         setError(null);
       },
       async (serverError: FirestoreError) => {
-        // Only report as permission error if the code matches
         if (serverError.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: (query as any)._query?.path?.segments?.join('/') || 'unknown',
@@ -38,9 +37,9 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
           });
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
+        } else if (serverError.code === 'unavailable') {
+          console.warn('Firestore: Client is offline or service unavailable.');
         } else {
-          // Other errors (like network/unreachable) are just logged or set locally
-          // We don't trigger the global permission error listener for these
           setError(serverError);
         }
         setLoading(false);
