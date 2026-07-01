@@ -21,6 +21,7 @@ import {
   Shield,
   CreditCard,
   Building2,
+  Globe,
   Image as ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
