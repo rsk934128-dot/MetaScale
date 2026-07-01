@@ -25,7 +25,8 @@ import {
   Image as ImageIcon,
   Loader2,
   Lock,
-  Send
+  Send,
+  TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -194,7 +195,7 @@ export default function ProfilePage() {
                 <Card className="glass-panel border-accent/20 bg-accent/5">
                    <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest text-accent">
-                         <Zap className="h-4 w-4" /> Settlement Capability
+                         <Zap className="h-4 w-4 text-accent" /> Settlement Capability
                       </CardTitle>
                    </CardHeader>
                    <CardContent className="space-y-4">
