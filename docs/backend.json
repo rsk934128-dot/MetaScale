@@ -25,6 +25,24 @@
       },
       "required": ["uid", "email", "kernelId", "accountNumber", "teamId"]
     },
+    "InboundPayment": {
+      "title": "Inbound Payment Ledger",
+      "description": "Normalized ledger for all incoming deposits and settlements.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unified internal payment ID." },
+        "orderId": { "type": "string" },
+        "userId": { "type": "string" },
+        "externalTxnId": { "type": "string" },
+        "provider": { "type": "string", "enum": ["STRIPE", "BKASH", "BINANCE_PAY"] },
+        "amount": { "type": "number" },
+        "currency": { "type": "string" },
+        "status": { "type": "string", "enum": ["CREATED", "USER_PAYING", "PAID", "CREDITED", "FAILED", "EXPIRED"] },
+        "eventTime": { "type": "number" },
+        "metadata": { "type": "object" }
+      },
+      "required": ["id", "orderId", "userId", "provider", "status"]
+    },
     "VerificationDoc": {
       "title": "Identity Verification Document",
       "description": "Regulatory documents submitted for Stablecoin CIP compliance.",
@@ -53,20 +71,6 @@
         "timestamp": { "type": "number" }
       },
       "required": ["id", "type", "status", "timestamp"]
-    },
-    "VirtualCard": {
-      "title": "Fusion Virtual Card",
-      "description": "Company-issued virtual card.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "cardNumber": { "type": "string" },
-        "expiry": { "type": "string" },
-        "brand": { "type": "string" },
-        "balance": { "type": "number" },
-        "status": { "type": "string" }
-      }
     }
   },
   "auth": {
@@ -74,14 +78,9 @@
   },
   "firestore": {
     "/users/{userId}": { "schema": "UserProfile", "description": "Extended user profile information." },
-    "/users/{userId}/cards/{cardId}": { "schema": "VirtualCard", "description": "Issued virtual cards for the user." },
-    "/users/{userId}/watchlist/{tickerId}": { "schema": "WatchlistItem", "description": "Users financial watchlist." },
-    "/users/{userId}/assets/{assetId}": { "schema": "Asset", "description": "Users private library assets." },
-    "/users/{userId}/notifications/{notifId}": { "schema": "Notification", "description": "Users system notifications." },
-    "/users/{userId}/payment_links/{linkId}": { "schema": "PaymentLink", "description": "Users private payment links." },
-    "/payment_links/{sealId}": { "schema": "PaymentLink", "description": "Public checkout links." },
+    "/payments/{paymentId}": { "schema": "InboundPayment", "description": "Central ledger for all incoming payments." },
+    "/users/{userId}/payments/{paymentId}": { "schema": "InboundPayment", "description": "User specific payment history." },
     "/ubil_events/{eventId}": { "schema": "UBILEvent", "description": "Registry of all NoorNexus UBIL incoming events." },
-    "/events/{eventId}": { "schema": "SovereignEvent", "description": "Persistent log of all kernel events." },
     "/verification_docs/{docId}": { "schema": "VerificationDoc", "description": "User submitted verification documents." }
   }
 }
