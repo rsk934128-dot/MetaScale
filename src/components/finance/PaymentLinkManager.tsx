@@ -23,7 +23,9 @@ import {
   Loader2,
   ShoppingBag,
   ExternalLink,
-  Code2
+  Code2,
+  Target,
+  MoreVertical
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +41,12 @@ import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function PaymentLinkManager() {
   const { user } = useUser();
@@ -55,6 +63,7 @@ export function PaymentLinkManager() {
   const [formData, setFormData] = useState({
     amount: "",
     description: "",
+    mission: "",
     currency: "BDT",
     brand: "FusionPay",
     webhookUrl: "https://api.example.com/webhook",
@@ -91,6 +100,7 @@ export function PaymentLinkManager() {
       amount: parseFloat(formData.amount),
       currency: formData.currency,
       description: formData.description || "General Payment",
+      mission: formData.mission || "Sovereign Settlement & Fiscal Inclusion",
       brand: formData.brand,
       status: 'ACTIVE',
       seal: seal,
@@ -130,7 +140,7 @@ export function PaymentLinkManager() {
       });
 
       toast({ title: "Handshake Successful", description: "আপনার ইউনিক পেমেন্ট লিংক জেনারেট হয়েছে।" });
-      setFormData({ ...formData, amount: "", description: "" });
+      setFormData({ ...formData, amount: "", description: "", mission: "" });
       setActiveTab("config");
     } catch (err) {
       toast({ variant: "destructive", title: "Kernel Error", description: "Authorization failed during link persistence." });
@@ -229,13 +239,26 @@ export function PaymentLinkManager() {
                 </div>
 
                 <div className="space-y-2">
-                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">Transaction Memo</Label>
+                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">Offer/Product Name (Hindi/Eng)</Label>
                    <Input 
-                     placeholder="e.g. Invoice #2024-001" 
+                     placeholder="e.g. Premium Business License" 
                      className="bg-secondary/30 border-white/5 h-11 text-sm italic"
                      value={formData.description}
                      onChange={(e) => setFormData({...formData, description: e.target.value})}
                    />
+                </div>
+
+                <div className="space-y-2">
+                   <Label className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1.5">
+                     <Target className="h-3 w-3 text-accent" /> Mission/Goal (আমাদের লক্ষ্য)
+                   </Label>
+                   <Input 
+                     placeholder="e.g. Empowerment through deterministic finance" 
+                     className="bg-secondary/30 border-white/5 h-11 text-sm italic"
+                     value={formData.mission}
+                     onChange={(e) => setFormData({...formData, mission: e.target.value})}
+                   />
+                   <p className="text-[8px] text-muted-foreground italic">এটি শেয়ার করা লিঙ্কে সুন্দরভাবে দেখা যাবে।</p>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
@@ -243,7 +266,7 @@ export function PaymentLinkManager() {
                       <p className="text-[10px] font-bold text-white uppercase flex items-center gap-2">
                          <ShieldCheck className="h-3 w-3 text-accent" /> Institutional Verify
                       </p>
-                      <p className="text-[8px] text-muted-foreground italic">প্রমাণিত বিক্রেতা (Verified via Mesh)</p>
+                      <p className="text-[8px] text-muted-foreground italic">प्रमाणित विक्रेता (Verified via Mesh)</p>
                    </div>
                    <Switch checked={formData.isVerified} onCheckedChange={(v) => setFormData({...formData, isVerified: v})} />
                 </div>
@@ -374,6 +397,11 @@ export function PaymentLinkManager() {
                                   <span>•</span>
                                   <span className="text-accent/60">{link.brand}</span>
                                </div>
+                               {link.mission && (
+                                 <p className="text-[9px] text-accent/80 italic line-clamp-1 flex items-center gap-1">
+                                   <Target className="h-2.5 w-2.5" /> {link.mission}
+                                 </p>
+                               )}
                                <div className="flex items-center gap-2 text-[9px] font-mono text-white/30 truncate">
                                   Seal: {link.seal}
                                </div>
@@ -440,20 +468,6 @@ export function PaymentLinkManager() {
           </CardFooter>
         </Card>
       </div>
-
-      {/* Component Library Trigger (Lucide Icon Check) */}
-      <div className="sr-only">
-        <MoreVertical />
-        <DropdownMenu />
-      </div>
     </div>
   );
 }
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
