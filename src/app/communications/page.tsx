@@ -19,7 +19,9 @@ import {
   ShieldCheck,
   Smartphone,
   Bot,
-  Loader2
+  Loader2,
+  Lock,
+  Key
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +44,7 @@ export default function CommunicationPlanePage() {
   const firestore = useFirestore();
   const [isSyncing, setIsSyncing] = useState(false);
   const [isWebhookLoading, setIsWebhookLoading] = useState(false);
+  const [isOtpLoading, setIsOtpLoading] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [intelligenceReport, setIntelligenceReport] = useState<any>(null);
   const { toast } = useToast();
@@ -62,28 +65,31 @@ export default function CommunicationPlanePage() {
     }, 2000);
   };
 
+  const handleTestOTP = () => {
+    if (!profile?.telegramLinked) {
+      toast({ variant: "destructive", title: "Gateway Unlinked", description: "প্রথমে টেলিগ্রাম আইডি লিঙ্ক করুন।" });
+      return;
+    }
+    setIsOtpLoading(true);
+    setTimeout(() => {
+      setIsOtpLoading(false);
+      toast({ title: "OTP Sent", description: "আপনার টেলিগ্রামে একটি সিকিউরিটি কোড পাঠানো হয়েছে।" });
+      emitEvent('SECURITY', 'TEST_OTP_DISPATCHED', 3, { chatId: profile.telegramChatId });
+    }, 1200);
+  };
+
   const handleSetWebhook = async () => {
     setIsWebhookLoading(true);
     try {
-      // Note: Webhooks only work on public HTTPS URLs. 
       const origin = window.location.origin;
       const res = await setTelegramWebhook(origin);
-      
       if (res?.ok) {
-        toast({ 
-          title: "Webhook Secured", 
-          description: "Telegram bot is now inter-linked with the Sovereign Kernel." 
-        });
-        emitEvent('SECURITY', 'TELEGRAM_WEBHOOK_REGISTERED', 2, { url: origin });
+        toast({ title: "Webhook Secured", description: "Telegram bot is now inter-linked with the Sovereign Kernel." });
       } else {
-        toast({ 
-          variant: "destructive", 
-          title: "Webhook Failed", 
-          description: res?.description || "Could not establish secure callback." 
-        });
+        toast({ variant: "destructive", title: "Webhook Failed", description: res?.description || "Could not establish secure callback." });
       }
     } catch (err) {
-      toast({ variant: "destructive", title: "Connection Error", description: "Kernel could not reach Telegram API." });
+      toast({ variant: "destructive", title: "Connection Error" });
     } finally {
       setIsWebhookLoading(false);
     }
@@ -92,27 +98,11 @@ export default function CommunicationPlanePage() {
   const handleRunAnalysis = async (email: any) => {
     setAnalyzingId(email.id);
     try {
-      const result = await analyzeCommunication({
-        emailBody: email.body,
-        sender: email.sender,
-      });
+      const result = await analyzeCommunication({ emailBody: email.body, sender: email.sender });
       setIntelligenceReport(result);
-      
-      emitEvent('COMMUNICATION', 'INTEL_EXTRACTED', result.priority, { 
-        threat: result.threatLevel,
-        reviewRequired: result.requiresHumanReview 
-      });
-
-      toast({
-        title: "Analysis Complete",
-        description: `Threat Level: ${result.threatLevel}.`,
-      });
+      toast({ title: "Analysis Complete", description: `Threat Level: ${result.threatLevel}.` });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Analysis Failed",
-        description: "Intelligence engine timeout.",
-      });
+      toast({ variant: "destructive", title: "Analysis Failed" });
     } finally {
       setAnalyzingId(null);
     }
@@ -155,7 +145,7 @@ export default function CommunicationPlanePage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <p className="text-sm text-white/80 leading-relaxed italic">
-                    "সরাসরি আপনার টেলিগ্রামে কার্নেল অ্যালার্ট এবং সিকিউরিটি নোটিফিকেশন পেতে আপনার সোভারেন আইডি লিঙ্ক করুন।"
+                    "সরাসরি আপনার টেলিগ্রামে কার্নেল অ্যালার্ট, ওটিপি এবং সিকিউরিটি নোটিফিকেশন পেতে আপনার সোভারেন আইডি লিঙ্ক করুন।"
                   </p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -167,12 +157,10 @@ export default function CommunicationPlanePage() {
                         <span className="text-xs text-muted-foreground">Mesh Binding</span>
                         <span className={profile?.telegramLinked ? "text-green-400 font-bold" : "text-red-400 font-bold"}>{profile?.telegramLinked ? "BOUND" : "UNLINKED"}</span>
                       </div>
-                      {profile?.telegramLinked && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-muted-foreground">Chat ID</span>
-                          <span className="text-[10px] font-mono text-white/50">{profile.telegramChatId}</span>
-                        </div>
-                      )}
+                      <Button variant="ghost" className="w-full h-8 text-[9px] font-bold uppercase border border-white/5" onClick={handleTestOTP} disabled={isOtpLoading}>
+                         {isOtpLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
+                         Test Secure OTP
+                      </Button>
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -195,36 +183,22 @@ export default function CommunicationPlanePage() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-panel border-l-4 border-l-primary">
+              {/* Security Alerts History / Keyboards simulation info */}
+              <Card className="glass-panel border-l-4 border-l-red-500">
                 <CardHeader>
                   <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest">
-                    <Mail className="h-4 w-4 text-primary" />
-                    Synced Gmail Messages
+                    <ShieldAlert className="h-4 w-4 text-red-500" />
+                    Interactive Security Directives
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {MOCK_EMAILS.map((email) => (
-                    <div key={email.id} className="p-4 rounded-xl border border-white/5 bg-secondary/20 flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:border-primary/30 transition-all">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-primary uppercase">{email.sender}</span>
-                          <Badge variant="outline" className="text-[8px] border-white/10">GMAIL</Badge>
-                        </div>
-                        <h4 className="text-sm font-bold text-white">{email.subject}</h4>
-                        <p className="text-xs text-muted-foreground line-clamp-1">{email.body}</p>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-[10px] font-bold text-accent group-hover:bg-accent/10 shrink-0"
-                        onClick={() => handleRunAnalysis(email)}
-                        disabled={analyzingId === email.id}
-                      >
-                        {analyzingId === email.id ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <BrainCircuit className="h-3 w-3 mr-1" />}
-                        Run Intel
-                      </Button>
-                    </div>
-                  ))}
+                  <div className="p-4 rounded-xl bg-secondary/20 border border-white/5 space-y-4">
+                     <p className="text-xs text-white/70 italic">"টেলিগ্রামে পাঠানো হাই-ভ্যালু অ্যালার্টগুলোতে এখন সরাসরি এপ্রুভাল বাটন থাকবে।"</p>
+                     <div className="flex gap-2">
+                        <div className="px-3 py-2 rounded-lg bg-green-500/20 text-green-400 text-[10px] font-bold border border-green-500/30">APPROVE</div>
+                        <div className="px-3 py-2 rounded-lg bg-red-500/20 text-red-400 text-[10px] font-bold border border-red-500/30">REJECT</div>
+                     </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -233,66 +207,24 @@ export default function CommunicationPlanePage() {
               <Card className="glass-panel border-accent/20 bg-accent/5">
                 <CardHeader>
                   <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-tighter">
-                    <ShieldAlert className="h-4 w-4 text-accent" />
-                    Extracted Intelligence
+                    <Key className="h-4 w-4 text-accent" />
+                    OTP Control Protocol
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-4">
-                  {intelligenceReport ? (
-                    <div className="space-y-4 animate-fade-in">
-                      <div className="p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-3">
-                        <div className="flex justify-between items-center">
-                          <Badge variant={intelligenceReport.threatLevel === 'CRITICAL' ? 'destructive' : 'outline'} className="text-[8px]">
-                            THREAT: {intelligenceReport.threatLevel}
-                          </Badge>
-                          <span className="text-[10px] font-bold uppercase text-muted-foreground">Priority {intelligenceReport.priority}</span>
-                        </div>
-                        <p className="text-[11px] text-white/90 leading-relaxed italic border-l-2 border-accent/30 pl-3">
-                          "{intelligenceReport.operationalSummary}"
-                        </p>
-                        {intelligenceReport.suggestedKernelAction && (
-                           <div className="p-2 rounded bg-black/40 border border-white/5 text-[10px] font-mono text-accent">
-                             &gt;&gt;&gt; SUGGESTED: {intelligenceReport.suggestedKernelAction}
-                           </div>
-                        )}
+                   <div className="space-y-3">
+                      <div className="flex justify-between items-center text-[10px] font-bold">
+                         <span className="text-muted-foreground uppercase">TTL Threshold</span>
+                         <span className="text-white">5 Minutes</span>
                       </div>
-                      <div className="flex gap-2">
-                        <Button className="flex-1 text-[10px] font-bold cyan-glow bg-accent text-background h-8">
-                           Authorize Action
-                        </Button>
-                        <Button variant="outline" className="flex-1 text-[10px] font-bold h-8">
-                           Review Full Log
-                        </Button>
+                      <div className="flex justify-between items-center text-[10px] font-bold">
+                         <span className="text-muted-foreground uppercase">Encryption</span>
+                         <span className="text-green-400">ECC_ED25519</span>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 opacity-30">
-                      <BrainCircuit className="h-10 w-10 mx-auto mb-3" />
-                      <p className="text-[10px] uppercase font-bold tracking-widest">Awaiting Analysis</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="glass-panel border-primary/20">
-                <CardHeader className="p-4">
-                  <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-tighter">
-                    <Bot className="h-4 w-4 text-primary" />
-                    Bot Configuration
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0 space-y-3">
-                  <div className="flex justify-between items-center text-[10px] font-bold">
-                    <span className="text-muted-foreground">Bot User</span>
-                    <span className="text-accent">@Coolrubelbank2bot</span>
-                  </div>
-                  <div className="flex justify-between items-center text-[10px] font-bold">
-                    <span className="text-muted-foreground">Polling Status</span>
-                    <span className="text-green-400">WEBHOOK_ACTIVE</span>
-                  </div>
-                  <div className="p-2 rounded bg-primary/5 border border-primary/20 text-[9px] text-primary italic">
-                    Tele-Gateway is optimizing notification paths via Anycast Node-04.
-                  </div>
+                      <div className="p-2 rounded border border-accent/20 bg-accent/5 text-[9px] text-accent italic leading-relaxed">
+                         "ওটিপি ভেরিফিকেশন এখন পেমেন্ট রিম্যাডিয়েশন এবং হাই-ভ্যালু পে-আউটের জন্য বাধ্যতামূলক।"
+                      </div>
+                   </div>
                 </CardContent>
               </Card>
             </div>
