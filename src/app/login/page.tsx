@@ -33,6 +33,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/ui/logo';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 const ADMIN_EMAIL = 'rubels1k994@gmail.com';
 const DEFAULT_TEAM_ID = 'team_UJR6KEPUrWUszD8jdhiyjQgV';
@@ -61,7 +63,10 @@ export default function LoginPage() {
       case 'auth/user-not-found': return 'এই ইমেইল দিয়ে কোনো একাউন্ট পাওয়া যায়নি।';
       case 'auth/email-already-in-use': return 'এই ইমেইলটি অলরেডি অন্য একটি একাউন্টে ব্যবহার করা হয়েছে।';
       case 'auth/weak-password': return 'পাসওয়ার্ডটি অন্তত ৬ অক্ষরের হতে হবে।';
-      default: return 'একটি অজানা সমস্যা হয়েছে। আবার চেষ্টা করুন।';
+      case 'auth/operation-not-allowed': return 'এই লগইন মেথডটি এখনো এনাবেল করা হয়নি। দয়া করে ফায়ারবেস কনসোলে গিয়ে গুগল এবং ইমেইল/পাসওয়ার্ড অন করুন।';
+      case 'auth/popup-blocked': return 'পপআপ ব্লক করা হয়েছে। দয়া করে ব্রাউজারের পপআপ এনাবেল করুন।';
+      case 'auth/popup-closed-by-user': return 'লগইন উইন্ডোটি বন্ধ করা হয়েছে।';
+      default: return `Error: ${errorCode}. দয়া করে আবার চেষ্টা করুন।`;
     }
   };
 
@@ -75,26 +80,37 @@ export default function LoginPage() {
       if (result.user) {
         const isAdmin = result.user.email === ADMIN_EMAIL;
         const userRef = doc(firestore, 'users', result.user.uid);
-        const userSnap = await getDoc(userRef);
         
-        const userData = {
-          uid: result.user.uid,
-          displayName: result.user.displayName,
-          email: result.user.email,
-          kernelId: `SKO-${result.user.uid.substring(0, 6).toUpperCase()}`,
-          teamId: DEFAULT_TEAM_ID,
-          lastLogin: serverTimestamp(),
-          role: isAdmin ? 'ADMIN' : 'CITIZEN',
-          plan: 'FREE',
-          ...(userSnap.exists() ? {} : { 
-            accountNumber: generateAccountNumber(), 
-            balance: 1000,
-            trustScore: 85.0,
-            verificationStatus: 'UNVERIFIED'
-          })
-        };
+        // We don't await the profile fetch/creation to keep auth flow fast
+        // Firestore local cache handles instant identity binding
+        getDoc(userRef).then((userSnap) => {
+          const userData = {
+            uid: result.user.uid,
+            displayName: result.user.displayName,
+            email: result.user.email,
+            kernelId: `SKO-${result.user.uid.substring(0, 6).toUpperCase()}`,
+            teamId: DEFAULT_TEAM_ID,
+            lastLogin: serverTimestamp(),
+            role: isAdmin ? 'ADMIN' : 'CITIZEN',
+            plan: 'FREE',
+            ...(userSnap.exists() ? {} : { 
+              accountNumber: generateAccountNumber(), 
+              balance: 1000,
+              trustScore: 85.0,
+              verificationStatus: 'UNVERIFIED'
+            })
+          };
 
-        await setDoc(userRef, userData, { merge: true });
+          setDoc(userRef, userData, { merge: true }).catch(async (err) => {
+            const permissionError = new FirestorePermissionError({
+              path: userRef.path,
+              operation: 'write',
+              requestResourceData: userData,
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
+          });
+        });
+
         toast({ title: "Identity Bound", description: "Sovereign Mesh link established successfully." });
         router.replace('/dashboard');
       }
@@ -131,7 +147,15 @@ export default function LoginPage() {
         createdAt: serverTimestamp(),
       };
 
-      await setDoc(userRef, userData);
+      setDoc(userRef, userData).catch(async (err) => {
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'create',
+          requestResourceData: userData,
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+      });
+
       toast({ title: "Protocol Established", description: "কার্নেল আইডেন্টিটি তৈরি হয়েছে।" });
       router.replace('/dashboard');
     } catch (error: any) {

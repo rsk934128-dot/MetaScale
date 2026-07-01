@@ -43,6 +43,8 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 export default function AdminCompliancePage() {
   const [search, setSearch] = useState("");
@@ -59,44 +61,53 @@ export default function AdminCompliancePage() {
 
   const { data: remoteDocs, loading } = useCollection<any>(docsQuery);
 
-  const handleVerify = async (docData: any, status: 'APPROVED' | 'REJECTED') => {
+  const handleVerify = (docData: any, status: 'APPROVED' | 'REJECTED') => {
     if (!firestore) return;
     setIsProcessing(docData.id);
     
-    try {
-      // 1. Update verification document status
-      const docRef = doc(firestore, 'verification_docs', docData.id);
-      await updateDoc(docRef, { status: status });
-
-      // 2. Update user profile status
-      const userRef = doc(firestore, 'users', docData.userId);
-      await updateDoc(userRef, { 
-        verificationStatus: status === 'APPROVED' ? 'VERIFIED' : 'FLAGGED',
-        trustScore: status === 'APPROVED' ? 98.4 : 45.0
+    // 1. Update verification document status
+    const docRef = doc(firestore, 'verification_docs', docData.id);
+    updateDoc(docRef, { status: status })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: { status },
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
       });
 
-      emitEvent('SECURITY', 'DOCUMENT_VERIFICATION_RESOLVED', 2, { 
-        docId: docData.id, 
-        userId: docData.userId, 
-        type: docData.type,
-        status 
+    // 2. Update user profile status
+    const userRef = doc(firestore, 'users', docData.userId);
+    const userUpdate = { 
+      verificationStatus: status === 'APPROVED' ? 'VERIFIED' : 'FLAGGED',
+      trustScore: status === 'APPROVED' ? 98.4 : 45.0
+    };
+    updateDoc(userRef, userUpdate)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'update',
+          requestResourceData: userUpdate,
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
       });
 
-      toast({
-        title: status === 'APPROVED' ? "Compliance Approved" : "Request Rejected",
-        description: `Entity ${docData.userName} status has been updated.`,
-        variant: status === 'APPROVED' ? "default" : "destructive",
-      });
-      setSelectedDoc(null);
-    } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "Action Failed",
-        description: "Error communicating with the Sovereign Mesh."
-      });
-    } finally {
-      setIsProcessing(null);
-    }
+    emitEvent('SECURITY', 'DOCUMENT_VERIFICATION_RESOLVED', 2, { 
+      docId: docData.id, 
+      userId: docData.userId, 
+      type: docData.type,
+      status 
+    });
+
+    toast({
+      title: status === 'APPROVED' ? "Compliance Approved" : "Request Rejected",
+      description: `Entity ${docData.userName} status has been updated.`,
+      variant: status === 'APPROVED' ? "default" : "destructive",
+    });
+    
+    setSelectedDoc(null);
+    setIsProcessing(null);
   };
 
   const filteredDocs = useMemo(() => {
