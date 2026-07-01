@@ -58,7 +58,7 @@ export default function IntelligenceLayerPage() {
       const result = await marketingCommandChat({
         query: userMsg,
         history: chatHistory,
-        context: "Sovereign OS context: Project 45 Eco Governance in progress. Focus: Yield recycling, AML/CFT compliance hub, and dynamic compute allocation. 42 nodes operational. Revenue yield 3.5%.",
+        context: "Sovereign OS context: Project 45 Eco Governance in progress. Focus: Yield recycling, AML/CFT compliance hub, and dynamic compute allocation. 42 nodes operational. Revenue yield 3.5%. Current Node: Node-04 UK Corridor.",
       });
       
       setLastResult(result);
@@ -67,11 +67,16 @@ export default function IntelligenceLayerPage() {
       toast({
         variant: "destructive",
         title: "Intelligence Failure",
-        description: "The Sovereign AI engine encountered an error processing your query.",
+        description: "The Sovereign AI node encountered a serious reasoning breach. Tracing Node-04...",
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleAction = (action: string) => {
+    setQuery(action);
+    // Auto-trigger if needed or just set query
   };
 
   return (
@@ -91,7 +96,7 @@ export default function IntelligenceLayerPage() {
               <TrendingUp className="mr-2 h-3 w-3" /> P45_FISCAL_MODE: ENABLED
             </Badge>
             <Badge variant="outline" className="text-primary border-primary/20 text-[10px]">
-              EXECUTION_LEVEL_0
+              NODE: 04_UK
             </Badge>
           </div>
         </header>
@@ -109,7 +114,12 @@ export default function IntelligenceLayerPage() {
                         ? 'bg-primary border-primary/50 text-white' 
                         : 'bg-secondary/40 border-white/5 text-white/90'
                       )}>
-                        {msg.role === 'model' && <div className="flex items-center gap-2 mb-2 pb-1 border-b border-white/5 opacity-50"><Zap className="h-3 w-3 text-accent" /><span className="text-[8px] uppercase font-bold tracking-widest">Sovereign Strategist</span></div>}
+                        {msg.role === 'model' && (
+                          <div className="flex items-center gap-2 mb-2 pb-1 border-b border-white/5 opacity-50">
+                            <Zap className="h-3 w-3 text-accent" />
+                            <span className="text-[8px] uppercase font-bold tracking-widest">Sovereign Strategist (Node-04)</span>
+                          </div>
+                        )}
                         <p className="whitespace-pre-wrap">{msg.text}</p>
                       </div>
                     </div>
@@ -118,7 +128,7 @@ export default function IntelligenceLayerPage() {
                     <div className="flex justify-start">
                       <div className="bg-secondary/40 border border-white/5 p-4 rounded-2xl flex items-center gap-3">
                         <Loader2 className="h-4 w-4 animate-spin text-accent" />
-                        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground">Reasoning Governance...</span>
+                        <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground">Intercepting Packet Trajectories...</span>
                       </div>
                     </div>
                   )}
@@ -126,6 +136,13 @@ export default function IntelligenceLayerPage() {
               </ScrollArea>
               
               <div className="p-4 border-t border-white/5 bg-background/50 backdrop-blur-sm">
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'model' && (
+                    <div className="flex flex-wrap gap-2">
+                       {/* Contextual actions could go here */}
+                    </div>
+                  )}
+                </div>
                 <div className="relative flex items-center gap-2">
                   <div className="absolute left-3 p-1 rounded bg-accent/10 border border-accent/20">
                      <Briefcase className="h-3 w-3 text-accent" />
@@ -192,7 +209,7 @@ export default function IntelligenceLayerPage() {
             <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2 text-center shadow-inner">
                <Sparkles className="h-6 w-6 text-primary mx-auto opacity-50" />
                <p className="text-[9px] text-primary font-bold uppercase tracking-widest leading-relaxed">
-                  System is now autonomously recycling yield and optimizing node-level compute power.
+                  System is now autonomously recycling yield and optimizing node-level compute power via Gemini Flash.
                </p>
             </div>
           </div>
