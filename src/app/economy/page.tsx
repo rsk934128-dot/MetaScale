@@ -12,28 +12,28 @@ import {
   ShieldCheck, 
   Network, 
   RefreshCw,
-  Search,
-  Filter,
-  Scale,
-  Globe,
-  ArrowUpRight,
-  ShieldAlert,
-  Cpu,
-  Loader2,
-  DollarSign,
-  Gavel,
-  PieChart,
-  Milestone,
-  Rocket,
-  Lock,
-  Wallet,
-  ShieldHalf,
-  BarChart4,
-  HardDriveDownload,
-  AlertTriangle,
-  BrainCircuit,
-  Save,
-  CheckCircle2
+  Search, 
+  Filter, 
+  Scale, 
+  Globe, 
+  ArrowUpRight, 
+  ShieldAlert, 
+  Cpu, 
+  Loader2, 
+  DollarSign, 
+  Gavel, 
+  PieChart, 
+  Milestone, 
+  Rocket, 
+  Lock, 
+  Wallet, 
+  ShieldHalf, 
+  BarChart4, 
+  HardDriveDownload, 
+  AlertTriangle, 
+  BrainCircuit, 
+  Save, 
+  CheckCircle2 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -97,7 +97,6 @@ export default function Project45EconomyPage() {
   const [driftResult, setDriftResult] = useState<any>(null);
   const [reserveBalance, setReserveBalance] = useState(125000);
   
-  // Dynamic Recycle Rate State
   const [recycleRate, setRecycleRate] = useState(42.5);
   const [tempRate, setTempRate] = useState(42.5);
   const [isAdjustingRecycle, setIsAdjustingRecycle] = useState(false);
@@ -132,8 +131,8 @@ export default function Project45EconomyPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Simulation Failed",
-        description: "Eco Governance engine is under heavy compute load.",
+        title: "এআই নোড বর্তমানে হাই-লোড প্রসেসিং এ আছে।",
+        description: "অনুগ্রহ করে পুনরায় চেষ্টা করুন।",
       });
     } finally {
       setIsSimulating(false);
@@ -158,8 +157,8 @@ export default function Project45EconomyPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Analysis Failed",
-        description: "Forensic nodes are unreachable."
+        title: "এআই নোড বর্তমানে হাই-লোড প্রসেসিং এ আছে।",
+        description: "অনুগ্রহ করে পুনরায় চেষ্টা করুন।"
       });
     } finally {
       setIsAnalyzingDrift(false);
@@ -317,7 +316,6 @@ export default function Project45EconomyPage() {
                 </CardContent>
               </Card>
 
-              {/* Forensic Liquidity Drift Analysis UI */}
               <Card className="glass-panel border-accent/20 bg-accent/5 overflow-hidden">
                 <CardHeader className="flex flex-row items-center justify-between border-b border-white/10">
                    <div>
@@ -465,7 +463,6 @@ export default function Project45EconomyPage() {
         </footer>
       </SidebarInset>
 
-      {/* Adjust Recycle Rate Dialog */}
       <Dialog open={isAdjustingRecycle} onOpenChange={setIsAdjustingRecycle}>
         <DialogContent className="glass-panel border-accent/20 bg-background/95 p-0 overflow-hidden sm:max-w-md">
           <div className="bg-accent/10 p-6 border-b border-white/10">
@@ -543,4 +540,3 @@ export default function Project45EconomyPage() {
     </div>
   );
 }
-
