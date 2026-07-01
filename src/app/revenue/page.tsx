@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -26,7 +27,8 @@ import {
   Fingerprint,
   Lock,
   Sparkles,
-  Bot
+  Bot,
+  BrainCircuit
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
@@ -46,6 +48,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { runForensicCognition } from "@/ai/flows/forensic-analyst";
 
 export default function RevenuePage() {
   const { emitEvent } = useKernel();
@@ -53,7 +56,7 @@ export default function RevenuePage() {
   const firestore = useFirestore();
   const [isExporting, setIsExporting] = useState(false);
   const [isGeneratingAIReport, setIsGeneratingAIReport] = useState(false);
-  const [aiReport, setAiReport] = useState<string | null>(null);
+  const [aiInsights, setAiInsights] = useState<any>(null);
   const [showReportDialog, setShowReportDialog] = useState(false);
 
   // Live Sync with Finance Events for Audit Log
@@ -65,28 +68,34 @@ export default function RevenuePage() {
   const { data: liveEvents, loading: eventsLoading } = useCollection<any>(eventsQuery);
 
   const handleGenerateAIReport = async () => {
+    if (!liveEvents || liveEvents.length === 0) {
+      toast({ variant: "destructive", title: "No audit logs found to analyze." });
+      return;
+    }
+
     setIsGeneratingAIReport(true);
-    emitEvent('FINANCE', 'AI_AUDIT_REPORT_INITIATED', 3, { mode: 'AGENTIC' });
+    emitEvent('FINANCE', 'AI_FORENSIC_AUDIT_INITIATED', 3, { mode: 'COGNITIVE_RAG' });
 
     try {
-      // Simulate AI Report Generation based on system data
-      // In production, this would call a dedicated Genkit flow
-      setTimeout(() => {
-        setAiReport(`
-**FORENSIC AUDIT REPORT: NODE-04 (UK)**
-**STATUS: NOMINAL**
+      const result = await runForensicCognition({
+        currentIncident: "Perform a system-wide financial health audit.",
+        historicalLogs: liveEvents.map((e: any) => ({
+          id: e.id,
+          type: e.type,
+          node: "NODE-04",
+          msg: JSON.stringify(e.payload),
+          timestamp: e.timestamp,
+          plane: e.plane
+        })),
+        context: "Sovereign OS Revenue Ops Phase 4"
+      });
 
-1. **Liquidity Health:** Global yield at 3.5% with $428k in TON Wallet Mesh. No drift detected.
-2. **Transaction Integrity:** 100% of seals are valid. No duplicate credits found in last 24h.
-3. **Anomalies:** One "PAID_NOT_CREDITED" signal detected (PAY_SEAL_X92). Auto-healing is recommended.
-4. **Conclusion:** System is operating within Sovereign Kernel v1.2 parameters.
-        `);
-        setIsGeneratingAIReport(false);
-        setShowReportDialog(true);
-        toast({ title: "AI Audit Ready", description: "Forensic summary generated via Node-04." });
-      }, 3000);
+      setAiInsights(result);
+      setShowReportDialog(true);
+      toast({ title: "Forensic Analysis Ready", description: "Audit Oracle has generated new insights." });
     } catch (e) {
-      toast({ variant: "destructive", title: "AI Failure" });
+      toast({ variant: "destructive", title: "Forensic Engine Failure", description: "Reasoning node is under heavy load." });
+    } finally {
       setIsGeneratingAIReport(false);
     }
   };
@@ -127,8 +136,8 @@ export default function RevenuePage() {
                 onClick={handleGenerateAIReport} 
                 disabled={isGeneratingAIReport}
              >
-                {isGeneratingAIReport ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Bot className="mr-1.5 h-3.5 w-3.5" />}
-                AI Audit
+                {isGeneratingAIReport ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <BrainCircuit className="mr-1.5 h-3.5 w-3.5" />}
+                Audit Oracle
              </Button>
              <Button size="sm" className="bg-accent text-background font-bold text-[10px] h-9" onClick={handleExport} disabled={isExporting}>
                 {isExporting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <FileText className="mr-1.5 h-3.5 w-3.5" />}
@@ -253,17 +262,47 @@ export default function RevenuePage() {
              </div>
              
              <div className="p-8">
-                <div className="p-6 rounded-3xl bg-black/60 border border-white/10 italic text-sm text-white/90 leading-relaxed font-body shadow-inner">
-                   <pre className="whitespace-pre-wrap font-sans">{aiReport}</pre>
-                </div>
-                <div className="mt-8 flex gap-3">
-                   <Button className="flex-1 h-12 bg-accent text-background font-bold uppercase tracking-widest text-[10px] cyan-glow" onClick={() => setShowReportDialog(false)}>
-                      Archive Report
-                   </Button>
-                   <Button variant="outline" className="flex-1 h-12 border-white/10 text-[10px] font-bold uppercase tracking-widest" onClick={() => window.print()}>
-                      <Download className="mr-2 h-4 w-4" /> Export PDF
-                   </Button>
-                </div>
+                {aiInsights ? (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 rounded-2xl bg-secondary/30 border border-white/5 space-y-1 text-center">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Risk Level</p>
+                        <Badge className={aiInsights.riskLevel === 'CRITICAL' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}>
+                          {aiInsights.riskLevel}
+                        </Badge>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-secondary/30 border border-white/5 space-y-1 text-center">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Confidence</p>
+                        <p className="text-xl font-headline font-bold text-accent">{aiInsights.confidenceIndex}%</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                       <p className="text-[10px] font-bold text-accent uppercase flex items-center gap-2">
+                         <Activity className="h-3 w-3" /> Root Cause Analysis
+                       </p>
+                       <div className="p-6 rounded-3xl bg-black/60 border border-white/10 italic text-sm text-white/90 leading-relaxed font-body shadow-inner">
+                          {aiInsights.rootCauseAnalysis}
+                       </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 space-y-2">
+                       <p className="text-[9px] font-bold text-primary uppercase">Recommended Strategy</p>
+                       <p className="text-xs text-white leading-relaxed font-bold">{aiInsights.recommendedStrategy}</p>
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                       <Button className="flex-1 h-12 bg-accent text-background font-bold uppercase tracking-widest text-[10px] cyan-glow" onClick={() => setShowReportDialog(false)}>
+                          Archive Report
+                       </Button>
+                       <Button variant="outline" className="flex-1 h-12 border-white/10 text-[10px] font-bold uppercase tracking-widest" onClick={() => window.print()}>
+                          <Download className="mr-2 h-4 w-4" /> Export PDF
+                       </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-10 text-center opacity-30 italic">Processing cognitive mesh...</div>
+                )}
              </div>
           </DialogContent>
         </Dialog>
