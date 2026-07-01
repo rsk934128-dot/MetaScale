@@ -144,8 +144,8 @@ export default function LandingPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
             </div>
 
-            {/* Content Container */}
-            <div className="relative z-10 h-full max-w-7xl mx-auto px-6 flex flex-col justify-center items-center text-center">
+            {/* Content Container - Adjusted for Right Alignment */}
+            <div className="relative z-10 h-full max-w-7xl mx-auto px-6 flex flex-col justify-center items-center md:items-end text-center md:text-right">
               <Badge variant="outline" className={cn("mb-6 uppercase tracking-[0.3em] px-4 py-1 text-[10px] font-bold animate-fade-in border-current", slide.color)}>
                 {slide.badge}
               </Badge>
@@ -153,11 +153,11 @@ export default function LandingPage() {
                 {slide.title} <br />
                 <span className={cn("italic transition-colors duration-1000", slide.color)}>{slide.titleItalic}</span>
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in">
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl animate-fade-in mb-12">
                 {slide.desc}
               </p>
               
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
+              <div className="flex flex-col sm:flex-row items-center justify-center md:justify-end gap-4 animate-fade-in">
                 <Button asChild size="lg" className={cn("cyan-glow font-bold uppercase text-xs tracking-widest h-14 px-10 rounded-full transition-all duration-500", slide.color === 'text-accent' ? 'bg-accent text-background' : 'bg-white text-background')}>
                   <Link href={user ? "/dashboard" : "/login"}>
                     Access Smart Wallet
