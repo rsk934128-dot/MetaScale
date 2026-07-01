@@ -24,21 +24,27 @@ import {
   ArrowRight,
   Lock,
   Eye,
-  Info
+  Info,
+  TrendingUp,
+  BarChart3,
+  Signal,
+  Clock,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useCollection, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, where } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, where, addDoc } from "firebase/firestore";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { processPaymentCredit } from "@/services/payment-service";
 import { runAutomatedReconciliation } from "@/services/reconciliation-cron";
 import { cn } from "@/lib/utils";
+import { OperationalMetric, SystemAlert } from "@/lib/kernel/types";
 
 export default function AdminCompliancePage() {
   const [search, setSearch] = useState("");
@@ -70,6 +76,26 @@ export default function AdminCompliancePage() {
     );
   }, [firestore]);
   const { data: anomalies, loading: anomaliesLoading } = useCollection<any>(anomaliesQuery);
+
+  // 3. Operational Events for Alert Feed
+  const alertsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'events'),
+      where('priority', '<=', 2),
+      orderBy('timestamp', 'desc'),
+      limit(10)
+    );
+  }, [firestore]);
+  const { data: systemAlerts } = useCollection<any>(alertsQuery);
+
+  // Mock Operational Metrics (In production these would be aggregated from DB)
+  const operationalMetrics: OperationalMetric[] = [
+    { id: 'm1', label: 'Payment Success', value: '99.4%', type: 'GAUGE', trend: 'UP', status: 'NORMAL' },
+    { id: 'm2', label: 'Stuck Payments', value: anomalies?.length || 0, type: 'COUNTER', trend: 'NEUTRAL', status: (anomalies?.length || 0) > 5 ? 'CRITICAL' : 'NORMAL' },
+    { id: 'm3', label: 'Mesh Integrity', value: '100%', type: 'GAUGE', trend: 'NEUTRAL', status: 'NORMAL' },
+    { id: 'm4', label: 'Escrow Depth', value: '$428k', type: 'GAUGE', trend: 'UP', status: 'NORMAL' },
+  ];
 
   const handleVerify = async (docData: any, status: 'APPROVED' | 'REJECTED') => {
     if (!firestore) return;
@@ -145,6 +171,32 @@ export default function AdminCompliancePage() {
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
+          
+          {/* KPI Metrics Strip */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+             {operationalMetrics.map((metric) => (
+               <Card key={metric.id} className={cn(
+                 "glass-panel border-l-4 transition-all",
+                 metric.status === 'CRITICAL' ? 'border-l-red-500 bg-red-500/5' : 'border-l-accent'
+               )}>
+                 <CardContent className="p-4 flex justify-between items-end">
+                    <div className="space-y-1">
+                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{metric.label}</p>
+                       <p className={cn("text-2xl font-headline font-bold", metric.status === 'CRITICAL' ? 'text-red-400' : 'text-white')}>
+                          {metric.value}
+                       </p>
+                    </div>
+                    <div className={cn(
+                      "p-2 rounded-lg bg-background/50",
+                      metric.trend === 'UP' ? 'text-green-400' : 'text-muted-foreground'
+                    )}>
+                       {metric.trend === 'UP' ? <TrendingUp className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
+                    </div>
+                 </CardContent>
+               </Card>
+             ))}
+          </div>
+
           <Tabs defaultValue="reconciliation" className="space-y-8">
             <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1">
                <TabsTrigger value="kyb" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">KYB Queue</TabsTrigger>
@@ -218,8 +270,63 @@ export default function AdminCompliancePage() {
                </div>
 
                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  {/* Incident Feed */}
-                  <div className="lg:col-span-7 space-y-6">
+                  {/* Alert Rail & Incident Feed */}
+                  <div className="lg:col-span-4 space-y-6">
+                    <Card className="glass-panel border-accent/20 bg-accent/5">
+                        <CardHeader className="border-b border-white/10 pb-3">
+                           <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest text-accent">
+                              <Bell className="h-4 w-4" />
+                              Live Alert Rail
+                           </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                           <ScrollArea className="h-[400px]">
+                              <div className="divide-y divide-white/5">
+                                 {(!systemAlerts || systemAlerts.length === 0) ? (
+                                   <div className="p-10 text-center text-[10px] text-muted-foreground italic uppercase">No active alerts.</div>
+                                 ) : systemAlerts.map((alert: any) => (
+                                   <div key={alert.id} className="p-4 space-y-2 hover:bg-white/5 transition-all">
+                                      <div className="flex justify-between items-start">
+                                         <Badge className={cn(
+                                           "text-[7px] font-bold uppercase",
+                                           alert.priority <= 2 ? 'bg-red-500' : 'bg-yellow-500/20 text-yellow-500'
+                                         )}>
+                                           {alert.priority <= 2 ? 'CRITICAL' : 'WARNING'}
+                                         </Badge>
+                                         <span className="text-[8px] font-mono opacity-50">{new Date(alert.timestamp).toLocaleTimeString()}</span>
+                                      </div>
+                                      <p className="text-[11px] font-bold text-white">{alert.type}</p>
+                                      <p className="text-[9px] text-muted-foreground italic leading-tight">
+                                        Seal: {alert.id.substring(0, 14)}...
+                                      </p>
+                                   </div>
+                                 ))}
+                              </div>
+                           </ScrollArea>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="glass-panel border-white/5 bg-black/40">
+                        <CardHeader className="pb-2">
+                           <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2">
+                             <Clock className="h-3 w-3" /> System Heartbeat
+                           </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                           <div className="flex justify-between text-[10px]">
+                              <span className="text-muted-foreground uppercase">Cron Health</span>
+                              <span className="text-green-400 font-bold">STABLE</span>
+                           </div>
+                           <div className="flex justify-between text-[10px]">
+                              <span className="text-muted-foreground uppercase">API Latency</span>
+                              <span className="text-accent font-bold">27.5ms</span>
+                           </div>
+                        </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Anomaly Feed */}
+                  <div className="lg:col-span-8 space-y-6">
                     <Card className="glass-panel border-red-500/20 bg-red-500/5">
                         <CardHeader className="border-b border-red-500/10">
                           <CardTitle className="text-sm flex items-center gap-2 text-red-400 uppercase tracking-widest">
@@ -263,12 +370,10 @@ export default function AdminCompliancePage() {
                           )}
                         </CardContent>
                     </Card>
-                  </div>
-
-                  {/* Playbook Inspector */}
-                  <div className="lg:col-span-5 space-y-6">
-                    {selectedAnomaly ? (
-                      <Card className="glass-panel border-accent/30 bg-accent/5 shadow-2xl animate-fade-in sticky top-24">
+                    
+                    {/* Playbook Inspector (Shows only when selected) */}
+                    {selectedAnomaly && (
+                      <Card className="glass-panel border-accent/30 bg-accent/5 shadow-2xl animate-fade-in">
                         <CardHeader className="border-b border-white/10">
                            <div className="flex justify-between items-center">
                               <Badge className="bg-red-500 text-white font-bold text-[8px] uppercase tracking-widest">CRITICAL INCIDENT</Badge>
@@ -279,7 +384,7 @@ export default function AdminCompliancePage() {
                            </CardTitle>
                            <CardDescription className="text-xs uppercase font-bold text-accent">STUCK_PAYMENT_RECOVERY</CardDescription>
                         </CardHeader>
-                        <CardContent className="p-6 space-y-6">
+                        <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
                            <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-4">
                               <p className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-2">
                                 <Terminal className="h-3 w-3" /> Recommended Actions
@@ -299,53 +404,32 @@ export default function AdminCompliancePage() {
                               </div>
                            </div>
 
-                           <div className="space-y-3">
-                              <Button 
-                                  className="w-full h-12 bg-accent text-background font-bold text-[11px] uppercase tracking-widest cyan-glow"
-                                  onClick={() => handleManualReplay(selectedAnomaly)}
-                                  disabled={isProcessing === selectedAnomaly.id}
-                              >
-                                  {isProcessing === selectedAnomaly.id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
-                                  Execute Safe Replay
-                              </Button>
-                              <div className="grid grid-cols-2 gap-2">
-                                 <Button variant="outline" className="h-10 text-[9px] font-bold border-red-500/20 text-red-400 hover:bg-red-500/10 uppercase">
-                                    <Lock className="mr-2 h-3.5 w-3.5" /> Freeze Account
-                                 </Button>
-                                 <Button variant="outline" className="h-10 text-[9px] font-bold border-white/10 uppercase">
-                                    <Eye className="mr-2 h-3.5 w-3.5" /> Full Audit Log
-                                 </Button>
+                           <div className="space-y-6">
+                              <div className="space-y-3">
+                                <Button 
+                                    className="w-full h-12 bg-accent text-background font-bold text-[11px] uppercase tracking-widest cyan-glow"
+                                    onClick={() => handleManualReplay(selectedAnomaly)}
+                                    disabled={isProcessing === selectedAnomaly.id}
+                                >
+                                    {isProcessing === selectedAnomaly.id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+                                    Execute Safe Replay
+                                </Button>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Button variant="outline" className="h-10 text-[9px] font-bold border-red-500/20 text-red-400 hover:bg-red-500/10 uppercase">
+                                      <Lock className="mr-2 h-3.5 w-3.5" /> Freeze Account
+                                  </Button>
+                                  <Button variant="outline" className="h-10 text-[9px] font-bold border-white/10 uppercase">
+                                      <Eye className="mr-2 h-3.5 w-3.5" /> Full Audit Log
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20 flex gap-3">
+                                <Info className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
+                                <p className="text-[10px] text-muted-foreground leading-relaxed italic">
+                                  Executing a replay will trigger an atomic balancing update. Ensure provider confirmation before authorization.
+                                </p>
                               </div>
                            </div>
-
-                           <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20 flex gap-3">
-                              <Info className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
-                              <p className="text-[10px] text-muted-foreground leading-relaxed italic">
-                                 Executing a replay will trigger an atomic balancing update. Ensure provider confirmation before authorization.
-                              </p>
-                           </div>
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      <Card className="glass-panel border-white/5 bg-black/40 h-[400px] flex flex-col">
-                        <CardHeader className="border-b border-white/5 pb-3">
-                          <CardTitle className="text-xs uppercase flex items-center gap-2">
-                             <Terminal className="h-4 w-4 text-accent" />
-                             Scan Terminal
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0 flex-1 overflow-hidden">
-                          <ScrollArea className="h-full p-4">
-                            <div className="space-y-1.5 font-mono text-[9px]">
-                               {cronLogs.length === 0 ? (
-                                 <p className="text-muted-foreground italic">Terminal ready. Select an incident or trigger mesh scan.</p>
-                               ) : cronLogs.map((log, i) => (
-                                 <p key={i} className={cn("pl-2 border-l border-white/10", log.includes('SUCCESS') ? 'text-green-400' : 'text-white/60')}>
-                                   &gt; {log}
-                                 </p>
-                               ))}
-                            </div>
-                          </ScrollArea>
                         </CardContent>
                       </Card>
                     )}

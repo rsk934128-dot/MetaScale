@@ -18,6 +18,7 @@ import { processPaymentCredit } from './payment-service';
 /**
  * Phase 2.7: Optimized Reconciliation Engine
  * Phase 2.8: Incident Severity Injection
+ * Phase 2.9: Operational Metrics Emission
  */
 export async function runAutomatedReconciliation(
   firestore: Firestore,
@@ -68,6 +69,7 @@ export async function runAutomatedReconciliation(
         const nextAttempt = now + backoffMs;
         
         const newBucket = newCount >= 5 ? 'FATAL' : 'WAITING_BACKOFF';
+        const severity = newCount >= 3 ? 'CRITICAL' : 'HIGH';
 
         await updateDoc(doc(firestore, 'payments', payment.id), {
           replayCount: newCount,
@@ -77,8 +79,27 @@ export async function runAutomatedReconciliation(
           updatedAt: now,
           settlementBucket: newBucket,
           manualReviewRequired: newBucket === 'FATAL',
-          primaryAnomaly: 'STUCK_PAYMENT'
+          primaryAnomaly: 'STUCK_PAYMENT',
+          severity: severity
         });
+
+        // Phase 2.9: Emit Alert for High Failure Rate or Critical Severity
+        if (severity === 'CRITICAL' || newCount === 1) {
+          await addDoc(collection(firestore, 'events'), {
+             type: 'METRIC_THRESHOLD_EXCEEDED',
+             plane: 'OPERATIONS',
+             priority: severity === 'CRITICAL' ? 1 : 2,
+             timestamp: Date.now(),
+             payload: {
+               paymentId: payment.id,
+               error: err.message,
+               retryCount: newCount
+             },
+             status: 'QUEUED',
+             severity: severity,
+             category: 'STUCK_PAYMENT'
+          });
+        }
       }
     }
   } catch (globalErr: any) {

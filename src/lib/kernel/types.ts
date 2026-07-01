@@ -1,7 +1,7 @@
 
 export type SystemMode = 'NORMAL' | 'EMERGENCY' | 'LOCKDOWN' | 'RECOVERY';
 
-export type PlaneType = 'CIVIC' | 'FINANCE' | 'SECURITY' | 'INFRA';
+export type PlaneType = 'CIVIC' | 'FINANCE' | 'SECURITY' | 'INFRA' | 'OPERATIONS';
 
 export type EventStatus = 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REJECTED' | 'ROLLED_BACK';
 
@@ -13,7 +13,9 @@ export type IncidentCategory =
   | 'WEBHOOK_FAILURE' 
   | 'AMOUNT_MISMATCH' 
   | 'INFRA_FAILURE'
-  | 'ADMIN_ABUSE';
+  | 'ADMIN_ABUSE'
+  | 'LATENCY_SPIKE'
+  | 'METRIC_THRESHOLD_EXCEEDED';
 
 export interface SovereignEvent {
   id: string;
@@ -40,6 +42,30 @@ export interface KernelState {
   events: SovereignEvent[];
   planes: Record<PlaneType, PlaneState>;
   uptime: number;
+}
+
+/**
+ * Phase 2.9: Operational Metrics & Alerting
+ */
+export type MetricType = 'COUNTER' | 'GAUGE' | 'HISTOGRAM';
+
+export interface OperationalMetric {
+  id: string;
+  label: string;
+  value: number | string;
+  type: MetricType;
+  trend?: 'UP' | 'DOWN' | 'NEUTRAL';
+  status: 'NORMAL' | 'WARN' | 'CRITICAL';
+}
+
+export interface SystemAlert {
+  id: string;
+  severity: 'CRITICAL' | 'WARNING' | 'INFO';
+  title: string;
+  message: string;
+  timestamp: number;
+  status: 'ACTIVE' | 'ACKNOWLEDGED' | 'RESOLVED';
+  category: string;
 }
 
 /**
