@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useKernel } from "@/components/kernel/KernelProvider";
-import { ShieldCheck, Bell, MapPin, Camera, Mic, Settings, Smartphone } from "lucide-react";
+import { ShieldCheck, Bell, MapPin, Camera, Mic, Settings, Smartphone, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
