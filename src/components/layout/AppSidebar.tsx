@@ -33,7 +33,8 @@ import {
   Unplug,
   Sparkles,
   Braces,
-  BrainCircuit
+  BrainCircuit,
+  FileSearch
 } from "lucide-react";
 import {
   Sidebar,
@@ -86,6 +87,7 @@ const projectNav = [
 
 const securityNav = [
   { icon: ShieldAlert, label: "Security Intelligence", href: "/risk" },
+  { icon: FileSearch, label: "SAM Reader", href: "/sam-reader" },
   { icon: Lock, label: "Identity & Trust", href: "/network" },
   { icon: BrainCircuit, label: "Sovereign Chat", href: "/intelligence" },
 ];
@@ -361,4 +363,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
