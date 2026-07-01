@@ -30,7 +30,8 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Building2
+  Building2,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,9 +73,9 @@ export default function FinancialIntelligence() {
   const [showCardNumbers, setShowCardNumbers] = useState(false);
   
   // Payout State
-  const [payoutEmail, setPayoutEmail] = useState("");
+  const [payoutRecipient, setPayoutRecipient] = useState("");
   const [payoutAmount, setPayoutAmount] = useState("");
-  const [payoutGateway, setPayoutGateway] = useState<'PAYPAL' | 'PRIYO_PAY' | 'PAYONEER'>('PRIYO_PAY');
+  const [payoutGateway, setPayoutGateway] = useState<'PAYPAL' | 'PRIYO_PAY' | 'PAYONEER' | 'TELEGRAM_WALLET'>('PRIYO_PAY');
   const [isPayoutProcessing, setIsPayoutProcessing] = useState(false);
 
   // Sandbox State
@@ -87,13 +88,13 @@ export default function FinancialIntelligence() {
   };
 
   const handleGlobalPayout = async () => {
-    if (!payoutEmail || !payoutAmount || !profile || !user?.uid || !firestore) {
+    if (!payoutRecipient || !payoutAmount || !profile || !user?.uid || !firestore) {
       toast({ variant: "destructive", title: "Incomplete Data", description: "সবগুলো তথ্য প্রদান করুন।" });
       return;
     }
 
     const amountNum = parseFloat(payoutAmount);
-    if (amountNum > profile.balance) {
+    if (amountNum > (profile.balance || 0)) {
       toast({ variant: "destructive", title: "Insufficient Balance", description: "আপনার ওয়ালেটে পর্যাপ্ত ডলার নেই।" });
       return;
     }
@@ -102,15 +103,15 @@ export default function FinancialIntelligence() {
     emitEvent('FINANCE', 'PAYOUT_INITIATED', 2, { gateway: payoutGateway, amount: amountNum });
 
     try {
-      // 1. Call Genkit Payout Orchestrator (Simulated Flow)
+      // 1. Call Genkit Payout Orchestrator
       const result = await orchestratePayout({
         gateway: payoutGateway,
-        recipientEmail: payoutEmail,
+        recipientInfo: payoutRecipient,
         amount: amountNum,
         currency: 'USD'
       });
 
-      if (result.status === 'SUCCESS') {
+      if (result.status === 'SUCCESS' || result.status === 'PENDING') {
         // 2. Atomic Database Update
         await updateDoc(userRef!, { 
           balance: increment(-amountNum) 
@@ -122,15 +123,18 @@ export default function FinancialIntelligence() {
           plane: 'FINANCE',
           status: 'COMPLETED',
           amount: amountNum,
-          recipient: payoutEmail,
+          recipient: payoutRecipient,
           gateway: payoutGateway,
           batchId: result.batchId,
           timestamp: Date.now()
         });
 
-        toast({ title: "Payout Successful", description: `${amountNum} USD পাঠানো হয়েছে ${payoutGateway} এর মাধ্যমে।` });
+        toast({ 
+          title: "Payout Dispatched", 
+          description: `${amountNum} USD পাঠানো হয়েছে ${payoutGateway} এর মাধ্যমে।` 
+        });
         setPayoutAmount("");
-        setPayoutEmail("");
+        setPayoutRecipient("");
       } else {
         throw new Error("Gateway Handshake Failed");
       }
@@ -217,7 +221,7 @@ export default function FinancialIntelligence() {
                 </CardHeader>
                 <CardContent className="p-4 flex flex-col justify-center min-h-[100px]">
                    <p className="text-3xl font-headline font-bold text-white">
-                     ${virtualCards?.reduce((acc, c) => acc + c.balance, 0).toLocaleString() || '0.00'}
+                     ${virtualCards?.reduce((acc, c) => acc + (c.balance || 0), 0).toLocaleString() || '0.00'}
                    </p>
                    <div className="flex items-center gap-1 text-primary text-[10px] font-bold mt-1">
                       <Plus className="h-3 w-3" /> {virtualCards?.length || 0} Issued Cards
@@ -256,7 +260,7 @@ export default function FinancialIntelligence() {
             <div className="lg:col-span-2 space-y-6">
               <Tabs defaultValue="payout" className="space-y-6">
                 <TabsList className="bg-secondary/50 border border-white/5 p-1 h-auto flex flex-wrap">
-                  <TabsTrigger value="payout" className="data-[state=active]:bg-[#6366f1] data-[state=active]:text-white text-[10px] uppercase font-bold tracking-widest px-6 h-10">Priyo / Global Payout</TabsTrigger>
+                  <TabsTrigger value="payout" className="data-[state=active]:bg-[#6366f1] data-[state=active]:text-white text-[10px] uppercase font-bold tracking-widest px-6 h-10">Global Payouts</TabsTrigger>
                   <TabsTrigger value="cards" className="data-[state=active]:bg-accent data-[state=active]:text-background text-[10px] uppercase font-bold tracking-widest px-6 h-10">My Virtual Cards</TabsTrigger>
                   <TabsTrigger value="links" className="data-[state=active]:bg-primary data-[state=active]:text-white text-[10px] uppercase font-bold tracking-widest px-6 h-10">Receive Routes</TabsTrigger>
                 </TabsList>
@@ -267,44 +271,73 @@ export default function FinancialIntelligence() {
                          <CardTitle className="text-sm flex items-center gap-2 uppercase text-[#818cf8]">
                             <Building2 className="h-4 w-4" /> Global Settlement Payout
                          </CardTitle>
-                         <CardDescription className="text-[10px] uppercase tracking-widest">PayPal | Priyo Pay | Open Banking (Yapily)</CardDescription>
+                         <CardDescription className="text-[10px] uppercase tracking-widest">PayPal | Priyo Pay | Telegram Wallet (TON)</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-6">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                <Label className="text-[10px] font-bold opacity-60">Payout Gateway</Label>
                                <select 
-                                 className="w-full bg-secondary/50 border border-white/5 rounded-md h-11 text-xs px-3 text-white"
+                                 className="w-full bg-secondary/50 border border-white/5 rounded-md h-11 text-xs px-3 text-white focus:outline-none focus:border-accent/50"
                                  value={payoutGateway}
-                                 onChange={(e: any) => setPayoutGateway(e.target.value)}
+                                 onChange={(e: any) => {
+                                   setPayoutGateway(e.target.value);
+                                   setPayoutRecipient(""); // Clear input on switch
+                                 }}
                                >
                                   <option value="PRIYO_PAY">Priyo Pay (USD)</option>
+                                  <option value="TELEGRAM_WALLET">Telegram Wallet (TON/USDt)</option>
                                   <option value="PAYPAL">PayPal Batch</option>
                                   <option value="PAYONEER">Yapily / Payoneer (PIS)</option>
                                </select>
                             </div>
                             <div className="space-y-2">
-                               <Label className="text-[10px] font-bold opacity-60">Recipient Email</Label>
-                               <Input 
-                                 placeholder="recipient@example.com" 
-                                 className="bg-secondary/30 border-white/5 h-11 text-sm"
-                                 value={payoutEmail}
-                                 onChange={(e) => setPayoutEmail(e.target.value)}
-                               />
+                               <Label className="text-[10px] font-bold opacity-60">
+                                 {payoutGateway === 'TELEGRAM_WALLET' ? 'Telegram ID / Phone Number' : 'Recipient Email'}
+                               </Label>
+                               <div className="relative">
+                                  {payoutGateway === 'TELEGRAM_WALLET' ? (
+                                    <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent/50" />
+                                  ) : (
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
+                                  )}
+                                  <Input 
+                                    placeholder={payoutGateway === 'TELEGRAM_WALLET' ? "@username or +880..." : "recipient@example.com"} 
+                                    className="pl-10 bg-secondary/30 border-white/5 h-11 text-sm"
+                                    value={payoutRecipient}
+                                    onChange={(e) => setPayoutRecipient(e.target.value)}
+                                  />
+                               </div>
                             </div>
                          </div>
                          <div className="space-y-2">
                             <Label className="text-[10px] font-bold opacity-60">Amount to Send (USD)</Label>
-                            <Input 
-                              type="number" 
-                              placeholder="0.00" 
-                              className="bg-secondary/30 border-white/5 h-12 text-lg font-headline"
-                              value={payoutAmount}
-                              onChange={(e) => setPayoutAmount(e.target.value)}
-                            />
+                            <div className="relative">
+                              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-accent" />
+                              <Input 
+                                type="number" 
+                                placeholder="0.00" 
+                                className="pl-10 bg-secondary/30 border-white/5 h-12 text-lg font-headline"
+                                value={payoutAmount}
+                                onChange={(e) => setPayoutAmount(e.target.value)}
+                              />
+                            </div>
                          </div>
+
+                         {payoutGateway === 'TELEGRAM_WALLET' && (
+                           <div className="p-3 rounded-lg bg-accent/5 border border-accent/20 flex gap-3 animate-fade-in">
+                              <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
+                              <p className="text-[10px] text-muted-foreground leading-relaxed italic">
+                                "টেলিগ্রাম ওয়ালেটে টাকা পাঠালে প্রাপক সরাসরি তার টেলিগ্রাম অ্যাপে নোটিফিকেশন পাবেন। এটি একটি সিকিউর TON করিডোর ব্যবহার করবে।"
+                              </p>
+                           </div>
+                         )}
+
                          <Button 
-                           className="w-full bg-[#6366f1] hover:bg-[#4f46e5] text-white font-bold h-12 uppercase text-[10px] cyan-glow"
+                           className={cn(
+                             "w-full font-bold h-12 uppercase text-[10px] cyan-glow transition-all",
+                             payoutGateway === 'TELEGRAM_WALLET' ? "bg-accent text-background hover:bg-accent/90" : "bg-[#6366f1] hover:bg-[#4f46e5] text-white"
+                           )}
                            onClick={handleGlobalPayout}
                            disabled={isPayoutProcessing || isThrottled}
                          >
@@ -393,7 +426,7 @@ export default function FinancialIntelligence() {
                                  <div className="flex justify-between items-end">
                                     <div className="flex gap-8">
                                        <div className="space-y-0.5"><p className="text-[8px] uppercase opacity-50">Expiry</p><p className="text-xs font-bold">{card.expiry}</p></div>
-                                       <div className="space-y-0.5"><p className="text-[8px] uppercase opacity-50">Balance</p><p className="text-sm font-bold text-accent">${card.balance.toLocaleString()}</p></div>
+                                       <div className="space-y-0.5"><p className="text-[8px] uppercase opacity-50">Balance</p><p className="text-sm font-bold text-accent">${(card.balance || 0).toLocaleString()}</p></div>
                                     </div>
                                     <div className="flex gap-1">
                                        {card.brand === 'MASTERCARD' ? <><div className="w-8 h-8 rounded-full bg-[#eb001b] opacity-80" /><div className="w-8 h-8 rounded-full bg-[#f79e1b] -ml-4 opacity-80" /></> : <div className="w-12 h-8 rounded-md bg-white flex items-center justify-center p-1"><p className="text-[10px] font-bold italic text-[#1a1f71]">VISA</p></div>}
