@@ -167,7 +167,8 @@ export default function LegalBoundPage() {
                     <CardTitle className="text-sm font-bold uppercase tracking-tight">Compliance</CardTitle>
                     <CardDescription className="text-[10px]">Governed by the laws of Seychelles.</CardDescription>
                   </CardHeader>
-                </div>
+                </Card>
+              </div>
 
               <Accordion type="single" collapsible className="w-full space-y-4">
                 <AccordionItem value="item-1" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
