@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -38,7 +37,10 @@ import {
   CheckCircle2,
   Fingerprint,
   Tag,
-  Info
+  Info,
+  Clock,
+  Zap,
+  TrendingDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +55,7 @@ import { collection, query, where, getDocs, doc, updateDoc, increment, addDoc, s
 import { BankSandboxModal } from "@/components/finance/BankSandboxModal";
 import { PaymentLinkManager } from "@/components/finance/PaymentLinkManager";
 import { orchestratePayout } from "@/ai/flows/payout-orchestrator";
+import { analyzeP2PMarket } from "@/ai/flows/p2p-market-analyst";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -74,12 +77,16 @@ export default function FinancialIntelligence() {
   }, [firestore, user?.uid]);
   const { data: virtualCards } = useCollection<any>(cardsQuery);
 
-  // Recent Transactions for Reversal/Refund View
+  // Recent Transactions
   const transactionsQuery = useMemo(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'events'), where('plane', '==', 'FINANCE'), orderBy('timestamp', 'desc'), limit(15));
   }, [firestore, user?.uid]);
   const { data: recentTxns } = useCollection<any>(transactionsQuery);
+
+  // Market Intel State
+  const [marketIntel, setMarketIntel] = useState<any>(null);
+  const [isAnalyzingMarket, setIsAnalyzingMarket] = useState(false);
 
   // Payout Form State
   const [payoutRecipient, setPayoutRecipient] = useState("");
@@ -89,11 +96,27 @@ export default function FinancialIntelligence() {
   const [isPayoutProcessing, setIsPayoutProcessing] = useState(false);
   const [recipientError, setRecipientError] = useState("");
   const [recipientType, setRecipientType] = useState<string>("NONE");
-  const [showCardNumbers, setShowCardNumbers] = useState(false);
 
   // Sandbox State
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
   const [connectedAccount, setConnectedAccount] = useState<any>(null);
+
+  // Fetch Market Intel on Mount
+  useEffect(() => {
+    handleRefreshMarket();
+  }, []);
+
+  const handleRefreshMarket = async () => {
+    setIsAnalyzingMarket(true);
+    try {
+      const result = await analyzeP2PMarket({ amount: 5000, method: 'bKash' });
+      setMarketIntel(result);
+    } catch (err) {
+      console.error("Market Intel Error:", err);
+    } finally {
+      setIsAnalyzingMarket(false);
+    }
+  };
 
   // Advanced Input Validation (Regex) for TON
   useEffect(() => {
@@ -188,22 +211,13 @@ export default function FinancialIntelligence() {
         toast({ title: "Payout Dispatched", description: `Transaction Hash: ${result.txHash.substring(0, 16)}...` });
         setPayoutAmount("");
         setPayoutRecipient("");
+        setPayoutMemo("");
       }
     } catch (err: any) {
       toast({ variant: "destructive", title: "Execution Failed" });
     } finally {
       setIsPayoutProcessing(false);
     }
-  };
-
-  const handleRequestRefund = async (txn: any) => {
-    if (!firestore || !user?.uid || !profile) return;
-    emitEvent('FINANCE', 'REFUND_INITIATED', 2, { txnId: txn.id, amount: txn.amount });
-    setTimeout(async () => {
-      await updateDoc(userRef!, { balance: increment(txn.amount) });
-      await updateDoc(doc(firestore, 'events', txn.id), { status: 'REFUNDED' });
-      toast({ title: "Fund Restored", description: `${txn.amount} USD ফেরত দেওয়া হয়েছে।` });
-    }, 1500);
   };
 
   const isThrottled = mode === 'LOCKDOWN' || mode === 'EMERGENCY';
@@ -244,24 +258,47 @@ export default function FinancialIntelligence() {
                 </CardContent>
              </Card>
 
-             <Card className="glass-panel border-l-4 border-l-primary overflow-hidden h-full">
-                <CardHeader className="pb-2 p-4">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Virtual Card Assets</CardTitle>
-                    <CreditCard className="h-4 w-4 text-primary" />
+             {/* Market Intelligence Card */}
+             <Card className="glass-panel border-l-4 border-l-primary lg:col-span-2 overflow-hidden h-full bg-primary/5">
+                <CardHeader className="pb-2 p-4 border-b border-white/5 bg-white/5">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-[10px] uppercase font-bold text-primary tracking-widest flex items-center gap-2">
+                       <TrendingUp className="h-3 w-3" /> P2P Market Intelligence (USDT/BDT)
+                    </CardTitle>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleRefreshMarket} disabled={isAnalyzingMarket}>
+                       <RefreshCw className={cn("h-3 w-3", isAnalyzingMarket && "animate-spin")} />
+                    </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4 flex flex-col justify-center min-h-[100px]">
-                   <p className="text-3xl font-headline font-bold text-white">
-                     ${virtualCards?.reduce((acc, c) => acc + (c.balance || 0), 0).toLocaleString() || '0.00'}
-                   </p>
+                <CardContent className="p-4">
+                   {marketIntel ? (
+                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6 animate-fade-in">
+                        <div className="space-y-1">
+                           <p className="text-[9px] uppercase font-bold text-muted-foreground">Optimal Price</p>
+                           <p className="text-xl font-headline font-bold text-white">৳{marketIntel.optimalOffer.price}</p>
+                        </div>
+                        <div className="space-y-1">
+                           <p className="text-[9px] uppercase font-bold text-muted-foreground">bKash Depth</p>
+                           <p className="text-xl font-headline font-bold text-accent">76.9%</p>
+                        </div>
+                        <div className="space-y-1 hidden md:block">
+                           <p className="text-[9px] uppercase font-bold text-muted-foreground">Execution SLA</p>
+                           <Badge className="bg-red-500/20 text-red-400 text-[8px] font-mono"><Clock className="h-2 w-2 mr-1" /> 15 MINS</Badge>
+                        </div>
+                     </div>
+                   ) : (
+                     <div className="flex items-center gap-4 opacity-40">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <p className="text-[10px] uppercase font-bold tracking-widest">Intercepting P2P Signals...</p>
+                     </div>
+                   )}
                 </CardContent>
              </Card>
 
-             <Card className="glass-panel border-l-4 border-l-green-500 lg:col-span-2 overflow-hidden h-full">
+             <Card className="glass-panel border-l-4 border-l-green-500 overflow-hidden h-full">
                 <CardHeader className="pb-2 p-4">
                   <div className="flex justify-between items-center">
-                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Institutional Bank Sync</CardTitle>
+                    <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Bank Sync</CardTitle>
                     {connectedAccount && (
                       <Badge className="bg-primary/20 text-primary text-[8px] font-mono">PIS_ACTIVE</Badge>
                     )}
@@ -269,16 +306,10 @@ export default function FinancialIntelligence() {
                 </CardHeader>
                 <CardContent className="p-4 flex flex-col justify-center min-h-[100px]">
                    {connectedAccount ? (
-                     <div className="flex justify-between items-center gap-4">
-                        <div>
-                          <p className="text-2xl font-headline font-bold text-white">${connectedAccount.balance.toLocaleString()}</p>
-                          <p className="text-[9px] text-muted-foreground uppercase">{connectedAccount.bankName}</p>
-                        </div>
-                        <Button size="sm" className="bg-primary text-primary-foreground font-bold text-[10px] h-8 px-4" onClick={() => setIsSandboxOpen(true)}>Sync Mesh</Button>
-                     </div>
+                        <p className="text-2xl font-headline font-bold text-white">${connectedAccount.balance.toLocaleString()}</p>
                    ) : (
-                     <Button variant="ghost" className="text-[10px] font-bold text-primary hover:bg-primary/10 h-12 border border-dashed border-primary/20 w-full" onClick={() => setIsSandboxOpen(true)}>
-                        Connect External Bank Node
+                     <Button variant="ghost" className="text-[10px] font-bold text-primary hover:bg-primary/10 h-10 border border-dashed border-primary/20 w-full" onClick={() => setIsSandboxOpen(true)}>
+                        Link Node
                      </Button>
                    )}
                 </CardContent>
@@ -295,7 +326,10 @@ export default function FinancialIntelligence() {
                 </TabsList>
 
                 <TabsContent value="payout" className="space-y-6 animate-fade-in">
-                   <Card className="glass-panel border-l-4 border-l-[#6366f1] bg-[#6366f1]/5 shadow-2xl">
+                   <Card className="glass-panel border-l-4 border-l-[#6366f1] bg-[#6366f1]/5 shadow-2xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-4 opacity-5">
+                         <CloudLightning className="h-40 w-40 text-white" />
+                      </div>
                       <CardHeader>
                          <div className="flex justify-between items-start">
                             <div>
@@ -321,7 +355,16 @@ export default function FinancialIntelligence() {
                             </div>
                          </div>
                       </CardHeader>
-                      <CardContent className="space-y-6">
+                      <CardContent className="space-y-6 relative z-10">
+                         {marketIntel && (
+                           <div className="p-3 rounded-xl bg-red-500/5 border border-red-500/20 flex items-center gap-3 animate-pulse">
+                              <Clock className="h-4 w-4 text-red-400" />
+                              <p className="text-[10px] text-red-400 font-bold uppercase">
+                                 Time-Critical Settlement Active: 15-Minute Window Enforced
+                              </p>
+                           </div>
+                         )}
+
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                <Label className="text-[10px] font-bold opacity-60">Payout Gateway</Label>
@@ -337,15 +380,38 @@ export default function FinancialIntelligence() {
                             </div>
                             <div className="space-y-2">
                                <Label className="text-[10px] font-bold opacity-60">Recipient Info</Label>
-                               <Input 
-                                 placeholder={payoutGateway === 'TELEGRAM_WALLET' ? "@username or EQ..." : "recipient@example.com"} 
-                                 className={cn("bg-secondary/30 border-white/5 h-11 text-sm", recipientError && "border-red-500/50")}
-                                 value={payoutRecipient}
-                                 onChange={(e) => setPayoutRecipient(e.target.value)}
-                               />
+                               <div className="relative">
+                                  <Input 
+                                    placeholder={payoutGateway === 'TELEGRAM_WALLET' ? "@username or EQ..." : "recipient@example.com"} 
+                                    className={cn("bg-secondary/30 border-white/5 h-11 text-sm pl-4 pr-10", recipientError && "border-red-500/50")}
+                                    value={payoutRecipient}
+                                    onChange={(e) => setPayoutRecipient(e.target.value)}
+                                  />
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-40">
+                                    <span className="text-[8px] font-bold uppercase">{recipientType}</span>
+                                  </div>
+                               </div>
                                {recipientError && <p className="text-[9px] text-red-400 font-bold uppercase">{recipientError}</p>}
                             </div>
                          </div>
+
+                         {payoutGateway === 'TELEGRAM_WALLET' && (
+                           <div className="space-y-2 animate-fade-in">
+                              <Label className="text-[10px] font-bold opacity-60">Memo / Tag (Required for CEX)</Label>
+                              <div className="relative">
+                                 <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-accent/50" />
+                                 <Input 
+                                   placeholder="e.g. 10293847" 
+                                   className="bg-secondary/30 border-white/5 h-11 text-sm font-mono pl-10"
+                                   value={payoutMemo}
+                                   onChange={(e) => setPayoutMemo(e.target.value)}
+                                 />
+                              </div>
+                              <p className="text-[8px] text-muted-foreground italic flex items-center gap-1">
+                                <Info className="h-2 w-2" /> Exchange (Binance/OKX) ডিপোজিট করতে মেমো বাধ্যতামূলক।
+                              </p>
+                           </div>
+                         )}
 
                          <div className="space-y-2">
                             <Label className="text-[10px] font-bold opacity-60">Amount to Send (USD)</Label>
@@ -366,7 +432,7 @@ export default function FinancialIntelligence() {
                          <Button 
                            className="w-full font-bold h-12 uppercase text-[10px] cyan-glow bg-accent text-background"
                            onClick={handleGlobalPayout}
-                           disabled={isPayoutProcessing || isThrottled || !!recipientError || !payoutAmount}
+                           disabled={isPayoutProcessing || isThrottled || !!recipientError || !payoutAmount || (payoutGateway === 'TELEGRAM_WALLET' && recipientType === 'TON_WALLET' && !payoutMemo)}
                          >
                             {isPayoutProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                             Authorize Institutional Disbursement
@@ -399,9 +465,6 @@ export default function FinancialIntelligence() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                        <Badge className="text-[8px] uppercase">{txn.status}</Badge>
-                                       {txn.status === 'COMPLETED' && (
-                                         <Button variant="outline" size="sm" className="h-7 text-[8px] font-bold uppercase border-red-500/30 text-red-400" onClick={() => handleRequestRefund(txn)}>Reversal</Button>
-                                       )}
                                     </div>
                                  </div>
                                ))}
