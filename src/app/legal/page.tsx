@@ -1,4 +1,3 @@
-
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -27,7 +26,8 @@ import {
   UserCheck,
   Table as TableIcon,
   Mail,
-  CheckCircle2
+  CheckCircle2,
+  Database
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
