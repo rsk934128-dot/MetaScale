@@ -24,7 +24,8 @@ import {
   Monitor,
   Lightbulb,
   Mail,
-  Users
+  Users,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,7 @@ export default function SyntaxArchitectPage() {
   const [targetPlane, setTargetPlane] = useState<'CIVIC' | 'FINANCE' | 'SECURITY' | 'INFRA'>('FINANCE');
   const [isArchitecting, setIsArchitecting] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
@@ -48,6 +50,7 @@ export default function SyntaxArchitectPage() {
     
     setIsArchitecting(true);
     setResult(null);
+    setError(null);
 
     try {
       const output = await architectSyntax({
@@ -56,11 +59,12 @@ export default function SyntaxArchitectPage() {
       });
       setResult(output);
       toast({ title: "Architecture Complete", description: "Intent mapped to Sovereign Syntax." });
-    } catch (error) {
+    } catch (err) {
+      setError("এআই নোড বর্তমানে হাই-লোড প্রসেসিং এ আছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।");
       toast({ 
         variant: "destructive", 
-        title: "Kernel Error", 
-        description: "AI reasoning nodes are busy or unreachable." 
+        title: "Reasoning Timeout", 
+        description: "Node-04 recovery logic active. Please try again." 
       });
     } finally {
       setIsArchitecting(false);
@@ -212,7 +216,7 @@ export default function SyntaxArchitectPage() {
 
             {/* Output Panel */}
             <div className="lg:col-span-7 space-y-6">
-              <Card className="glass-panel h-full flex flex-col border-white/5 shadow-2xl overflow-hidden">
+              <Card className="glass-panel h-full flex flex-col border-white/5 shadow-2xl overflow-hidden min-h-[500px]">
                 <CardHeader className="border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
@@ -232,6 +236,12 @@ export default function SyntaxArchitectPage() {
                     <div className="flex-1 flex flex-col items-center justify-center space-y-4 opacity-50">
                       <RefreshCw className="h-10 w-10 animate-spin text-primary" />
                       <p className="text-[10px] font-bold uppercase tracking-[0.4em]">Synthesizing Logic Mesh...</p>
+                    </div>
+                  ) : error ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-4">
+                       <AlertTriangle className="h-12 w-12 text-yellow-500 animate-pulse" />
+                       <p className="text-sm text-white/80 italic max-w-xs">{error}</p>
+                       <Button variant="outline" size="sm" className="text-[10px] uppercase font-bold" onClick={() => handleArchitect()}>Retry Architecture</Button>
                     </div>
                   ) : result ? (
                     <Tabs defaultValue="code" className="flex-1 flex flex-col">

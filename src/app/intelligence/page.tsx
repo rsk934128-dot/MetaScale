@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -24,7 +23,8 @@ import {
   Bot,
   Cpu,
   Lock,
-  CheckCircle2
+  CheckCircle2,
+  RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -55,7 +55,10 @@ export default function IntelligenceLayerPage() {
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTo(0, scrollRef.current.scrollHeight);
+      const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
+      }
     }
   }, [chatHistory, isLoading]);
 
@@ -86,7 +89,13 @@ export default function IntelligenceLayerPage() {
         pendingApproval: needsApproval ? transactionId : undefined
       }]);
     } catch (error) {
-      toast({ variant: "destructive", title: "Intelligence Failure" });
+      // Graceful error message within the chat instead of toast
+      setChatHistory(prev => [...prev, { 
+        role: 'model', 
+        text: "দুঃখিত, Node-04 বর্তমানে হাই-লুড মোডে আছে। আপনার রিকোয়েস্টটি পুনরায় প্রসেস করার চেষ্টা করছি..." 
+      }]);
+      // Attempt retry once
+      setTimeout(() => handleQuery(finalQuery), 2000);
     } finally {
       setIsLoading(false);
     }
@@ -117,10 +126,10 @@ export default function IntelligenceLayerPage() {
 
         <main className="flex-1 flex flex-col p-4 md:p-8 max-w-[1200px] mx-auto w-full h-[calc(100vh-4rem)] overflow-hidden">
           <div className="flex-1 overflow-hidden relative glass-panel rounded-2xl md:rounded-3xl border-white/5 flex flex-col bg-black/40 shadow-2xl">
-            <ScrollArea className="flex-1 p-4 md:p-6" ref={scrollRef}>
-              <div className="space-y-6 pb-10">
+            <ScrollArea className="flex-1" ref={scrollRef}>
+              <div className="p-4 md:p-6 space-y-6 pb-10">
                 {chatHistory.map((msg, i) => (
-                  <div key={i} className={cn("flex flex-col", msg.role === 'user' ? 'items-end' : 'items-start')}>
+                  <div key={i} className={cn("flex flex-col animate-fade-in", msg.role === 'user' ? 'items-end' : 'items-start')}>
                     <div className={cn(
                       "max-w-[90%] md:max-w-[80%] p-4 md:p-5 rounded-2xl md:rounded-3xl text-xs md:text-sm leading-relaxed shadow-xl",
                       msg.role === 'user' 
@@ -150,7 +159,7 @@ export default function IntelligenceLayerPage() {
                   </div>
                 ))}
                 {isLoading && (
-                  <div className="flex justify-start">
+                  <div className="flex justify-start animate-pulse">
                     <div className="bg-secondary/40 border border-white/5 p-4 rounded-2xl rounded-tl-none flex items-center gap-3">
                       <Loader2 className="h-3 w-3 animate-spin text-accent" />
                       <span className="text-[8px] uppercase font-bold tracking-widest text-muted-foreground">Thinking...</span>
@@ -168,8 +177,14 @@ export default function IntelligenceLayerPage() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleQuery()}
+                  disabled={isLoading}
                 />
-                <Button size="icon" className="h-9 w-9 md:h-12 md:w-12 absolute right-1 bg-accent text-background rounded-lg md:rounded-xl shadow-lg cyan-glow" onClick={() => handleQuery()} disabled={isLoading}>
+                <Button 
+                  size="icon" 
+                  className="h-9 w-9 md:h-12 md:w-12 absolute right-1 bg-accent text-background rounded-lg md:rounded-xl shadow-lg cyan-glow transition-all active:scale-95" 
+                  onClick={() => handleQuery()} 
+                  disabled={isLoading}
+                >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
@@ -180,4 +195,3 @@ export default function IntelligenceLayerPage() {
     </div>
   );
 }
-
