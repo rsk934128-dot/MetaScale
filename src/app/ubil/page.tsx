@@ -78,6 +78,19 @@ export default function UBILMainframePage() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Listen for autonomous engine events to log in console
+  const { events } = useKernel();
+  useEffect(() => {
+    const latestAuto = events.find(e => e.type === 'AUTONOMOUS_SETTLEMENT_SUCCESS');
+    if (latestAuto) {
+      setLogs(prev => [
+        `> [AUTONOMOUS] Settled ${latestAuto.payload.count} পেন্ডিং পেমেন্ট।`,
+        `> [LEGER] Hash: ${latestAuto.id.substring(0, 12)}... verified.`,
+        ...prev
+      ]);
+    }
+  }, [events]);
+
   const eventsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'ubil_events'), orderBy('timestamp', 'desc'), limit(50));
@@ -87,8 +100,8 @@ export default function UBILMainframePage() {
 
   const handleStartAutonomous = () => {
     startAutonomousWorker();
-    setLogs(prev => [`$ nn-cli --start-autonomous`, `> Sovereign Worker Started...`, ...prev]);
-    toast({ title: "Autonomous Engine Active" });
+    setLogs(prev => [`$ nn-cli --start-autonomous`, `> Sovereign Worker Started... Cycle: 60s.`, ...prev]);
+    toast({ title: "Autonomous Engine Active", description: "সিস্টেম এখন নিজে থেকেই পেমেন্ট ক্রেডিট করবে।" });
   };
 
   const filteredEvents = useMemo(() => {
@@ -147,13 +160,16 @@ export default function UBILMainframePage() {
               <Card className="glass-panel border-accent/20 bg-accent/5 shadow-2xl">
                   <CardHeader className="p-4 border-b border-white/5">
                     <CardTitle className="text-[10px] md:text-xs uppercase flex items-center gap-2">
-                        <Terminal className="h-4 w-4" /> Console
+                        <Terminal className="h-4 w-4" /> Mainframe Terminal
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="p-3 md:p-4 bg-black/60 font-mono text-[9px] md:text-[10px] space-y-1 h-[300px] md:h-[450px] overflow-y-auto scrollbar-hide">
                        {logs.map((log, i) => (
-                         <p key={i} className="pl-1 border-l-2 py-0.5 border-white/5 text-white/60">
+                         <p key={i} className={cn(
+                           "pl-1 border-l-2 py-0.5 border-white/5",
+                           log.includes('[AUTONOMOUS]') ? "text-green-400" : "text-white/60"
+                         )}>
                            {log}
                          </p>
                        ))}
@@ -167,7 +183,7 @@ export default function UBILMainframePage() {
                 <CardHeader className="p-4 md:p-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="min-w-0">
                     <CardTitle className="text-xs md:text-sm uppercase tracking-widest flex items-center gap-2">
-                      <Database className="h-4 w-4 text-accent" /> Ledger
+                      <Database className="h-4 w-4 text-accent" /> Ledger Inspection
                     </CardTitle>
                   </div>
                   <div className="relative w-full md:w-64">
@@ -215,6 +231,16 @@ export default function UBILMainframePage() {
                                   "{selectedEvent.routingReason || 'Mapped to Sovereign Grid.'}"
                               </p>
                           </div>
+                          <div className="grid grid-cols-2 gap-4">
+                             <div className="p-3 rounded-lg bg-secondary/20 border border-white/5">
+                                <p className="text-[8px] font-bold text-muted-foreground uppercase">Amount</p>
+                                <p className="text-sm font-bold text-white">${selectedEvent.amount}</p>
+                             </div>
+                             <div className="p-3 rounded-lg bg-secondary/20 border border-white/5">
+                                <p className="text-[8px] font-bold text-muted-foreground uppercase">Bank</p>
+                                <p className="text-sm font-bold text-white">{selectedEvent.senderBank}</p>
+                             </div>
+                          </div>
                        </div>
                      ) : (
                        <div className="h-40 md:h-full flex flex-col items-center justify-center opacity-20 text-center">
@@ -232,4 +258,3 @@ export default function UBILMainframePage() {
     </div>
   );
 }
-

@@ -29,6 +29,7 @@ export interface SovereignEvent {
   message?: string;
   severity?: IncidentSeverity;
   category?: IncidentCategory;
+  userId?: string;
 }
 
 export interface PlaneState {

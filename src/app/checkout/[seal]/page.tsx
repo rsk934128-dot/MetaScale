@@ -2,7 +2,7 @@
 "use client";
 
 import { useDoc, useFirestore } from "@/firebase";
-import { doc, updateDoc, increment, setDoc } from "firebase/firestore";
+import { doc, updateDoc, setDoc } from "firebase/firestore";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,21 +62,41 @@ export default function CheckoutPage() {
     setIsProcessing(true);
     try {
       const timestamp = Date.now();
-      const updateData = { 
+      const paymentId = `SIMULATED_${sealId}`;
+
+      // 1. Update the payment link status
+      await updateDoc(doc(firestore, 'payment_links', sealId), { 
         status: 'PAID', 
         paidAt: timestamp,
         paymentMethod: selectedMethod 
-      };
+      });
 
-      // 1. Update registries (Public Link)
-      await updateDoc(doc(firestore, 'payment_links', sealId), updateData);
-      
-      // 2. Update registries (User-specific Copy if exists)
-      try {
-        await updateDoc(doc(firestore, 'users', link.creatorId, 'payment_links', sealId), updateData);
-      } catch (e) {
-        console.warn("User link copy update failed");
-      }
+      // 2. Create the Ledger Entry for Automation
+      // Setting bucket to READY_FOR_REPLAY triggers the Kernel Autonomous Worker
+      await setDoc(doc(firestore, 'payments', paymentId), {
+        id: paymentId,
+        orderId: sealId,
+        userId: link.creatorId, // Merchant who created the link
+        externalTxnId: sealId,
+        provider: 'STRIPE',
+        amount: link.amount,
+        currency: 'USD',
+        status: 'PAID',
+        isCredited: false,
+        credited: false,
+        eventTime: timestamp,
+        updatedAt: timestamp,
+        settlementBucket: 'READY_FOR_REPLAY',
+        manualReviewRequired: false,
+        replayCount: 0,
+        anomalyFlags: [],
+        statusHistory: [{
+          status: 'PAID',
+          timestamp: timestamp,
+          trigger: 'WEBHOOK',
+          reason: 'Instant checkout authorized'
+        }]
+      });
 
       // 3. Log to UBIL Events
       await setDoc(doc(firestore, 'ubil_events', `TXN_${sealId}`), {
@@ -90,13 +110,13 @@ export default function CheckoutPage() {
         senderBank: selectedMethod.toUpperCase(),
         merchantId: link.creatorId,
         seal: sealId,
-        isVerified: link.isVerified
+        routingReason: "Instant authorization via Simulation Rail."
       });
 
       setIsPaid(true);
       toast({ 
         title: "Authorization Successful", 
-        description: "भुगतान सफलतापूर्वक पूर्ण हुआ।",
+        description: "ব্যালেন্স স্বয়ংক্রিয়ভাবে আপডেট করা হচ্ছে (Autonomous Update Active)।",
       });
     } catch (error: any) {
       console.error("Payment Error:", error);
@@ -216,7 +236,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="space-y-2">
                     <h3 className="text-2xl font-headline font-bold text-white uppercase italic tracking-tighter">सफल भुगतान (Settled)</h3>
-                    <p className="text-xs text-muted-foreground">आपका लेनदेन सफलतापूर्वक प्रमाणित और सुरक्षित कर लिया गया है।</p>
+                    <p className="text-xs text-muted-foreground">আপনার পেমেন্ট রিসিভ হয়েছে। আমাদের এআই অটোমেশন এখন ব্যালেন্স আপডেট করছে।</p>
                   </div>
                   <Button asChild className="w-full h-12 bg-white text-background font-bold uppercase text-[10px]">
                      <Link href="/">Back to Core</Link>
