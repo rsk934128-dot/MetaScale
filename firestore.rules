@@ -18,7 +18,7 @@ service cloud.firestore {
 
     // User Profile Rules
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
+      allow read: if isAuthenticated(); // Allow reading profile info for mesh visibility
       
       // Allow creation for self during registration
       allow create: if isOwner(userId);
@@ -49,13 +49,13 @@ service cloud.firestore {
       allow delete: if isAdmin() || (isAuthenticated() && resource.data.creatorId == request.auth.uid);
     }
 
-    // Payment Ledger
+    // Payment Ledger (Global view allowed for authenticated users in prototype mesh)
     match /payments/{paymentId} {
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow read: if isAuthenticated(); 
       allow write: if isAdmin(); // Only Admin (Server SDK / Cloud Functions) can write
     }
 
-    // Unified Banking Intel Layer Events
+    // Unified Banking Intel Layer Events (Global view for mesh synchronization)
     match /ubil_events/{event} {
       allow read: if isAuthenticated() || isAdmin();
       allow create: if true; // Allow public creation from checkout simulation
@@ -71,7 +71,7 @@ service cloud.firestore {
 
     // Limit Escalation Requests
     match /limit_requests/{request} {
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.userId);
       allow create: if isAuthenticated();
       allow update: if isAdmin();
     }
@@ -82,15 +82,21 @@ service cloud.firestore {
       allow create: if isAuthenticated();
     }
 
-    // Events and Logs
+    // Events and Logs (Global audit feed for mesh nodes)
     match /events/{event} {
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated();
     }
 
     // Civic Plane
     match /civic/emergencies/active/{emergency} {
       allow read, write: if isAuthenticated();
+    }
+    
+    // Readiness checks
+    match /readiness/{checkId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }

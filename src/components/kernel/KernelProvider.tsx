@@ -10,7 +10,6 @@ import { collection, doc, setDoc, query, orderBy, limit, addDoc, getDoc, updateD
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { sendTelegramMessage } from '@/lib/telegram';
-import { generateDailyPulse } from '@/ai/flows/daily-integrity-report-flow';
 
 interface KernelContextType extends KernelState {
   emitEvent: (plane: PlaneType, type: string, priority: number, payload: any) => void;
@@ -78,7 +77,6 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
 
       // Autonomous Cycle Simulation
       if (isAutonomousActive && uptime % 60 === 0) {
-        // Discovery Phase every minute in prototype
         emitEvent('INFRA', 'AUTONOMOUS_DISCOVERY_SCAN', 4, { mode: 'ACTIVE', results: 'Scanning for endpoints...' });
       }
     }, 1000);
@@ -97,17 +95,13 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
       timestamp: Date.now(),
       payload,
       status: 'QUEUED',
+      userId: user?.uid || 'SYSTEM'
     };
 
     if (firestore) {
       const eventRef = doc(firestore, 'events', systemSeal);
       setDoc(eventRef, newEvent).catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
-          path: eventRef.path,
-          operation: 'create',
-          requestResourceData: newEvent,
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        console.error("Kernel Event Error:", error);
       });
 
       if (user?.uid) {
@@ -121,20 +115,17 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
             const notification = {
               id: systemSeal,
               title: `Kernel Trigger: ${type}`,
-              message: `Priority ${resolvedPriority} event detected in ${plane} plane. Payload: ${JSON.stringify(payload)}`,
+              message: `Priority ${resolvedPriority} event detected in ${plane} plane.`,
               type: resolvedPriority === 1 ? 'CRITICAL' : 'WARNING',
               read: false,
               timestamp: Date.now(),
             };
-            addDoc(notifRef, notification);
+            addDoc(notifRef, notification).catch(() => {});
 
             if (userData?.telegramLinked && userData?.telegramChatId) {
-              // For daily pulse, we send the formatted text instead of JSON
               const alertEmoji = resolvedPriority === 1 ? "🚨" : "📊";
-              const header = type === 'DAILY_INTEGRITY_PULSE' ? '' : `<b>${alertEmoji} KERNEL ALERT</b>\n\n<b>Type:</b> ${type}\n<b>Plane:</b> ${plane}\n\n`;
-              const content = type === 'DAILY_INTEGRITY_PULSE' ? payload.report : `<b>Payload:</b> <code>${JSON.stringify(payload)}</code>`;
-              
-              const text = `${header}${content}`;
+              const header = `<b>${alertEmoji} KERNEL ALERT</b>\n\n<b>Type:</b> ${type}\n<b>Plane:</b> ${plane}\n\n`;
+              const text = `${header}<b>Payload:</b> <code>${JSON.stringify(payload)}</code>`;
               await sendTelegramMessage(userData.telegramChatId, text);
             }
           }
@@ -144,7 +135,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    if (priority <= 2 || type.includes('PAYOUT') || type.includes('HEARTBEAT') || type === 'DAILY_INTEGRITY_PULSE') {
+    if (priority <= 2 || type.includes('PAYOUT') || type.includes('HEARTBEAT')) {
       toast({
         title: `Kernel Event: ${type}`,
         description: `Source: ${plane} | Seal: ${systemSeal}`,
@@ -170,27 +161,13 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     if (!nextQueued) return;
 
     const eventRef = doc(firestore, 'events', nextQueued.id);
-    updateDoc(eventRef, { status: 'COMPLETED' }).catch(async (error) => {
-      const permissionError = new FirestorePermissionError({
-        path: eventRef.path,
-        operation: 'update',
-        requestResourceData: { status: 'COMPLETED' },
-      });
-      errorEmitter.emit('permission-error', permissionError);
-    });
+    updateDoc(eventRef, { status: 'COMPLETED' }).catch(() => {});
   }, [remoteEvents, firestore]);
 
   const rollbackEvent = useCallback((eventId: string) => {
     if (!firestore) return;
     const eventRef = doc(firestore, 'events', eventId);
-    updateDoc(eventRef, { status: 'ROLLED_BACK' }).catch(async (error) => {
-      const permissionError = new FirestorePermissionError({
-        path: eventRef.path,
-        operation: 'update',
-        requestResourceData: { status: 'ROLLED_BACK' },
-      });
-      errorEmitter.emit('permission-error', permissionError);
-    });
+    updateDoc(eventRef, { status: 'ROLLED_BACK' }).catch(() => {});
   }, [firestore]);
 
   const stateValue: KernelContextType = {

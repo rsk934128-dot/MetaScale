@@ -12,24 +12,6 @@ import {
 import { NormalizedPaymentEvent, InboundPaymentDoc, PaymentStatus, SettlementBucket } from '@/lib/payments/types';
 
 /**
- * Helper to determine the query bucket for a payment
- */
-function deriveSettlementBucket(doc: Partial<InboundPaymentDoc>): SettlementBucket {
-  if (doc.isCredited) return 'DONE';
-  if (doc.status !== 'PAID') return 'PENDING_PROVIDER';
-  
-  const replayCount = doc.replayCount || 0;
-  if (replayCount >= 5) return 'FATAL';
-  
-  const now = Date.now();
-  if (!doc.nextReplayAttemptAt || doc.nextReplayAttemptAt <= now) {
-    return 'READY_FOR_REPLAY';
-  }
-  
-  return 'WAITING_BACKOFF';
-}
-
-/**
  * Core Domain Service: Atomic Payment Credit Logic
  * Phase 2.7: Now populates derived query fields for indexing.
  */
@@ -89,7 +71,8 @@ export async function processPaymentCredit(
       updatedAt: timestamp,
       creditedAt: timestamp,
       isCredited: isCredited,
-      credited: isCredited, // Derived boolean
+      credited: isCredited, // Derived boolean for fast indexing
+      userId: event.userId, // Ensure userId is indexed
       creditOperationId: creditOpId,
       reconciliationStatus: 'MATCHED',
       id: paymentId,
@@ -97,7 +80,7 @@ export async function processPaymentCredit(
       replayCount: 0,
       lastError: "",
       manualReviewRequired: false,
-      settlementBucket: 'DONE' // Final bucket
+      settlementBucket: 'DONE'
     };
 
     if (!paymentSnap.exists()) {
