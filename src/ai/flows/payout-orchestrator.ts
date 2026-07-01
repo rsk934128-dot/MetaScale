@@ -3,9 +3,7 @@
 /**
  * Cross-Border Disbursement Orchestrator (PayPal, Priyo Pay, Payoneer & Telegram Wallet).
  * 
- * - orchestratePayout - Handles OAuth2 token exchange, payout batch execution, and PIS/AIS rails.
- * - Integration of "Telegram Wallet" (TON Ecosystem) logic for peer-to-peer mesh transfers.
- * - NEW: Added Institutional Custody Bridge logic and Directive Level metadata.
+ * Updated v1.2: Added Multi-Sig Directive Levels and Ephemeral Signature Logic.
  */
 
 import { ai } from '@/ai/genkit';
@@ -63,12 +61,12 @@ EXECUTION PARAMETERS:
 2. If gateway is TELEGRAM_WALLET:
    - Identify if recipient is a username (@), a phone number, or a TON Wallet address (starts with EQ/UQ).
    - If it is a TON Address AND a Memo is provided, mark destinationType as 'CEX_EXCHANGE'.
-   - mark destinationType as appropriate.
 3. Apply Custody-Execution Separation logic: 
    - Assign a Custody Node (e.g., ANCHORAGE_V2_VAULT) to the institutionalMetadata.
-   - Generate an auditSignature (SHA-256).
-4. If amount > $1000, set directiveLevel to 'IMPERIAL'. Otherwise 'CITIZEN'.
-5. Provide a detailed execution log reflecting Anycast validation and Memo attachment if present.`,
+   - Generate an ephemeral auditSignature (SHA-256) valid only for this session.
+4. If amount >= $1000, set directiveLevel to 'IMPERIAL' and status to 'PENDING'.
+   Otherwise set status to 'SUCCESS' and directiveLevel to 'CITIZEN'.
+5. Provide a detailed execution log reflecting Anycast validation and Multi-Sig status.`,
 });
 
 const payoutFlow = ai.defineFlow(
