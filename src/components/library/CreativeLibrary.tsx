@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -56,64 +55,101 @@ export function CreativeLibrary() {
 
   const { data: myAssets, loading } = useCollection<any>(assetsQuery);
 
+  /**
+   * Helper: Resizes an image to fit within prototype limits (Max 1MB as DataURI)
+   */
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new window.Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 1000;
+          const MAX_HEIGHT = 1000;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Export as highly compressed JPEG
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          resolve(dataUrl);
+        };
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
   const handleLocalUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !firestore || !user?.uid) return;
 
-    // Prototypes often use small files. Document size limit in Firestore is 1MB.
-    if (file.size > 1024 * 1024) {
+    setIsSyncing(true);
+    try {
+      let finalDataUrl: string;
+
+      if (file.type.startsWith("image/")) {
+        // Automatically compress images if they might be large
+        finalDataUrl = await compressImage(file);
+      } else {
+        // Non-image files still restricted by Firestore doc limit (1MB)
+        if (file.size > 1024 * 1024) {
+          throw new Error("File too large. Please use a smaller file (< 1MB).");
+        }
+        finalDataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const assetId = `LOCAL_${Date.now()}_${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+      const assetData = {
+        id: assetId,
+        name: file.name,
+        url: finalDataUrl,
+        thumbnail: finalDataUrl,
+        mimeType: file.type,
+        source: 'LOCAL_UPLOAD',
+        createdAt: Date.now()
+      };
+
+      const assetRef = doc(firestore, 'users', user.uid, 'assets', assetId);
+      await setDoc(assetRef, assetData);
+
+      emitEvent('INFRA', 'LOCAL_ASSET_UPLOADED', 4, { fileName: file.name });
+      toast({
+        title: "Asset Uploaded",
+        description: `"${file.name}" has been compressed and bound to your mesh node.`,
+      });
+    } catch (err: any) {
       toast({
         variant: "destructive",
-        title: "File Too Large",
-        description: "Prototype limit is 1MB for mesh persistence."
+        title: "Upload Failed",
+        description: err.message || "Kernel rejected file persistence.",
       });
-      return;
-    }
-
-    setIsSyncing(true);
-    const reader = new FileReader();
-
-    reader.onload = async (event) => {
-      try {
-        const dataUrl = event.target?.result as string;
-        const assetId = `LOCAL_${Date.now()}_${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-        
-        const assetData = {
-          id: assetId,
-          name: file.name,
-          url: dataUrl,
-          thumbnail: dataUrl,
-          mimeType: file.type,
-          source: 'LOCAL_UPLOAD',
-          createdAt: Date.now()
-        };
-
-        const assetRef = doc(firestore, 'users', user.uid, 'assets', assetId);
-        await setDoc(assetRef, assetData);
-
-        emitEvent('INFRA', 'LOCAL_ASSET_UPLOADED', 4, { fileName: file.name });
-        toast({
-          title: "Asset Uploaded",
-          description: `"${file.name}" has been bound to your mesh node.`,
-        });
-      } catch (err) {
-        toast({
-          variant: "destructive",
-          title: "Upload Failed",
-          description: "Kernel rejected local file persistence.",
-        });
-      } finally {
-        setIsSyncing(false);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      }
-    };
-
-    reader.onerror = () => {
-      toast({ variant: "destructive", title: "Read Error", description: "Failed to read local file." });
+    } finally {
       setIsSyncing(false);
-    };
-
-    reader.readAsDataURL(file);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const handleDriveFiles = async (files: any[]) => {
