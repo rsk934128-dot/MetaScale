@@ -30,7 +30,6 @@ import { cn } from "@/lib/utils";
 
 export function MobileExperienceHub() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   return (
     <div className="fixed bottom-6 right-6 z-[100]">
@@ -44,6 +43,14 @@ export function MobileExperienceHub() {
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-4xl bg-background/95 backdrop-blur-2xl border-white/5 p-0 overflow-hidden sm:rounded-3xl shadow-[0_0_100px_rgba(0,242,255,0.15)]">
+          {/* Accessibility Headers */}
+          <DialogHeader className="sr-only">
+            <DialogTitle>Mobile Experience Hub</DialogTitle>
+            <DialogDescription>
+              Explore the mobile-optimized interface of FusionPay Sovereign OS.
+            </DialogDescription>
+          </DialogHeader>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 h-full min-h-[700px]">
             {/* Info Panel */}
             <div className="p-10 flex flex-col justify-center space-y-8 bg-accent/5 border-r border-white/5">
@@ -146,7 +153,7 @@ export function MobileExperienceHub() {
                     </div>
 
                     {/* App Navigation Sim */}
-                    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] h-12 rounded-2xl bg-background/80 backdrop-blur-md border border-white/10 flex items-center justify-around px-2 shadow-2xl">
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] h-12 rounded-2xl bg-background/80 backdrop-blur-md border border-white/10 flex items-center justify-around px-2 shadow-2xl">
                        <Globe className="h-4 w-4 text-accent" />
                        <Activity className="h-4 w-4 text-muted-foreground" />
                        <Smartphone className="h-4 w-4 text-muted-foreground" />
