@@ -12,6 +12,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
     }
 
@@ -19,35 +20,57 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       
-      // Strict Write boundary: Users CANNOT update their own balance, role, or plan
-      allow write: if isOwner(userId) && 
+      // Allow creation for self during registration
+      allow create: if isOwner(userId);
+      
+      // Strict Update boundary: Users CANNOT change their own balance, role, or plan
+      allow update: if isOwner(userId) && 
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['balance', 'role', 'plan', 'trustScore']);
+      
+      // Admin can update everything (e.g., via compliance panel)
+      allow write: if isAdmin();
 
-      match /cards/{cardId} { allow read, write: if isOwner(userId); }
-      match /assets/{asset} { allow read, write: if isOwner(userId); }
-      match /notifications/{notif} { allow read, write: if isOwner(userId); }
-      match /payment_links/{link} { allow read, write: if isOwner(userId); }
-      match /watchlist/{item} { allow read, write: if isOwner(userId); }
+      match /cards/{cardId} { allow read, write: if isOwner(userId) || isAdmin(); }
+      match /assets/{asset} { allow read, write: if isOwner(userId) || isAdmin(); }
+      match /notifications/{notif} { allow read, write: if isOwner(userId) || isAdmin(); }
+      match /payment_links/{link} { allow read, write: if isOwner(userId) || isAdmin(); }
+      match /watchlist/{item} { allow read, write: if isOwner(userId) || isAdmin(); }
     }
 
-    // Payment Ledger: READ ONLY for authorized parties.
-    // WRITE BLOCKED for all clients. Only server-side transactions can write.
+    // Root Payment Links (Mandatory for public checkout)
+    match /payment_links/{linkId} {
+      allow read: if true; // Public checkout needs to read
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.creatorId == request.auth.uid);
+    }
+
+    // Payment Ledger
     match /payments/{paymentId} {
       allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow write: if false; 
+      allow write: if isAdmin(); // Only Admin (Server SDK / Cloud Functions) can write
     }
 
+    // Unified Banking Intel Layer Events
     match /ubil_events/{event} {
       allow read: if isAuthenticated();
-      allow write: if false; // Only server context
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
     }
 
+    // Verification Docs (KYB)
     match /verification_docs/{doc} {
       allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == resource.data.userId);
       allow create: if isAuthenticated();
       allow update: if isAdmin();
     }
 
+    // Events and Logs
+    match /events/{event} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated();
+    }
+
+    // Civic Plane
     match /civic/emergencies/active/{emergency} {
       allow read, write: if isAuthenticated();
     }

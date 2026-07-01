@@ -2,27 +2,21 @@
 "use client";
 
 import { useDoc, useFirestore } from "@/firebase";
-import { doc, updateDoc, increment, collection, addDoc, setDoc } from "firebase/firestore";
+import { doc, updateDoc, increment, setDoc } from "firebase/firestore";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
-  ShoppingBag, 
   ShieldCheck, 
   Zap, 
   Loader2, 
-  CheckCircle2, 
   ChevronLeft,
   ArrowRight,
-  Globe,
-  CreditCard,
-  Smartphone,
   Building2,
-  Wallet,
-  Check
+  Check,
+  CreditCard
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -71,14 +65,17 @@ export default function CheckoutPage() {
         paymentMethod: selectedMethod 
       };
 
-      // 1. Update registries
+      // 1. Update registries (Public Link)
       await updateDoc(doc(firestore, 'payment_links', sealId), updateData);
       
-      // 2. Settle funds in User's balance
-      const sellerRef = doc(firestore, 'users', link.creatorId);
-      await updateDoc(sellerRef, { balance: increment(link.amount) });
+      // 2. Update registries (User-specific Copy if exists)
+      try {
+        await updateDoc(doc(firestore, 'users', link.creatorId, 'payment_links', sealId), updateData);
+      } catch (e) {
+        console.warn("User link copy update failed (expected if rule is strict)");
+      }
 
-      // 3. Log to UBIL Events for Revenue Sync
+      // 3. Log to UBIL Events for Settlement (This acts as the trigger for the automated engine)
       await setDoc(doc(firestore, 'ubil_events', `TXN_${sealId}`), {
         id: `TXN_${sealId}`,
         type: 'TXN_SUCCESS',
@@ -87,17 +84,23 @@ export default function CheckoutPage() {
         status: 'SUCCESS',
         timestamp: timestamp,
         senderName: "Public Checkout",
-        senderBank: selectedMethod.toUpperCase()
+        senderBank: selectedMethod.toUpperCase(),
+        merchantId: link.creatorId,
+        seal: sealId
       });
 
       setIsPaid(true);
       toast({ 
-        title: "Payment Successful", 
-        description: "Transaction settled on the Sovereign Mesh.",
-        variant: "default"
+        title: "Authorization Successful", 
+        description: "Transaction finalized on the Sovereign Mesh.",
       });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Settlement Error", description: "Handshake interrupted." });
+    } catch (error: any) {
+      console.error("Payment Error:", error);
+      toast({ 
+        variant: "destructive", 
+        title: "Settlement Error", 
+        description: error.message || "Handshake interrupted by Security Protocol." 
+      });
     } finally {
       setIsProcessing(false);
     }
