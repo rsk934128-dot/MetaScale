@@ -1,4 +1,3 @@
-
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -22,7 +21,8 @@ import {
   BrainCircuit,
   AlertCircle,
   Thermometer,
-  CloudRain
+  CloudRain,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -140,7 +140,7 @@ export default function CivicIntelligencePage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-2">
             <div>
               <h2 className="text-2xl md:text-3xl font-headline font-bold mb-1 uppercase tracking-tighter">Jamuna <span className="text-blue-400">Basin Hub</span></h2>
-              <p className="text-xs md:text-sm text-muted-foreground italic">"Monitoring hydrological stress across 2,402 km² Sirajganj territory."</p>
+              <p className="text-xs md:text-sm text-muted-foreground italic">"Monitoring hydrological stress across 2,402 km² Sirajganj territory using 2D modeling."</p>
             </div>
             <div className="text-left md:text-right">
               <p className="text-[10px] font-bold uppercase text-muted-foreground">Regional Stability</p>
@@ -252,24 +252,27 @@ export default function CivicIntelligencePage() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-panel">
-                <CardHeader className="p-4 md:p-6">
-                  <CardTitle className="flex items-center gap-2 text-sm md:text-base uppercase">
-                    <Map className="h-4 w-4 md:h-5 md:w-5 text-blue-400" />
-                    Brahmaputra-Jamuna Morphology
-                  </CardTitle>
+              <Card className="glass-panel border-accent/20 bg-accent/5">
+                <CardHeader>
+                   <CardTitle className="text-xs uppercase flex items-center gap-2 text-accent">
+                      <Info className="h-4 w-4" /> 
+                      Flood Frequency Analysis (Gumbel Distribution)
+                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 md:p-6 pt-0">
-                  <div className="h-[300px] md:h-[400px] border border-white/5 rounded-xl bg-black/20 relative flex items-center justify-center overflow-hidden">
-                    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #60a5fa 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-                    <div className="relative z-10 w-full max-w-lg p-6 text-center space-y-4">
-                      <div className="inline-block p-3 rounded-full bg-blue-400/10 border border-blue-400/20">
-                        <Waves className="h-8 w-8 text-blue-400 animate-pulse" />
+                <CardContent className="space-y-4">
+                   <div className="p-4 rounded-xl bg-black/60 border border-white/10 font-mono text-[11px] leading-relaxed">
+                      <p className="text-accent mb-2">// PEAK STAGE PROJECTION</p>
+                      <p className="text-white">X = μ + K * σ</p>
+                      <div className="mt-4 text-[9px] text-muted-foreground space-y-1">
+                         <p>• X: Projected flood level for return period (T)</p>
+                         <p>• μ: Mean of historical peak levels</p>
+                         <p>• K: Gumbel frequency factor</p>
+                         <p>• σ: Standard deviation of dataset</p>
                       </div>
-                      <h3 className="text-lg font-headline font-bold uppercase italic text-white">Chauhali-Kazipur Reach</h3>
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Hydrological Modeling Engine active via RIVERFLOW2D & HEC-RAS</p>
-                    </div>
-                  </div>
+                   </div>
+                   <p className="text-[10px] text-muted-foreground italic leading-relaxed">
+                      "Utilized to calculate monsoonal surges and inundation extents for 2, 25, and 100-year return periods in the Kazipur reach."
+                   </p>
                 </CardContent>
               </Card>
             </div>

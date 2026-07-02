@@ -1,4 +1,3 @@
-
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -54,7 +53,7 @@ const ROADMAP_PHASES = [
     icon: ShieldCheck,
     date: "Q4 2023",
     progress: 100,
-    desc: "Bootstrapping for high-trust users in North Bengal. Manual settlements via Liquidity Desk.",
+    desc: "Initial bootstrapping for first 100 high-trust users with payouts managed via a manual Liquidity Desk in North Bengal.",
     items: [
       "Manual MFS (bKash/Nagad) Settlement",
       "Trade License Compliance Validation",
@@ -68,11 +67,11 @@ const ROADMAP_PHASES = [
     icon: Network,
     date: "Q1 2024",
     progress: 100,
-    desc: "Server-authoritative ledger with exactly-once crediting and deterministic state machine.",
+    desc: "Establishing a server-authoritative ledger with exactly-once crediting and programmatic webhook integration.",
     items: [
       "Firestore Hardened Security Rules",
       "Transactional Balance Updates (Atomic)",
-      "CREATED -> PAID -> CREDITED Transitions"
+      "CREATED -> PAID -> CREDITED State Machine"
     ]
   },
   {
@@ -82,7 +81,7 @@ const ROADMAP_PHASES = [
     icon: Cpu,
     date: "Q2 2024",
     progress: 100,
-    desc: "Autonomous fiscal management and automated reconciliation with exponential backoff.",
+    desc: "Autonomous fiscal management, automated system reconciliation, and forensic auditing pipelines.",
     items: [
       "Automated Reconciliation Cron Job",
       "Forensic Anomaly Dashboard",
@@ -96,11 +95,11 @@ const ROADMAP_PHASES = [
     icon: ShieldAlert,
     date: "Active 2026",
     progress: 90,
-    desc: "Telegram Mini App integration, remote terminal controllers, and mobile gateway synchronization.",
+    desc: "Telegram Mini App integration, remote terminal controllers, and mobile gateway synchronization for field access.",
     items: [
       "Telegram Mini App Integration (v1.2.0)",
       "Remote Settlement Webhooks (PAY_SEAL_...)",
-      "Bengali AI Reporting (Daily Pulse Pulse)",
+      "Real-time Bengali AI Reporting (Daily Pulse)",
       "Safe Replay Authorization Boundary"
     ]
   }
@@ -211,8 +210,8 @@ export default function RoadmapPage() {
             <h2 className="text-4xl md:text-5xl font-headline font-bold text-white tracking-tighter uppercase">
               From Internal Kernel to <span className="text-accent italic">Global Execution</span>
             </h2>
-            <p className="text-muted-foreground text-sm italic">
-              "Deploying resilient financial infra in Sirajganj District and beyond."
+            <p className="text-muted-foreground text-sm italic leading-relaxed max-w-xl mx-auto">
+              "Deploying resilient financial infra across the Rajshahi Division, specifically targeting the hydrological stressors of the Sirajganj territory."
             </p>
           </div>
 

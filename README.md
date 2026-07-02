@@ -2,7 +2,7 @@
 # 🚀 FusionPay | Sovereign OS v1.2.0-stable
 ### Focused Pilot Territory: Sirajganj District, Rajshahi Division
 
-**FusionPay** (powered by Sovereign Kernel) হলো একটি এআই-নেটিভ (AI-native) গ্লোবাল ফিনটেক সল্যুশন। এটি লন্ডন-স্ট্যান্ডার্ড ইনফ্রাস্ট্রাকচার ব্যবহার করে লোকাল পেমেন্ট (bKash, Nagad) এবং গ্লোবাল সেটেলমেন্ট (PayPal, Stripe, SWIFT, TON) এর মধ্যে একটি শক্তিশালী সেতু তৈরি করে, যা সিরাজগঞ্জের যমুনা অববাহিকার মতো চ্যালেঞ্জিং ভৌগোলিক অঞ্চলেও নিরবচ্ছিন্ন সেবা প্রদানে সক্ষম।
+**FusionPay** (powered by Sovereign Kernel) হলো একটি এআই-নেটিভ (AI-native) গ্লোবাল ফিনটেক সল্যুশন। এটি লন্ডন-স্ট্যান্ডার্ড ইনফ্রাস্ট্রাকচার ব্যবহার করে লোকাল পেমেন্ট (bKash, Nagad) এবং গ্লোবাল সেটেলমেন্ট (PayPal, Stripe, SWIFT, TON) এর মধ্যে একটি শক্তিশালী সেতু তৈরি করে, যা সিরাজগঞ্জের যমুনা অববাহিকার মতো চ্যালেঞ্জিং ভৌগোলিক অঞ্চলে নিরবচ্ছিন্ন সেবা প্রদানে সক্ষম।
 
 ---
 
@@ -34,7 +34,7 @@
 | **Double Spending** | **Exactly-Once Logic:** ফায়ারস্টোর ট্রানজ্যাকশন গার্ড নিশ্চিত করে যে ব্যালেন্স কেবল একবারই আপডেট হবে। |
 | **Environmental Outages** | **Self-Healing Cron:** বন্যার সময় নেটওয়ার্ক ড্রপ করলেও সিস্টেম অটোমেটিক পেমেন্ট রিপ্লে করে। |
 | **Regulatory Risk** | **Identity Binding:** NID/TIN ভেরিফিকেশন এবং আইসোলেটেড ডাটা রেসিডেন্সি। |
-| **Manual Operations** | **Interactive Runbooks:** অপারেশনাল এরর কমাতে এম্বেডেড ইনসিডেন্ট প্লেবুক। |
+| **Manual Operations** | **Remote Imperial Control:** মোবাইল-অপ্টিমাইজড টেলিগ্রাম মিনি অ্যাপ ইন্টারফেস। |
 
 ---
 
@@ -45,9 +45,10 @@
 - [x] **Yield Recycler:** ৪২.৫% অটোমেটেড লিকুইডিটি ইনজেকশন।
 - [x] **Self-Healing:** এক্সপোনেনশিয়াল ব্যাকঅফ সহ অটো-রিকনসিলিয়েশন।
 
-### 🔄 Phase 4: Operational Control (Active)
+### 🔄 Phase 4: Operational Control (Active - 90%)
 - [x] **Hunter Mode:** প্রো-অ্যাক্টিভ অ্যানোমালি প্রোফাইলিং।
-- [ ] **Interactive Runbooks:** ইনসিডেন্ট রেসপন্স এর জন্য গাইডলাইন মেকানিজম।
+- [x] **Telegram App:** সম্পূর্ণ ইন্টিগ্রেটেড মিনি অ্যাপ ইন্টারফেস।
+- [x] **Remote Settle:** চ্যাট স্ক্রিন থেকেই সরাসরি সেটেলমেন্ট ট্রিগার।
 - [ ] **Forensic AML Node:** লেনদেনের প্যাটার্ন দেখে অটোমেটিক সন্দেহভাজন নোড লকডাউন।
 
 ---

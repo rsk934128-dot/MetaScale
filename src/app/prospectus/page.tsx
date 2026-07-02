@@ -1,4 +1,3 @@
-
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -23,7 +22,8 @@ import {
   ShieldAlert,
   Building2,
   CheckCircle2,
-  Waves
+  Waves,
+  Milestone
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

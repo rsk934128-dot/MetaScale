@@ -1,4 +1,3 @@
-
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -16,12 +15,12 @@ import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Sovereign OS | Global Fintech & Civic Infrastructure',
-  description: 'FusionPay Sovereign OS provides deterministic infrastructure for global settlements, civic intelligence, and AI-native financial mesh.',
-  keywords: ['Fintech', 'Sovereign OS', 'Global Payout', 'AI Banking', 'ISO 20022', 'NoorNexus'],
+  description: 'FusionPay Sovereign OS provides deterministic infrastructure for global settlements, civic intelligence, and AI-native financial mesh. Resilient to hydrological stressors in regions like Sirajganj.',
+  keywords: ['Fintech', 'Sovereign OS', 'Global Payout', 'AI Banking', 'ISO 20022', 'NoorNexus', 'Sirajganj', 'Hydrological Resilience'],
   authors: [{ name: 'Sheikh Farid', url: 'https://noornexus.com' }],
   openGraph: {
     title: 'Sovereign OS | Deterministic Infrastructure',
-    description: 'Mission-critical operating system for digital civilizations.',
+    description: 'Mission-critical operating system for digital civilizations and resilient commerce.',
     url: 'https://sko-v1.vercel.app',
     siteName: 'Sovereign OS',
     locale: 'en_US',
@@ -54,7 +53,7 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Sovereign OS",
-    "operatingSystem": "Web, iOS, Android",
+    "operatingSystem": "Web, iOS, Android, Telegram",
     "applicationCategory": "FinanceApplication",
     "author": {
       "@type": "Organization",
@@ -65,7 +64,7 @@ export default function RootLayout({
       "price": "0.00",
       "priceCurrency": "USD"
     },
-    "description": "Deterministic financial engine for global settlements and civic infrastructure management."
+    "description": "Deterministic financial engine for global settlements, remote imperial control via Telegram, and resilient civic infrastructure management."
   };
 
   return (
