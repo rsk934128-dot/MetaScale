@@ -1,14 +1,26 @@
 
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { ShieldCheck, Globe, Loader2, RefreshCw, ExternalLink, Maximize2, Zap, Shield } from "lucide-react";
+import { 
+  ShieldCheck, 
+  Globe, 
+  Loader2, 
+  RefreshCw, 
+  ExternalLink, 
+  Maximize2, 
+  Zap, 
+  Shield, 
+  ChevronLeft,
+  Home
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 /**
  * PersistentStandardsPortal
@@ -17,6 +29,7 @@ import { cn } from "@/lib/utils";
  */
 export function PersistentStandardsPortal() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -81,47 +94,67 @@ export function PersistentStandardsPortal() {
         {/* Persistent Sidebar and Layout to mimic a native page */}
         <AppSidebar />
         <SidebarInset className="flex flex-col h-screen overflow-hidden bg-background">
-          <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-4 md:px-6 shrink-0 shadow-sm">
-            <SidebarTrigger />
-            <div className="flex-1 truncate">
-              <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 text-accent">
-                <ShieldCheck className="h-4 w-4 md:h-5 md:w-5 text-accent shrink-0" />
-                <span className="truncate uppercase italic tracking-tighter">Shurukkha Standards Portal</span>
-              </h1>
-            </div>
+          <header className="sticky top-0 z-30 flex h-16 items-center gap-2 md:gap-4 border-b bg-background/90 backdrop-blur-xl px-4 md:px-6 shrink-0 shadow-xl">
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="hidden lg:flex border-accent/20 text-accent font-mono text-[9px] uppercase tracking-widest px-3">
-                <Shield className="mr-2 h-3 w-3" /> ISO 20022 READY
-              </Badge>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 border-white/10 text-[10px] uppercase font-bold px-2 md:px-3 hover:bg-accent/10 hover:text-accent transition-colors"
-                onClick={handleRefresh}
-                disabled={isLoading}
-              >
-                <RefreshCw className={cn("mr-1.5 h-3.5 w-3.5", isLoading && "animate-spin")} />
-                <span className="hidden xs:inline">Sync Mesh Node</span>
-                <span className="xs:hidden">Sync</span>
-              </Button>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-8 text-[10px] uppercase font-bold p-2 text-muted-foreground hover:text-white"
-                onClick={toggleFullScreen}
-                title="Toggle Fullscreen"
+                asChild
+                className="h-9 w-9 md:w-auto md:px-3 text-muted-foreground hover:text-accent hover:bg-accent/10 transition-all font-bold uppercase text-[10px]"
               >
-                <Maximize2 className="h-4 w-4" />
+                <Link href="/dashboard">
+                  <ChevronLeft className="h-4 w-4 md:mr-1" />
+                  <span className="hidden md:inline">Back to App</span>
+                </Link>
               </Button>
-              <Button size="sm" variant="ghost" className="h-8 text-[10px] uppercase font-bold p-2 text-muted-foreground hover:text-white" asChild title="Open in new tab">
-                <a href={targetUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              </Button>
+              <div className="h-6 w-px bg-white/10 hidden md:block mx-1" />
+              <SidebarTrigger />
+            </div>
+
+            <div className="flex-1 truncate">
+              <h1 className="text-xs md:text-sm font-headline font-bold flex items-center gap-2 text-accent">
+                <ShieldCheck className="h-3.5 w-3.5 md:h-4 md:w-4 text-accent shrink-0" />
+                <span className="truncate uppercase italic tracking-tighter">Standards Portal</span>
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-1.5 md:gap-3">
+              <Badge variant="outline" className="hidden sm:flex border-accent/20 text-accent font-mono text-[8px] md:text-[9px] uppercase tracking-widest px-2">
+                <Shield className="mr-1.5 h-3 w-3" /> ISO 20022
+              </Badge>
+              
+              <div className="flex items-center gap-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 w-8 md:w-auto border-white/10 text-[10px] uppercase font-bold px-0 md:px-3 hover:bg-accent/10 hover:text-accent transition-colors"
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                >
+                  <RefreshCw className={cn("h-3.5 w-3.5 md:mr-1.5", isLoading && "animate-spin")} />
+                  <span className="hidden md:inline">Sync</span>
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-muted-foreground hover:text-white"
+                  onClick={toggleFullScreen}
+                  title="Toggle Fullscreen"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" />
+                </Button>
+
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-white" asChild title="Open in new tab">
+                  <a href={targetUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </Button>
+              </div>
             </div>
           </header>
 
-          <main className="flex-1 relative bg-black overflow-hidden group">
+          <main className="flex-1 relative bg-black overflow-hidden">
             {isLoading && (
               <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/95 backdrop-blur-xl animate-fade-in">
                 <div className="relative mb-6">
@@ -131,7 +164,7 @@ export function PersistentStandardsPortal() {
                 <div className="space-y-4 text-center">
                   <div className="space-y-2">
                     <p className="text-[10px] font-bold uppercase tracking-[0.5em] text-accent animate-pulse">Establishing Secure Tunnel</p>
-                    <p className="text-[8px] font-mono text-muted-foreground uppercase opacity-50 tracking-widest">ENCRYPTION: AES-256-GCM • NODE: 04</p>
+                    <p className="text-[8px] font-mono text-muted-foreground uppercase opacity-50 tracking-widest">AES-256-GCM • NODE-04</p>
                   </div>
                   <Button 
                     variant="ghost" 
