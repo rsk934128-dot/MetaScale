@@ -42,7 +42,9 @@ import {
   Clock,
   Send,
   BrainCircuit,
-  Sparkles
+  Sparkles,
+  Bot,
+  Radar as RadarIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,14 +69,15 @@ export default function UBILMainframePage() {
   const [isSendingPulse, setIsSendingPulse] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([
-    "UBIL Core: Mainframe Terminal ACTIVE, listening...",
+    "UBIL Core: Sovereign Master Kernel ACTIVE.",
   ]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setLogs(prev => [
-        "> System Status: Projects 42-44 verified in Knowledge Bank.",
-        "> Heartbeat Monitor: Pulse active on core nodes.",
+        "> [AUDIT] Forensic Intelligence Engine: 94.2% Memory Density.",
+        "> [AUDIT] Pattern Library: 14.2k nodes mapped.",
+        "> [SYNC] Anycast Grid: sub-10ms UX stabilized.",
         ...prev
       ]);
     }, 1000);
@@ -87,7 +90,7 @@ export default function UBILMainframePage() {
     if (latestEvent.type === 'AUTONOMOUS_SETTLEMENT_SUCCESS') {
       setLogs(prev => [`> [AUTONOMOUS] Settled ${latestEvent.payload.count} পেন্ডিং পেমেন্ট।`, ...prev]);
     } else if (latestEvent.type === 'GOVERNANCE_VIOLATION') {
-      setLogs(prev => [`! [GOVERNANCE_BLOCK] Policy Violation Detected: ${latestEvent.payload.blockedEvent}`, ...prev]);
+      setLogs(prev => [`! [GOVERNANCE_BLOCK] Policy Violation: Profile mismatch on Node-04.`, ...prev]);
     }
   }, [events]);
 
@@ -100,7 +103,7 @@ export default function UBILMainframePage() {
 
   const handleStartAutonomous = () => {
     startAutonomousWorker();
-    setLogs(prev => [`$ nn-cli --start-autonomous`, `> Sovereign Worker Started... Cycle: 60s.`, ...prev]);
+    setLogs(prev => [`$ nn-cli --start-autonomous --night-watchman`, `> Sovereign Worker Started... Cycle: 60s.`, ...prev]);
     toast({ title: "Autonomous Engine Active", description: "সিস্টেম এখন নিজে থেকেই পেমেন্ট ক্রেডিট করবে।" });
   };
 
@@ -157,7 +160,7 @@ export default function UBILMainframePage() {
           <div className="flex-1 truncate">
             <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 text-white">
               <Lock className="h-4 w-4 md:h-5 md:w-5 text-accent" />
-              UBIL Mainframe
+              Sovereign Master Kernel <Badge variant="outline" className="ml-2 border-accent/20 text-accent text-[8px]">NOS_V3</Badge>
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -207,18 +210,20 @@ export default function UBILMainframePage() {
               <Card className="glass-panel border-accent/20 bg-accent/5 shadow-2xl">
                   <CardHeader className="p-4 border-b border-white/5">
                     <CardTitle className="text-[10px] md:text-xs uppercase flex items-center gap-2">
-                        <Terminal className="h-4 w-4" /> Mainframe Terminal
+                        <Terminal className="h-4 w-4" /> Imperial Terminal
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <div className="p-3 md:p-4 bg-black/60 font-mono text-[9px] md:text-[10px] space-y-1 h-[300px] md:h-[450px] overflow-y-auto scrollbar-hide">
+                    <div className="p-3 md:p-4 bg-black/60 font-mono text-[9px] md:text-[10px] space-y-1.5 h-[300px] md:h-[450px] overflow-y-auto scrollbar-hide">
                        {logs.map((log, i) => (
                          <p key={i} className={cn(
                            "pl-1 border-l-2 py-0.5 border-white/5",
                            log.includes('[AUTONOMOUS]') ? "text-green-400" : 
                            log.includes('[AGENT_COUNCIL]') ? "text-accent" :
                            log.includes('[REPORT]') ? "text-primary" :
-                           log.includes('[GOVERNANCE_BLOCK]') ? "text-red-500 font-bold" :
+                           log.includes('[SYNC]') ? "text-blue-400" :
+                           log.includes('[AUDIT]') ? "text-yellow-500 font-bold" :
+                           log.includes('!') ? "text-red-500 font-bold" :
                            "text-white/60"
                          )}>
                            {log}
@@ -234,12 +239,12 @@ export default function UBILMainframePage() {
                 <CardHeader className="p-4 md:p-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="min-w-0">
                     <CardTitle className="text-xs md:text-sm uppercase tracking-widest flex items-center gap-2">
-                      <Database className="h-4 w-4 text-accent" /> Ledger Inspection
+                      <Database className="h-4 w-4 text-accent" /> Ledger Extraction
                     </CardTitle>
                   </div>
                   <div className="relative w-full md:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                    <Input placeholder="Filter signals or types..." className="pl-9 h-8 bg-secondary/30 border-white/5 text-[10px] rounded-lg" value={search} onChange={e => setSearch(e.target.value)} />
+                    <Input placeholder="Filter signals or hashes..." className="pl-9 h-8 bg-secondary/30 border-white/5 text-[10px] rounded-lg" value={search} onChange={e => setSearch(e.target.value)} />
                   </div>
                 </CardHeader>
                 <CardContent className="p-0 flex-1 flex flex-col md:flex-row overflow-hidden">
@@ -247,7 +252,7 @@ export default function UBILMainframePage() {
                     <ScrollArea className="h-[300px] md:h-[500px]">
                        <div className="divide-y divide-white/5">
                           {loading ? (
-                             <div className="p-12 flex justify-center opacity-30"><Loader2 className="h-6 w-6 animate-spin" /></div>
+                             <div className="p-12 flex justify-center opacity-30"><Loader2 className="h-8 w-8 animate-spin" /></div>
                           ) : filteredEvents.map((event) => (
                             <div 
                               key={event.id} 
@@ -276,7 +281,7 @@ export default function UBILMainframePage() {
                           <div className="flex items-center justify-between border-b border-white/10 pb-4">
                              <div className="min-w-0">
                                 <h4 className="text-base md:text-lg font-headline italic font-bold uppercase text-accent truncate">
-                                  {selectedEvent.type.includes('BLOCK') ? 'Policy Enforcement' : selectedEvent.type === 'AGENT_DIRECTIVE_SYNCED' ? 'Agent Council' : 'Ledger Inspector'}
+                                  {selectedEvent.type.includes('BLOCK') ? 'Policy Enforcement' : selectedEvent.type === 'AGENT_DIRECTIVE_SYNCED' ? 'Forensic Analyst' : 'Ledger Inspector'}
                                 </h4>
                              </div>
                              {selectedEvent.type.includes('BLOCK') ? <ShieldAlert className="h-5 w-5 text-red-500" /> : selectedEvent.type === 'AGENT_DIRECTIVE_SYNCED' ? <BrainCircuit className="h-5 w-5 text-accent" /> : <Fingerprint className="h-5 w-5 text-accent" />}
@@ -303,7 +308,7 @@ export default function UBILMainframePage() {
                                </div>
                              ) : (
                                <div className="p-4 rounded-xl bg-black/40 border border-white/10 font-mono text-[10px] space-y-2">
-                                  <p className="text-accent uppercase">// {selectedEvent.type.includes('BLOCK') ? 'Policy Violation Trace' : 'Agent Directive Trace'}</p>
+                                  <p className="text-accent uppercase">// {selectedEvent.type.includes('BLOCK') ? 'Policy Violation Trace' : 'Forensic Intelligence Trace'}</p>
                                   <pre className="text-white/60 whitespace-pre-wrap">
                                     {JSON.stringify(selectedEvent.payload, null, 2)}
                                   </pre>

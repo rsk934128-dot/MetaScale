@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -23,7 +24,8 @@ import {
   Building2,
   CheckCircle2,
   Waves,
-  Milestone
+  Milestone,
+  Network
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,21 +52,21 @@ export default function ProspectusPage() {
         <main className="flex-1 p-8 max-w-[1200px] mx-auto w-full space-y-20 pb-20">
           <div className="text-center space-y-8 py-10">
             <Badge variant="outline" className="border-accent/30 text-accent uppercase tracking-[0.4em] px-6 py-1.5 text-[10px] font-bold">
-              North Bengal Economic Gateway: Sirajganj District
+              North Bengal Economic Gateway: Sirajganj Hub
             </Badge>
             <h2 className="text-6xl md:text-8xl font-headline font-bold text-white tracking-tighter uppercase leading-[0.8]">
-              RESILIENT <br />
-              <span className="text-accent italic font-light">DIGITAL INFRA</span>
+              GLOBAL <br />
+              <span className="text-accent italic font-light">LIQUIDITY NODES</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed italic">
-              "Providing deterministic settlement infrastructure for the 1,041-acre Sirajganj Economic Zone and a BDT 100 Crore dairy market across the Jamuna basin."
+              "Deploying a 42-node anycast distributed grid ensuring sub-10ms latency for all settlement triggers, with a focus on the BDT 100 Crore Sirajganj dairy corridor."
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6">
                <Button className="h-16 px-12 rounded-full bg-accent text-background font-bold uppercase text-xs tracking-widest cyan-glow">
                  Partner with NoorNexus
                </Button>
                <Button variant="outline" className="h-16 px-12 rounded-full text-xs font-bold uppercase tracking-widest border-white/10 hover:bg-white/5 transition-all text-white">
-                 Download Case Study: Sirajganj
+                 Download Case Study: MY-BD Tunnel
                </Button>
             </div>
           </div>
@@ -94,20 +96,20 @@ export default function ProspectusPage() {
              <Card className="glass-panel border-t-4 border-t-primary bg-primary/5 hover:border-primary transition-all duration-500">
                 <CardHeader>
                    <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 w-fit mb-4">
-                      <Waves className="h-8 w-8 text-primary" />
+                      <Network className="h-8 w-8 text-primary" />
                    </div>
-                   <CardTitle className="text-2xl font-headline uppercase italic">Hydrological Resilience</CardTitle>
+                   <CardTitle className="text-2xl font-headline uppercase italic">MY-BD Tunnel</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Utilizing 2D modeling (HEC-RAS) and automated self-healing crons to maintain financial continuity during monsoonal surges (2, 25, 100-yr return periods).
+                      Operating a secure 4,200+ node anycast corridor for instant remittance and settlement between Kuala Lumpur and Dhaka.
                    </p>
                    <div className="pt-4 space-y-2">
                       <div className="flex justify-between text-[10px] font-bold uppercase">
-                         <span className="text-white/50">Uptime during Flood</span>
-                         <span className="text-primary">99.9%</span>
+                         <span className="text-white/50">Node Density</span>
+                         <span className="text-primary">4,200+ Active</span>
                       </div>
-                      <Progress value={99} className="h-1 bg-primary/10 [&>div]:bg-primary" />
+                      <Progress value={92} className="h-1 bg-primary/10 [&>div]:bg-primary" />
                    </div>
                 </CardContent>
              </Card>
@@ -138,17 +140,17 @@ export default function ProspectusPage() {
              <div className="space-y-8">
                 <div className="space-y-2">
                    <Badge variant="outline" className="text-accent border-accent/20 uppercase tracking-widest text-[9px] font-bold">Economic Integration</Badge>
-                   <h3 className="text-4xl font-headline font-bold uppercase italic tracking-tighter">SIRAJGANJ <span className="text-accent">ECON ZONE</span></h3>
+                   <h3 className="text-4xl font-headline font-bold uppercase italic tracking-tighter">GLOBAL <span className="text-accent">SMART WALLET</span></h3>
                    <p className="text-muted-foreground text-lg leading-relaxed">
-                      Providing the digital financial backbone for Bangladesh's largest private economic zone (1,041 acres), connected to the Dhaka-Bogura Highway via high-speed digital rails.
+                      Connecting local payments like bKash/Nagad with global rails like PayPal, Stripe, and SWIFT in a single AI-native node.
                    </p>
                 </div>
                 
                 <div className="space-y-4">
                    {[
-                     { label: "MFS Integration", value: "bKash/Nagad", icon: DollarSign, desc: "Automated settlements for 33k dairy farms and cottage cooperatives." },
-                     { label: "Identity Grid", value: "3.3M Citizens", icon: Globe, desc: "Full NID/TIN verification for hand-loom textile merchants." },
-                     { label: "Invariants", value: "Exactly-Once", icon: Cpu, desc: "Firestore transaction guards preventing double crediting in rural nodes." }
+                     { label: "Execution Layer", value: "T+0 Finality", icon: Zap, desc: "Instant settlement across the grid with exactly-once ledger enforcement." },
+                     { label: "Intelligence", value: "94.2% Density", icon: Cpu, desc: "Forensic reasoning over 14.2k behavioral patterns via Node-04." },
+                     { label: "Anycast Latency", value: "8.4ms Global", icon: Globe, desc: "Distributed infrastructure across 42 anycast nodes ensuring sub-10ms UX." }
                    ].map((item, i) => (
                      <div key={i} className="flex items-center gap-6 p-6 rounded-2xl border border-white/5 bg-secondary/20 hover:bg-white/5 transition-all group">
                         <div className="p-3 rounded-xl bg-background border border-white/10 text-accent group-hover:scale-110 transition-transform">
@@ -168,13 +170,13 @@ export default function ProspectusPage() {
              <Card className="glass-panel border-accent/20 bg-accent/5 p-10 relative overflow-hidden shadow-2xl">
                 <div className="absolute top-0 right-0 p-4 opacity-10"><Award className="h-60 w-60 text-accent" /></div>
                 <div className="relative z-10 space-y-8">
-                   <h4 className="text-2xl font-headline font-bold uppercase text-accent italic tracking-tighter">Regional Impact (Sirajganj)</h4>
+                   <h4 className="text-2xl font-headline font-bold uppercase text-accent italic tracking-tighter">Institutional Resilience</h4>
                    <div className="space-y-6">
                       {[
-                        { title: "Dairy Market Liquidity", desc: "Automating BDT 100 Cr+ in collection and payout flows." },
-                        { title: "Flood Resilience", desc: "Self-healing crons maintain financial continuity during Jamuna outages." },
-                        { title: "MFS Interop", desc: "Server-authoritative webhooks for instant bKash/Nagad reconciliation." },
-                        { title: "Remote Control", desc: "Telegram Mini App allows operators to manage settlements from the field." }
+                        { title: "Multi-Sig Liquidity Guard", desc: "Transactions >= $1,000 require manual Imperial seal via Telegram." },
+                        { title: "Forensic Anomaly Detection", desc: "Hunter Mode profiling prevents fraudulent velocity attacks before execution." },
+                        { title: "Self-Healing Settlement", desc: "Autonomous worker reconciles stuck payments using exponential backoff." },
+                        { title: "ISO 20022 Compliance", desc: "Unified messaging architecture for cross-border banking interoperability." }
                       ].map((item, i) => (
                         <div key={i} className="flex items-start gap-4">
                            <div className="mt-1 h-6 w-6 rounded-full bg-accent/20 flex items-center justify-center border border-accent/40 text-accent font-bold text-xs shrink-0">
@@ -190,7 +192,7 @@ export default function ProspectusPage() {
                    <div className="pt-6 border-t border-white/10">
                       <div className="flex items-center gap-3 text-green-400 font-bold text-xs">
                          <CheckCircle2 className="h-4 w-4" />
-                         SIRAJGANJ HUB: READY FOR EXECUTION (V1.2.0)
+                         SOVEREIGN OS: READY FOR GLOBAL SCALE (V1.2.0)
                       </div>
                    </div>
                 </div>
@@ -206,7 +208,7 @@ export default function ProspectusPage() {
                 <div className="h-0.5 w-20 bg-gradient-to-l from-transparent to-accent/50" />
              </div>
              <p className="text-[9px] font-bold uppercase tracking-[0.5em] text-muted-foreground opacity-50 italic">
-                Operational Focus: Sirajganj, Rajshahi Division, Bangladesh.
+                Operational Pilot: Sirajganj, Bangladesh. Core Hub: London, UK.
              </p>
           </footer>
         </main>

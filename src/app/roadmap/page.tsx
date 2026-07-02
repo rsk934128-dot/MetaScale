@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -100,17 +101,17 @@ const ROADMAP_PHASES = [
       "Telegram Mini App Integration (v1.2.0)",
       "Remote Settlement Webhooks (PAY_SEAL_...)",
       "Real-time Bengali AI Reporting (Daily Pulse)",
-      "Safe Replay Authorization Boundary"
+      "Multi-Sig Liquidity Guard ($1k Threshold)"
     ]
   }
 ];
 
 const READINESS_MATRIX = [
-  { category: "Security", item: "HMAC Secrets Configured", status: "PASS", icon: Lock },
+  { category: "Security", item: "Hunter Mode: Anomaly Profiling", status: "PASS", icon: Radar },
   { category: "Ledger", item: "Exactly-once Enforcement", status: "PASS", icon: CheckCircle2 },
   { category: "Reconciliation", item: "Self-healing Worker Active", status: "PASS", icon: RefreshCw },
-  { category: "Comms", item: "Telegram Mobile Gateway", status: "PASS", icon: MessageSquare },
-  { category: "Infra", item: "Anycast Latency < 15ms", status: "PASS", icon: Zap },
+  { category: "Comms", item: "Telegram Imperial Gateway", status: "PASS", icon: MessageSquare },
+  { category: "Infra", item: "Anycast Latency < 8.4ms", status: "PASS", icon: Zap },
   { category: "Compliance", item: "Identity Binding (NID/TIN)", status: "PASS", icon: ShieldCheck }
 ];
 
