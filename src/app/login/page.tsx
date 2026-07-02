@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth, useFirestore } from '@/firebase';
@@ -25,10 +24,11 @@ import {
   Loader2,
   AlertCircle,
   Users,
-  ChevronLeft
+  ChevronLeft,
+  Smartphone
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -48,11 +48,18 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
+  const [isTelegram, setIsTelegram] = useState(false);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [mobile, setPhone] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
+      setIsTelegram(true);
+    }
+  }, []);
 
   const generateAccountNumber = () => {
     return Math.floor(100000000000 + Math.random() * 900000000000).toString();
@@ -65,12 +72,9 @@ export default function LoginPage() {
       case 'auth/user-not-found': return 'এই ইমেইল দিয়ে কোনো একাউন্ট পাওয়া যায়নি।';
       case 'auth/email-already-in-use': return 'এই ইমেইলটি অলরেডি অন্য একটি একাউন্টে ব্যবহার করা হয়েছে।';
       case 'auth/weak-password': return 'পাসওয়ার্ডটি অন্তত ৬ অক্ষরের হতে হবে।';
-      case 'auth/operation-not-allowed': return 'এই লগইন মেথডটি এখনো এনাবেল করা হয়নি। দয়া করে ফায়ারবেস কনসোলে গিয়ে গুগল এবং ইমেইল/পাসওয়ার্ড অন করুন।';
-      case 'auth/popup-blocked': return 'পপআপ ব্লক করা হয়েছে। দয়া করে ব্রাউজারের পপআপ এনাবেল করুন।';
+      case 'auth/popup-blocked': return 'টেলিগ্রাম বা মোবাইল ব্রাউজারে পপআপ ব্লক করা হয়েছে। ইমেইল/পাসওয়ার্ড ব্যবহার করুন।';
       case 'auth/popup-closed-by-user': return 'লগইন উইন্ডোটি বন্ধ করা হয়েছে।';
-      case 'auth/cancelled-popup-request': return 'একাধিক পপআপ রিকোয়েস্টের কারণে অপারেশন বাতিল করা হয়েছে।';
-      case 'auth/internal-error': return 'অভ্যন্তরীণ ত্রুটি। দয়া করে ইন্টারনেট কানেকশন চেক করুন।';
-      default: return `Error: ${errorCode}. দয়া করে আবার চেষ্টা করুন।`;
+      default: return `ত্রুটি: ${errorCode}। দয়া করে আবার চেষ্টা করুন।`;
     }
   };
 
@@ -84,6 +88,14 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    if (isTelegram) {
+      toast({
+        variant: "destructive",
+        title: "Platform Restriction",
+        description: "টেলিগ্রাম মিনি অ্যাপে গুগল পপআপ অনেক সময় কাজ করে না। ইমেইল এবং পাসওয়ার্ড ব্যবহার করা নিরাপদ।"
+      });
+    }
+
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
@@ -113,15 +125,7 @@ export default function LoginPage() {
           })
         };
 
-        await setDoc(userRef, userData, { merge: true }).catch(async (err) => {
-          const permissionError = new FirestorePermissionError({
-            path: userRef.path,
-            operation: 'write',
-            requestResourceData: userData,
-          } satisfies SecurityRuleContext);
-          errorEmitter.emit('permission-error', permissionError);
-        });
-
+        await setDoc(userRef, userData, { merge: true });
         toast({ title: "Identity Bound", description: "Sovereign Mesh link established successfully." });
         router.replace('/dashboard');
       }
@@ -161,15 +165,7 @@ export default function LoginPage() {
         isOnline: true,
       };
 
-      await setDoc(userRef, userData).catch(async (err) => {
-        const permissionError = new FirestorePermissionError({
-          path: userRef.path,
-          operation: 'create',
-          requestResourceData: userData,
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
-      });
-
+      await setDoc(userRef, userData);
       toast({ title: "Protocol Established", description: "কার্নেল আইডেন্টিটি তৈরি হয়েছে।" });
       router.push('/dashboard');
     } catch (error: any) {
@@ -219,6 +215,15 @@ export default function LoginPage() {
             ESTABLISH <span className="text-accent italic">TEAM</span> IDENTITY
           </h1>
         </div>
+
+        {isTelegram && (
+          <div className="max-w-lg w-full p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex gap-4 items-center animate-fade-in shadow-xl">
+             <Smartphone className="h-6 w-6 text-yellow-500 shrink-0" />
+             <p className="text-[10px] text-white/80 leading-relaxed italic">
+               আপনি টেলিগ্রাম মিনি অ্যাপে আছেন। নিরবচ্ছিন্ন অভিজ্ঞতার জন্য **Email & Password** দিয়ে লগইন করার পরামর্শ দেওয়া হচ্ছে।
+             </p>
+          </div>
+        )}
 
         <Card className="w-full max-w-lg glass-panel border-white/10 shadow-2xl overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary animate-pulse" />
