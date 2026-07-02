@@ -1,13 +1,13 @@
 
 import { NextResponse } from 'next/server';
 import { initializeFirebase } from '@/firebase';
-import { doc, updateDoc, getDoc, collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
-import { sendTelegramMessage, sendFinancialAlert, sendBillingAlert } from '@/lib/telegram';
+import { doc, updateDoc, getDoc, collection, getDocs, query, where, orderBy, limit, setDoc } from 'firebase/firestore';
+import { sendTelegramMessage, sendFinancialAlert, sendHealthReport, sendMaintenanceAlert } from '@/lib/telegram';
 import { reconcileAndSettleLink, processPaymentCredit } from '@/services/payment-service';
 
 /**
- * Telegram Webhook Handler v1.4
- * Improved with Remote Settlement & Billing Control.
+ * Telegram Webhook Handler v1.5
+ * Improved with Remote Commands, Health Checks & Maintenance Toggles.
  */
 export async function POST(req: Request) {
   try {
@@ -44,6 +44,8 @@ export async function POST(req: Request) {
     const chatId = message.chat.id.toString();
     const text = message.text.trim();
 
+    // --- COMMAND ROUTER ---
+
     // 2. Identity Binding: /start <uid>
     if (text.startsWith('/start ')) {
       const userId = text.split(' ')[1];
@@ -58,7 +60,36 @@ export async function POST(req: Request) {
       }
     } 
     
-    // 3. Billing Status: /plan
+    // 3. Health Check: /health
+    else if (text === '/health') {
+      // Mock stats (in real app, query system state doc)
+      await sendHealthReport(chatId, { isLocked: false, uptime: 14200 });
+    }
+
+    // 4. Logs: /logs
+    else if (text === '/logs') {
+      const eventsQuery = query(collection(firestore, 'events'), where('plane', '==', 'SECURITY'), orderBy('timestamp', 'desc'), limit(5));
+      const eventsSnap = await getDocs(eventsQuery);
+      let logText = "<b>🛡️ LATEST SECURITY LOGS</b>\n\n";
+      eventsSnap.forEach(d => {
+        const ev = d.data();
+        logText += `• [${ev.type}] ${ev.id.substring(0,6)}... (${new Date(ev.timestamp).toLocaleTimeString()})\n`;
+      });
+      await sendTelegramMessage(chatId, logText || "No security events found.");
+    }
+
+    // 5. Maintenance Toggle: /maintenance
+    else if (text === '/maintenance') {
+      const configRef = doc(firestore, 'system', 'config');
+      const configSnap = await getDoc(configRef);
+      const currentState = configSnap.data()?.maintenance || false;
+      const newState = !currentState;
+      
+      await setDoc(configRef, { maintenance: newState }, { merge: true });
+      await sendMaintenanceAlert(chatId, newState);
+    }
+
+    // 6. Billing Status: /plan
     else if (text === '/plan') {
       const usersQuery = query(collection(firestore, 'users'), where('telegramChatId', '==', chatId), limit(1));
       const userSnap = await getDocs(usersQuery);
@@ -73,7 +104,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 4. Remote Settlement Action (If user sends a PAY_SEAL_ or TXN_)
+    // 7. Remote Settlement Action
     else if (text.startsWith('PAY_SEAL_')) {
       await sendFinancialAlert(chatId, 'REMOTE_SETTLE_INIT', { seal: text });
       
@@ -92,7 +123,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 5. System Commands
+    // 8. System Status
     else if (text === '/status') {
       await sendTelegramMessage(chatId, "<b>SYSTEM STATUS: NOMINAL</b>\n\nMesh Health: 100%\nAnycast: Node-04 Priority\nMulti-Sig Guard: ACTIVE\nFinance Signal: READY");
     }

@@ -28,7 +28,8 @@ import {
   Server,
   ChevronRight,
   CreditCard,
-  Scale
+  Scale,
+  Hammer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -38,13 +39,18 @@ import { cn } from "@/lib/utils";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { SystemMode } from "@/lib/kernel/types";
 import { Progress } from "@/components/ui/progress";
-import { useFirestore, useCollection } from "@/firebase";
-import { collection, query, orderBy, limit } from "firebase/firestore";
+import { useFirestore, useCollection, useDoc } from "@/firebase";
+import { collection, query, orderBy, limit, doc } from "firebase/firestore";
 
 export default function SovereignControlPlane() {
   const { mode, setSystemMode, events, emitEvent, processNextEvent, isAutonomousActive } = useKernel();
   const [isSyncing, setIsSyncing] = useState(false);
   const firestore = useFirestore();
+
+  // Maintenance Check
+  const configRef = useMemo(() => firestore ? doc(firestore, 'system', 'config') : null, [firestore]);
+  const { data: systemConfig } = useDoc<any>(configRef);
+  const isMaintenanceActive = systemConfig?.maintenance || false;
 
   const isLive = useMemo(() => {
     return events.some(e => e.type === 'COMMERCIAL_CHANNELS_OPEN' && e.status === 'COMPLETED');
@@ -66,7 +72,25 @@ export default function SovereignControlPlane() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background relative">
+      {/* Maintenance Overlay */}
+      {isMaintenanceActive && (
+        <div className="absolute inset-0 z-[100] bg-background/90 backdrop-blur-md flex items-center justify-center p-6 text-center animate-fade-in">
+           <div className="max-w-md space-y-6">
+              <div className="w-20 h-20 rounded-full bg-yellow-500/20 border-2 border-yellow-500 flex items-center justify-center mx-auto animate-pulse">
+                <Hammer className="h-10 w-10 text-yellow-500" />
+              </div>
+              <h2 className="text-3xl font-headline font-bold text-white uppercase italic tracking-tighter">System Under Maintenance</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                সোভারেন কার্নেল বর্তমানে আপগ্রেড করা হচ্ছে। আনুমানিক সময়: ২১:০০ - ০২:০০ ইউটিসি। জরুরি প্রয়োজনে টেলিগ্রাম কমান্ড ব্যবহার করুন।
+              </p>
+              <div className="p-4 rounded-xl bg-secondary/30 border border-white/5 font-mono text-[10px] text-accent">
+                &gt;&gt; CMD: nn-cli --status MAINTENANCE_ACTIVE
+              </div>
+           </div>
+        </div>
+      )}
+
       <AppSidebar />
       <SidebarInset>
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-4 md:px-6">
