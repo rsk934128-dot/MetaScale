@@ -51,6 +51,17 @@ export default function FinancialIntelligence() {
   const { mode, emitEvent } = useKernel();
   const { toast } = useToast();
   
+  const [isMiniApp, setIsMiniApp] = useState(false);
+
+  useEffect(() => {
+    // Detect Telegram Mini App Context
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
+      setIsMiniApp(true);
+      (window as any).Telegram.WebApp.expand();
+      (window as any).Telegram.WebApp.ready();
+    }
+  }, []);
+
   const userRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: profile } = useDoc<any>(userRef);
 
@@ -108,24 +119,16 @@ export default function FinancialIntelligence() {
     }
   };
 
-  const moneyMovementOptions = [
-    { icon: Users, label: "Priyo User", desc: "Instant P2P" },
-    { icon: Building2, label: "US Bank", desc: "Wires/ACH" },
-    { icon: Globe, label: "BD Bank", desc: "BEFTN/NPSB" },
-    { icon: Smartphone, label: "Wallet", desc: "bKash/Nagad" },
-    { icon: CreditCard, label: "Accounts", desc: "Settlements" }
-  ];
-
   return (
-    <div className="flex min-h-screen">
-      <AppSidebar />
-      <SidebarInset>
+    <div className={cn("flex min-h-screen", isMiniApp && "bg-black")}>
+      {!isMiniApp && <AppSidebar />}
+      <SidebarInset className={cn(isMiniApp && "p-0")}>
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-4 md:px-6">
-          <SidebarTrigger />
+          {!isMiniApp && <SidebarTrigger />}
           <div className="flex-1 truncate">
             <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 text-accent">
               <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-accent" />
-              Fiscal Command Hub
+              Fiscal Command Hub {isMiniApp && <Badge className="ml-2 bg-blue-500/20 text-blue-400">Mini App</Badge>}
             </h1>
           </div>
         </header>
@@ -168,11 +171,13 @@ export default function FinancialIntelligence() {
                          <span className="flex items-center gap-1.5"><Unplug className="h-3 w-3 text-accent" /> Webhook: Active</span>
                       </div>
                    </div>
-                   <Button asChild size="lg" className="bg-accent text-background font-bold uppercase tracking-widest text-[10px] cyan-glow h-12 px-8 shrink-0">
-                      <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
-                         <Zap className="mr-2 h-4 w-4" /> Link identity
-                      </a>
-                   </Button>
+                   {!profile?.telegramLinked && (
+                     <Button asChild size="lg" className="bg-accent text-background font-bold uppercase tracking-widest text-[10px] cyan-glow h-12 px-8 shrink-0">
+                        <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
+                           <Zap className="mr-2 h-4 w-4" /> Link identity
+                        </a>
+                     </Button>
+                   )}
                 </CardContent>
              </Card>
           </div>

@@ -30,7 +30,7 @@ export async function sendTelegramMessage(chatId: string, text: string, options:
 /**
  * Sends a formatted financial alert for link generation or settlement.
  */
-export async function sendFinancialAlert(chatId: string, type: 'LINK_CREATED' | 'SETTLED', data: any) {
+export async function sendFinancialAlert(chatId: string, type: 'LINK_CREATED' | 'SETTLED' | 'REMOTE_SETTLE_INIT', data: any) {
   let text = "";
   
   if (type === 'LINK_CREATED') {
@@ -48,9 +48,21 @@ export async function sendFinancialAlert(chatId: string, type: 'LINK_CREATED' | 
            `<b>External ID:</b> <code>${data.externalTxnId}</code>\n` +
            `<b>Seal:</b> <code>${data.seal}</code>\n\n` +
            `আপনার ব্যালেন্স সফলভাবে আপডেট করা হয়েছে।`;
+  } else if (type === 'REMOTE_SETTLE_INIT') {
+    text = `<b>⏳ REMOTE SETTLEMENT INITIATED</b>\n\n` +
+           `<b>Seal:</b> <code>${data.seal}</code>\n` +
+           `<b>Status:</b> Reconciling with Hub...\n\n` +
+           `দয়া করে অপেক্ষা করুন, সোভারেন কার্নেল লেনদেনটি যাচাই করছে।`;
   }
 
   return await sendTelegramMessage(chatId, text);
+}
+
+/**
+ * Sends the Daily Integrity Pulse Report.
+ */
+export async function sendPulseReport(chatId: string, reportText: string) {
+  return await sendTelegramMessage(chatId, reportText);
 }
 
 /**
