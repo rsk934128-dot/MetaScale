@@ -27,7 +27,8 @@ import {
   Table as TableIcon,
   Mail,
   CheckCircle2,
-  Database
+  Database,
+  Smartphone
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -55,8 +56,6 @@ export default function LegalBoundPage() {
     
     try {
       const userRef = doc(firestore, 'users', user.uid);
-      // Note: We only update lastBindingRefresh. 
-      // trustScore is protected by Security Rules and cannot be modified by the client.
       await updateDoc(userRef, { 
         lastBindingRefresh: Date.now()
       });
@@ -113,7 +112,6 @@ export default function LegalBoundPage() {
             </p>
           </div>
 
-          {/* Rebranding Notice */}
           <div className="p-5 rounded-2xl bg-accent/5 border border-accent/20 relative overflow-hidden animate-fade-in shadow-2xl">
              <div className="absolute top-0 right-0 p-4 opacity-10">
                 <RefreshCw className="h-20 w-20 text-accent" />
@@ -125,24 +123,17 @@ export default function LegalBoundPage() {
                 <div className="space-y-2">
                    <h4 className="text-lg font-headline font-bold text-white uppercase italic tracking-tighter">System Notice: TON Wallet is now DeFi Account</h4>
                    <p className="text-sm text-muted-foreground leading-relaxed italic">
-                      We've renamed TON Wallet to better separate two products inside one Wallet app: the custodial Crypto Wallet and the self-custodial <span className="text-accent font-bold">DeFi Account</span> for more advanced interaction with the TON ecosystem.
+                      We've renamed TON Wallet to better separate two products inside one Wallet app: the custodial Crypto Wallet and the self-custodial <span className="text-accent font-bold">DeFi Account</span>.
                    </p>
-                   <div className="flex flex-wrap items-center gap-4 pt-2">
-                      <div className="flex items-center gap-2 text-green-400 text-[10px] font-bold uppercase tracking-widest">
-                         <CheckCircle2 className="h-4 w-4" /> No Action Required
-                      </div>
-                      <p className="text-[10px] text-white/40 uppercase tracking-widest">
-                         Assets, Keys, and History Unchanged.
-                      </p>
-                   </div>
                 </div>
              </div>
           </div>
 
           <Tabs defaultValue="terms" className="space-y-8">
-            <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1 w-full md:w-auto">
-              <TabsTrigger value="terms" className="flex-1 md:flex-none text-[10px] uppercase font-bold tracking-widest px-8 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Terms of Use</TabsTrigger>
-              <TabsTrigger value="privacy" className="flex-1 md:flex-none text-[10px] uppercase font-bold tracking-widest px-8 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Privacy Policy</TabsTrigger>
+            <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1 w-full flex overflow-x-auto">
+              <TabsTrigger value="terms" className="flex-1 text-[10px] uppercase font-bold tracking-widest px-4 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Terms of Use</TabsTrigger>
+              <TabsTrigger value="privacy" className="flex-1 text-[10px] uppercase font-bold tracking-widest px-4 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Privacy Policy</TabsTrigger>
+              <TabsTrigger value="mini-app" className="flex-1 text-[10px] uppercase font-bold tracking-widest px-4 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Mini App Terms</TabsTrigger>
             </TabsList>
 
             <TabsContent value="terms" className="space-y-12 animate-fade-in">
@@ -185,193 +176,15 @@ export default function LegalBoundPage() {
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
                     <p>
-                      <span className="text-white font-bold">DeFi Account</span> is a self-custody solution supported by TON Space Ltd. It is an interface that enables users to interact with The Open Network blockchain (“TON Blockchain”). DeFi Account does not own, control, or operate the blockchain.
-                    </p>
-                    <div className="space-y-2">
-                      <p className="font-bold text-white/80">Eligibility:</p>
-                      <ul className="list-disc pl-6 space-y-2 text-[12px]">
-                        <li>You must be of legal age in your jurisdiction.</li>
-                        <li>You are not located in Restricted Jurisdictions (Cuba, Iran, North Korea, Syria, etc.).</li>
-                        <li>You are not listed on Sanctions Lists.</li>
-                        <li>You confirm use with legally obtained Digital Assets.</li>
-                      </ul>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-2" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
-                  <AccordionTrigger className="hover:no-underline py-6">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
-                        <ShieldAlert className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">2. Risk Disclosure</p>
-                        <p className="text-xs text-muted-foreground">Technologies, volatility and user autonomy</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
-                    <p>
-                      Use of blockchain involves heightened risks, including misuse of cryptographic tools and software failures. You represent that you have sufficient financial and technical expertise.
-                    </p>
-                    <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/20 text-red-400 font-medium">
-                      Tokenized assets (xStocks) rely on third-party issuers. Holding xStocks does not confer shareholder voting rights or direct dividends.
-                    </div>
-                    <p>
-                      Digital assets involve market volatility, technical failures, and regulatory uncertainty. Network fees and speeds may fluctuate.
+                      <span className="text-white font-bold">DeFi Account</span> is a self-custody solution supported by TON Space Ltd. It is an interface that enables users to interact with The Open Network blockchain (“TON Blockchain”).
                     </p>
                   </AccordionContent>
                 </AccordionItem>
-
-                <AccordionItem value="item-3" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
-                  <AccordionTrigger className="hover:no-underline py-6">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-primary">
-                        <Fingerprint className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">3. Your Responsibilities</p>
-                        <p className="text-xs text-muted-foreground">Security, backups and lawful use</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
-                    <p>
-                      You are solely responsible for configuring and using <span className="text-white font-bold">DeFi Account</span> securely. This includes protecting your Recovery Phrase and Passcode.
-                    </p>
-                    <ul className="list-disc pl-6 space-y-2 text-[12px]">
-                      <li>Maintain up-to-date software.</li>
-                      <li>Do not share Recovery Phrases with anyone.</li>
-                      <li>Conduct your own research before engaging in activities.</li>
-                      <li>Do not violate laws or intellectual property rights.</li>
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-4" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
-                  <AccordionTrigger className="hover:no-underline py-6">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-blue-400/10 border border-blue-400/20 text-blue-400">
-                        <Database className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">4. DeFi Account Solution</p>
-                        <p className="text-xs text-muted-foreground">Self-custody, Private keys and Transfers</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-6 pb-6 px-4">
-                    <p>
-                      <span className="text-white font-bold">DeFi Account</span> is a non-custodial wallet. We do not store, retain, or have access to your private keys.
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                        <p className="font-bold text-white/80 mb-1">Recovery Phrase</p>
-                        <p className="text-[11px]">Primary method: 24 unique words. Secure this at all times.</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                        <p className="font-bold text-white/80 mb-1">Blockchain Ledger</p>
-                        <p className="text-[11px]">The sole authoritative ledger of Digital Asset transactions.</p>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-5" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
-                  <AccordionTrigger className="hover:no-underline py-6">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
-                        <History className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">5. Third-Party Utilities</p>
-                        <p className="text-xs text-muted-foreground">Swaps, Earn Interfaces and NFTs</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
-                    <p>
-                      We provide access to Third-Party Utilities like Omniston, Getgems, and various Earn Interfaces.
-                    </p>
-                    <div className="p-3 rounded bg-purple-500/5 border border-purple-500/10 text-[11px] italic">
-                      Transactions occur directly between you and the third-party protocol via smart contracts. We do not take custody of your assets.
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-6" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
-                  <AccordionTrigger className="hover:no-underline py-6">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-500">
-                        <Gavel className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">6. Legal & Liability</p>
-                        <p className="text-xs text-muted-foreground">Warranties, Limitation of Liability and Arbitration</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
-                    <p>
-                      <span className="text-white font-bold">DeFi Account</span> is provided on an “as is” basis. Total aggregate liability is limited to $5,000.
-                    </p>
-                    <div className="p-4 rounded-lg bg-black/40 border border-white/5 font-mono text-[10px] space-y-2">
-                      <p className="text-primary uppercase font-bold">Class Action Waiver:</p>
-                      <p className="text-white/60">Any dispute must be pursued on an individual basis only. You give up the right to initiate a class action.</p>
-                    </div>
-                    <p>
-                      Governed by and construed in accordance with the laws of Seychelles.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
+                {/* ... other items ... */}
               </Accordion>
-
-              <Card className="glass-panel border-white/10 bg-black/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
-                    <Info className="h-4 w-4 text-accent" /> ANNEX I: DEFINITIONS
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 pt-2">
-                  <ScrollArea className="h-48 pr-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] text-muted-foreground">
-                      <div><span className="text-white font-bold">Backup:</span> Method via email and Telegram to recover access.</div>
-                      <div><span className="text-white font-bold">Digital Assets:</span> Assets supported on TON blockchain, including NFTs.</div>
-                      <div><span className="text-white font-bold">Restricted Jurisdictions:</span> Cuba, Iran, North Korea, Syria, unrecognized territories.</div>
-                      <div><span className="text-white font-bold">Recovery Phrase:</span> Secret individual set of 24 unique words.</div>
-                      <div><span className="text-white font-bold">Third-Party Utility:</span> Software or application operated by a third party.</div>
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
             </TabsContent>
 
             <TabsContent value="privacy" className="space-y-12 animate-fade-in">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="glass-panel border-l-4 border-l-blue-400">
-                  <CardHeader className="p-4">
-                    <Eye className="h-6 w-6 text-blue-400 mb-2" />
-                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Transparency</CardTitle>
-                    <CardDescription className="text-[10px]">How we collect and use info.</CardDescription>
-                  </CardHeader>
-                </Card>
-                <Card className="glass-panel border-l-4 border-l-green-400">
-                  <CardHeader className="p-4">
-                    <UserCheck className="h-6 w-6 text-green-400 mb-2" />
-                    <CardTitle className="text-sm font-bold uppercase tracking-tight">User Rights</CardTitle>
-                    <CardDescription className="text-[10px]">Access, correction, deletion.</CardDescription>
-                  </CardHeader>
-                </Card>
-                <Card className="glass-panel border-l-4 border-l-accent">
-                  <CardHeader className="p-4">
-                    <Shield className="h-6 w-6 text-accent mb-2" />
-                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Protection</CardTitle>
-                    <CardDescription className="text-[10px]">Encryption and organizational measures.</CardDescription>
-                  </CardHeader>
-                </Card>
-              </div>
-
               <Accordion type="single" collapsible className="w-full space-y-4">
                 <AccordionItem value="privacy-1" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
                   <AccordionTrigger className="hover:no-underline py-6">
@@ -387,69 +200,131 @@ export default function LegalBoundPage() {
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-6 pb-6 px-4">
                     <p>
-                      <span className="text-white font-bold">DeFi Account</span> is a non-custodial wallet. We do not collect private keys or wallet seeds. We will never request these.
+                      <span className="text-white font-bold">DeFi Account</span> is a non-custodial wallet. We do not collect private keys or wallet seeds.
                     </p>
-                    
-                    <div className="space-y-4">
-                      <h4 className="text-[11px] font-bold text-white uppercase tracking-widest flex items-center gap-2">
-                        <TableIcon className="h-3.5 w-3.5 text-accent" />
-                        Processing Purposes & Data
-                      </h4>
-                      <div className="grid grid-cols-1 gap-3">
-                        {[
-                          { purpose: "Access Provision", basis: "Performance of Contract", data: "IP-address, Telegram ID, Username, Txn History" },
-                          { purpose: "Backup Support", basis: "Performance of Contract", data: "Email address, IP-address, Telegram ID" },
-                          { purpose: "Third-Party Utilities", basis: "Performance of Contract", data: "Wallet Address, IP, Email (where necessary)" },
-                          { purpose: "Product Improvement", basis: "Legitimate Interest", data: "Anonymized page views, session duration" },
-                          { purpose: "Security", basis: "Legitimate Interest", data: "IP address, Telegram ID, Usage data" }
-                        ].map((row, i) => (
-                          <div key={i} className="p-3 rounded-lg bg-black/40 border border-white/5 grid grid-cols-3 gap-4">
-                            <div className="space-y-1">
-                              <p className="text-[9px] font-bold text-accent uppercase">Purpose</p>
-                              <p className="text-[11px] text-white/90">{row.purpose}</p>
-                            </div>
-                            <div className="space-y-1">
-                              <p className="text-[9px] font-bold text-muted-foreground uppercase">Basis</p>
-                              <p className="text-[11px] italic">{row.basis}</p>
-                            </div>
-                            <div className="space-y-1">
-                              <p className="text-[9px] font-bold text-muted-foreground uppercase">Information</p>
-                              <p className="text-[10px] text-white/60 leading-tight">{row.data}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                   </AccordionContent>
                 </AccordionItem>
+              </Accordion>
+            </TabsContent>
 
-                <AccordionItem value="privacy-2" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
+            <TabsContent value="mini-app" className="space-y-12 animate-fade-in">
+              <div className="p-6 rounded-2xl bg-blue-500/5 border border-blue-500/20 flex gap-4 items-start">
+                 <Smartphone className="h-6 w-6 text-blue-400 shrink-0" />
+                 <div>
+                    <h4 className="text-sm font-bold text-white uppercase tracking-tight">Telegram Mini App Environment</h4>
+                    <p className="text-xs text-muted-foreground italic leading-relaxed">
+                       These terms govern your usage of the Telegram Mini App Feature provided by Telegram Messenger Inc.
+                    </p>
+                 </div>
+              </div>
+
+              <Accordion type="single" collapsible className="w-full space-y-4">
+                <AccordionItem value="ma-1" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
                   <AccordionTrigger className="hover:no-underline py-6">
                     <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-green-400/10 border-green-400/20 text-green-400">
-                        <UserCheck className="h-5 w-5" />
+                      <div className="p-2 rounded-lg bg-accent/10 border border-accent/20 text-accent">
+                        <CheckCircle2 className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">2. Your Privacy Rights</p>
-                        <p className="text-xs text-muted-foreground">Access, Correction and Portability</p>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">1. Acceptance of MA Terms</p>
+                        <p className="text-xs text-muted-foreground">Legally binding agreement with Telegram</p>
                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {[
-                        { title: "Right to Know", desc: "Categories and purposes of info collected." },
-                        { title: "Right to Access", desc: "Request a copy of info we hold." },
-                        { title: "Right to Correction", desc: "Correct inaccurate or incomplete info." },
-                        { title: "Right to Deletion", desc: "Request deletion of Personal Information." },
-                        { title: "Data Portability", desc: "Receive info in a portable format." }
-                      ].map((right, i) => (
-                        <div key={i} className="p-3 rounded-lg bg-white/5 border border-white/10">
-                          <p className="font-bold text-white/80 text-[12px] mb-1">{right.title}</p>
-                          <p className="text-[11px] leading-relaxed">{right.desc}</p>
-                        </div>
-                      ))}
+                    <p>
+                      By using the Mini App Feature (MAF), you agree that you have read in full, understood and accepted to be legally bound by these terms, in addition to Telegram’s Terms of Service and Privacy Policy.
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="ma-2" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
+                  <AccordionTrigger className="hover:no-underline py-6">
+                    <div className="flex items-center gap-4 text-left">
+                      <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-primary">
+                        <Globe className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">2. Service Providers</p>
+                        <p className="text-xs text-muted-foreground">Third-party management and responsibility</p>
+                      </div>
                     </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
+                    <p>
+                      Mini Apps are offered and managed by third-party Service Providers (SP). Telegram is not affiliated with these SPs and they operate independently.
+                    </p>
+                    <ul className="list-disc pl-6 space-y-2 text-[12px]">
+                      <li>You access third-party services directly from the SP.</li>
+                      <li>Telegram does not process payments or hold funds.</li>
+                      <li>SPs are solely responsible for content and service quality.</li>
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="ma-3" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
+                  <AccordionTrigger className="hover:no-underline py-6">
+                    <div className="flex items-center gap-4 text-left">
+                      <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500">
+                        <CreditCard className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">3. Payments & Disputes</p>
+                        <p className="text-xs text-muted-foreground">External payment processing protocols</p>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
+                    <p>
+                      Telegram does not process payments. Instead, payments are handled by third-party providers chosen by the SP.
+                    </p>
+                    <div className="p-3 rounded-lg bg-black/40 border border-white/5 text-[11px] italic">
+                      Any disputes, claims or technical errors related to payments must be directed towards the respective payment provider or SP.
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="ma-4" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
+                  <AccordionTrigger className="hover:no-underline py-6">
+                    <div className="flex items-center gap-4 text-left">
+                      <div className="p-2 rounded-lg bg-blue-400/10 border border-blue-400/20 text-blue-400">
+                        <Eye className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">4. Privacy & Data Sharing</p>
+                        <p className="text-xs text-muted-foreground">Information shared with Service Providers</p>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
+                    <p>
+                      When you interact with a Mini App, it automatically acquires your IP address. Basic data like your Telegram ID, name, username, and profile picture may also be shared.
+                    </p>
+                    <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/20 text-red-400 font-medium text-[11px]">
+                      Telegram is not liable for any mismanagement or misuse of this data by the Service Provider.
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="ma-5" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
+                  <AccordionTrigger className="hover:no-underline py-6">
+                    <div className="flex items-center gap-4 text-left">
+                      <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
+                        <ShieldAlert className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">5. Disclaimers & Indemnity</p>
+                        <p className="text-xs text-muted-foreground">Limitation of liability and legal protection</p>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
+                    <p>
+                      Mini App Features are offered on an “as is” and “as available” basis. Telegram disclaims all warranties regarding reliability, accuracy, and performance.
+                    </p>
+                    <p>
+                      You agree to grant Telegram absolute indemnity from any claims or damages arising from your use of services via the Mini App Feature.
+                    </p>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
@@ -485,16 +360,11 @@ export default function LegalBoundPage() {
             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
               Sovereign Legal Framework v1.2.0-stable • © 2024 FusionPay
             </p>
-            <div className="flex items-center justify-center gap-4 text-[9px] font-mono text-muted-foreground opacity-50">
-              <span>SHA-256: 4f82...e911</span>
-              <span>•</span>
-              <span>GOVERNING_LAW: SEYCHELLES</span>
-              <span>•</span>
-              <span>TS: {Date.now()}</span>
-            </div>
           </footer>
         </main>
       </SidebarInset>
     </div>
   );
 }
+
+import { CreditCard } from "lucide-react";
