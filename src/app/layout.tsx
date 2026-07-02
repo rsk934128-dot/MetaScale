@@ -94,7 +94,9 @@ export default function RootLayout({
                     message.includes('MetaMask') || 
                     message.includes('nkbihfbeogaeaoehlefnkodbefgpgknn') ||
                     source.includes('extension') ||
-                    message.includes('failed to connect')
+                    message.includes('failed to connect') ||
+                    message.includes('Firestore') ||
+                    message.includes('backend')
                   ) {
                     if (event.stopImmediatePropagation) event.stopImmediatePropagation();
                     if (event.preventDefault) event.preventDefault();

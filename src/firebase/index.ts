@@ -1,35 +1,47 @@
 'use client';
 
-import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { 
   getFirestore, 
   initializeFirestore, 
   persistentLocalCache, 
-  persistentMultipleTabManager 
+  persistentMultipleTabManager,
+  Firestore
 } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { getAuth, Auth } from 'firebase/auth';
 import { firebaseConfig } from './config';
 
+let firebaseApp: FirebaseApp;
+let firestore: Firestore;
+let auth: Auth;
+
 export function initializeFirebase() {
-  const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-  
-  let firestore;
-  try {
-    // Use getFirestore first to check if already initialized
-    firestore = getFirestore(app);
-  } catch (e) {
-    // If not initialized, set it up with persistence
-    firestore = initializeFirestore(app, {
-      localCache: persistentLocalCache({ 
-        tabManager: persistentMultipleTabManager() 
-      }),
-      experimentalForceLongPolling: true
-    });
+  if (getApps().length > 0) {
+    firebaseApp = getApp();
+  } else {
+    firebaseApp = initializeApp(firebaseConfig);
   }
   
-  const auth = getAuth(app);
+  if (!firestore) {
+    try {
+      // Must be the first call to getFirestore to set settings
+      firestore = initializeFirestore(firebaseApp, {
+        localCache: persistentLocalCache({ 
+          tabManager: persistentMultipleTabManager() 
+        }),
+        experimentalForceLongPolling: true
+      });
+      console.log("Firestore initialized with Persistence and Long Polling.");
+    } catch (e) {
+      firestore = getFirestore(firebaseApp);
+    }
+  }
 
-  return { app, firestore, auth };
+  if (!auth) {
+    auth = getAuth(firebaseApp);
+  }
+
+  return { app: firebaseApp, firestore, auth };
 }
 
 export * from './provider';

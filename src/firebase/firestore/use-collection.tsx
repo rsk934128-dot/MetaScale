@@ -38,7 +38,8 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
         } else if (serverError.code === 'unavailable') {
-          console.warn('Firestore: Client is offline or service unavailable.');
+          // Suppress hard error for offline mode
+          console.warn('Firestore: Operating in offline mode.');
         } else {
           setError(serverError);
         }

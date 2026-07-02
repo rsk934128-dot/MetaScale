@@ -30,7 +30,6 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
         setError(null);
       },
       async (serverError: FirestoreError) => {
-        // Handle specific error codes
         if (serverError.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: ref.path,
@@ -39,10 +38,8 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
         } else if (serverError.code === 'unavailable') {
-          // If unavailable (offline), we don't treat it as a hard error
-          // but we can set it locally for UI awareness if needed.
-          // For now, we stay in loading/last-known-data state.
-          console.warn('Firestore: Client is offline or service unavailable.');
+          // Suppress hard error for offline mode
+          console.warn('Firestore: Operating in offline mode.');
         } else {
           setError(serverError);
         }
