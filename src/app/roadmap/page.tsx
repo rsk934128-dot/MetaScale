@@ -33,7 +33,9 @@ import {
   Shield,
   Lightbulb,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Smartphone,
+  MessageSquare
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,11 +95,12 @@ const ROADMAP_PHASES = [
     status: "Active",
     icon: ShieldAlert,
     date: "Active 2026",
-    progress: 85,
-    desc: "Building embedded incident playbooks for institutional reliability in high-risk zones.",
+    progress: 90,
+    desc: "Telegram Mini App integration, remote terminal controllers, and mobile gateway synchronization.",
     items: [
-      "Interactive Incident Runbooks",
-      "Severity-based Escalation Matrix",
+      "Telegram Mini App Integration (v1.2.0)",
+      "Remote Settlement Webhooks (PAY_SEAL_...)",
+      "Bengali AI Reporting (Daily Pulse Pulse)",
       "Safe Replay Authorization Boundary"
     ]
   }
@@ -107,7 +110,7 @@ const READINESS_MATRIX = [
   { category: "Security", item: "HMAC Secrets Configured", status: "PASS", icon: Lock },
   { category: "Ledger", item: "Exactly-once Enforcement", status: "PASS", icon: CheckCircle2 },
   { category: "Reconciliation", item: "Self-healing Worker Active", status: "PASS", icon: RefreshCw },
-  { category: "Operations", item: "Embedded Incident Playbooks", status: "PASS", icon: FileSearch },
+  { category: "Comms", item: "Telegram Mobile Gateway", status: "PASS", icon: MessageSquare },
   { category: "Infra", item: "Anycast Latency < 15ms", status: "PASS", icon: Zap },
   { category: "Compliance", item: "Identity Binding (NID/TIN)", status: "PASS", icon: ShieldCheck }
 ];
@@ -127,14 +130,14 @@ const SOLVED_PROBLEMS = [
   },
   { 
     title: "Regulatory Compliance", 
-    solution: "Identity Binding (NID/TIN) per Bangladesh Bank rules.",
+    solution: "Identity Binding (NID/TIN) per BB/CIP rules.",
     icon: ShieldCheck,
     color: "text-blue-400"
   },
   { 
-    title: "Human Error in Ops", 
-    solution: "Embedded Runbooks & Escalation Matrix for operators.",
-    icon: Lightbulb,
+    title: "Remote Imperial Control", 
+    solution: "Mobile-optimized Telegram Mini App interface.",
+    icon: Smartphone,
     color: "text-yellow-400"
   }
 ];
@@ -209,7 +212,7 @@ export default function RoadmapPage() {
               From Internal Kernel to <span className="text-accent italic">Global Execution</span>
             </h2>
             <p className="text-muted-foreground text-sm italic">
-              "Deploying resilient financial infra in Sirajganj and beyond."
+              "Deploying resilient financial infra in Sirajganj District and beyond."
             </p>
           </div>
 

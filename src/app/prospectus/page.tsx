@@ -50,14 +50,14 @@ export default function ProspectusPage() {
         <main className="flex-1 p-8 max-w-[1200px] mx-auto w-full space-y-20 pb-20">
           <div className="text-center space-y-8 py-10">
             <Badge variant="outline" className="border-accent/30 text-accent uppercase tracking-[0.4em] px-6 py-1.5 text-[10px] font-bold">
-              Gateway to North Bengal: Sirajganj District
+              North Bengal Economic Gateway: Sirajganj District
             </Badge>
             <h2 className="text-6xl md:text-8xl font-headline font-bold text-white tracking-tighter uppercase leading-[0.8]">
               RESILIENT <br />
               <span className="text-accent italic font-light">DIGITAL INFRA</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed italic">
-              "Targeting the Sirajganj Economic Zone (1,041 acres) and a dairy market valued at BDT 100 Crore with automated, flood-resilient settlement infrastructure."
+              "Providing deterministic settlement infrastructure for the 1,041-acre Sirajganj Economic Zone and a BDT 100 Crore dairy market across the Jamuna basin."
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6">
                <Button className="h-16 px-12 rounded-full bg-accent text-background font-bold uppercase text-xs tracking-widest cyan-glow">
@@ -100,7 +100,7 @@ export default function ProspectusPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Utilizing 2D modeling (RIVERFLOW2D) and automated self-healing crons to maintain financial continuity during monsoonal surges.
+                      Utilizing 2D modeling (HEC-RAS) and automated self-healing crons to maintain financial continuity during monsoonal surges (2, 25, 100-yr return periods).
                    </p>
                    <div className="pt-4 space-y-2">
                       <div className="flex justify-between text-[10px] font-bold uppercase">
@@ -121,7 +121,7 @@ export default function ProspectusPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Securing 3.3 million citizens through NID and TIN identity binding, ensuring regulatory compliance with Bangladesh Bank's CIP rules.
+                      Securing 3.3 million citizens through NID and TIN identity binding, ensuring regulatory compliance with Bangladesh Bank's CIP/CIB protocols.
                    </p>
                    <div className="pt-4 space-y-2">
                       <div className="flex justify-between text-[10px] font-bold uppercase">
@@ -140,15 +140,15 @@ export default function ProspectusPage() {
                    <Badge variant="outline" className="text-accent border-accent/20 uppercase tracking-widest text-[9px] font-bold">Economic Integration</Badge>
                    <h3 className="text-4xl font-headline font-bold uppercase italic tracking-tighter">SIRAJGANJ <span className="text-accent">ECON ZONE</span></h3>
                    <p className="text-muted-foreground text-lg leading-relaxed">
-                      Providing the digital financial backbone for Bangladesh's largest private economic zone, connected to the Dhaka-Bogura Highway via high-speed digital rails.
+                      Providing the digital financial backbone for Bangladesh's largest private economic zone (1,041 acres), connected to the Dhaka-Bogura Highway via high-speed digital rails.
                    </p>
                 </div>
                 
                 <div className="space-y-4">
                    {[
-                     { label: "MFS Integration", value: "bKash/Nagad", icon: DollarSign, desc: "Automated settlements for rural dairy cooperatives." },
-                     { label: "Identity Grid", value: "3.3M People", icon: Globe, desc: "Full NID/TIN verification for hand-loom merchants." },
-                     { label: "Infrastructure", value: "42 Anycast Nodes", icon: Cpu, desc: "Regional edge nodes for sub-15ms regional latency." }
+                     { label: "MFS Integration", value: "bKash/Nagad", icon: DollarSign, desc: "Automated settlements for 33k dairy farms and cottage cooperatives." },
+                     { label: "Identity Grid", value: "3.3M Citizens", icon: Globe, desc: "Full NID/TIN verification for hand-loom textile merchants." },
+                     { label: "Invariants", value: "Exactly-Once", icon: Cpu, desc: "Firestore transaction guards preventing double crediting in rural nodes." }
                    ].map((item, i) => (
                      <div key={i} className="flex items-center gap-6 p-6 rounded-2xl border border-white/5 bg-secondary/20 hover:bg-white/5 transition-all group">
                         <div className="p-3 rounded-xl bg-background border border-white/10 text-accent group-hover:scale-110 transition-transform">
@@ -168,13 +168,13 @@ export default function ProspectusPage() {
              <Card className="glass-panel border-accent/20 bg-accent/5 p-10 relative overflow-hidden shadow-2xl">
                 <div className="absolute top-0 right-0 p-4 opacity-10"><Award className="h-60 w-60 text-accent" /></div>
                 <div className="relative z-10 space-y-8">
-                   <h4 className="text-2xl font-headline font-bold uppercase text-accent italic tracking-tighter">Regional Impact</h4>
+                   <h4 className="text-2xl font-headline font-bold uppercase text-accent italic tracking-tighter">Regional Impact (Sirajganj)</h4>
                    <div className="space-y-6">
                       {[
-                        { title: "Dairy Digitization", desc: "Building verifiable transaction histories for 33,000 farms." },
-                        { title: "Flood Continuity", desc: "Maintaining payments during monsoon outages via self-healing crons." },
-                        { title: "Supply Chain", desc: "Automating B2B settlements for hand-loom textile exports." },
-                        { title: "CIP Compliance", desc: "Full alignment with national financial intelligence standards." }
+                        { title: "Dairy Market Liquidity", desc: "Automating BDT 100 Cr+ in collection and payout flows." },
+                        { title: "Flood Resilience", desc: "Self-healing crons maintain financial continuity during Jamuna outages." },
+                        { title: "MFS Interop", desc: "Server-authoritative webhooks for instant bKash/Nagad reconciliation." },
+                        { title: "Remote Control", desc: "Telegram Mini App allows operators to manage settlements from the field." }
                       ].map((item, i) => (
                         <div key={i} className="flex items-start gap-4">
                            <div className="mt-1 h-6 w-6 rounded-full bg-accent/20 flex items-center justify-center border border-accent/40 text-accent font-bold text-xs shrink-0">
@@ -190,7 +190,7 @@ export default function ProspectusPage() {
                    <div className="pt-6 border-t border-white/10">
                       <div className="flex items-center gap-3 text-green-400 font-bold text-xs">
                          <CheckCircle2 className="h-4 w-4" />
-                         SIRAJGANJ PILOT: PRE-FLIGHT (V1.2.0)
+                         SIRAJGANJ HUB: READY FOR EXECUTION (V1.2.0)
                       </div>
                    </div>
                 </div>
@@ -206,7 +206,7 @@ export default function ProspectusPage() {
                 <div className="h-0.5 w-20 bg-gradient-to-l from-transparent to-accent/50" />
              </div>
              <p className="text-[9px] font-bold uppercase tracking-[0.5em] text-muted-foreground opacity-50 italic">
-                Focus Territory: Sirajganj, Rajshahi Division, Bangladesh.
+                Operational Focus: Sirajganj, Rajshahi Division, Bangladesh.
              </p>
           </footer>
         </main>

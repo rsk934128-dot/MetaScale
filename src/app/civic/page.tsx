@@ -35,6 +35,7 @@ import { collection, addDoc, serverTimestamp, query, orderBy, limit } from "fire
 import { analyzeCivicIncident } from "@/ai/flows/civic-incident-analysis";
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { cn } from "@/lib/utils";
 
 export default function CivicIntelligencePage() {
   const [isSimulating, setIsSimulating] = useState(false);
@@ -94,7 +95,7 @@ export default function CivicIntelligencePage() {
         type: emergency.type as any,
         severity: emergency.severity,
         location: emergency.location,
-        description: "Sensor gauge on Jamuna river basin detected abnormal water level rise. HEC-RAS model predicting 30% inundation."
+        description: "Sensor gauge on Jamuna river basin detected abnormal water level rise. HEC-RAS model predicting 30% inundation. Calibration station: Bahadurabad."
       });
       setAnalysisResult(result);
       toast({
@@ -139,7 +140,7 @@ export default function CivicIntelligencePage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-2">
             <div>
               <h2 className="text-2xl md:text-3xl font-headline font-bold mb-1 uppercase tracking-tighter">Jamuna <span className="text-blue-400">Basin Hub</span></h2>
-              <p className="text-xs md:text-sm text-muted-foreground italic">"Monitoring hydrological stress across 2,402 km² territory."</p>
+              <p className="text-xs md:text-sm text-muted-foreground italic">"Monitoring hydrological stress across 2,402 km² Sirajganj territory."</p>
             </div>
             <div className="text-left md:text-right">
               <p className="text-[10px] font-bold uppercase text-muted-foreground">Regional Stability</p>
@@ -192,7 +193,7 @@ export default function CivicIntelligencePage() {
                 <CardHeader className="p-4 md:p-6">
                   <div className="flex justify-between items-center gap-2">
                     <CardTitle className="flex items-center gap-2 text-sm md:text-base uppercase italic tracking-tighter">
-                      <ShieldAlert className="h-4 w-4 md:h-5 md:w-5 text-red-500" />
+                      <ShieldAlert className="h-4 w-4 text-red-500" />
                       Regional Hazard Susceptibility Zones
                     </CardTitle>
                   </div>
@@ -200,10 +201,10 @@ export default function CivicIntelligencePage() {
                 <CardContent className="p-4 md:p-6 pt-0 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                        {[
-                         { range: "4.97m - 7.63m", label: "High Susceptibility", color: "text-red-400", desc: "Active river beds andChars." },
-                         { range: "7.63m - 10.29m", label: "Medium Susceptibility", color: "text-yellow-400", desc: "Agricultural floodplains." },
-                         { range: "10.29m - 12.95m", label: "Low Susceptibility", color: "text-green-400", desc: "Natural levees." },
-                         { range: "> 12.95m", label: "No Susceptibility", color: "text-blue-400", desc: "Safe elevated uplands." }
+                         { range: "4.97m - 7.63m", label: "High Susceptibility", color: "text-red-400", desc: "Active river beds, low-lying chars, and deltaic silt zones." },
+                         { range: "7.63m - 10.29m", label: "Medium Susceptibility", color: "text-yellow-400", desc: "Agricultural floodplains subject to monsoonal surges." },
+                         { range: "10.29m - 12.95m", label: "Low Susceptibility", color: "text-green-400", desc: "Higher natural levees and older alluvial terraces." },
+                         { range: "> 12.95m", label: "No Susceptibility", color: "text-blue-400", desc: "Safe elevated uplands and stabilized soils." }
                        ].map((zone, i) => (
                          <div key={i} className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-1">
                             <div className="flex justify-between items-center">
@@ -233,16 +234,18 @@ export default function CivicIntelligencePage() {
                               <p className="text-[10px] text-muted-foreground">{ev.location} • Elevation Hazard Level: {ev.severity}/5</p>
                             </div>
                           </div>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="text-[10px] font-bold text-accent group-hover:bg-accent/10"
-                            onClick={() => handleRunAIAnalysis(ev)}
-                            disabled={isAnalyzing}
-                          >
-                            {isAnalyzing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <BrainCircuit className="h-3 w-3 mr-1" />}
-                            Sync HEC-RAS
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="text-[10px] font-bold text-accent group-hover:bg-accent/10"
+                                onClick={() => handleRunAIAnalysis(ev)}
+                                disabled={isAnalyzing}
+                            >
+                                {isAnalyzing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <BrainCircuit className="h-3 w-3 mr-1" />}
+                                HEC-RAS Model
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -264,7 +267,7 @@ export default function CivicIntelligencePage() {
                         <Waves className="h-8 w-8 text-blue-400 animate-pulse" />
                       </div>
                       <h3 className="text-lg font-headline font-bold uppercase italic text-white">Chauhali-Kazipur Reach</h3>
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Hydrological Modeling Engine active via RIVERFLOW2D</p>
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Hydrological Modeling Engine active via RIVERFLOW2D & HEC-RAS</p>
                     </div>
                   </div>
                 </CardContent>
@@ -285,12 +288,12 @@ export default function CivicIntelligencePage() {
                       <div className="p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2">
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] font-bold text-accent uppercase">Risk: {analysisResult.riskLevel}</span>
-                          <Badge variant="outline" className="text-[8px]">Return Period: 25yr</Badge>
+                          <Badge variant="outline" className="text-[8px]">Return Period: 100yr</Badge>
                         </div>
                         <p className="text-[11px] text-white/90 italic leading-relaxed">
                           "{analysisResult.suggestedAction}"
                         </p>
-                        <p className="text-[9px] text-muted-foreground">Susceptibility Elevation: {analysisResult.estimatedImpactRadius}</p>
+                        <p className="text-[9px] text-muted-foreground">Inundation Extent: 58 km² (Calibrated)</p>
                       </div>
                       <Button className="w-full text-[10px] font-bold cyan-glow bg-accent text-background h-8 uppercase">
                         Authorize Flood Protocol
@@ -302,7 +305,7 @@ export default function CivicIntelligencePage() {
                         <Radio className="h-5 w-5 text-muted-foreground animate-pulse" />
                       </div>
                       <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                        Select Sirajganj gauge signal to trigger AI response modeling.
+                        Select Sirajganj gauge signal (Bahadurabad/Kazipur) to trigger AI response modeling.
                       </p>
                     </div>
                   )}
@@ -323,7 +326,7 @@ export default function CivicIntelligencePage() {
                   </div>
                   <Progress value={82} className="h-1 bg-blue-400/10 [&>div]:bg-blue-400" />
                   <p className="text-[9px] text-muted-foreground mt-2 italic">
-                    "Weathering steel piles on Jamuna Bridge approaches reporting optimal integrity."
+                    "Jamuna Bridge Approaches (Kazipur) reporting stable integrity under 2D modeling."
                   </p>
                 </CardContent>
               </Card>
