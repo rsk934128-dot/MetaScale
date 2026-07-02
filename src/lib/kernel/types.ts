@@ -48,11 +48,23 @@ export interface PlaneState {
   lastSync: number;
 }
 
+/**
+ * Sovereign OS Boot & Service Types
+ */
+export type ServiceStatus = 'OFFLINE' | 'INITIALIZING' | 'ONLINE' | 'FAILED';
+
+export interface BootStatus {
+  ready: boolean;
+  services: Record<string, ServiceStatus>;
+  lastUpdate: number;
+}
+
 export interface KernelState {
   mode: SystemMode;
   events: SovereignEvent[];
   planes: Record<PlaneType, PlaneState>;
   uptime: number;
+  boot: BootStatus;
 }
 
 /**

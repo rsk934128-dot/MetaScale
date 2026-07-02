@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { KernelState, SovereignEvent, SystemMode, PlaneType, PlaneState, HeartbeatStatus } from '@/lib/kernel/types';
+import { KernelState, SovereignEvent, SystemMode, PlaneType, PlaneState, HeartbeatStatus, BootStatus } from '@/lib/kernel/types';
 import { resolveEventPriority, isTransitionAllowed } from '@/lib/kernel/priority-engine';
 import { validateDirective } from '@/lib/kernel/governance-engine';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +10,7 @@ import { useFirestore, useCollection, useUser } from '@/firebase';
 import { collection, doc, setDoc, query, orderBy, limit, addDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { sendTelegramMessage } from '@/lib/telegram';
 import { runAutomatedReconciliation } from '@/services/reconciliation-cron';
+import { bootManager } from '@/lib/kernel/boot-manager';
 
 interface KernelContextType extends KernelState {
   emitEvent: (plane: PlaneType, type: string, priority: number, payload: any) => void;
@@ -43,6 +44,8 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
   const [localMode, setLocalMode] = useState<SystemMode>('NORMAL');
   const [uptime, setUptime] = useState(0);
   const [isAutonomousActive, setIsAutonomousActive] = useState(false);
+  const [boot, setBoot] = useState<BootStatus>({ ready: false, services: {}, lastUpdate: Date.now() });
+  
   const [heartbeat, setHeartbeat] = useState<HeartbeatStatus[]>([
     { nodeId: 'NODE-04-UK', latency: 8, status: 'ONLINE', lastCheck: Date.now() },
     { nodeId: 'NODE-22-ASIA', latency: 42, status: 'ONLINE', lastCheck: Date.now() },
@@ -82,10 +85,8 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
       newEvent.message = govCheck.reason;
 
       if (firestore) {
-        // Log the blocked event
         await setDoc(doc(firestore, 'events', systemSeal), newEvent);
         
-        // Emit a security violation event
         const violationSeal = `VIOLATION_${Date.now()}`;
         await setDoc(doc(firestore, 'events', violationSeal), {
           id: violationSeal,
@@ -104,7 +105,6 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
           severity: govCheck.severity
         });
 
-        // Push to UBIL Core as a warning
         await setDoc(doc(firestore, 'ubil_events', `GOV_${systemSeal}`), {
           id: systemSeal,
           type: 'GOVERNANCE_BLOCK_LOGGED',
@@ -199,6 +199,19 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     updateDoc(doc(firestore, 'events', eventId), { status: 'ROLLED_BACK' }).catch(() => {});
   }, [firestore]);
 
+  // --- INITIALIZATION ---
+  useEffect(() => {
+    const runBootSequence = async () => {
+      try {
+        await bootManager.bootSystem();
+        setBoot(bootManager.getSystemStatus());
+      } catch (err) {
+        setSystemMode('LOCKDOWN');
+      }
+    };
+    runBootSequence();
+  }, [setSystemMode]);
+
   // --- BACKGROUND LOOPS ---
 
   useEffect(() => {
@@ -241,6 +254,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     events: remoteEvents || [],
     planes: INITIAL_PLANES,
     uptime,
+    boot,
     emitEvent,
     setSystemMode,
     processNextEvent,
