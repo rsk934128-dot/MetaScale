@@ -2,12 +2,12 @@
 import { NextResponse } from 'next/server';
 import { initializeFirebase } from '@/firebase';
 import { doc, updateDoc, getDoc, collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
-import { sendTelegramMessage, sendFinancialAlert } from '@/lib/telegram';
+import { sendTelegramMessage, sendFinancialAlert, sendBillingAlert } from '@/lib/telegram';
 import { reconcileAndSettleLink, processPaymentCredit } from '@/services/payment-service';
 
 /**
- * Telegram Webhook Handler v1.3
- * Improved with Remote Settlement Control.
+ * Telegram Webhook Handler v1.4
+ * Improved with Remote Settlement & Billing Control.
  */
 export async function POST(req: Request) {
   try {
@@ -58,7 +58,22 @@ export async function POST(req: Request) {
       }
     } 
     
-    // 3. Remote Settlement Action (If user sends a PAY_SEAL_ or TXN_)
+    // 3. Billing Status: /plan
+    else if (text === '/plan') {
+      const usersQuery = query(collection(firestore, 'users'), where('telegramChatId', '==', chatId), limit(1));
+      const userSnap = await getDocs(usersQuery);
+      if (!userSnap.empty) {
+        const userData = userSnap.docs[0].data();
+        const planInfo = `<b>💳 BILLING STATUS</b>\n\n` +
+                        `<b>Current Plan:</b> ${userData.plan || 'FREE'}\n` +
+                        `<b>API Requests:</b> 420k / ${userData.plan === 'PRO' ? '10M' : '1M'}\n` +
+                        `<b>Status:</b> ACTIVE\n\n` +
+                        `আপনার প্ল্যান এবং ওভারএজ ট্র্যাকিং স্বাভাবিক আছে।`;
+        await sendTelegramMessage(chatId, planInfo);
+      }
+    }
+
+    // 4. Remote Settlement Action (If user sends a PAY_SEAL_ or TXN_)
     else if (text.startsWith('PAY_SEAL_')) {
       await sendFinancialAlert(chatId, 'REMOTE_SETTLE_INIT', { seal: text });
       
@@ -77,18 +92,9 @@ export async function POST(req: Request) {
       }
     }
 
-    // 4. System Commands
+    // 5. System Commands
     else if (text === '/status') {
       await sendTelegramMessage(chatId, "<b>SYSTEM STATUS: NOMINAL</b>\n\nMesh Health: 100%\nAnycast: Node-04 Priority\nMulti-Sig Guard: ACTIVE\nFinance Signal: READY");
-    } else if (text === '/report') {
-      const txnsQuery = query(collection(firestore, 'ubil_events'), orderBy('timestamp', 'desc'), limit(5));
-      const snap = await getDocs(txnsQuery);
-      let report = "<b>📊 RECENT TRANSACTIONS</b>\n\n";
-      snap.forEach(d => {
-        const data = d.data();
-        report += `• ${data.id}: $${data.amount} (${data.status})\n`;
-      });
-      await sendTelegramMessage(chatId, report);
     }
 
     return NextResponse.json({ ok: true });

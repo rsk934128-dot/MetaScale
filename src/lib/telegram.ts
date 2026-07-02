@@ -59,6 +59,19 @@ export async function sendFinancialAlert(chatId: string, type: 'LINK_CREATED' | 
 }
 
 /**
+ * Sends billing related alerts.
+ */
+export async function sendBillingAlert(chatId: string, type: 'UPGRADE' | 'OVERAGE' | 'SLA_BREACH', data: any) {
+  let text = "";
+  if (type === 'UPGRADE') {
+    text = `<b>🚀 SYSTEM UPGRADE SUCCESSFUL</b>\n\nআপনার একাউন্টটি সফলভাবে <b>${data.plan}</b> টিয়ারে উন্নীত করা হয়েছে।\n\n<b>নতুন সুবিধা:</b>\n• ${data.limit} API Requests\n• Priority Anycast (Node-04)\n• Managed WAF Protection`;
+  } else if (type === 'OVERAGE') {
+    text = `<b>⚠️ BILLING ALERT: OVERAGE</b>\n\nআপনার বর্তমান প্ল্যানের এপিআই লিমিট অতিক্রম করেছে।\n\n<b>অতিরিক্ত ট্রাফিক:</b> ${data.excess} Requests\n<b>চার্জ:</b> $${data.charge}\n\nএটি পরবর্তী বিলিং সাইকেলে অটো-সেটেল হবে।`;
+  }
+  return await sendTelegramMessage(chatId, text);
+}
+
+/**
  * Sends the Daily Integrity Pulse Report.
  */
 export async function sendPulseReport(chatId: string, reportText: string) {
