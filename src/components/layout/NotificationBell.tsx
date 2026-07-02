@@ -17,6 +17,7 @@ import { collection, query, orderBy, limit, doc, updateDoc, deleteDoc } from "fi
 import { useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export function NotificationBell() {
   const { user } = useUser();
@@ -96,7 +97,7 @@ export function NotificationBell() {
                     </div>
                   </div>
                   
-                  <div className="flex-1 space-y-0.5 pr-6 sm:pr-8">
+                  <div className="flex-1 space-y-0.5 pr-6 pr-8">
                     <p className="text-[9px] sm:text-sm font-bold text-white uppercase tracking-tight leading-tight">{notif.title}</p>
                     <p className="text-[8px] sm:text-xs text-muted-foreground leading-tight italic line-clamp-2">
                       {notif.message}
@@ -148,8 +149,10 @@ export function NotificationBell() {
         </ScrollArea>
         <DropdownMenuSeparator className="bg-white/5 m-0" />
         <div className="p-1.5 sm:p-3 bg-white/5">
-          <Button variant="ghost" className="w-full h-7 sm:h-10 text-[7px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-accent hover:bg-accent/10">
-            Open Audit Trail
+          <Button asChild variant="ghost" className="w-full h-7 sm:h-10 text-[7px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-accent hover:bg-accent/10">
+            <Link href="/sam-reader">
+              Open Audit Trail
+            </Link>
           </Button>
         </div>
       </DropdownMenuContent>
