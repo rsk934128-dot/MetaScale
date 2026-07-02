@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -47,10 +46,22 @@ export default function SovereignControlPlane() {
   const [isSyncing, setIsSyncing] = useState(false);
   const firestore = useFirestore();
 
-  // Maintenance Check
+  // Maintenance Check (Local Logic)
+  const [isAutoMaintenance, setIsAutoMaintenance] = useState(false);
+  useEffect(() => {
+    const checkTime = () => {
+      const hours = new Date().getUTCHours();
+      setIsAutoMaintenance(hours >= 21 || hours < 2);
+    };
+    checkTime();
+    const interval = setInterval(checkTime, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Remote Config Maintenance Check
   const configRef = useMemo(() => firestore ? doc(firestore, 'system', 'config') : null, [firestore]);
   const { data: systemConfig } = useDoc<any>(configRef);
-  const isMaintenanceActive = systemConfig?.maintenance || false;
+  const isMaintenanceActive = systemConfig?.maintenance || isAutoMaintenance;
 
   const isLive = useMemo(() => {
     return events.some(e => e.type === 'COMMERCIAL_CHANNELS_OPEN' && e.status === 'COMPLETED');
@@ -73,7 +84,7 @@ export default function SovereignControlPlane() {
 
   return (
     <div className="flex min-h-screen bg-background relative">
-      {/* Maintenance Overlay */}
+      {/* Maintenance Overlay (Circuit Breaker Visual) */}
       {isMaintenanceActive && (
         <div className="absolute inset-0 z-[100] bg-background/90 backdrop-blur-md flex items-center justify-center p-6 text-center animate-fade-in">
            <div className="max-w-md space-y-6">
@@ -82,11 +93,14 @@ export default function SovereignControlPlane() {
               </div>
               <h2 className="text-3xl font-headline font-bold text-white uppercase italic tracking-tighter">System Under Maintenance</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                সোভারেন কার্নেল বর্তমানে আপগ্রেড করা হচ্ছে। আনুমানিক সময়: ২১:০০ - ০২:০০ ইউটিসি। জরুরি প্রয়োজনে টেলিগ্রাম কমান্ড ব্যবহার করুন।
+                সোভারেন কার্নেল বর্তমানে আপগ্রেড করা হচ্ছে। শিডিউল: ২১:০০ - ০২:০০ ইউটিসি। জরুরি প্রয়োজনে টেলিগ্রাম কমান্ড ব্যবহার করুন।
               </p>
               <div className="p-4 rounded-xl bg-secondary/30 border border-white/5 font-mono text-[10px] text-accent">
-                &gt;&gt; CMD: nn-cli --status MAINTENANCE_ACTIVE
+                &gt;&gt; CIRCUIT_BREAKER: ACTIVE (RESTRICTED_MODE)
               </div>
+              <Button asChild variant="outline" className="border-accent/20 text-accent font-bold uppercase text-[10px]">
+                <a href="https://t.me/Coolrubelbank2bot" target="_blank" rel="noopener noreferrer">Contact Control Bot</a>
+              </Button>
            </div>
         </div>
       )}

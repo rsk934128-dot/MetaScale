@@ -30,7 +30,9 @@ import {
   Gem,
   Activity,
   Link2,
-  Plus
+  Plus,
+  AlertTriangle,
+  Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +59,20 @@ export default function FinancialIntelligence() {
   
   const [isMiniApp, setIsMiniApp] = useState(false);
   const [isDepositing, setIsDepositing] = useState(false);
+  const [isMaintenance, setIsMaintenance] = useState(false);
+
+  // Maintenance Check (Circuit Breaker)
+  // Scheduled: 21:00 - 02:00 UTC
+  useEffect(() => {
+    const checkMaintenance = () => {
+      const hours = new Date().getUTCHours();
+      const active = hours >= 21 || hours < 2;
+      setIsMaintenance(active);
+    };
+    checkMaintenance();
+    const interval = setInterval(checkMaintenance, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
@@ -79,32 +95,85 @@ export default function FinancialIntelligence() {
   const [payoutGateway, setPayoutGateway] = useState<'PAYPAL' | 'PRIYO_PAY' | 'PAYONEER' | 'TELEGRAM_WALLET'>('PRIYO_PAY');
   const [isPayoutProcessing, setIsPayoutProcessing] = useState(false);
 
-  // Mock Deposit Logic for Simulation
   const handleDeposit = async () => {
+    if (isMaintenance) {
+      toast({ 
+        variant: "destructive", 
+        title: "Circuit Breaker Active", 
+        description: "সিস্টেম বর্তমানে মেইনটেন্যান্সে আছে (21:00-02:00 UTC)। লেনদেন সাময়িকভাবে বন্ধ।" 
+      });
+      return;
+    }
+
     if (!tonAddress) {
       toast({ variant: "destructive", title: "Wallet Not Connected", description: "প্রথমে আপনার টেলিগ্রাম ওয়ালেট কানেক্ট করুন।" });
       return;
     }
+
     setIsDepositing(true);
-    setTimeout(async () => {
-      if (userRef) {
-        await updateDoc(userRef, { balance: increment(50) });
-        await addDoc(collection(firestore!, 'events'), {
+    const auditId = `AUDIT_${Date.now()}_${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+
+    try {
+      // Simulate real-time verification sequence
+      emitEvent('FINANCE', 'DEPOSIT_VERIFICATION_STARTED', 3, { auditId, method: 'TON' });
+      
+      // Simulate a small delay for blockchain confirmation simulation
+      await new Promise(resolve => setTimeout(resolve, 2500));
+
+      if (userRef && firestore) {
+        await updateDoc(userRef, { 
+          balance: increment(50),
+          lastAuditId: auditId
+        });
+
+        await addDoc(collection(firestore, 'events'), {
+          id: auditId,
           type: 'TON_DEPOSIT_RECEIVED',
           plane: 'FINANCE',
           status: 'COMPLETED',
           amount: 50,
+          currency: 'USD',
           txHash: `0x${Math.random().toString(16).substr(2, 64)}`,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          userId: user?.uid,
+          auditId: auditId
+        });
+
+        toast({ title: "Deposit Finalized", description: `$50.00 has been added to your ledger. Audit ID: ${auditId}` });
+        emitEvent('FINANCE', 'DEPOSIT_PROCESSED', 2, { method: 'TON', amount: 50, auditId });
+      }
+    } catch (err: any) {
+      const errorId = `ERR_${Date.now()}`;
+      console.error("Deposit Error:", err);
+      
+      if (firestore) {
+        await addDoc(collection(firestore, 'events'), {
+          type: 'DEPOSIT_FAILED',
+          plane: 'FINANCE',
+          status: 'FAILED',
+          errorId,
+          message: err.message,
+          timestamp: Date.now(),
+          userId: user?.uid
         });
       }
+
+      toast({ 
+        variant: "destructive", 
+        title: "Handshake Failed", 
+        description: `Error ID: ${errorId}. Kernel rejected the deposit signal.` 
+      });
+    } finally {
       setIsDepositing(false);
-      toast({ title: "Deposit Successful", description: "$50.00 has been added via TON Bridge." });
-      emitEvent('FINANCE', 'DEPOSIT_PROCESSED', 2, { method: 'TON', amount: 50 });
-    }, 2000);
+    }
   };
 
   const handleGlobalPayout = async () => {
+    if (isMaintenance) {
+      toast({ variant: "destructive", title: "System Maintenance", description: "Currently in 21:00-02:00 UTC window." });
+      return;
+    }
+
     if (!payoutRecipient || !payoutAmount || !profile || !user?.uid || !firestore) return;
     const amountNum = parseFloat(payoutAmount);
     if (amountNum > (profile.balance || 0)) {
@@ -131,7 +200,8 @@ export default function FinancialIntelligence() {
           recipient: payoutRecipient,
           gateway: payoutGateway,
           txHash: result.txHash,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          userId: user.uid
         });
         toast({ title: "Payout Dispatched", description: `TxHash: ${result.txHash.substring(0, 16)}...` });
         setPayoutAmount("");
@@ -168,6 +238,16 @@ export default function FinancialIntelligence() {
         </header>
 
         <main className="flex-1 p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-8">
+          {isMaintenance && (
+            <div className="p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-4 animate-fade-in shadow-2xl">
+              <AlertTriangle className="h-6 w-6 text-yellow-500 shrink-0" />
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-white uppercase tracking-widest">Circuit Breaker Enabled</p>
+                <p className="text-[10px] text-muted-foreground italic">System is under scheduled maintenance (21:00-02:00 UTC). Outbound operations are throttled.</p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
              <Card className="md:col-span-4 glass-panel border-l-4 border-l-accent overflow-hidden shadow-2xl">
                 <CardHeader className="pb-2 p-6">
@@ -207,11 +287,14 @@ export default function FinancialIntelligence() {
                       <div className="flex flex-wrap gap-3">
                         <Button 
                           onClick={handleDeposit} 
-                          disabled={isDepositing || !tonAddress}
-                          className="h-9 bg-accent text-background font-bold uppercase text-[9px] tracking-widest px-4 cyan-glow"
+                          disabled={isDepositing || !tonAddress || isMaintenance}
+                          className={cn(
+                            "h-9 font-bold uppercase text-[9px] tracking-widest px-4 cyan-glow",
+                            isMaintenance ? "bg-secondary text-muted-foreground opacity-50 cursor-not-allowed" : "bg-accent text-background"
+                          )}
                         >
-                          {isDepositing ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Plus className="mr-2 h-3 w-3" />}
-                          Deposit via TON
+                          {isDepositing ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : isMaintenance ? <Lock className="mr-2 h-3 w-3" /> : <Plus className="mr-2 h-3 w-3" />}
+                          {isMaintenance ? "Maintenace Active" : "Deposit via TON"}
                         </Button>
                         {!profile?.telegramLinked && (
                           <Button asChild className="bg-secondary text-white font-bold uppercase tracking-widest text-[9px] h-9 px-4">
@@ -257,6 +340,7 @@ export default function FinancialIntelligence() {
                             className="w-full bg-secondary/50 border border-white/5 rounded-md h-11 text-xs px-3 text-white focus:outline-none"
                             value={payoutGateway}
                             onChange={(e: any) => setPayoutGateway(e.target.value)}
+                            disabled={isMaintenance}
                           >
                              <option value="PRIYO_PAY">Priyo Pay (Global)</option>
                              <option value="TELEGRAM_WALLET">TON Wallet (P2P)</option>
@@ -270,6 +354,7 @@ export default function FinancialIntelligence() {
                             className="bg-secondary/30 border-white/5 h-11 text-sm"
                             value={payoutRecipient}
                             onChange={(e) => setPayoutRecipient(e.target.value)}
+                            disabled={isMaintenance}
                           />
                        </div>
                     </div>
@@ -281,15 +366,16 @@ export default function FinancialIntelligence() {
                          className="bg-secondary/30 border-white/5 h-12 text-lg font-headline"
                          value={payoutAmount}
                          onChange={(e) => setPayoutAmount(e.target.value)}
+                         disabled={isMaintenance}
                        />
                     </div>
                     <Button 
                       className="w-full font-bold h-12 uppercase text-[10px] cyan-glow bg-accent text-background"
                       onClick={handleGlobalPayout}
-                      disabled={isPayoutProcessing || !payoutAmount}
+                      disabled={isPayoutProcessing || !payoutAmount || isMaintenance}
                     >
-                       {isPayoutProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                       Authorize Dispatch
+                       {isPayoutProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isMaintenance ? <Lock className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
+                       {isMaintenance ? "Sovereign Locked" : "Authorize Dispatch"}
                     </Button>
                  </CardContent>
               </Card>
@@ -308,16 +394,24 @@ export default function FinancialIntelligence() {
                             {recentTxns?.map((txn: any) => (
                               <div key={txn.id} className="p-6 flex items-center justify-between hover:bg-white/5">
                                  <div className="flex items-center gap-5">
-                                    <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-primary">
-                                       <DollarSign className="h-5 w-5" />
+                                    <div className={cn(
+                                      "p-3 rounded-xl border border-white/10",
+                                      txn.status === 'FAILED' ? "text-red-400" : "text-primary"
+                                    )}>
+                                       {txn.status === 'FAILED' ? <AlertTriangle className="h-5 w-5" /> : <DollarSign className="h-5 w-5" />}
                                     </div>
                                     <div className="space-y-1">
-                                       <p className="text-lg font-bold text-white uppercase">${txn.amount}</p>
-                                       <p className="text-[9px] text-muted-foreground font-mono truncate w-48">ID: {txn.txHash || 'INTERNAL'}</p>
+                                       <p className="text-lg font-bold text-white uppercase">${txn.amount || '0.00'}</p>
+                                       <p className="text-[9px] text-muted-foreground font-mono truncate w-48">Audit: {txn.auditId || txn.id}</p>
                                     </div>
                                  </div>
                                  <div className="text-right">
-                                    <Badge variant="outline" className="text-[8px] uppercase border-green-500/20 text-green-400">{txn.status}</Badge>
+                                    <Badge variant="outline" className={cn(
+                                      "text-[8px] uppercase",
+                                      txn.status === 'COMPLETED' ? "border-green-500 text-green-400" : 
+                                      txn.status === 'FAILED' ? "border-red-500 text-red-400" :
+                                      "border-accent text-accent"
+                                    )}>{txn.status}</Badge>
                                     <p className="text-[10px] text-muted-foreground font-mono mt-1">{new Date(txn.timestamp).toLocaleTimeString()}</p>
                                  </div>
                               </div>
