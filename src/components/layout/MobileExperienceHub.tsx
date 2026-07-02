@@ -1,16 +1,14 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   Smartphone, 
-  X, 
   Zap, 
   ShieldCheck, 
   Globe, 
   Activity, 
   ArrowRight,
-  Loader2,
   Signal,
   Wifi,
   Battery
@@ -30,20 +28,97 @@ import { cn } from "@/lib/utils";
 
 export function MobileExperienceHub() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [position, setPosition] = useState({ x: -24, y: -24 }); // Relative to bottom-right
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-hide logic
+  useEffect(() => {
+    const handleActivity = () => {
+      setIsVisible(true);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        if (!isOpen && !isDragging) setIsVisible(false);
+      }, 5000);
+    };
+
+    window.addEventListener("mousemove", handleActivity);
+    window.addEventListener("touchstart", handleActivity);
+    handleActivity();
+
+    return () => {
+      window.removeEventListener("mousemove", handleActivity);
+      window.removeEventListener("touchstart", handleActivity);
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [isOpen, isDragging]);
+
+  // Dragging logic
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    dragStart.current = { x: clientX - position.x, y: clientY - position.y };
+    e.stopPropagation();
+  };
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDragging) return;
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      setPosition({
+        x: clientX - dragStart.current.x,
+        y: clientY - dragStart.current.y
+      });
+    };
+
+    const handleUp = () => setIsDragging(false);
+
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMove);
+      window.addEventListener("mouseup", handleUp);
+      window.addEventListener("touchmove", handleMove);
+      window.addEventListener("touchend", handleUp);
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", handleUp);
+    };
+  }, [isDragging]);
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100]">
+    <div 
+      className={cn(
+        "fixed z-[100] transition-opacity duration-500",
+        isVisible ? "opacity-100" : "opacity-20 hover:opacity-100",
+        isDragging ? "cursor-grabbing" : "cursor-grab"
+      )}
+      style={{ 
+        right: position.x < 0 ? `${Math.abs(position.x)}px` : 'auto',
+        left: position.x >= 0 ? `${position.x}px` : 'auto',
+        bottom: `${Math.abs(position.y)}px`,
+        touchAction: 'none'
+      }}
+      onMouseDown={handleMouseDown}
+      onTouchStart={handleMouseDown}
+    >
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <Button 
-            className="h-14 w-14 rounded-full bg-accent text-background shadow-2xl cyan-glow animate-float hover:scale-110 transition-transform group p-0"
+            className="h-14 w-14 rounded-full bg-accent text-background shadow-2xl cyan-glow animate-float hover:scale-110 transition-transform group p-0 pointer-events-auto"
             title="Mobile OS Experience"
+            onClick={(e) => isDragging && e.preventDefault()}
           >
             <Smartphone className="h-6 w-6 group-hover:rotate-12 transition-transform" />
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-4xl bg-background/95 backdrop-blur-2xl border-white/5 p-0 overflow-hidden sm:rounded-3xl shadow-[0_0_100px_rgba(0,242,255,0.15)]">
-          {/* Accessibility Headers */}
           <DialogHeader className="sr-only">
             <DialogTitle>Mobile Experience Hub</DialogTitle>
             <DialogDescription>
@@ -52,7 +127,6 @@ export function MobileExperienceHub() {
           </DialogHeader>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 h-full min-h-[700px]">
-            {/* Info Panel */}
             <div className="p-10 flex flex-col justify-center space-y-8 bg-accent/5 border-r border-white/5">
               <div className="space-y-4">
                 <Badge className="bg-accent/10 text-accent border-accent/20 uppercase tracking-[0.4em] text-[10px] font-bold">
@@ -92,7 +166,6 @@ export function MobileExperienceHub() {
               </div>
             </div>
 
-            {/* iPhone Mockup Panel */}
             <div className="relative bg-black flex items-center justify-center p-10">
               <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, #00f2ff 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
               
@@ -101,7 +174,6 @@ export function MobileExperienceHub() {
                   <div className="iphone-island" />
                 </div>
                 <div className="iphone-screen">
-                  {/* Status Bar */}
                   <div className="absolute top-0 left-0 w-full h-10 px-8 flex justify-between items-center z-50">
                     <span className="text-[10px] font-bold text-white">9:41</span>
                     <div className="flex items-center gap-1.5 opacity-80">
@@ -111,7 +183,6 @@ export function MobileExperienceHub() {
                     </div>
                   </div>
 
-                  {/* App Content Simulation */}
                   <div className="w-full h-full bg-[#13151a] p-6 pt-14 space-y-6 overflow-y-auto scrollbar-hide">
                     <div className="flex justify-between items-center">
                       <Logo size="sm" />
@@ -152,7 +223,6 @@ export function MobileExperienceHub() {
                        ))}
                     </div>
 
-                    {/* App Navigation Sim */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] h-12 rounded-2xl bg-background/80 backdrop-blur-md border border-white/10 flex items-center justify-around px-2 shadow-2xl">
                        <Globe className="h-4 w-4 text-accent" />
                        <Activity className="h-4 w-4 text-muted-foreground" />
@@ -163,7 +233,6 @@ export function MobileExperienceHub() {
                 </div>
               </div>
 
-              {/* Decorative Glow */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-accent/20 rounded-full blur-[100px] pointer-events-none" />
             </div>
           </div>

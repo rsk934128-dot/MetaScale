@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   Zap, 
   BrainCircuit, 
@@ -11,8 +11,6 @@ import {
   ChevronRight,
   LayoutGrid,
   Search,
-  MessageSquare,
-  Activity,
   Milestone
 } from "lucide-react";
 import { 
@@ -62,14 +60,91 @@ const QUICK_LINKS = [
 
 export function GlobalQuickAccess() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [position, setPosition] = useState({ x: 24, y: -24 }); // Relative to bottom-left
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-hide logic
+  useEffect(() => {
+    const handleActivity = () => {
+      setIsVisible(true);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        if (!isOpen && !isDragging) setIsVisible(false);
+      }, 5000);
+    };
+
+    window.addEventListener("mousemove", handleActivity);
+    window.addEventListener("touchstart", handleActivity);
+    handleActivity();
+
+    return () => {
+      window.removeEventListener("mousemove", handleActivity);
+      window.removeEventListener("touchstart", handleActivity);
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [isOpen, isDragging]);
+
+  // Dragging logic
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    dragStart.current = { x: clientX - position.x, y: clientY - position.y };
+    e.stopPropagation();
+  };
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDragging) return;
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      setPosition({
+        x: clientX - dragStart.current.x,
+        y: clientY - dragStart.current.y
+      });
+    };
+
+    const handleUp = () => setIsDragging(false);
+
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMove);
+      window.addEventListener("mouseup", handleUp);
+      window.addEventListener("touchmove", handleMove);
+      window.addEventListener("touchend", handleUp);
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", handleUp);
+    };
+  }, [isDragging]);
 
   return (
-    <div className="fixed bottom-6 left-6 z-[100]">
+    <div 
+      className={cn(
+        "fixed z-[100] transition-opacity duration-500",
+        isVisible ? "opacity-100" : "opacity-20 hover:opacity-100",
+        isDragging ? "cursor-grabbing" : "cursor-grab"
+      )}
+      style={{ 
+        left: `${position.x}px`, 
+        bottom: `${Math.abs(position.y)}px`,
+        touchAction: 'none'
+      }}
+      onMouseDown={handleMouseDown}
+      onTouchStart={handleMouseDown}
+    >
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <Button 
-            className="h-14 w-14 rounded-full bg-primary text-white shadow-2xl blue-glow animate-float hover:scale-110 transition-transform group p-0 border-2 border-primary/20"
+            className="h-14 w-14 rounded-full bg-primary text-white shadow-2xl blue-glow animate-float hover:scale-110 transition-transform group p-0 border-2 border-primary/20 pointer-events-auto"
             title="Open Sovereign Core"
+            onClick={(e) => isDragging && e.preventDefault()}
           >
             <Logo size="sm" animated={true} className="text-white" />
           </Button>
