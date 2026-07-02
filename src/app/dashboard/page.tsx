@@ -137,7 +137,7 @@ export default function SovereignControlPlane() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-            <div className="lg:col-span-8 space-y-6">
+            <div className="lg:col-span-7 space-y-6">
                <Card className="glass-panel border-white/5 relative overflow-hidden h-[300px] md:h-[500px] flex flex-col">
                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #00f2ff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
                   <CardHeader className="border-b border-white/5 bg-white/5 relative z-10 p-4">
@@ -176,7 +176,7 @@ export default function SovereignControlPlane() {
                </Card>
             </div>
 
-            <div className="lg:col-span-4 space-y-6">
+            <div className="lg:col-span-5 space-y-6">
                <Card className="glass-panel border-accent/20 bg-accent/5 shadow-2xl h-[400px] md:h-[500px] flex flex-col">
                   <CardHeader className="p-4 md:p-6 border-b border-white/10">
                      <CardTitle className="text-xs md:text-sm uppercase tracking-[0.2em] flex items-center gap-2 text-accent">
