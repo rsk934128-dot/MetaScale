@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -36,7 +37,8 @@ import {
   FileSearch,
   Smartphone,
   MessageSquare,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Trophy
 } from "lucide-react";
 import {
   Sidebar,
@@ -72,6 +74,7 @@ const civicNav = [
   { icon: TrendingUp, label: "Insights Hub", href: "/insights" },
   { icon: Waves, label: "Civic Intelligence", href: "/civic" },
   { icon: Music2, label: "Media Intelligence", href: "/media" },
+  { icon: Trophy, label: "FIFA Live Hub", href: "/fifa-hub" },
 ];
 
 const financialNav = [

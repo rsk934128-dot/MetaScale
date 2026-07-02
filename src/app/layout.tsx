@@ -1,3 +1,4 @@
+
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -11,6 +12,7 @@ import { GlobalQuickAccess } from "@/components/layout/GlobalQuickAccess";
 import { StandardsQuickButton } from "@/components/layout/StandardsQuickButton";
 import { SystemPermissionGuard } from "@/components/layout/SystemPermissionGuard";
 import { PersistentStandardsPortal } from "@/components/layout/PersistentStandardsPortal";
+import { FifaHubPortal } from "@/components/layout/FifaHubPortal";
 import { TonProvider } from "@/components/finance/TonProvider";
 import Script from 'next/script';
 
@@ -148,6 +150,7 @@ export default function RootLayout({
                 <SidebarProvider>
                   {children}
                   <PersistentStandardsPortal />
+                  <FifaHubPortal />
                   <MobileExperienceHub />
                   <GlobalQuickAccess />
                   <StandardsQuickButton />
