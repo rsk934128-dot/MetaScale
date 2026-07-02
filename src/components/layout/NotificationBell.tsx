@@ -48,10 +48,10 @@ export function NotificationBell() {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'CRITICAL': return <ShieldAlert className="h-5 w-5 text-red-500" />;
-      case 'WARNING': return <Zap className="h-5 w-5 text-yellow-500" />;
-      case 'DIRECTIVE': return <Mail className="h-5 w-5 text-accent" />;
-      default: return <Info className="h-5 w-5 text-blue-400" />;
+      case 'CRITICAL': return <ShieldAlert className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />;
+      case 'WARNING': return <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />;
+      case 'DIRECTIVE': return <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />;
+      default: return <Info className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />;
     }
   };
 
@@ -61,98 +61,98 @@ export function NotificationBell() {
         <Button variant="ghost" size="icon" className="relative hover:bg-white/5 transition-all group">
           <Bell className="h-5 w-5 text-muted-foreground group-hover:text-accent transition-colors" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-4 min-w-4 p-1 flex items-center justify-center bg-accent text-background font-bold text-[8px] animate-pulse border-2 border-background">
+            <Badge className="absolute -top-1 -right-1 h-3.5 min-w-[14px] p-0.5 flex items-center justify-center bg-accent text-background font-bold text-[7px] animate-pulse border-2 border-background">
               {unreadCount}
             </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[420px] glass-panel border-white/5 p-0 overflow-hidden">
-        <div className="p-5 border-b border-white/5 flex items-center justify-between bg-white/5">
-          <DropdownMenuLabel className="p-0 text-sm font-headline font-bold uppercase tracking-widest text-accent">
+      <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-[380px] md:w-[420px] glass-panel border-white/5 p-0 overflow-hidden">
+        <div className="p-3 sm:p-5 border-b border-white/5 flex items-center justify-between bg-white/5">
+          <DropdownMenuLabel className="p-0 text-[10px] sm:text-sm font-headline font-bold uppercase tracking-widest text-accent">
             Sovereign Mesh Directives
           </DropdownMenuLabel>
-          <Badge variant="outline" className="text-[9px] font-mono border-accent/30 text-accent uppercase">
-            {unreadCount} New Signals
+          <Badge variant="outline" className="text-[7px] sm:text-[9px] font-mono border-accent/30 text-accent uppercase px-1.5 py-0">
+            {unreadCount} New
           </Badge>
         </div>
-        <ScrollArea className="h-[450px]">
-          <div className="p-2">
+        <ScrollArea className="h-[350px] sm:h-[450px]">
+          <div className="p-1.5 sm:p-2">
             {notifications && notifications.length > 0 ? (
               notifications.map((notif) => (
                 <div 
                   key={notif.id} 
                   className={cn(
-                    "p-4 mb-2 rounded-xl border transition-all group relative flex gap-4",
+                    "p-2.5 sm:p-4 mb-1.5 rounded-lg sm:rounded-xl border transition-all group relative flex gap-3 sm:gap-4",
                     !notif.read ? "bg-accent/10 border-accent/20 shadow-[0_0_15px_rgba(0,242,255,0.05)]" : "bg-transparent border-white/5 opacity-50"
                   )}
                 >
                   <div className="shrink-0 mt-0.5">
                     <div className={cn(
-                      "p-2 rounded-lg bg-black/40 border border-white/5",
+                      "p-1.5 sm:p-2 rounded-lg bg-black/40 border border-white/5",
                       !notif.read && "border-accent/20"
                     )}>
                       {getTypeIcon(notif.type)}
                     </div>
                   </div>
                   
-                  <div className="flex-1 space-y-1.5 pr-8">
+                  <div className="flex-1 space-y-1 pr-6 sm:pr-8">
                     <div className="flex justify-between items-start">
-                      <p className="text-sm font-bold text-white uppercase tracking-tight leading-none">{notif.title}</p>
+                      <p className="text-[11px] sm:text-sm font-bold text-white uppercase tracking-tight leading-none">{notif.title}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed italic line-clamp-3">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed italic line-clamp-2 sm:line-clamp-3">
                       {notif.message}
                     </p>
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[9px] font-mono text-muted-foreground/60 uppercase">
-                        Seal: {notif.id.substring(0, 14)}...
+                    <div className="flex items-center justify-between pt-0.5">
+                      <span className="text-[7px] sm:text-[9px] font-mono text-muted-foreground/60 uppercase">
+                        Seal: {notif.id.substring(0, 10)}...
                       </span>
-                      <span className="text-[9px] font-bold text-accent/50">
+                      <span className="text-[7px] sm:text-[9px] font-bold text-accent/50">
                         {new Date(notif.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   </div>
 
-                  <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     {!notif.read && (
                       <Button 
                         size="icon" 
                         variant="outline" 
-                        className="h-8 w-8 rounded-lg bg-accent/20 border-accent/30 text-accent hover:bg-accent hover:text-background"
+                        className="h-6 w-6 sm:h-8 sm:w-8 rounded-md bg-accent/20 border-accent/30 text-accent hover:bg-accent hover:text-background"
                         onClick={() => markAsRead(notif.id)}
                         title="Authorize Sync"
                       >
-                        <Check className="h-4 w-4" />
+                        <Check className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     )}
                     <Button 
                       size="icon" 
                       variant="outline" 
-                      className="h-8 w-8 rounded-lg bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white"
+                      className="h-6 w-6 sm:h-8 sm:w-8 rounded-md bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white"
                       onClick={() => deleteNotification(notif.id)}
                       title="Isolate Log"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="h-[350px] flex flex-col items-center justify-center text-center p-6 space-y-4">
-                <div className="p-4 rounded-full bg-secondary/30 border border-white/5">
-                  <Bell className="h-10 w-10 text-muted-foreground/20" />
+              <div className="h-[250px] sm:h-[350px] flex flex-col items-center justify-center text-center p-6 space-y-4">
+                <div className="p-3 rounded-full bg-secondary/30 border border-white/5">
+                  <Bell className="h-6 w-6 sm:h-10 sm:w-10 text-muted-foreground/20" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground">No Active Directives</p>
-                  <p className="text-[10px] text-muted-foreground/40 italic">Global Mesh monitoring optimal...</p>
+                  <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground">No Signals</p>
+                  <p className="text-[8px] sm:text-[10px] text-muted-foreground/40 italic">Mesh monitoring optimal...</p>
                 </div>
               </div>
             )}
           </div>
         </ScrollArea>
         <DropdownMenuSeparator className="bg-white/5 m-0" />
-        <div className="p-3 bg-white/5">
-          <Button variant="ghost" className="w-full h-10 text-[10px] font-bold uppercase tracking-[0.2em] text-accent hover:bg-accent/10">
+        <div className="p-2 sm:p-3 bg-white/5">
+          <Button variant="ghost" className="w-full h-8 sm:h-10 text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-accent hover:bg-accent/10">
             Open Global Audit Trail
           </Button>
         </div>
