@@ -23,6 +23,7 @@ export function PersistentStandardsPortal() {
   const isVisible = pathname === '/shurukkha-standard';
   const targetUrl = "https://noor-nexus-rubel.vercel.app/";
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Transition effect for visibility
   useEffect(() => {
@@ -54,8 +55,20 @@ export function PersistentStandardsPortal() {
     }
   };
 
+  const toggleFullScreen = () => {
+    if (!containerRef.current) return;
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   return (
     <div 
+      ref={containerRef}
       className={cn(
         "fixed inset-0 z-[60] bg-background flex transition-all duration-500 ease-in-out",
         isVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none invisible"
@@ -90,6 +103,15 @@ export function PersistentStandardsPortal() {
                 <RefreshCw className={cn("mr-1.5 h-3.5 w-3.5", isLoading && "animate-spin")} />
                 <span className="hidden xs:inline">Sync Mesh Node</span>
                 <span className="xs:hidden">Sync</span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 text-[10px] uppercase font-bold p-2 text-muted-foreground hover:text-white"
+                onClick={toggleFullScreen}
+                title="Toggle Fullscreen"
+              >
+                <Maximize2 className="h-4 w-4" />
               </Button>
               <Button size="sm" variant="ghost" className="h-8 text-[10px] uppercase font-bold p-2 text-muted-foreground hover:text-white" asChild title="Open in new tab">
                 <a href={targetUrl} target="_blank" rel="noopener noreferrer">
@@ -136,7 +158,8 @@ export function PersistentStandardsPortal() {
                 setIsLoading(false);
               }}
               title="Shurukkha Standard Portal"
-              allow="geolocation; microphone; camera; midi; encrypted-media; autoplay; payment"
+              allow="geolocation; microphone; camera; midi; encrypted-media; autoplay; payment; fullscreen"
+              allowFullScreen
               sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads"
             />
 
