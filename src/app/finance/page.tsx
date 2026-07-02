@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -30,7 +29,8 @@ import {
   ExternalLink,
   Gem,
   Activity,
-  Link2
+  Link2,
+  Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,16 +46,17 @@ import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { generateTelegramLink } from "@/lib/telegram";
 import { PaymentLinkManager } from "@/components/finance/PaymentLinkManager";
+import { TonConnectButton, useTonAddress } from '@tonconnect/ui-react';
 
 export default function FinancialIntelligence() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { mode, emitEvent } = useKernel();
   const { toast } = useToast();
+  const tonAddress = useTonAddress();
   
   const [isMiniApp, setIsMiniApp] = useState(false);
-  const [isConnectingTon, setIsConnectingTon] = useState(false);
-  const [tonAddress, setTonAddress] = useState<string | null>(null);
+  const [isDepositing, setIsDepositing] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
@@ -78,14 +79,29 @@ export default function FinancialIntelligence() {
   const [payoutGateway, setPayoutGateway] = useState<'PAYPAL' | 'PRIYO_PAY' | 'PAYONEER' | 'TELEGRAM_WALLET'>('PRIYO_PAY');
   const [isPayoutProcessing, setIsPayoutProcessing] = useState(false);
 
-  const handleConnectTon = () => {
-    setIsConnectingTon(true);
-    setTimeout(() => {
-      setTonAddress("UQAr...pX92");
-      setIsConnectingTon(false);
-      toast({ title: "TON Wallet Connected", description: "Identity bound via @wallet bridge." });
-      emitEvent('FINANCE', 'TON_WALLET_CONNECTED', 3, { address: "UQAr...pX92" });
-    }, 1500);
+  // Mock Deposit Logic for Simulation
+  const handleDeposit = async () => {
+    if (!tonAddress) {
+      toast({ variant: "destructive", title: "Wallet Not Connected", description: "প্রথমে আপনার টেলিগ্রাম ওয়ালেট কানেক্ট করুন।" });
+      return;
+    }
+    setIsDepositing(true);
+    setTimeout(async () => {
+      if (userRef) {
+        await updateDoc(userRef, { balance: increment(50) });
+        await addDoc(collection(firestore!, 'events'), {
+          type: 'TON_DEPOSIT_RECEIVED',
+          plane: 'FINANCE',
+          status: 'COMPLETED',
+          amount: 50,
+          txHash: `0x${Math.random().toString(16).substr(2, 64)}`,
+          timestamp: Date.now()
+        });
+      }
+      setIsDepositing(false);
+      toast({ title: "Deposit Successful", description: "$50.00 has been added via TON Bridge." });
+      emitEvent('FINANCE', 'DEPOSIT_PROCESSED', 2, { method: 'TON', amount: 50 });
+    }, 2000);
   };
 
   const handleGlobalPayout = async () => {
@@ -140,12 +156,15 @@ export default function FinancialIntelligence() {
               Fiscal Command Hub
             </h1>
           </div>
-          <Badge variant="outline" className={cn(
-            "border-accent/30 text-accent font-mono text-[8px] md:text-[10px]",
-            profile?.plan === 'PRO' && "border-primary/50 text-primary"
-          )}>
-            {profile?.plan || 'FREE'}_NODE
-          </Badge>
+          <div className="flex items-center gap-2">
+            <TonConnectButton />
+            <Badge variant="outline" className={cn(
+              "hidden sm:flex border-accent/30 text-accent font-mono text-[8px] md:text-[10px]",
+              profile?.plan === 'PRO' && "border-primary/50 text-primary"
+            )}>
+              {profile?.plan || 'FREE'}_NODE
+            </Badge>
+          </div>
         </header>
 
         <main className="flex-1 p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-8">
@@ -187,15 +206,15 @@ export default function FinancialIntelligence() {
                       </p>
                       <div className="flex flex-wrap gap-3">
                         <Button 
-                          onClick={handleConnectTon} 
-                          disabled={isConnectingTon || !!tonAddress}
-                          className="h-9 bg-[#0088cc] hover:bg-[#0077b5] text-white font-bold uppercase text-[9px] tracking-widest px-4"
+                          onClick={handleDeposit} 
+                          disabled={isDepositing || !tonAddress}
+                          className="h-9 bg-accent text-background font-bold uppercase text-[9px] tracking-widest px-4 cyan-glow"
                         >
-                          {isConnectingTon ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Link2 className="mr-2 h-3 w-3" />}
-                          {tonAddress ? `TON: ${tonAddress}` : "Connect TON Wallet"}
+                          {isDepositing ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Plus className="mr-2 h-3 w-3" />}
+                          Deposit via TON
                         </Button>
                         {!profile?.telegramLinked && (
-                          <Button asChild className="bg-accent text-background font-bold uppercase tracking-widest text-[9px] h-9 px-4 cyan-glow">
+                          <Button asChild className="bg-secondary text-white font-bold uppercase tracking-widest text-[9px] h-9 px-4">
                              <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
                                 <Zap className="mr-2 h-3 w-3" /> Bind Gateway
                              </a>

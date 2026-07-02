@@ -11,6 +11,7 @@ import { GlobalQuickAccess } from "@/components/layout/GlobalQuickAccess";
 import { StandardsQuickButton } from "@/components/layout/StandardsQuickButton";
 import { SystemPermissionGuard } from "@/components/layout/SystemPermissionGuard";
 import { PersistentStandardsPortal } from "@/components/layout/PersistentStandardsPortal";
+import { TonProvider } from "@/components/finance/TonProvider";
 import Script from 'next/script';
 
 export const metadata: Metadata = {
@@ -141,14 +142,16 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <KernelProvider>
             <AuthGuard>
-              <SidebarProvider>
-                {children}
-                <PersistentStandardsPortal />
-                <MobileExperienceHub />
-                <GlobalQuickAccess />
-                <StandardsQuickButton />
-                <SystemPermissionGuard />
-              </SidebarProvider>
+              <TonProvider>
+                <SidebarProvider>
+                  {children}
+                  <PersistentStandardsPortal />
+                  <MobileExperienceHub />
+                  <GlobalQuickAccess />
+                  <StandardsQuickButton />
+                  <SystemPermissionGuard />
+                </SidebarProvider>
+              </TonProvider>
             </AuthGuard>
             <Toaster />
             <FirebaseErrorListener />
