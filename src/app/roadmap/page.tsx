@@ -47,15 +47,15 @@ import { useToast } from "@/hooks/use-toast";
 const ROADMAP_PHASES = [
   {
     id: "p1",
-    title: "Phase 1: Seed & Manual Desk",
+    title: "Phase 1: Seed & Manual Desk (Sirajganj Pilot)",
     status: "Completed",
     icon: ShieldCheck,
     date: "Q4 2023",
     progress: 100,
-    desc: "Focus on first 100 high-trust users. Payouts handled via Liquidity Desk.",
+    desc: "Bootstrapping for high-trust users in North Bengal. Manual settlements via Liquidity Desk.",
     items: [
-      "Manual bKash/Nagad Settlement",
-      "Trade License Compliance Check",
+      "Manual MFS (bKash/Nagad) Settlement",
+      "Trade License Compliance Validation",
       "Manual Ledger Reconciliation"
     ]
   },
@@ -66,11 +66,11 @@ const ROADMAP_PHASES = [
     icon: Network,
     date: "Q1 2024",
     progress: 100,
-    desc: "Server-authoritative ledger, exactly-once crediting, and webhook integration.",
+    desc: "Server-authoritative ledger with exactly-once crediting and deterministic state machine.",
     items: [
       "Firestore Hardened Security Rules",
-      "Transactional Balance Updates",
-      "Deterministic State Machine (CREATED->PAID->CREDITED)"
+      "Transactional Balance Updates (Atomic)",
+      "CREATED -> PAID -> CREDITED Transitions"
     ]
   },
   {
@@ -80,7 +80,7 @@ const ROADMAP_PHASES = [
     icon: Cpu,
     date: "Q2 2024",
     progress: 100,
-    desc: "Autonomous fiscal management, automated reconciliation, and forensic auditing.",
+    desc: "Autonomous fiscal management and automated reconciliation with exponential backoff.",
     items: [
       "Automated Reconciliation Cron Job",
       "Forensic Anomaly Dashboard",
@@ -92,9 +92,9 @@ const ROADMAP_PHASES = [
     title: "Phase 4: Operational Control & Playbooks",
     status: "Active",
     icon: ShieldAlert,
-    date: "Current Focus",
+    date: "Active 2026",
     progress: 85,
-    desc: "Embedded incident response playbooks, severity modeling, and emergency protocols.",
+    desc: "Building embedded incident playbooks for institutional reliability in high-risk zones.",
     items: [
       "Interactive Incident Runbooks",
       "Severity-based Escalation Matrix",
@@ -109,31 +109,31 @@ const READINESS_MATRIX = [
   { category: "Reconciliation", item: "Self-healing Worker Active", status: "PASS", icon: RefreshCw },
   { category: "Operations", item: "Embedded Incident Playbooks", status: "PASS", icon: FileSearch },
   { category: "Infra", item: "Anycast Latency < 15ms", status: "PASS", icon: Zap },
-  { category: "Compliance", item: "Gated Launch Protocol", status: "PASS", icon: ShieldCheck }
+  { category: "Compliance", item: "Identity Binding (NID/TIN)", status: "PASS", icon: ShieldCheck }
 ];
 
 const SOLVED_PROBLEMS = [
   { 
-    title: "Double Credit Prevention", 
-    solution: "Exactly-Once Ledger Logic via Firestore Transactions.",
+    title: "Exactly-Once Ledger", 
+    solution: "Prevents Double Credits via Firestore Transactions.",
     icon: CheckCircle,
     color: "text-green-400"
   },
   { 
     title: "Stuck Payment Recovery", 
-    solution: "Automated Self-healing Cron with Exponential Backoff.",
+    solution: "Self-healing Cron with Exponential Backoff logic.",
     icon: RefreshCw,
     color: "text-accent"
   },
   { 
     title: "Regulatory Compliance", 
-    solution: "Integrated Identity Binding (NID/TIN) for CIP rules.",
+    solution: "Identity Binding (NID/TIN) per Bangladesh Bank rules.",
     icon: ShieldCheck,
     color: "text-blue-400"
   },
   { 
     title: "Human Error in Ops", 
-    solution: "Embedded Incident Runbooks for guided problem resolution.",
+    solution: "Embedded Runbooks & Escalation Matrix for operators.",
     icon: Lightbulb,
     color: "text-yellow-400"
   }
@@ -209,13 +209,12 @@ export default function RoadmapPage() {
               From Internal Kernel to <span className="text-accent italic">Global Execution</span>
             </h2>
             <p className="text-muted-foreground text-sm italic">
-              "Phase 2.8: Building the operational playbooks for institutional reliability."
+              "Deploying resilient financial infra in Sirajganj and beyond."
             </p>
           </div>
 
-          {/* Solved Problems Section */}
           <section className="space-y-8">
-             <h3 className="text-xl font-headline font-bold uppercase tracking-widest text-white border-l-4 border-l-accent pl-4">What We Solve</h3>
+             <h3 className="text-xl font-headline font-bold uppercase tracking-widest text-white border-l-4 border-l-accent pl-4">Operational Invariants (What We Solve)</h3>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {SOLVED_PROBLEMS.map((problem, i) => (
                   <Card key={i} className="glass-panel border-white/5 hover:border-accent/30 transition-all">
@@ -235,7 +234,6 @@ export default function RoadmapPage() {
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
              <div className="xl:col-span-2 space-y-8">
-                {/* Phases Timeline */}
                 <div className="relative space-y-12 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-accent before:via-primary before:to-secondary/20">
                   {ROADMAP_PHASES.map((phase, idx) => (
                     <div key={phase.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group animate-fade-in" style={{ animationDelay: `${idx * 0.2}s` }}>
@@ -293,7 +291,6 @@ export default function RoadmapPage() {
              </div>
 
              <div className="space-y-6">
-                {/* Readiness Matrix Card */}
                 <Card className="glass-panel border-accent/20 bg-accent/5 sticky top-24">
                    <CardHeader className="border-b border-white/5">
                       <div className="flex justify-between items-center">
@@ -357,7 +354,7 @@ export default function RoadmapPage() {
                         {isLaunching ? "Preflight Active..." : isLive ? "Commercial Live" : "Authorize Global Launch"}
                       </Button>
                       <p className="text-[9px] text-muted-foreground text-center italic">
-                        "Preflight validates environment, playbooks, and ledger invariants before mode transition."
+                        "Preflight validates environment and ledger invariants for Sirajganj node."
                       </p>
                    </div>
                 </Card>
