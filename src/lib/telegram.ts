@@ -2,7 +2,7 @@
 /**
  * NoorNexus Telegram Gateway Utility
  * Handles communication with @Coolrubelbank2bot
- * Includes OTP support and Interactive Keyboards.
+ * Includes OTP support, Interactive Keyboards, and Financial Alerts.
  */
 
 const BOT_TOKEN = "7827860503:AAEVNXEe3mPUtPudIBT_S5aE1aHr56efaiA";
@@ -25,6 +25,32 @@ export async function sendTelegramMessage(chatId: string, text: string, options:
     console.error('Telegram Send Error:', error);
     return null;
   }
+}
+
+/**
+ * Sends a formatted financial alert for link generation or settlement.
+ */
+export async function sendFinancialAlert(chatId: string, type: 'LINK_CREATED' | 'SETTLED', data: any) {
+  let text = "";
+  
+  if (type === 'LINK_CREATED') {
+    text = `<b>🆕 NEW PAYMENT LINK GENERATED</b>\n\n` +
+           `<b>Brand:</b> ${data.brand}\n` +
+           `<b>Amount:</b> ${data.amount} ${data.currency}\n` +
+           `<b>Description:</b> ${data.description}\n` +
+           `<b>Mission:</b> ${data.mission}\n\n` +
+           `<b>🔗 Payment URL:</b>\n<code>${data.url}</code>\n\n` +
+           `এটি আপনার মার্চেন্ট নোডের মাধ্যমে সরাসরি সেটেলমেন্টের জন্য প্রস্তুত।`;
+  } else if (type === 'SETTLED') {
+    text = `<b>✅ PAYMENT SETTLED (T+0)</b>\n\n` +
+           `<b>Amount:</b> ${data.amount} ${data.currency}\n` +
+           `<b>Provider:</b> ${data.provider}\n` +
+           `<b>External ID:</b> <code>${data.externalTxnId}</code>\n` +
+           `<b>Seal:</b> <code>${data.seal}</code>\n\n` +
+           `আপনার ব্যালেন্স সফলভাবে আপডেট করা হয়েছে।`;
+  }
+
+  return await sendTelegramMessage(chatId, text);
 }
 
 /**

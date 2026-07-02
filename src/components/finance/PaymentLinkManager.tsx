@@ -26,14 +26,14 @@ import {
   Code2,
   Target,
   MoreVertical
-} from "lucide-react";
+} from "lucide-center";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { useUser, useFirestore, useCollection } from "@/firebase";
-import { collection, query, orderBy, limit, deleteDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
+import { collection, query, orderBy, limit, deleteDoc, doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -47,6 +47,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { sendFinancialAlert } from "@/lib/telegram";
 
 export function PaymentLinkManager() {
   const { user } = useUser();
@@ -92,6 +93,7 @@ export function PaymentLinkManager() {
 
     setIsCreating(true);
     const seal = `PAY_SEAL_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const linkUrl = `${window.location.origin}/checkout/${seal}`;
     
     const linkData = {
       id: seal,
@@ -129,21 +131,21 @@ export function PaymentLinkManager() {
         brand: formData.brand 
       });
 
-      // Audit Log for Forensic Engine
-      await setDoc(doc(firestore, 'events', `AUDIT_${seal}`), {
-        type: 'LINK_GENERATED',
-        plane: 'FINANCE',
-        status: 'COMPLETED',
-        payload: { seal, creator: user.uid, amount: formData.amount },
-        timestamp: Date.now(),
-        userId: user.uid
-      });
+      // Notify Telegram
+      const userSnap = await getDoc(doc(firestore, 'users', user.uid));
+      const userData = userSnap.data();
+      if (userData?.telegramLinked && userData?.telegramChatId) {
+        await sendFinancialAlert(userData.telegramChatId, 'LINK_CREATED', {
+          ...linkData,
+          url: linkUrl
+        });
+      }
 
-      toast({ title: "Handshake Successful", description: "আপনার ইউনিক পেমেন্ট লিংক জেনারেট হয়েছে।" });
+      toast({ title: "Handshake Successful", description: "আপনার পেমেন্ট লিংক জেনারেট হয়েছে এবং টেলিগ্রামে পাঠানো হয়েছে।" });
       setFormData({ ...formData, amount: "", description: "", mission: "" });
       setActiveTab("config");
     } catch (err) {
-      toast({ variant: "destructive", title: "Kernel Error", description: "Authorization failed during link persistence." });
+      toast({ variant: "destructive", title: "Kernel Error", description: "Authorization failed." });
     } finally {
       setIsCreating(false);
     }
@@ -239,7 +241,7 @@ export function PaymentLinkManager() {
                 </div>
 
                 <div className="space-y-2">
-                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">Offer/Product Name (Hindi/Eng)</Label>
+                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">Offer/Product Name</Label>
                    <Input 
                      placeholder="e.g. Premium Business License" 
                      className="bg-secondary/30 border-white/5 h-11 text-sm italic"
@@ -258,7 +260,6 @@ export function PaymentLinkManager() {
                      value={formData.mission}
                      onChange={(e) => setFormData({...formData, mission: e.target.value})}
                    />
-                   <p className="text-[8px] text-muted-foreground italic">এটি শেয়ার করা লিঙ্কে সুন্দরভাবে দেখা যাবে।</p>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
@@ -266,7 +267,7 @@ export function PaymentLinkManager() {
                       <p className="text-[10px] font-bold text-white uppercase flex items-center gap-2">
                          <ShieldCheck className="h-3 w-3 text-accent" /> Institutional Verify
                       </p>
-                      <p className="text-[8px] text-muted-foreground italic">प्रमाणित विक्रेता (Verified via Mesh)</p>
+                      <p className="text-[8px] text-muted-foreground italic">Verified via Mesh</p>
                    </div>
                    <Switch checked={formData.isVerified} onCheckedChange={(v) => setFormData({...formData, isVerified: v})} />
                 </div>
@@ -287,9 +288,6 @@ export function PaymentLinkManager() {
                      value={formData.webhookUrl}
                      onChange={(e) => setFormData({...formData, webhookUrl: e.target.value})}
                    />
-                   <p className="text-[8px] text-muted-foreground italic leading-relaxed">
-                     Every successful payment will trigger a POST request with HMAC SHA-256 signature.
-                   </p>
                 </div>
 
                 <div className="space-y-3">
@@ -317,27 +315,12 @@ export function PaymentLinkManager() {
                          <p className="text-2xl font-headline font-bold text-accent">{formData.amount || "0.00"} <span className="text-sm">{formData.currency}</span></p>
                       </div>
                    </div>
-                   
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                         <p className="text-[8px] uppercase font-bold text-muted-foreground">Type</p>
-                         <Badge variant="outline" className="text-[8px] border-white/10 uppercase">
-                            {formData.isSingleUse ? "Single-Use" : "Recurring"}
-                         </Badge>
-                      </div>
-                      <div className="space-y-1">
-                         <p className="text-[8px] uppercase font-bold text-muted-foreground">Security</p>
-                         <Badge variant="outline" className="text-[8px] border-green-500/20 text-green-400 uppercase">
-                            ISO 20022 ready
-                         </Badge>
-                      </div>
-                   </div>
                 </div>
 
                 <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 flex gap-3">
                    <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
                    <p className="text-[9px] text-white/60 leading-relaxed italic">
-                      Generate a deterministic payment seal indexed on Node-04. This action will create a permanent audit log.
+                      Generate a payment seal. A notification with the URL will be sent to your Telegram.
                    </p>
                 </div>
 
@@ -364,7 +347,6 @@ export function PaymentLinkManager() {
                 <LinkIcon className="h-4 w-4 text-primary" />
                 Active Directives
               </CardTitle>
-              <CardDescription className="text-[9px] uppercase font-bold text-muted-foreground/60">Real-time settlement signals</CardDescription>
             </div>
             <Badge variant="outline" className="text-[8px] font-mono border-white/10 opacity-50">{links?.length || 0} SEALS</Badge>
           </CardHeader>
@@ -380,7 +362,7 @@ export function PaymentLinkManager() {
                       <div key={link.id} className="p-6 flex items-center justify-between gap-6 hover:bg-white/5 transition-all group relative">
                          <div className="flex items-center gap-5">
                             <div className={cn(
-                              "w-14 h-14 rounded-2xl border flex items-center justify-center shrink-0 transition-all group-hover:scale-110",
+                              "w-14 h-14 rounded-2xl border flex items-center justify-center shrink-0",
                               link.status === 'PAID' ? "bg-green-500/10 border-green-500/30 text-green-400" : "bg-primary/10 border-primary/20 text-primary"
                             )}>
                                <ShoppingBag className="h-7 w-7" />
@@ -388,23 +370,13 @@ export function PaymentLinkManager() {
                             <div className="space-y-1.5 min-w-0">
                                <div className="flex items-center gap-2">
                                   <p className="text-xl font-headline font-bold text-white tracking-tighter">{link.amount} <span className="text-[10px] font-body text-muted-foreground">{link.currency}</span></p>
-                                  {link.isVerified && (
-                                     <Badge className="bg-accent/10 text-accent text-[7px] border-accent/20 uppercase h-4 px-1">Verified</Badge>
-                                  )}
                                </div>
                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
                                   <span className="truncate max-w-[200px]">{link.description}</span>
                                   <span>•</span>
                                   <span className="text-accent/60">{link.brand}</span>
                                </div>
-                               {link.mission && (
-                                 <p className="text-[9px] text-accent/80 italic line-clamp-1 flex items-center gap-1">
-                                   <Target className="h-2.5 w-2.5" /> {link.mission}
-                                 </p>
-                               )}
-                               <div className="flex items-center gap-2 text-[9px] font-mono text-white/30 truncate">
-                                  Seal: {link.seal}
-                               </div>
+                               <div className="text-[9px] font-mono text-white/30 truncate">Seal: {link.seal}</div>
                             </div>
                          </div>
                          
@@ -420,52 +392,20 @@ export function PaymentLinkManager() {
                                  Copy URL
                               </Button>
                             ) : (
-                               <div className="text-right">
-                                  <Badge className="bg-green-500/20 text-green-400 text-[10px] uppercase px-4 py-2 font-bold shadow-[0_0_15px_rgba(34,197,94,0.1)]">Settled T+0</Badge>
-                                  <p className="text-[8px] text-muted-foreground mt-1 uppercase font-bold">Ledger Synced</p>
-                               </div>
+                               <Badge className="bg-green-500/20 text-green-400 text-[10px] uppercase px-4 py-2 font-bold shadow-[0_0_15px_rgba(34,197,94,0.1)]">Settled T+0</Badge>
                             )}
-                            <DropdownMenu>
-                               <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-10 w-10 text-white/20 hover:text-white">
-                                     <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                               </DropdownMenuTrigger>
-                               <DropdownMenuContent align="end" className="glass-panel border-white/5">
-                                  <DropdownMenuItem className="text-[10px] font-bold uppercase tracking-widest" asChild>
-                                     <a href={`${window.location.origin}/checkout/${link.seal}`} target="_blank" rel="noopener noreferrer">
-                                        <ExternalLink className="mr-2 h-3 w-3" /> Preview
-                                     </a>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    className="text-[10px] font-bold uppercase tracking-widest text-red-400"
-                                    onClick={() => handleDelete(link.id, link.seal)}
-                                  >
-                                     <Trash2 className="mr-2 h-3 w-3" /> Revoke Seal
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
                          </div>
                       </div>
                     ))}
                  </div>
                ) : (
                  <div className="h-60 flex flex-col items-center justify-center text-[10px] uppercase font-bold text-muted-foreground opacity-20 space-y-6">
-                    <div className="p-5 rounded-full bg-secondary/20 border border-dashed border-white/10">
-                       <Terminal className="h-12 w-12" />
-                    </div>
+                    <Terminal className="h-12 w-12" />
                     <p className="tracking-[0.4em]">Listening for Mesh Signals...</p>
                  </div>
                )}
             </ScrollArea>
           </CardContent>
-          <CardFooter className="bg-secondary/20 border-t border-white/5 p-4 flex justify-between items-center">
-             <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[9px] font-bold text-muted-foreground uppercase">Node-04 Active</span>
-             </div>
-             <p className="text-[8px] uppercase font-bold text-muted-foreground/40 italic">Audit Track: 0x4f82...e911</p>
-          </CardFooter>
         </Card>
       </div>
     </div>
