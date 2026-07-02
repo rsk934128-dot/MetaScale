@@ -1,4 +1,3 @@
-
 'use client';
 
 import { ServiceStatus, BootStatus } from './types';
@@ -14,8 +13,9 @@ import { ServiceStatus, BootStatus } from './types';
 export type ServiceName = 'AuthService' | 'WalletLedger' | 'BankingAPI' | 'ShieldEngine';
 
 export class SovereignBootManager {
-  private isSystemReady: boolean = false;
-  private services: Record<ServiceName, ServiceStatus> = {
+  public isSystemReady: boolean = false;
+  public lastBootTimestamp: number | null = null;
+  public services: Record<ServiceName, ServiceStatus> = {
     'AuthService': 'OFFLINE',
     'WalletLedger': 'OFFLINE',
     'BankingAPI': 'OFFLINE',
@@ -44,6 +44,7 @@ export class SovereignBootManager {
       await this.initAuthService();
 
       this.isSystemReady = true;
+      this.lastBootTimestamp = Date.now();
       console.log("%c[Boot] System Boot Successful: All services active.", "color: #4ade80; font-weight: bold;");
       
       return true;
@@ -58,7 +59,6 @@ export class SovereignBootManager {
     this.services['ShieldEngine'] = 'INITIALIZING';
     console.log("[ShieldEngine] Initializing security core...");
     
-    // Simulate complex RSA/AES key generation and rotation
     return new Promise((resolve) => {
       setTimeout(() => {
         this.services['ShieldEngine'] = 'ONLINE';
@@ -112,7 +112,7 @@ export class SovereignBootManager {
    */
   private triggerFailsafeProtocol(error: Error) {
     console.log("%c[Failsafe] Activating emergency containment...", "color: #f87171; font-weight: bold;");
-    console.log(`[Failsafe] Root Cause: ${error.message}`);
+    console.log(`[Failsafe] Reason: ${error.message}`);
     
     // Set all services to failed
     Object.keys(this.services).forEach(key => {
