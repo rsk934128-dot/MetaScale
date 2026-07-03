@@ -5,10 +5,24 @@
  * Includes OTP support, Interactive Keyboards, and Financial Alerts.
  */
 
-const BOT_TOKEN = "7827860503:AAEVNXEe3mPUtPudIBT_S5aE1aHr56efaiA";
+// Securely fetch the token from environment variables
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const BASE_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
+/**
+ * Validate if the token is available to prevent runtime errors
+ */
+function checkConfig() {
+  if (!BOT_TOKEN) {
+    console.error(">>> [KERNEL_CRITICAL] TELEGRAM_BOT_TOKEN is missing from environment variables.");
+    return false;
+  }
+  return true;
+}
+
 export async function sendTelegramMessage(chatId: string, text: string, options: any = {}) {
+  if (!checkConfig()) return null;
+  
   try {
     const response = await fetch(`${BASE_URL}/sendMessage`, {
       method: 'POST',
@@ -132,6 +146,8 @@ export function generateTelegramLink(userId: string) {
 }
 
 export async function setTelegramWebhook(url: string) {
+  if (!checkConfig()) return null;
+  
   try {
     const webhookUrl = `${url}/api/telegram/webhook`;
     const response = await fetch(`${BASE_URL}/setWebhook`, {
