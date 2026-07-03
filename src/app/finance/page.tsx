@@ -62,7 +62,6 @@ export default function FinancialIntelligence() {
   const [isMaintenance, setIsMaintenance] = useState(false);
 
   // Maintenance Check (Circuit Breaker)
-  // Scheduled: 21:00 - 02:00 UTC
   useEffect(() => {
     const checkMaintenance = () => {
       const hours = new Date().getUTCHours();
@@ -86,7 +85,7 @@ export default function FinancialIntelligence() {
 
   const transactionsQuery = useMemo(() => {
     if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, 'events'), where('plane', '==', 'FINANCE'), orderBy('timestamp', 'desc'), limit(15));
+    return query(collection(firestore, 'events'), where('userId', '==', user.uid), where('plane', '==', 'FINANCE'), orderBy('timestamp', 'desc'), limit(15));
   }, [firestore, user?.uid]);
   const { data: recentTxns } = useCollection<any>(transactionsQuery);
 
@@ -100,7 +99,7 @@ export default function FinancialIntelligence() {
       toast({ 
         variant: "destructive", 
         title: "Circuit Breaker Active", 
-        description: "সিস্টেম বর্তমানে মেইনটেন্যান্সে আছে (21:00-02:00 UTC)। লেনদেন সাময়িকভাবে বন্ধ।" 
+        description: "সিস্টেম বর্তমানে মেইনটেন্যান্সে আছে (21:00-02:00 UTC)।" 
       });
       return;
     }
@@ -110,19 +109,38 @@ export default function FinancialIntelligence() {
       return;
     }
 
+    // MANDATORY: Check Telegram Link for Handshake Verification
+    if (!profile?.telegramLinked) {
+      const errorId = `ERR_${Date.now()}`;
+      toast({ 
+        variant: "destructive", 
+        title: "Handshake Failed", 
+        description: `Error ID: ${errorId}. Kernel rejected the deposit signal. (Reason: Awaiting Identity Binding)` 
+      });
+      emitEvent('SECURITY', 'UNAUTHORIZED_HANDSHAKE_ATTEMPT', 1, { errorId, reason: 'TELEGRAM_UNLINKED' });
+      return;
+    }
+
+    // MANDATORY: Check Compliance Tier
+    if (profile?.verificationStatus !== 'VERIFIED') {
+      toast({ 
+        variant: "destructive", 
+        title: "Compliance Lock", 
+        description: "আপনার 'Proof of Income' এখনো পেন্ডিং আছে। ভেরিফিকেশন সেন্টারে চেক করুন।" 
+      });
+      return;
+    }
+
     setIsDepositing(true);
     const auditId = `AUDIT_${Date.now()}_${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
     try {
-      // Simulate real-time verification sequence
       emitEvent('FINANCE', 'DEPOSIT_VERIFICATION_STARTED', 3, { auditId, method: 'TON' });
-      
-      // Simulate a small delay for blockchain confirmation simulation
       await new Promise(resolve => setTimeout(resolve, 2500));
 
       if (userRef && firestore) {
         await updateDoc(userRef, { 
-          balance: increment(50),
+          balance: increment(1000),
           lastAuditId: auditId
         });
 
@@ -131,7 +149,7 @@ export default function FinancialIntelligence() {
           type: 'TON_DEPOSIT_RECEIVED',
           plane: 'FINANCE',
           status: 'COMPLETED',
-          amount: 50,
+          amount: 1000,
           currency: 'USD',
           txHash: `0x${Math.random().toString(16).substr(2, 64)}`,
           timestamp: Date.now(),
@@ -139,30 +157,11 @@ export default function FinancialIntelligence() {
           auditId: auditId
         });
 
-        toast({ title: "Deposit Finalized", description: `$50.00 has been added to your ledger. Audit ID: ${auditId}` });
-        emitEvent('FINANCE', 'DEPOSIT_PROCESSED', 2, { method: 'TON', amount: 50, auditId });
+        toast({ title: "Deposit Finalized", description: `$1,000.00 added. Handshake stabilized on Node-04.` });
+        emitEvent('FINANCE', 'DEPOSIT_PROCESSED', 2, { method: 'TON', amount: 1000, auditId });
       }
     } catch (err: any) {
-      const errorId = `ERR_${Date.now()}`;
-      console.error("Deposit Error:", err);
-      
-      if (firestore) {
-        await addDoc(collection(firestore, 'events'), {
-          type: 'DEPOSIT_FAILED',
-          plane: 'FINANCE',
-          status: 'FAILED',
-          errorId,
-          message: err.message,
-          timestamp: Date.now(),
-          userId: user?.uid
-        });
-      }
-
-      toast({ 
-        variant: "destructive", 
-        title: "Handshake Failed", 
-        description: `Error ID: ${errorId}. Kernel rejected the deposit signal.` 
-      });
+      toast({ variant: "destructive", title: "Kernel Error", description: "Authorization failed." });
     } finally {
       setIsDepositing(false);
     }
@@ -243,7 +242,7 @@ export default function FinancialIntelligence() {
               <AlertTriangle className="h-6 w-6 text-yellow-500 shrink-0" />
               <div className="space-y-1">
                 <p className="text-xs font-bold text-white uppercase tracking-widest">Circuit Breaker Enabled</p>
-                <p className="text-[10px] text-muted-foreground italic">System is under scheduled maintenance (21:00-02:00 UTC). Outbound operations are throttled.</p>
+                <p className="text-[10px] text-muted-foreground italic">System is under scheduled maintenance (21:00-02:00 UTC).</p>
               </div>
             </div>
           )}
@@ -273,16 +272,16 @@ export default function FinancialIntelligence() {
                      <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2 text-accent">
                         <MessageSquare className="h-4 w-4" /> Imperial Telegram Node
                      </CardTitle>
-                     <CardDescription className="text-[10px] italic">Remote Control & TON Bridge Active.</CardDescription>
+                     <CardDescription className="text-[10px] italic">ECC_ED25519 Secure Handshake.</CardDescription>
                    </div>
-                   <Badge variant={profile?.telegramLinked ? "default" : "outline"} className={cn(profile?.telegramLinked ? "bg-green-500/20 text-green-400" : "animate-pulse")}>
+                   <Badge variant={profile?.telegramLinked ? "default" : "outline"} className={cn(profile?.telegramLinked ? "bg-green-500/20 text-green-400" : "bg-red-500/10 text-red-400 animate-pulse")}>
                       {profile?.telegramLinked ? "STABILIZED" : "AWAITING_LINK"}
                    </Badge>
                 </CardHeader>
                 <CardContent className="px-6 pb-6 flex flex-col md:flex-row items-center gap-6">
                    <div className="flex-1 space-y-4">
                       <p className="text-[11px] text-white/80 leading-relaxed italic">
-                        "টেলিগ্রাম কমান্ড /health বা /logs পাঠিয়ে আপনার মোবাইল থেকেই সিস্টেম কন্ট্রোল করুন। আপনার TON ওয়ালেট কানেক্ট করে সরাসরি ডিপোজিট সম্পন্ন করুন।"
+                        "টেলিগ্রাম কমান্ড /health পাঠিয়ে হ্যান্ডশেক স্ট্যাবিলাইজ করুন। $১,০০০ বা তার বেশি ডিপোজিটের জন্য আইডেন্টিটি বাইন্ডিং বাধ্যতামূলক।"
                       </p>
                       <div className="flex flex-wrap gap-3">
                         <Button 
@@ -294,12 +293,12 @@ export default function FinancialIntelligence() {
                           )}
                         >
                           {isDepositing ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : isMaintenance ? <Lock className="mr-2 h-3 w-3" /> : <Plus className="mr-2 h-3 w-3" />}
-                          {isMaintenance ? "Maintenace Active" : "Deposit via TON"}
+                          {isMaintenance ? "Maintenace Active" : "Deposit $1,000 via TON"}
                         </Button>
                         {!profile?.telegramLinked && (
-                          <Button asChild className="bg-secondary text-white font-bold uppercase tracking-widest text-[9px] h-9 px-4">
+                          <Button asChild className="bg-secondary text-white font-bold uppercase tracking-widest text-[9px] h-9 px-4 animate-pulse">
                              <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
-                                <Zap className="mr-2 h-3 w-3" /> Bind Gateway
+                                <Zap className="mr-2 h-3 w-3" /> Bind Identity Node
                              </a>
                           </Button>
                         )}

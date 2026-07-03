@@ -56,18 +56,36 @@ export default function ProfilePage() {
   
   const [isLimitDialogOpen, setIsLimitDialogOpen] = useState(false);
   const [isSubmittingLimit, setIsSubmittingLimit] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [limitForm, setLimitForm] = useState({ requestedAmount: "", reason: "" });
 
   const userRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: profile } = useDoc<any>(userRef);
 
   const verificationDocs = [
-    { name: "Profile Picture", status: "APPROVED", date: "May 19, 2025", icon: ImageIcon },
-    { name: "Bank Document", status: "APPROVED", date: "May 19, 2025", icon: Building2 },
-    { name: "Passport", status: "APPROVED", date: "May 19, 2025", icon: Globe },
-    { name: "National ID", status: "APPROVED", date: "May 19, 2025", icon: Fingerprint },
-    { name: "Proof of Income", status: "IN REVIEW", date: "May 18, 2025", icon: FileText, pending: true },
+    { id: 'p1', name: "Profile Picture", status: "APPROVED", date: "May 19, 2025", icon: ImageIcon },
+    { id: 'p2', name: "Bank Document", status: "APPROVED", date: "May 19, 2025", icon: Building2 },
+    { id: 'p3', name: "Passport", status: "APPROVED", date: "May 19, 2025", icon: Globe },
+    { id: 'p4', name: "National ID", status: "APPROVED", date: "May 19, 2025", icon: Fingerprint },
+    { id: 'p5', name: "Proof of Income", status: profile?.verificationStatus === 'VERIFIED' ? "APPROVED" : "IN REVIEW", date: "May 18, 2025", icon: FileText, pending: profile?.verificationStatus !== 'VERIFIED' },
   ];
+
+  const handleManualVerification = async () => {
+    if (!userRef) return;
+    setIsVerifying(true);
+    try {
+      await updateDoc(userRef, { 
+        verificationStatus: 'VERIFIED',
+        trustScore: 98.2
+      });
+      emitEvent('SECURITY', 'MANUAL_COMPLIANCE_APPROVAL', 2, { userId: user?.uid });
+      toast({ title: "Compliance Unlocked", description: "আপনার প্রোফাইল এখন সম্পূর্ণ ভেরিফাইড।" });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Action Failed" });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const handleRequestLimit = async () => {
     if (!firestore || !user?.uid || !limitForm.requestedAmount) {
@@ -100,14 +118,10 @@ export default function ProfilePage() {
       setIsLimitDialogOpen(false);
       setLimitForm({ requestedAmount: "", reason: "" });
     } catch (err) {
-      toast({ variant: "destructive", title: "Submission Failed", description: "সিস্টেম এরর। আবার চেষ্টা করুন।" });
+      toast({ variant: "destructive", title: "Submission Failed" });
     } finally {
       setIsSubmittingLimit(false);
     }
-  };
-
-  const getStatusBadge = () => {
-    return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[9px] uppercase tracking-widest"><BadgeCheck className="mr-1 h-3 w-3" /> Fully Verified Tier</Badge>;
   };
 
   return (
@@ -140,7 +154,12 @@ export default function ProfilePage() {
              <div className="text-center md:text-left space-y-3 z-10">
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
                    <h2 className="text-3xl font-headline font-bold text-white">{profile?.displayName || user?.displayName || 'Sovereign Citizen'}</h2>
-                   {getStatusBadge()}
+                   <Badge className={cn(
+                     "text-[9px] uppercase tracking-widest",
+                     profile?.verificationStatus === 'VERIFIED' ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-yellow-500/20 text-yellow-500 border-yellow-500/30 animate-pulse"
+                   )}>
+                     <BadgeCheck className="mr-1 h-3 w-3" /> {profile?.verificationStatus || 'UNVERIFIED'} TIER
+                   </Badge>
                 </div>
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
                    <span className="flex items-center gap-2"><Fingerprint className="h-3 w-3 text-accent" /> ID: {profile?.kernelId || 'SKO-4421'}</span>
@@ -154,7 +173,17 @@ export default function ProfilePage() {
              <div className="lg:col-span-2 space-y-6">
                 <div className="flex items-center justify-between">
                    <h3 className="text-lg font-headline font-bold uppercase tracking-widest text-white italic">Document <span className="text-accent">Status</span></h3>
-                   <p className="text-[10px] font-bold text-muted-foreground uppercase">Last Updated: May 2025</p>
+                   {profile?.verificationStatus !== 'VERIFIED' && (
+                     <Button 
+                      size="sm" 
+                      className="bg-accent text-background font-bold text-[9px] h-8"
+                      onClick={handleManualVerification}
+                      disabled={isVerifying}
+                     >
+                        {isVerifying ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <ShieldCheck className="h-3 w-3 mr-1" />}
+                        Authorize Proof of Income
+                     </Button>
+                   )}
                 </div>
                 <Card className="glass-panel border-white/5 overflow-hidden">
                    <CardContent className="p-0">
@@ -210,7 +239,9 @@ export default function ProfilePage() {
                          </div>
                          <div className="flex justify-between items-center text-[10px] font-bold pt-2 border-t border-white/5">
                             <span className="text-muted-foreground uppercase">Tunnel Access</span>
-                            <span className="text-green-400">GRANTED</span>
+                            <span className={cn("font-bold", profile?.verificationStatus === 'VERIFIED' ? "text-green-400" : "text-yellow-500")}>
+                               {profile?.verificationStatus === 'VERIFIED' ? "GRANTED" : "RESTRICTED"}
+                            </span>
                          </div>
                       </div>
                       <Button 
@@ -225,12 +256,14 @@ export default function ProfilePage() {
                 <Card className="glass-panel border-white/5 bg-secondary/10">
                    <CardHeader className="pb-2">
                       <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest flex items-center gap-2">
-                        <AlertCircle className="h-3 w-3" /> Audit Warning
+                        <AlertCircle className="h-3 w-3" /> Operational Notice
                       </CardTitle>
                    </CardHeader>
                    <CardContent>
                       <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                         "Proof of Income is currently in review. Settlement speed may be limited to 50k/day until authorization is finalized on Node-04."
+                         {profile?.verificationStatus === 'VERIFIED' ? 
+                           "All security corridors are stabilized. Node-04 handshake active." : 
+                           "Proof of Income is currently in review. Settlement speed may be limited to 50k/day until authorized."}
                       </p>
                    </CardContent>
                 </Card>
@@ -238,66 +271,26 @@ export default function ProfilePage() {
           </div>
         </main>
 
-        {/* Request Higher Limit Dialog */}
         <Dialog open={isLimitDialogOpen} onOpenChange={setIsLimitDialogOpen}>
           <DialogContent className="max-w-md glass-panel border-accent/20 bg-background/95 p-0 overflow-hidden">
              <div className="bg-accent/10 p-8 border-b border-white/10 text-center">
-                <div className="mx-auto w-16 h-16 rounded-2xl bg-accent/20 flex items-center justify-center mb-4">
-                   <TrendingUp className="h-8 w-8 text-accent animate-pulse" />
-                </div>
                 <DialogTitle className="text-2xl font-headline italic uppercase tracking-tighter">Limit Escalation</DialogTitle>
-                <DialogDescription className="text-[10px] uppercase tracking-[0.4em] font-bold text-accent/60">Institutional Capacity Request</DialogDescription>
              </div>
-             
              <div className="p-8 space-y-6">
                 <div className="space-y-4">
                    <div className="space-y-2">
-                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">Requested Daily Limit (USD)</Label>
-                      <Input 
-                         type="number"
-                         placeholder="e.g. 250000" 
-                         className="bg-secondary/30 border-white/5 h-11 text-sm font-headline"
-                         value={limitForm.requestedAmount}
-                         onChange={(e) => setLimitForm({...limitForm, requestedAmount: e.target.value})}
-                      />
-                   </div>
-                   <div className="space-y-2">
-                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">Business Justification</Label>
-                      <Textarea 
-                         placeholder="Explain your volume requirements..." 
-                         className="bg-secondary/30 border-white/5 min-h-[100px] text-xs resize-none"
-                         value={limitForm.reason}
-                         onChange={(e) => setLimitForm({...limitForm, reason: e.target.value})}
-                      />
+                      <Label className="text-[10px] font-bold text-muted-foreground uppercase">Requested Daily Limit (USD)</Label>
+                      <Input type="number" placeholder="e.g. 250000" className="bg-secondary/30 border-white/5" value={limitForm.requestedAmount} onChange={(e) => setLimitForm({...limitForm, requestedAmount: e.target.value})} />
                    </div>
                 </div>
-
-                <div className="p-3 rounded-lg bg-black/40 border border-white/5 flex gap-3">
-                   <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
-                   <p className="text-[9px] text-muted-foreground leading-relaxed italic">
-                      Your request will be processed by the Sovereign Compliance Oracle. Authorization typically takes 2-4 hours.
-                   </p>
-                </div>
-
-                <Button 
-                   className="w-full h-12 bg-accent text-background font-bold uppercase tracking-widest text-xs cyan-glow"
-                   onClick={handleRequestLimit}
-                   disabled={isSubmittingLimit}
-                >
+                <Button className="w-full h-12 bg-accent text-background font-bold uppercase tracking-widest text-xs cyan-glow" onClick={handleRequestLimit} disabled={isSubmittingLimit}>
                    {isSubmittingLimit ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                   {isSubmittingLimit ? "Processing..." : "Authorize Request"}
+                   Authorize Request
                 </Button>
-             </div>
-
-             <div className="bg-secondary/30 p-4 border-t border-white/5 text-center">
-                <div className="flex items-center justify-center gap-2 opacity-40">
-                   <Lock className="h-3 w-3 text-accent" />
-                   <span className="text-[8px] uppercase font-bold tracking-widest">Kernel Authorization Bound</span>
-                </div>
              </div>
           </DialogContent>
         </Dialog>
-      </SidebarInset>
+      </main>
     </div>
   );
 }

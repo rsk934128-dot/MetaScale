@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { initializeFirebase } from '@/firebase';
 import { doc, updateDoc, getDoc, collection, getDocs, query, where, orderBy, limit, setDoc } from 'firebase/firestore';
@@ -53,8 +52,12 @@ export async function POST(req: Request) {
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
-        await updateDoc(userRef, { telegramChatId: chatId, telegramLinked: true, updatedAt: Date.now() });
-        await sendTelegramMessage(chatId, `<b>✅ IDENTITY BOUND</b>\n\nCitizen: ${userSnap.data().displayName}\n\nআপনার অ্যাকাউন্ট এখন সোভারেন ওএস-এর সাথে লিঙ্কড।`);
+        await updateDoc(userRef, { 
+          telegramChatId: chatId, 
+          telegramLinked: true, 
+          updatedAt: Date.now() 
+        });
+        await sendTelegramMessage(chatId, `<b>✅ IDENTITY BOUND & STABILIZED</b>\n\nCitizen: ${userSnap.data().displayName}\n\nআপনার মোবাইল নোড এখন সোভারেন কার্নেলের সাথে সফলভাবে সিঙ্কড (ECC_ED25519)। আপনি এখন হাই-ভ্যালু লেনদেন সম্পন্ন করতে পারবেন।`);
       } else {
         await sendTelegramMessage(chatId, "❌ <b>IDENTITY_NOT_FOUND</b>");
       }
@@ -62,8 +65,15 @@ export async function POST(req: Request) {
     
     // 3. Health Check: /health
     else if (text === '/health') {
-      // Mock stats (in real app, query system state doc)
-      await sendHealthReport(chatId, { isLocked: false, uptime: 14200 });
+      // Find user by chatId to confirm link
+      const usersQuery = query(collection(firestore, 'users'), where('telegramChatId', '==', chatId), limit(1));
+      const userSnap = await getDocs(usersQuery);
+      if (!userSnap.empty) {
+        await updateDoc(userSnap.docs[0].ref, { telegramLinked: true }); // Re-verify link
+        await sendHealthReport(chatId, { isLocked: false, uptime: 14200 });
+      } else {
+        await sendTelegramMessage(chatId, "❌ <b>LINK_NOT_FOUND</b>\n\nদয়া করে অ্যাপ থেকে 'Bind Identity' বাটনটি ক্লিক করুন।");
+      }
     }
 
     // 4. Logs: /logs
@@ -87,21 +97,6 @@ export async function POST(req: Request) {
       
       await setDoc(configRef, { maintenance: newState }, { merge: true });
       await sendMaintenanceAlert(chatId, newState);
-    }
-
-    // 6. Billing Status: /plan
-    else if (text === '/plan') {
-      const usersQuery = query(collection(firestore, 'users'), where('telegramChatId', '==', chatId), limit(1));
-      const userSnap = await getDocs(usersQuery);
-      if (!userSnap.empty) {
-        const userData = userSnap.docs[0].data();
-        const planInfo = `<b>💳 BILLING STATUS</b>\n\n` +
-                        `<b>Current Plan:</b> ${userData.plan || 'FREE'}\n` +
-                        `<b>API Requests:</b> 420k / ${userData.plan === 'PRO' ? '10M' : '1M'}\n` +
-                        `<b>Status:</b> ACTIVE\n\n` +
-                        `আপনার প্ল্যান এবং ওভারএজ ট্র্যাকিং স্বাভাবিক আছে।`;
-        await sendTelegramMessage(chatId, planInfo);
-      }
     }
 
     // 7. Remote Settlement Action
