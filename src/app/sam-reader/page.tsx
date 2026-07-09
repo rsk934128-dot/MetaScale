@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -30,7 +29,8 @@ import {
   TrendingDown,
   Info,
   Activity as ActivityIcon,
-  ShieldHalf
+  ShieldHalf,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -167,11 +167,10 @@ export default function SAMReaderPage() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-            {/* Audit Feed */}
             <div className="xl:col-span-7">
                <Card className="glass-panel border-white/5 flex flex-col h-[650px] overflow-hidden shadow-2xl">
                   <CardHeader className="border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
-                     <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2">
+                     <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2 text-white">
                         <Terminal className="h-4 w-4 text-accent" />
                         Live Trace Terminal
                      </CardTitle>
@@ -220,7 +219,6 @@ export default function SAMReaderPage() {
                </Card>
             </div>
 
-            {/* Cognitive Inspector Panel */}
             <div className="xl:col-span-5 space-y-6">
                <Card className="glass-panel border-accent/20 bg-accent/5 shadow-2xl h-fit relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4 opacity-5"><BrainCircuit className="h-32 w-32 text-accent" /></div>
@@ -338,7 +336,7 @@ export default function SAMReaderPage() {
                        { label: "RCA Latency", status: "1.2s", color: "text-green-400" },
                        { label: "Pattern Library", status: "14.2k", color: "text-primary" }
                      ].map((idx, i) => (
-                       <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-black/20 border border-white/5">
+                       <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-black/40 border border-white/5">
                           <span className="text-[9px] font-bold uppercase text-muted-foreground">{idx.label}</span>
                           <span className={cn("text-[10px] font-bold uppercase font-mono", idx.color)}>{idx.status}</span>
                        </div>
