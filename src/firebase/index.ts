@@ -1,4 +1,3 @@
-
 'use client';
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
@@ -25,14 +24,22 @@ export function initializeFirebase() {
   
   if (!firestore) {
     try {
-      // Initialize with Persistence and optimized long polling to bypass proxy issues
-      firestore = initializeFirestore(firebaseApp, {
-        localCache: persistentLocalCache({ 
-          tabManager: persistentMultipleTabManager() 
-        }),
-        experimentalForceLongPolling: true,
-        ignoreUndefinedProperties: true
-      });
+      // Server-side environments (like API routes) don't have indexedDB or localStorage.
+      // We must detect environment to avoid "Persistence" related crashes on the server.
+      const isBrowser = typeof window !== 'undefined';
+      
+      if (isBrowser) {
+        firestore = initializeFirestore(firebaseApp, {
+          localCache: persistentLocalCache({ 
+            tabManager: persistentMultipleTabManager() 
+          }),
+          experimentalForceLongPolling: true,
+          ignoreUndefinedProperties: true
+        });
+      } else {
+        // Simple initialization for Server side
+        firestore = getFirestore(firebaseApp);
+      }
     } catch (e) {
       firestore = getFirestore(firebaseApp);
     }

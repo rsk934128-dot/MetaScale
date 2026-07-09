@@ -5,16 +5,22 @@ import { sendTelegramMessage, sendFinancialAlert, sendHealthReport, sendMaintena
 import { reconcileAndSettleLink, processPaymentCredit } from '@/services/payment-service';
 
 /**
- * Telegram Webhook Handler v1.5
- * Improved with Remote Commands, Health Checks & Maintenance Toggles.
+ * Telegram Webhook Handler v1.6
+ * Improved with Server-safe Firebase Init and Robust Error Logging.
  */
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { firestore } = initializeFirebase();
-    if (!firestore) return NextResponse.json({ ok: true });
+  console.log(">>> [TELEGRAM_WEBHOOK] Signal Received.");
 
-    // 1. Handle Callback Queries (Approve/Reject)
+  try {
+    const { firestore } = initializeFirebase();
+    if (!firestore) {
+      console.error(">>> [TELEGRAM_ERROR] Firestore not initialized.");
+      return NextResponse.json({ ok: true });
+    }
+
+    const body = await req.json();
+
+    // 1. Handle Callback Queries (Approve/Reject from inline buttons)
     if (body.callback_query) {
       const { data, from } = body.callback_query;
       const chatId = from.id.toString();
@@ -43,6 +49,8 @@ export async function POST(req: Request) {
     const chatId = message.chat.id.toString();
     const text = message.text.trim();
 
+    console.log(`>>> [TELEGRAM_COMMAND] From: ${chatId} | Text: ${text}`);
+
     // --- COMMAND ROUTER ---
 
     // 2. Identity Binding: /start <uid>
@@ -65,11 +73,10 @@ export async function POST(req: Request) {
     
     // 3. Health Check: /health
     else if (text === '/health') {
-      // Find user by chatId to confirm link
       const usersQuery = query(collection(firestore, 'users'), where('telegramChatId', '==', chatId), limit(1));
       const userSnap = await getDocs(usersQuery);
       if (!userSnap.empty) {
-        await updateDoc(userSnap.docs[0].ref, { telegramLinked: true }); // Re-verify link
+        await updateDoc(userSnap.docs[0].ref, { telegramLinked: true });
         await sendHealthReport(chatId, { isLocked: false, uptime: 14200 });
       } else {
         await sendTelegramMessage(chatId, "❌ <b>LINK_NOT_FOUND</b>\n\nদয়া করে অ্যাপ থেকে 'Bind Identity' বাটনটি ক্লিক করুন।");
@@ -124,8 +131,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error('Webhook Runtime Error:', error);
+  } catch (error: any) {
+    console.error('>>> [WEBHOOK_FATAL_ERROR]:', error.message);
     return NextResponse.json({ ok: true }); 
   }
 }

@@ -1,4 +1,3 @@
-
 /**
  * NoorNexus Telegram Gateway Utility v1.5
  * Handles communication with @Coolrubelbank2bot
@@ -13,8 +12,8 @@ const BASE_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
  * Validate if the token is available to prevent runtime errors
  */
 function checkConfig() {
-  if (!BOT_TOKEN) {
-    console.error(">>> [KERNEL_CRITICAL] TELEGRAM_BOT_TOKEN is missing from environment variables.");
+  if (!BOT_TOKEN || BOT_TOKEN === 'your_token_here') {
+    console.warn(">>> [TELEGRAM_WARN] TELEGRAM_BOT_TOKEN is missing or placeholder in environment variables.");
     return false;
   }
   return true;
@@ -34,9 +33,13 @@ export async function sendTelegramMessage(chatId: string, text: string, options:
         ...options
       }),
     });
-    return await response.json();
+    const result = await response.json();
+    if (!result.ok) {
+      console.error('Telegram API Error:', result.description);
+    }
+    return result;
   } catch (error) {
-    console.error('Telegram Send Error:', error);
+    console.error('Telegram fetch network error:', error);
     return null;
   }
 }
