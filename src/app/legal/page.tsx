@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -101,15 +102,15 @@ export default function LegalBoundPage() {
         </header>
 
         <main className="flex-1 p-8 max-w-[1100px] mx-auto w-full space-y-12 pb-20">
-          <div className="text-center space-y-4">
-            <Badge className="bg-accent/10 text-accent border-accent/20 uppercase tracking-[0.2em] text-[10px] font-bold">
+          <div className="text-center space-y-4 max-w-3xl mx-auto">
+            <Badge className="bg-accent/10 text-accent border-accent/20 uppercase tracking-[0.2em] text-[10px] font-bold px-4 py-1">
               Deterministic Accountability
             </Badge>
             <h2 className="text-4xl md:text-5xl font-headline font-bold text-white tracking-tighter uppercase">
               THE SOVEREIGN <span className="text-accent italic">COVENANT</span>
             </h2>
             <p className="text-muted-foreground text-sm max-w-xl mx-auto italic leading-relaxed">
-              "Governing your access to FusionPay Sovereign OS and our commitment to protecting your digital presence."
+              "Governing the Sirajganj Operational Pilot through ISO 20022 compliance and exactly-once ledger enforcement."
             </p>
           </div>
 
@@ -122,9 +123,9 @@ export default function LegalBoundPage() {
                    <Info className="h-6 w-6" />
                 </div>
                 <div className="space-y-2">
-                   <h4 className="text-lg font-headline font-bold text-white uppercase italic tracking-tighter">System Notice: TON Wallet is now DeFi Account</h4>
+                   <h4 className="text-lg font-headline font-bold text-white uppercase italic tracking-tighter">Identity Binding (NID/TIN) Enforcement</h4>
                    <p className="text-sm text-muted-foreground leading-relaxed italic">
-                      We've renamed TON Wallet to better separate two products inside one Wallet app: the custodial Crypto Wallet and the self-custodial <span className="text-accent font-bold">DeFi Account</span>.
+                      Satisfying CIP/CIB rules established by Bangladesh Bank, all merchants must link their accounts to their **National Identity Card (NID)** and **Taxpayer Identification Number (TIN)** for BDT 100 Crore regional dairy settlement.
                    </p>
                 </div>
              </div>
@@ -133,8 +134,8 @@ export default function LegalBoundPage() {
           <Tabs defaultValue="terms" className="space-y-8">
             <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1 w-full flex overflow-x-auto">
               <TabsTrigger value="terms" className="flex-1 text-[10px] uppercase font-bold tracking-widest px-4 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Terms of Use</TabsTrigger>
-              <TabsTrigger value="privacy" className="flex-1 text-[10px] uppercase font-bold tracking-widest px-4 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Privacy Policy</TabsTrigger>
-              <TabsTrigger value="mini-app" className="flex-1 text-[10px] uppercase font-bold tracking-widest px-4 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Mini App Terms</TabsTrigger>
+              <TabsTrigger value="privacy" className="flex-1 text-[10px] uppercase font-bold tracking-widest px-4 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Compliance</TabsTrigger>
+              <TabsTrigger value="mini-app" className="flex-1 text-[10px] uppercase font-bold tracking-widest px-4 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Ledger Invariants</TabsTrigger>
             </TabsList>
 
             <TabsContent value="terms" className="space-y-12 animate-fade-in">
@@ -142,22 +143,22 @@ export default function LegalBoundPage() {
                 <Card className="glass-panel border-l-4 border-l-accent">
                   <CardHeader className="p-4">
                     <ShieldCheck className="h-6 w-6 text-accent mb-2" />
-                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Self-Custody</CardTitle>
-                    <CardDescription className="text-[10px]">User autonomy and responsibility.</CardDescription>
+                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Identity Binding</CardTitle>
+                    <CardDescription className="text-[10px]">CIB/CIP Compliant.</CardDescription>
                   </CardHeader>
                 </Card>
                 <Card className="glass-panel border-l-4 border-l-primary">
                   <CardHeader className="p-4">
                     <Lock className="h-6 w-6 text-primary mb-2" />
-                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Decentralized</CardTitle>
-                    <CardDescription className="text-[10px]">Blockchain interaction interface.</CardDescription>
+                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Exactly-Once</CardTitle>
+                    <CardDescription className="text-[10px]">No Double Credits.</CardDescription>
                   </CardHeader>
                 </Card>
                 <Card className="glass-panel border-l-4 border-l-red-500">
                   <CardHeader className="p-4">
                     <Scale className="h-6 w-6 text-red-500 mb-2" />
-                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Compliance</CardTitle>
-                    <CardDescription className="text-[10px]">Governed by the laws of Seychelles.</CardDescription>
+                    <CardTitle className="text-sm font-bold uppercase tracking-tight">T+0 Finality</CardTitle>
+                    <CardDescription className="text-[10px]">Instant Settlement.</CardDescription>
                   </CardHeader>
                 </Card>
               </div>
@@ -170,14 +171,14 @@ export default function LegalBoundPage() {
                         <BookOpen className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">1. Introduction & Eligibility</p>
-                        <p className="text-xs text-muted-foreground">Scope, Acceptance and Eligibility requirements</p>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">1. Regional Jurisdiction & Eligibility</p>
+                        <p className="text-xs text-muted-foreground">Sirajganj Hub Operational Parameters</p>
                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
                     <p>
-                      <span className="text-white font-bold">DeFi Account</span> is a self-custody solution supported by TON Space Ltd. It is an interface that enables users to interact with The Open Network blockchain (“TON Blockchain”).
+                      FusionPay Sovereign OS provides deterministic financial infrastructure for citizens of Bangladesh, specifically within the Rajshahi Division. All regional settlements are governed by local trade license validation protocols.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
@@ -193,14 +194,14 @@ export default function LegalBoundPage() {
                         <FileText className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">1. Information We Collect</p>
-                        <p className="text-xs text-muted-foreground">Self-custody and personal information scope</p>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">1. NID/TIN Data Governance</p>
+                        <p className="text-xs text-muted-foreground">Programmatic Identity Binding Protocols</p>
                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-6 pb-6 px-4">
                     <p>
-                      <span className="text-white font-bold">DeFi Account</span> is a non-custodial wallet. We do not collect private keys or wallet seeds.
+                      To satisfy Bangladesh Bank's CIP requirements, every high-volume dairy cooperative and hand-loom merchant must undergo a cryptographic handshake linking their digital wallet to their verified **NID** and **TIN** data.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
@@ -209,11 +210,11 @@ export default function LegalBoundPage() {
 
             <TabsContent value="mini-app" className="space-y-12 animate-fade-in">
               <div className="p-6 rounded-2xl bg-blue-500/5 border border-blue-500/20 flex gap-4 items-start">
-                 <Smartphone className="h-6 w-6 text-blue-400 shrink-0" />
+                 <Lock className="h-6 w-6 text-blue-400 shrink-0" />
                  <div>
-                    <h4 className="text-sm font-bold text-white uppercase tracking-tight">Telegram Mini App Environment</h4>
+                    <h4 className="text-sm font-bold text-white uppercase tracking-tight">Deterministic Ledger Invariants</h4>
                     <p className="text-xs text-muted-foreground italic leading-relaxed">
-                       These terms govern your usage of the Telegram Mini App Feature provided by Telegram Messenger Inc.
+                       Every transaction follows a rigid state machine: **CREATED -> PAID -> CREDITED**.
                     </p>
                  </div>
               </div>
@@ -226,14 +227,14 @@ export default function LegalBoundPage() {
                         <CheckCircle2 className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">1. Acceptance of MA Terms</p>
-                        <p className="text-xs text-muted-foreground">Legally binding agreement with Telegram</p>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">1. Double Credit Prevention</p>
+                        <p className="text-xs text-muted-foreground">Exactly-Once Ledger Enforcement</p>
                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
                     <p>
-                      By using the Mini App Feature (MAF), you agree that you have read in full, understood and accepted to be legally bound by these terms, in addition to Telegram’s Terms of Service and Privacy Policy.
+                      Atomic database transactions lock the target account's balance field during write operations. This prevents race conditions and ensures that no merchant is credited twice for the same payment event.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
@@ -245,85 +246,14 @@ export default function LegalBoundPage() {
                         <Globe className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">2. Service Providers</p>
-                        <p className="text-xs text-muted-foreground">Third-party management and responsibility</p>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">2. Self-Healing Recoveries</p>
+                        <p className="text-xs text-muted-foreground">Exponential Backoff Cron Protocols</p>
                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
                     <p>
-                      Mini Apps are offered and managed by third-party Service Providers (SP). Telegram is not affiliated with these SPs and they operate independently.
-                    </p>
-                    <ul className="list-disc pl-6 space-y-2 text-[12px]">
-                      <li>You access third-party services directly from the SP.</li>
-                      <li>Telegram does not process payments or hold funds.</li>
-                      <li>SPs are solely responsible for content and service quality.</li>
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="ma-3" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
-                  <AccordionTrigger className="hover:no-underline py-6">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500">
-                        <CreditCard className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">3. Payments & Disputes</p>
-                        <p className="text-xs text-muted-foreground">External payment processing protocols</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
-                    <p>
-                      Telegram does not process payments. Instead, payments are handled by third-party providers chosen by the SP.
-                    </p>
-                    <div className="p-3 rounded-lg bg-black/40 border border-white/5 text-[11px] italic">
-                      Any disputes, claims or technical errors related to payments must be directed towards the respective payment provider or SP.
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="ma-4" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
-                  <AccordionTrigger className="hover:no-underline py-6">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-blue-400/10 border border-blue-400/20 text-blue-400">
-                        <Eye className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">4. Privacy & Data Sharing</p>
-                        <p className="text-xs text-muted-foreground">Information shared with Service Providers</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
-                    <p>
-                      When you interact with a Mini App, it automatically acquires your IP address. Basic data like your Telegram ID, name, username, and profile picture may also be shared.
-                    </p>
-                    <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/20 text-red-400 font-medium text-[11px]">
-                      Telegram is not liable for any mismanagement or misuse of this data by the Service Provider.
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="ma-5" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
-                  <AccordionTrigger className="hover:no-underline py-6">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
-                        <ShieldAlert className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">5. Disclaimers & Indemnity</p>
-                        <p className="text-xs text-muted-foreground">Limitation of liability and legal protection</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
-                    <p>
-                      Mini App Features are offered on an “as is” and “as available” basis. Telegram disclaims all warranties regarding reliability, accuracy, and performance.
-                    </p>
-                    <p>
-                      You agree to grant Telegram absolute indemnity from any claims or damages arising from your use of services via the Mini App Feature.
+                      In cases of regional telecommunications failure, the system's background crons automatically reconcile transactions with MFS gateways using exponential backoff (2^n) intervals, ensuring eventual settlement finality.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
@@ -336,10 +266,10 @@ export default function LegalBoundPage() {
               <div className="space-y-2 text-center md:text-left">
                 <h4 className="text-lg font-bold text-white flex items-center justify-center md:justify-start gap-2">
                   <Fingerprint className="h-5 w-5 text-accent" />
-                  Identity Re-Verification Required
+                  Legal Handshake Required
                 </h4>
                 <p className="text-xs text-muted-foreground">
-                  Your legal binding status expires periodically. A fresh cryptographic handshake is necessary to maintain mesh access.
+                  Access to the Sirajganj Operational Pilot requires re-validation of your Identity Binding status.
                 </p>
               </div>
               <Button 
@@ -350,7 +280,7 @@ export default function LegalBoundPage() {
                 {isRefreshing ? (
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
-                {isRefreshing ? "Refreshing..." : "Refresh Binding"}
+                {isRefreshing ? "Refreshing..." : "Authorize Binding"}
                 {!isRefreshing && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </CardContent>
@@ -358,7 +288,7 @@ export default function LegalBoundPage() {
 
           <footer className="text-center pt-8 border-t border-white/5 space-y-2">
             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
-              Sovereign Legal Framework v1.2.0-stable • © 2024 FusionPay
+              Sovereign OS Sirajganj Pilot v1.2.0-stable • © 2024 FusionPay
             </p>
           </footer>
         </main>

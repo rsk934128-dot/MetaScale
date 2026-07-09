@@ -50,12 +50,12 @@ import { useToast } from "@/hooks/use-toast";
 const ROADMAP_PHASES = [
   {
     id: "p1",
-    title: "Phase 1: Seed & Manual Desk (Sirajganj Pilot)",
+    title: "Phase 1: Seed & Manual Desk (Pilot)",
     status: "Completed",
     icon: ShieldCheck,
     date: "Q4 2023",
     progress: 100,
-    desc: "Initial bootstrapping for first 100 high-trust users with payouts managed via a manual Liquidity Desk in North Bengal.",
+    desc: "Initial bootstrapping for first 100 high-trust users with payouts managed via a manual Liquidity Desk in Sirajganj.",
     items: [
       "Manual MFS (bKash/Nagad) Settlement",
       "Trade License Compliance Validation",
@@ -69,11 +69,11 @@ const ROADMAP_PHASES = [
     icon: Network,
     date: "Q1 2024",
     progress: 100,
-    desc: "Establishing a server-authoritative ledger with exactly-once crediting and programmatic webhook integration.",
+    desc: "Establishing a server-authoritative ledger with exactly-once crediting and deterministic state machine logic.",
     items: [
       "Firestore Hardened Security Rules",
       "Transactional Balance Updates (Atomic)",
-      "CREATED -> PAID -> CREDITED State Machine"
+      "CREATED -> PAID -> CREDITED Machine"
     ]
   },
   {
@@ -83,7 +83,7 @@ const ROADMAP_PHASES = [
     icon: Cpu,
     date: "Q2 2024",
     progress: 100,
-    desc: "Autonomous fiscal management, automated system reconciliation, and forensic auditing pipelines.",
+    desc: "Autonomous fiscal management, automated system reconciliation, and forensic auditing pipelines via Node-04.",
     items: [
       "Automated Reconciliation Cron Job",
       "Forensic Anomaly Dashboard",
@@ -97,11 +97,11 @@ const ROADMAP_PHASES = [
     icon: ShieldAlert,
     date: "Active 2026",
     progress: 90,
-    desc: "Telegram Mini App integration, remote terminal controllers, and mobile gateway synchronization for field access.",
+    desc: "Telegram Mini App integration, remote terminal controllers, forensic RAG pipelines, and Multi-Sig Liquidity Guards.",
     items: [
       "Telegram Mini App Integration (v1.2.0)",
       "Remote Settlement Webhooks (PAY_SEAL_...)",
-      "Real-time Bengali AI Reporting (Daily Pulse)",
+      "Forensic RAG & AI Root Cause Analysis",
       "Multi-Sig Liquidity Guard ($1k Threshold)"
     ]
   }
@@ -213,7 +213,7 @@ export default function RoadmapPage() {
               From Internal Kernel to <span className="text-accent italic">Global Execution</span>
             </h2>
             <p className="text-muted-foreground text-sm italic leading-relaxed max-w-xl mx-auto">
-              "Deploying resilient financial infra across the Rajshahi Division, specifically targeting the hydrological stressors of the Sirajganj territory."
+              "Deploying resilient financial infrastructure across the Rajshahi Division, specifically targeting the hydrological stressors of the Sirajganj territory."
             </p>
           </div>
 
@@ -357,8 +357,8 @@ export default function RoadmapPage() {
                         )}
                         {isLaunching ? "Preflight Active..." : isLive ? "Commercial Live" : "Authorize Global Launch"}
                       </Button>
-                      <p className="text-[9px] text-muted-foreground text-center italic">
-                        "Preflight validates environment and ledger invariants for Sirajganj node."
+                      <p className="text-[9px] text-muted-foreground text-center italic leading-relaxed">
+                        "Preflight validates environment and ledger invariants for Sirajganj Operational Hub."
                       </p>
                    </div>
                 </Card>

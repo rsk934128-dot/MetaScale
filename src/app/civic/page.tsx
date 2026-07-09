@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -22,7 +23,9 @@ import {
   AlertCircle,
   Thermometer,
   CloudRain,
-  Info
+  Info,
+  Droplets,
+  Ruler
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +49,6 @@ export default function CivicIntelligencePage() {
   const { emitEvent } = useKernel();
   const firestore = useFirestore();
 
-  // Real-time Firestore Emergencies
   const emergenciesQuery = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'civic', 'emergencies', 'active'), orderBy('timestamp', 'desc'), limit(10));
@@ -95,7 +97,7 @@ export default function CivicIntelligencePage() {
         type: emergency.type as any,
         severity: emergency.severity,
         location: emergency.location,
-        description: "Sensor gauge on Jamuna river basin detected abnormal water level rise. HEC-RAS model predicting 30% inundation. Calibration station: Bahadurabad."
+        description: "Sensor gauge on Jamuna river basin detected abnormal water level rise. HEC-RAS model predicting inundation. Calibration station: Bahadurabad."
       });
       setAnalysisResult(result);
       toast({
@@ -122,12 +124,12 @@ export default function CivicIntelligencePage() {
           <div className="flex-1 truncate">
             <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 text-blue-400">
               <Waves className="h-4 w-4 md:h-5 md:w-5 shrink-0" />
-              <span className="truncate">Sirajganj Civic Intelligence</span>
+              <span className="truncate">Sirajganj Civic Intelligence v1.2</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="border-blue-400/20 text-blue-400 text-[10px] uppercase font-bold">
-               Jamuna Gauge: Node-04
+               Jamuna Basin: Node-04
             </Badge>
             <Button size="sm" onClick={handleSOS} disabled={isSimulating} className="bg-red-500 hover:bg-red-600 text-white text-[10px] md:text-xs font-bold h-8 px-2 md:px-3">
               {isSimulating ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Zap className="h-3 w-3 mr-1" />}
@@ -138,12 +140,14 @@ export default function CivicIntelligencePage() {
 
         <main className="flex-1 p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-6 md:space-y-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-2">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-headline font-bold mb-1 uppercase tracking-tighter">Jamuna <span className="text-blue-400">Basin Hub</span></h2>
-              <p className="text-xs md:text-sm text-muted-foreground italic">"Monitoring hydrological stress across 2,402 km² Sirajganj territory using 2D modeling."</p>
+            <div className="space-y-1">
+              <h2 className="text-2xl md:text-3xl font-headline font-bold mb-1 uppercase tracking-tighter">Sirajganj <span className="text-blue-400">Spatial Profile</span></h2>
+              <p className="text-xs md:text-sm text-muted-foreground italic max-w-2xl">
+                "Monitoring 2,402.05 km² alluvial territory. Topography: Mean elevation 7m above MSL. Hydrology: Active braided Jamuna channel."
+              </p>
             </div>
             <div className="text-left md:text-right">
-              <p className="text-[10px] font-bold uppercase text-muted-foreground">Regional Stability</p>
+              <p className="text-[10px] font-bold uppercase text-muted-foreground">Regional Stability Index</p>
               <p className="text-3xl md:text-4xl font-headline font-bold text-blue-400">92.4</p>
             </div>
           </div>
@@ -151,7 +155,7 @@ export default function CivicIntelligencePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             <Card className="glass-panel border-l-4 border-l-blue-400">
               <CardHeader className="pb-2 p-4">
-                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Mean River Level</CardTitle>
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2"><Ruler className="h-3 w-3" /> Mean Elevation</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0 space-y-3">
                 <div className="text-2xl font-bold">7.0m MSL</div>
@@ -160,29 +164,29 @@ export default function CivicIntelligencePage() {
             </Card>
             <Card className="glass-panel border-l-4 border-l-yellow-400">
               <CardHeader className="pb-2 p-4">
-                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Monsoon Rain</CardTitle>
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2"><CloudRain className="h-3 w-3" /> Annual Rain</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="text-2xl font-bold">1,610mm</div>
-                <p className="text-[10px] text-yellow-400 uppercase font-bold mt-1">Annual Concentration</p>
+                <p className="text-[10px] text-yellow-400 uppercase font-bold mt-1">Monsoon Concentration</p>
               </CardContent>
             </Card>
             <Card className="glass-panel border-l-4 border-l-red-500">
               <CardHeader className="pb-2 p-4">
-                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Heat Stress</CardTitle>
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2"><Thermometer className="h-3 w-3" /> Max Temp</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="text-2xl font-bold">34.6°C</div>
-                <p className="text-[10px] text-red-400 uppercase font-bold mt-1">High Susceptibility</p>
+                <p className="text-[10px] text-red-400 uppercase font-bold mt-1">High Stress Index</p>
               </CardContent>
             </Card>
             <Card className="glass-panel border-l-4 border-l-primary">
               <CardHeader className="pb-2 p-4">
-                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground">Active SOS</CardTitle>
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2"><Droplets className="h-3 w-3" /> Area Coverage</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="text-2xl font-bold">{emergencies?.length || 0}</div>
-                <p className="text-[10px] text-muted-foreground uppercase mt-1">Sirajganj Nodes</p>
+                <div className="text-2xl font-bold">2,497 km²</div>
+                <p className="text-[10px] text-muted-foreground uppercase mt-1">Total Admin Units</p>
               </CardContent>
             </Card>
           </div>
@@ -194,17 +198,29 @@ export default function CivicIntelligencePage() {
                   <div className="flex justify-between items-center gap-2">
                     <CardTitle className="flex items-center gap-2 text-sm md:text-base uppercase italic tracking-tighter">
                       <ShieldAlert className="h-4 w-4 text-red-500" />
-                      Regional Hazard Susceptibility Zones
+                      Hydrological Inundation Extent (Simulation)
                     </CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4 md:p-6 pt-0 space-y-4">
+                <CardContent className="p-4 md:p-6 pt-0 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       {[
+                         { period: "2-year", area: "40 km²", label: "Steady State", color: "text-blue-400" },
+                         { period: "25-year", area: "55 km²", label: "Moderate Surge", color: "text-yellow-400" },
+                         { period: "100-year", area: "58 km²", label: "Extreme Event", color: "text-red-400" }
+                       ].map((stat, i) => (
+                         <div key={i} className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-2">
+                            <p className={cn("text-[10px] font-bold uppercase", stat.color)}>{stat.period} Return</p>
+                            <p className="text-2xl font-headline font-bold text-white">{stat.area}</p>
+                            <p className="text-[9px] text-muted-foreground italic">"{stat.label}"</p>
+                         </div>
+                       ))}
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                        {[
                          { range: "4.97m - 7.63m", label: "High Susceptibility", color: "text-red-400", desc: "Active river beds, low-lying chars, and deltaic silt zones." },
-                         { range: "7.63m - 10.29m", label: "Medium Susceptibility", color: "text-yellow-400", desc: "Agricultural floodplains subject to monsoonal surges." },
-                         { range: "10.29m - 12.95m", label: "Low Susceptibility", color: "text-green-400", desc: "Higher natural levees and older alluvial terraces." },
-                         { range: "> 12.95m", label: "No Susceptibility", color: "text-blue-400", desc: "Safe elevated uplands and stabilized soils." }
+                         { range: "7.63m - 10.29m", label: "Medium Susceptibility", color: "text-yellow-400", desc: "Agricultural floodplains subject to monsoonal surges." }
                        ].map((zone, i) => (
                          <div key={i} className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-1">
                             <div className="flex justify-between items-center">
@@ -220,7 +236,7 @@ export default function CivicIntelligencePage() {
                       <p className="text-[10px] font-bold uppercase text-muted-foreground mb-3 tracking-widest">Active Incident Queue (Live Node)</p>
                       {(!emergencies || emergencies.length === 0) && (
                         <div className="h-40 flex items-center justify-center text-muted-foreground italic text-xs">
-                          No active flood surges reported.
+                          No active flood surges reported in Investigation Reach.
                         </div>
                       )}
                       {emergencies?.map((ev: any) => (
@@ -256,22 +272,22 @@ export default function CivicIntelligencePage() {
                 <CardHeader>
                    <CardTitle className="text-xs uppercase flex items-center gap-2 text-accent">
                       <Info className="h-4 w-4" /> 
-                      Flood Frequency Analysis (Gumbel Distribution)
+                      Gumbel Extreme Value Distribution
                    </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <div className="p-4 rounded-xl bg-black/60 border border-white/10 font-mono text-[11px] leading-relaxed">
-                      <p className="text-accent mb-2">// PEAK STAGE PROJECTION</p>
-                      <p className="text-white">X = μ + K * σ</p>
+                      <p className="text-accent mb-2">// PEAK STAGE LEVEL CALCULATION</p>
+                      <p className="text-white text-lg">X = X̄ + K * σ</p>
                       <div className="mt-4 text-[9px] text-muted-foreground space-y-1">
                          <p>• X: Projected flood level for return period (T)</p>
-                         <p>• μ: Mean of historical peak levels</p>
-                         <p>• K: Gumbel frequency factor</p>
-                         <p>• σ: Standard deviation of dataset</p>
+                         <p>• X̄: Mean of historical peak levels</p>
+                         <p>• K: Gumbel frequency factor (Calibrated)</p>
+                         <p>• σ: Standard deviation of investigated dataset</p>
                       </div>
                    </div>
                    <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                      "Utilized to calculate monsoonal surges and inundation extents for 2, 25, and 100-year return periods in the Kazipur reach."
+                      "Utilized for modeling monsoonal surges and bank erosion risk across investigated reaches in Chauhali and Kazipur."
                    </p>
                 </CardContent>
               </Card>
@@ -282,7 +298,7 @@ export default function CivicIntelligencePage() {
                 <CardHeader className="p-4">
                   <CardTitle className="text-xs flex items-center gap-2 uppercase">
                     <BrainCircuit className="h-4 w-4 text-accent" />
-                    RIVERFLOW2D Insight
+                    RIVERFLOW2D Analysis
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-4">
@@ -291,15 +307,15 @@ export default function CivicIntelligencePage() {
                       <div className="p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2">
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] font-bold text-accent uppercase">Risk: {analysisResult.riskLevel}</span>
-                          <Badge variant="outline" className="text-[8px]">Return Period: 100yr</Badge>
+                          <Badge variant="outline" className="text-[8px]">T=100yr Extent</Badge>
                         </div>
                         <p className="text-[11px] text-white/90 italic leading-relaxed">
                           "{analysisResult.suggestedAction}"
                         </p>
-                        <p className="text-[9px] text-muted-foreground">Inundation Extent: 58 km² (Calibrated)</p>
+                        <p className="text-[9px] text-muted-foreground">Inundation Prob: 30% of investigated reach.</p>
                       </div>
                       <Button className="w-full text-[10px] font-bold cyan-glow bg-accent text-background h-8 uppercase">
-                        Authorize Flood Protocol
+                        Authorize Flood Response
                       </Button>
                     </div>
                   ) : (
@@ -308,7 +324,7 @@ export default function CivicIntelligencePage() {
                         <Radio className="h-5 w-5 text-muted-foreground animate-pulse" />
                       </div>
                       <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                        Select Sirajganj gauge signal (Bahadurabad/Kazipur) to trigger AI response modeling.
+                        Select gauge signal (Kazipur/Chauhali) to trigger hydrodynamic response modeling.
                       </p>
                     </div>
                   )}
@@ -319,17 +335,26 @@ export default function CivicIntelligencePage() {
                 <CardHeader className="p-4">
                   <CardTitle className="text-xs flex items-center gap-2 uppercase font-bold text-blue-400">
                     <Activity className="h-4 w-4" />
-                    Infrastructure Guard
+                    Structural Integrity
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 pt-0 space-y-2">
-                  <div className="flex justify-between text-[10px] font-bold">
-                    <span>Embankment Stability</span>
-                    <span>82%</span>
+                <CardContent className="p-4 pt-0 space-y-3">
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold">
+                      <span>Embankment Stability</span>
+                      <span>82%</span>
+                    </div>
+                    <Progress value={82} className="h-1 bg-blue-400/10 [&>div]:bg-blue-400" />
                   </div>
-                  <Progress value={82} className="h-1 bg-blue-400/10 [&>div]:bg-blue-400" />
-                  <p className="text-[9px] text-muted-foreground mt-2 italic">
-                    "Jamuna Bridge Approaches (Kazipur) reporting stable integrity under 2D modeling."
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold">
+                      <span>Bridge Approach (Kazipur)</span>
+                      <span>91%</span>
+                    </div>
+                    <Progress value={91} className="h-1 bg-blue-400/10 [&>div]:bg-blue-400" />
+                  </div>
+                  <p className="text-[9px] text-muted-foreground mt-2 italic leading-tight">
+                    "Monitoring linear settlements and linear grid resilience along flood protection embankments."
                   </p>
                 </CardContent>
               </Card>
