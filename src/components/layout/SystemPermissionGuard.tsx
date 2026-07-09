@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useKernel } from "@/components/kernel/KernelProvider";
-import { ShieldCheck, Bell, MapPin, Camera, Mic, Settings, Smartphone, RefreshCw, Zap } from "lucide-react";
+import { ShieldCheck, Bell, MapPin, Camera, Mic, Settings, Smartphone, RefreshCw, Zap, Settings2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 /**
  * SystemPermissionGuard
  * Ensures all necessary browser permissions are requested and managed.
- * Updated v1.3: Support for Background Node Handshake.
+ * Updated v1.3: Support for Background Node Handshake & Mobile Settings Integration.
  */
 export function SystemPermissionGuard() {
   const [showPrompt, setShowPrompt] = useState(false);
@@ -74,7 +74,7 @@ export function SystemPermissionGuard() {
       
       toast({
         title: "Sovereign Mesh Authorized",
-        description: "Mobile Signal Interception and Background Sync are now active.",
+        description: "Mobile Signal Interception and Background Sync are now active. Please check settings for persistence.",
       });
     } catch (error) {
       console.error("Permission Request Error:", error);
@@ -83,7 +83,7 @@ export function SystemPermissionGuard() {
 
   return (
     <Dialog open={showPrompt} onOpenChange={setShowPrompt}>
-      <DialogContent className="glass-panel border-accent/20 bg-background/95 max-w-md">
+      <DialogContent className="glass-panel border-accent/20 bg-background/95 max-w-md shadow-[0_0_50px_rgba(0,242,255,0.1)]">
         <DialogHeader className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center">
             <ShieldCheck className="h-8 w-8 text-accent animate-pulse" />
@@ -94,10 +94,10 @@ export function SystemPermissionGuard() {
           </div>
         </DialogHeader>
 
-        <div className="py-6 space-y-4">
-          <div className="p-4 rounded-2xl bg-accent/5 border border-accent/20 space-y-3">
+        <div className="py-4 space-y-4">
+          <div className="p-4 rounded-2xl bg-accent/5 border border-accent/20 space-y-3 shadow-inner">
              <p className="text-[11px] text-center text-white/90 leading-relaxed italic px-2">
-               "সিস্টেমের অফলাইন-সিঙ্ক এবং ব্যাকগ্রাউন্ড অপারেশন চালু করতে নিচের পারমিশনগুলো এলাও করুন। এটি চালু থাকলে অ্যাপটি ব্যাকগ্রাউন্ডেও কাজ করতে পারবে এবং এসএমএস সিগন্যাল ধরতে পারবে। এতে সামান্য বেশি চার্জ ব্যয় হতে পারে।"
+               "সিস্টেমের অফলাইন-সিঙ্ক এবং ব্যাকগ্রাউন্ড অপারেশন চালু করতে নিচের পারমিশনগুলো এলাও করুন। এটি চালু থাকলে অ্যাপটি ব্যাকগ্রাউন্ডেও কাজ করতে পারবে এবং এসএমএস সিগন্যাল ধরতে পারবে।"
              </p>
              <div className="flex justify-center gap-2">
                 <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 text-[7px] uppercase font-bold px-2 py-0">Power: Balanced+</Badge>
@@ -112,15 +112,22 @@ export function SystemPermissionGuard() {
                { icon: Bell, label: "Push Alrt" },
                { icon: Zap, label: "Mesh Trigger" }
              ].map((item, i) => (
-               <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 border border-white/5">
+               <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 border border-white/5 hover:bg-secondary/50 transition-colors">
                   <item.icon className="h-4 w-4 text-accent" />
                   <span className="text-[10px] font-bold uppercase text-white/60">{item.label}</span>
                </div>
              ))}
           </div>
+
+          <div className="p-3 mx-4 rounded-lg bg-blue-500/5 border border-blue-500/20 flex gap-3">
+             <Info className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+             <p className="text-[9px] text-muted-foreground leading-relaxed italic">
+                নিশ্চিত করুন যে আপনার মোবাইল সেটিংসে "Battery Optimization" ডিজেবল করা আছে যাতে অ্যাপটি বন্ধ না হয়।
+             </p>
+          </div>
         </div>
 
-        <DialogFooter className="flex-col gap-2 p-4 pt-0">
+        <DialogFooter className="flex-col gap-2 p-6 pt-0">
           <Button className="w-full h-12 bg-accent text-background font-bold uppercase tracking-widest text-xs cyan-glow" onClick={requestAllPermissions}>
             Establish Mobile Handshake
           </Button>

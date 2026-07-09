@@ -12,7 +12,9 @@ import {
   Lock,
   Activity,
   Bell,
-  Fingerprint
+  Fingerprint,
+  Smartphone,
+  Zap
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -182,6 +184,18 @@ export function SettingsContainer() {
                    </SelectContent>
                  </Select>
                </div>
+               
+               <div className="flex items-center justify-between p-3 rounded-lg bg-accent/5 border border-accent/10">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="h-4 w-4 text-accent" />
+                    <p className="text-sm font-bold">Persistence Protocol</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Keep the background node active even when the device is idle.</p>
+                </div>
+                <Switch defaultChecked />
+              </div>
+
                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/20">
                 <div className="space-y-0.5">
                   <p className="text-sm font-bold">Self-Healing Grid</p>
