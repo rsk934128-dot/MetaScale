@@ -34,8 +34,6 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/ui/logo';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import Link from 'next/link';
 
 const ADMIN_EMAIL = 'rubels1k994@gmail.com';
@@ -49,11 +47,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
   const [isTelegram, setIsTelegram] = useState(false);
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [mobile, setPhone] = useState('');
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
@@ -72,8 +65,9 @@ export default function LoginPage() {
       case 'auth/user-not-found': return 'এই ইমেইল দিয়ে কোনো একাউন্ট পাওয়া যায়নি।';
       case 'auth/email-already-in-use': return 'এই ইমেইলটি অলরেডি অন্য একটি একাউন্টে ব্যবহার করা হয়েছে।';
       case 'auth/weak-password': return 'পাসওয়ার্ডটি অন্তত ৬ অক্ষরের হতে হবে।';
-      case 'auth/popup-blocked': return 'টেলিগ্রাম বা মোবাইল ব্রাউজারে পপআপ ব্লক করা হয়েছে। ইমেইল/পাসওয়ার্ড ব্যবহার করুন।';
-      case 'auth/popup-closed-by-user': return 'লগইন উইন্ডোটি বন্ধ করা হয়েছে।';
+      case 'auth/popup-blocked': return 'পপআপ ব্লক করা হয়েছে। ইমেইল/পাসওয়ার্ড ব্যবহার করুন।';
+      case 'auth/popup-closed-by-user': return 'লগইন উইন্ডোটি বন্ধ করা হয়েছে। দয়া করে পুনরায় চেষ্টা করুন।';
+      case 'auth/cancelled-popup-request': return 'পূর্ববর্তী লগইন রিকোয়েস্ট বাতিল করা হয়েছে।';
       default: return `ত্রুটি: ${errorCode}। দয়া করে আবার চেষ্টা করুন।`;
     }
   };
@@ -88,14 +82,8 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    if (isTelegram) {
-      toast({
-        variant: "destructive",
-        title: "Platform Restriction",
-        description: "টেলিগ্রাম মিনি অ্যাপে গুগল পপআপ অনেক সময় কাজ করে না। ইমেইল এবং পাসওয়ার্ড ব্যবহার করা নিরাপদ।"
-      });
-    }
-
+    if (isLoading) return;
+    
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
@@ -130,8 +118,25 @@ export default function LoginPage() {
         router.replace('/dashboard');
       }
     } catch (error: any) {
-      console.error("Auth Error:", error);
-      toast({ variant: "destructive", title: "Auth Failed", description: getAuthErrorMessage(error.code) });
+      if (error.code === 'auth/popup-closed-by-user') {
+        toast({
+          title: "Sign-in Cancelled",
+          description: "লগইন পপআপটি বন্ধ করা হয়েছে।",
+        });
+      } else if (error.code === 'auth/popup-blocked') {
+        toast({
+          variant: "destructive",
+          title: "Popup Blocked",
+          description: "আপনার ব্রাউজার পপআপ ব্লক করেছে। সেটিংস চেক করুন অথবা ইমেইল দিয়ে লগইন করুন।",
+        });
+      } else {
+        console.error("Auth Error:", error);
+        toast({ 
+          variant: "destructive", 
+          title: "Auth Failed", 
+          description: getAuthErrorMessage(error.code) 
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -191,6 +196,11 @@ export default function LoginPage() {
     }
   };
 
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [mobile, setPhone] = useState('');
+
   return (
     <div className="min-h-screen w-full bg-background flex items-center justify-center p-4 md:p-10 relative overflow-hidden">
       {/* Back Button */}
@@ -219,9 +229,12 @@ export default function LoginPage() {
         {isTelegram && (
           <div className="max-w-lg w-full p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex gap-4 items-center animate-fade-in shadow-xl">
              <Smartphone className="h-6 w-6 text-yellow-500 shrink-0" />
-             <p className="text-[10px] text-white/80 leading-relaxed italic">
-               আপনি টেলিগ্রাম মিনি অ্যাপে আছেন। নিরবচ্ছিন্ন অভিজ্ঞতার জন্য **Email & Password** দিয়ে লগইন করার পরামর্শ দেওয়া হচ্ছে।
-             </p>
+             <div className="space-y-1">
+                <p className="text-[11px] font-bold text-white uppercase">Telegram Mini App Detected</p>
+                <p className="text-[10px] text-white/80 leading-relaxed italic">
+                  পপআপ ব্লকিং এড়াতে সরাসরি <b>Email & Password</b> ব্যবহার করা নিরাপদ। গুগল লগইন কাজ না করলে এটি ব্যবহার করুন।
+                </p>
+             </div>
           </div>
         )}
 
