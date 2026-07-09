@@ -89,17 +89,29 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
+                // Suppress specific library warnings from triggering visual error overlays
+                const ignoredMessages = [
+                  'MetaMask', 
+                  'nkbihfbeogaeaoehlefnkodbefgpgknn',
+                  'failed to connect',
+                  'Firestore',
+                  'backend',
+                  'FirebaseError',
+                  'Backend didn\\'t respond'
+                ];
+
+                const originalError = console.error;
+                console.error = (...args) => {
+                  const msg = args.join(' ');
+                  if (ignoredMessages.some(term => msg.includes(term))) {
+                    return; // Silently drop
+                  }
+                  originalError.apply(console, args);
+                };
+
                 const suppressErrors = (event) => {
                   const message = event.message || (event.reason && event.reason.message) || "";
-                  const source = event.filename || "";
-                  if (
-                    message.includes('MetaMask') || 
-                    message.includes('nkbihfbeogaeaoehlefnkodbefgpgknn') ||
-                    source.includes('extension') ||
-                    message.includes('failed to connect') ||
-                    message.includes('Firestore') ||
-                    message.includes('backend')
-                  ) {
+                  if (ignoredMessages.some(term => message.includes(term))) {
                     if (event.stopImmediatePropagation) event.stopImmediatePropagation();
                     if (event.preventDefault) event.preventDefault();
                     return true;

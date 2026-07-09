@@ -1,3 +1,4 @@
+
 'use client';
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
@@ -24,14 +25,14 @@ export function initializeFirebase() {
   
   if (!firestore) {
     try {
-      // Must be the first call to getFirestore to set settings
+      // Initialize with Persistence and optimized long polling to bypass proxy issues
       firestore = initializeFirestore(firebaseApp, {
         localCache: persistentLocalCache({ 
           tabManager: persistentMultipleTabManager() 
         }),
-        experimentalForceLongPolling: true
+        experimentalForceLongPolling: true,
+        ignoreUndefinedProperties: true
       });
-      console.log("Firestore initialized with Persistence and Long Polling.");
     } catch (e) {
       firestore = getFirestore(firebaseApp);
     }
