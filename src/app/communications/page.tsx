@@ -21,7 +21,9 @@ import {
   Bot,
   Loader2,
   Lock,
-  Key
+  Key,
+  Server,
+  Code2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -129,6 +131,41 @@ export default function CommunicationPlanePage() {
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
+              {/* Vercel Environment Configuration Section */}
+              <Card className="glass-panel border-l-4 border-l-primary bg-primary/5 overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="text-xl font-headline italic uppercase tracking-tighter flex items-center gap-3">
+                    <Server className="h-6 w-6 text-primary" />
+                    Vercel Configuration Node
+                  </CardTitle>
+                  <CardDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Server-side Secrets Management</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <p className="text-sm text-white/80 leading-relaxed italic">
+                    "আপনার টেলিগ্রাম বটের টোকেন ভার্সেল (Vercel) ড্যাশবোর্ডে সেট আপ করতে নিচের লিঙ্কটি ব্যবহার করুন। এটি ছাড়া বট সিগন্যাল প্রসেস করতে পারবে না।"
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2 font-mono text-[10px]">
+                      <p className="text-primary font-bold">// Required Variable</p>
+                      <p className="text-white">KEY: <span className="text-accent">TELEGRAM_BOT_TOKEN</span></p>
+                      <p className="text-white">VALUE: <span className="text-muted-foreground">Your_Token_From_BotFather</span></p>
+                    </div>
+
+                    <div className="flex flex-col gap-2 justify-center">
+                      <Button asChild className="h-11 blue-glow bg-primary text-white font-bold uppercase tracking-widest text-[10px]">
+                        <a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="mr-2 h-4 w-4" /> Open Vercel Settings
+                        </a>
+                      </Button>
+                      <p className="text-[9px] text-center text-muted-foreground italic">
+                        ভার্সেল ড্যাশবোর্ডে গিয়ে Settings > Environment Variables এ টোকেনটি যুক্ত করুন।
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Telegram Gateway Section */}
               <Card className="glass-panel border-l-4 border-l-accent bg-accent/5 overflow-hidden">
                 <div className="absolute top-0 right-0 p-4">
