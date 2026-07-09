@@ -80,7 +80,12 @@ export default function FinancialIntelligence() {
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
       setIsMiniApp(true);
-      (window as any).Telegram.WebApp.expand();
+      const tg = (window as any).Telegram.WebApp;
+      tg.expand();
+      tg.ready();
+      
+      // Notify kernel of Mini App detection
+      console.log(">>> [MINI_APP] Environment Initialized. User:", tg.initDataUnsafe?.user?.id);
     }
   }, []);
 
@@ -113,7 +118,6 @@ export default function FinancialIntelligence() {
       return;
     }
 
-    // MANDATORY: Check Telegram Link for Handshake Verification (Fix for Image 8)
     if (!profile?.telegramLinked) {
       const errorId = `ERR_${Date.now()}`;
       toast({ 
@@ -249,37 +253,27 @@ export default function FinancialIntelligence() {
         </header>
 
         <main className="flex-1 p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-8">
-          {/* Handshake Status Alert (Fix for Image 8) */}
+          {/* Handshake Status Alert */}
           {!profile?.telegramLinked ? (
-            <div className="p-4 rounded-2xl bg-red-500/10 border-2 border-red-500/30 flex items-center justify-between gap-4 animate-pulse shadow-2xl">
+            <div className="p-4 rounded-2xl bg-yellow-500/10 border-2 border-yellow-500/30 flex items-center justify-between gap-4 animate-pulse shadow-2xl">
                <div className="flex items-center gap-4">
-                  <ShieldAlert className="h-8 w-8 text-red-500" />
+                  <ShieldAlert className="h-8 w-8 text-yellow-500" />
                   <div className="space-y-1">
-                    <p className="text-xs font-bold text-white uppercase tracking-widest">Handshake Failed (ERR_1783062812091)</p>
-                    <p className="text-[10px] text-red-400 italic">"টেলিগ্রাম নোডটি AWAITING_LINK স্টেটে আছে। গেটওয়ে বাইন্ড করুন।"</p>
+                    <p className="text-xs font-bold text-white uppercase tracking-widest">Handshake Required (AWAITING_SYNC)</p>
+                    <p className="text-[10px] text-yellow-500/80 italic">"আপনার সোভারেন আইডেন্টিটি লিঙ্ক করতে BIND GATEWAY চাপুন।"</p>
                   </div>
                </div>
-               <Button asChild size="sm" className="bg-red-500 text-white font-bold text-[9px] uppercase h-8 px-4">
-                  <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">Bind Now</a>
+               <Button asChild size="sm" className="bg-yellow-500 text-black font-bold text-[9px] uppercase h-8 px-4">
+                  <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">Bind Gateway</a>
                </Button>
             </div>
           ) : (
             <div className="p-4 rounded-2xl bg-green-500/10 border-2 border-green-500/30 flex items-center gap-4 animate-fade-in shadow-2xl">
                <ShieldCheck className="h-8 w-8 text-green-500" />
                <div className="space-y-1">
-                  <p className="text-xs font-bold text-white uppercase tracking-widest">Handshake Stabilized (ECC_ED25519)</p>
-                  <p className="text-[10px] text-green-400 italic">"আপনার $১,০০০ ব্যালেন্সের গেটওয়ে লকটি সফলভাবে আনলক হয়েছে।"</p>
+                  <p className="text-xs font-bold text-white uppercase tracking-widest">Identity Stabilized (CONNECTED)</p>
+                  <p className="text-[10px] text-green-400 italic">"আপনার মোবাইল নোডটি সফলভাবে সোভারেন কার্নেলের সাথে সিঙ্কড।"</p>
                </div>
-            </div>
-          )}
-
-          {isMaintenance && (
-            <div className="p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-4 animate-fade-in shadow-2xl">
-              <AlertTriangle className="h-6 w-6 text-yellow-500 shrink-0" />
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-white uppercase tracking-widest">Circuit Breaker Enabled</p>
-                <p className="text-[10px] text-muted-foreground italic">System is under scheduled maintenance (21:00-02:00 UTC).</p>
-              </div>
             </div>
           )}
 
@@ -306,18 +300,18 @@ export default function FinancialIntelligence() {
                 <CardHeader className="pb-2 p-6 flex flex-row items-center justify-between">
                    <div className="space-y-1">
                      <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2 text-accent">
-                        <MessageSquare className="h-4 w-4" /> Imperial Telegram Node
+                        <MessageSquare className="h-4 w-4" /> Telegram Node Gateway
                      </CardTitle>
-                     <CardDescription className="text-[10px] italic">ECC_ED25519 Secure Handshake.</CardDescription>
+                     <CardDescription className="text-[10px] italic">Handshake Stabilization Mode.</CardDescription>
                    </div>
-                   <Badge variant={profile?.telegramLinked ? "default" : "outline"} className={cn(profile?.telegramLinked ? "bg-green-500/20 text-green-400" : "bg-red-500/10 text-red-400 animate-pulse")}>
-                      {profile?.telegramLinked ? "STABILIZED" : "AWAITING_LINK"}
+                   <Badge variant={profile?.telegramLinked ? "default" : "outline"} className={cn(profile?.telegramLinked ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-yellow-500/10 text-yellow-400 border-yellow-500/30 animate-pulse")}>
+                      {profile?.telegramLinked ? "CONNECTED" : "AWAITING_SYNC"}
                    </Badge>
                 </CardHeader>
                 <CardContent className="px-6 pb-6 flex flex-col md:flex-row items-center gap-6">
                    <div className="flex-1 space-y-4">
                       <p className="text-[11px] text-white/80 leading-relaxed italic">
-                        "টেলিগ্রাম কমান্ড /health পাঠিয়ে হ্যান্ডশেক স্ট্যাবিলাইজ করুন। $১,০০০ বা তার বেশি ডিপোজিটের জন্য আইডেন্টিটি বাইন্ডিং বাধ্যতামূলক।"
+                        "টেলিগ্রাম হ্যান্ডশেক সফল হলে পেমেন্ট রিম্যাডিয়েশন এবং হাই-ভ্যালু পে-আউট অটোমেটিক্যালি আনলক হবে।"
                       </p>
                       <div className="flex flex-wrap gap-3">
                         <Button 
@@ -329,7 +323,7 @@ export default function FinancialIntelligence() {
                           )}
                         >
                           {isDepositing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isMaintenance || !profile?.telegramLinked) ? <Lock className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
-                          {isMaintenance ? "Maintenance Active" : !profile?.telegramLinked ? "Handshake Required" : "Deposit $1,000 via TON"}
+                          {isMaintenance ? "Maintenance Active" : !profile?.telegramLinked ? "Awaiting Sync" : "Deposit $1,000 via TON"}
                         </Button>
                         <Button 
                            variant="outline"
@@ -339,9 +333,9 @@ export default function FinancialIntelligence() {
                            <Building2 className="mr-2 h-3 w-3" /> Connect Banking API
                         </Button>
                         {!profile?.telegramLinked && (
-                          <Button asChild className="bg-secondary text-white font-bold uppercase tracking-widest text-[9px] h-9 px-4 animate-pulse">
+                          <Button asChild className="bg-accent text-background font-bold uppercase tracking-widest text-[9px] h-9 px-4 cyan-glow">
                              <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
-                                <Zap className="mr-2 h-3 w-3" /> BIND GATEWAY
+                                <Zap className="mr-2 h-3 w-3" /> Link identity
                              </a>
                           </Button>
                         )}
@@ -349,8 +343,8 @@ export default function FinancialIntelligence() {
                    </div>
                    <div className="flex flex-col gap-2 text-[8px] font-mono text-muted-foreground uppercase bg-black/20 p-3 rounded-xl border border-white/5">
                       <span className="flex items-center gap-1.5"><ShieldCheck className="h-2.5 w-2.5 text-accent" /> Security: ECC_ED25519</span>
-                      <span className="flex items-center gap-1.5"><Activity className="h-2.5 w-2.5 text-accent" /> Bridge: TON_MAINNET</span>
-                      <span className="flex items-center gap-1.5"><Smartphone className="h-2.5 w-2.5 text-accent" /> Control: BOT_ENABLED</span>
+                      <span className="flex items-center gap-1.5"><Activity className="h-2.5 w-2.5 text-accent" /> Webhook: Active</span>
+                      <span className="flex items-center gap-1.5"><Lock className="h-2.5 w-2.5 text-accent" /> Encryption: AES-256</span>
                    </div>
                 </CardContent>
              </Card>
