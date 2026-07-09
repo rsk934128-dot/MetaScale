@@ -171,7 +171,6 @@ export default function SovereignControlPlane() {
                 <CardContent className="p-3 md:p-4 pt-0">
                    <div className="text-xl md:text-3xl font-headline font-bold text-white">100%</div>
                 </CardContent>
-             </Card>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
