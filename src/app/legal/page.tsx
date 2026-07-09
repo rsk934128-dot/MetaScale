@@ -25,7 +25,6 @@ import {
   Eye,
   Shield,
   UserCheck,
-  Table as TableIcon,
   Mail,
   CheckCircle2,
   Database,
@@ -97,7 +96,7 @@ export default function LegalBoundPage() {
             </h1>
           </div>
           <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[10px]">
-            REV_ID: 2026_05_28
+            ISO 20022 READY • BIS COMPLIANT
           </Badge>
         </header>
 
@@ -110,7 +109,7 @@ export default function LegalBoundPage() {
               THE SOVEREIGN <span className="text-accent italic">COVENANT</span>
             </h2>
             <p className="text-muted-foreground text-sm max-w-xl mx-auto italic leading-relaxed">
-              "Governing the Sirajganj Operational Pilot through ISO 20022 compliance and exactly-once ledger enforcement."
+              "Governing the Sirajganj Operational Pilot through exactly-once ledger invariants and BFIU-compliant identity binding."
             </p>
           </div>
 
@@ -123,9 +122,9 @@ export default function LegalBoundPage() {
                    <Info className="h-6 w-6" />
                 </div>
                 <div className="space-y-2">
-                   <h4 className="text-lg font-headline font-bold text-white uppercase italic tracking-tighter">Identity Binding (NID/TIN) Enforcement</h4>
+                   <h4 className="text-lg font-headline font-bold text-white uppercase italic tracking-tighter">Exactly-Once Ledger Mandate</h4>
                    <p className="text-sm text-muted-foreground leading-relaxed italic">
-                      Satisfying CIP/CIB rules established by Bangladesh Bank, all merchants must link their accounts to their **National Identity Card (NID)** and **Taxpayer Identification Number (TIN)** for BDT 100 Crore regional dairy settlement.
+                      Compliant with Bank for International Settlements (BIS) standards for real-time gross settlement (RTGS). Atomic Locking via Firestore ensures absolute prevention of double-spending.
                    </p>
                 </div>
              </div>
@@ -134,8 +133,8 @@ export default function LegalBoundPage() {
           <Tabs defaultValue="terms" className="space-y-8">
             <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1 w-full flex overflow-x-auto">
               <TabsTrigger value="terms" className="flex-1 text-[10px] uppercase font-bold tracking-widest px-4 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Terms of Use</TabsTrigger>
-              <TabsTrigger value="privacy" className="flex-1 text-[10px] uppercase font-bold tracking-widest px-4 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Compliance</TabsTrigger>
-              <TabsTrigger value="mini-app" className="flex-1 text-[10px] uppercase font-bold tracking-widest px-4 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Ledger Invariants</TabsTrigger>
+              <TabsTrigger value="compliance" className="flex-1 text-[10px] uppercase font-bold tracking-widest px-4 h-full data-[state=active]:bg-accent data-[state=active]:text-background">AML/CFT</TabsTrigger>
+              <TabsTrigger value="data" className="flex-1 text-[10px] uppercase font-bold tracking-widest px-4 h-full data-[state=active]:bg-accent data-[state=active]:text-background">Data Residency</TabsTrigger>
             </TabsList>
 
             <TabsContent value="terms" className="space-y-12 animate-fade-in">
@@ -144,14 +143,14 @@ export default function LegalBoundPage() {
                   <CardHeader className="p-4">
                     <ShieldCheck className="h-6 w-6 text-accent mb-2" />
                     <CardTitle className="text-sm font-bold uppercase tracking-tight">Identity Binding</CardTitle>
-                    <CardDescription className="text-[10px]">CIB/CIP Compliant.</CardDescription>
+                    <CardDescription className="text-[10px]">BFIU/BB Compliant.</CardDescription>
                   </CardHeader>
                 </Card>
                 <Card className="glass-panel border-l-4 border-l-primary">
                   <CardHeader className="p-4">
                     <Lock className="h-6 w-6 text-primary mb-2" />
                     <CardTitle className="text-sm font-bold uppercase tracking-tight">Exactly-Once</CardTitle>
-                    <CardDescription className="text-[10px]">No Double Credits.</CardDescription>
+                    <CardDescription className="text-[10px]">BIS RTGS Standard.</CardDescription>
                   </CardHeader>
                 </Card>
                 <Card className="glass-panel border-l-4 border-l-red-500">
@@ -171,22 +170,32 @@ export default function LegalBoundPage() {
                         <BookOpen className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">1. Regional Jurisdiction & Eligibility</p>
-                        <p className="text-xs text-muted-foreground">Sirajganj Hub Operational Parameters</p>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">1. Regional Jurisdiction (Sirajganj Pilot)</p>
+                        <p className="text-xs text-muted-foreground">Governing 3.3M Citizens</p>
                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
                     <p>
-                      FusionPay Sovereign OS provides deterministic financial infrastructure for citizens of Bangladesh, specifically within the Rajshahi Division. All regional settlements are governed by local trade license validation protocols.
+                      Sovereign OS provides deterministic financial infrastructure for the Rajshahi Division. All regional settlements for dairy cooperatives and hand-loom traders are governed by local trade license validation and mandatory NID/TIN binding.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
             </TabsContent>
 
-            <TabsContent value="privacy" className="space-y-12 animate-fade-in">
-              <Accordion type="single" collapsible className="w-full space-y-4">
+            <TabsContent value="compliance" className="space-y-12 animate-fade-in">
+               <div className="p-6 rounded-2xl bg-red-500/5 border border-red-500/20 flex gap-4 items-start shadow-xl">
+                  <ShieldAlert className="h-6 w-6 text-red-400 shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-bold text-white uppercase tracking-tight">AML/CFT Regulatory Framework</h4>
+                    <p className="text-xs text-muted-foreground italic leading-relaxed mt-1">
+                      "Under the Anti-Money Laundering (AML) Act, all transactions internal to the Sirajganj Hub must be linked to a verified BFIU identity node."
+                    </p>
+                  </div>
+               </div>
+
+               <Accordion type="single" collapsible className="w-full space-y-4">
                 <AccordionItem value="privacy-1" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
                   <AccordionTrigger className="hover:no-underline py-6">
                     <div className="flex items-center gap-4 text-left">
@@ -194,27 +203,27 @@ export default function LegalBoundPage() {
                         <FileText className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">1. NID/TIN Data Governance</p>
-                        <p className="text-xs text-muted-foreground">Programmatic Identity Binding Protocols</p>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">1. Programmatic NID/TIN Binding</p>
+                        <p className="text-xs text-muted-foreground">CIP/CIB Enforcement per Bangladesh Bank</p>
                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-6 pb-6 px-4">
                     <p>
-                      To satisfy Bangladesh Bank's CIP requirements, every high-volume dairy cooperative and hand-loom merchant must undergo a cryptographic handshake linking their digital wallet to their verified **NID** and **TIN** data.
+                      Financial operations exceeding specific thresholds must be linked to a verified national identity. Programmatic binding of NID and TIN records ensures that agricultural credits can be audited by state authorities, preventing capital flight.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
             </TabsContent>
 
-            <TabsContent value="mini-app" className="space-y-12 animate-fade-in">
-              <div className="p-6 rounded-2xl bg-blue-500/5 border border-blue-500/20 flex gap-4 items-start">
-                 <Lock className="h-6 w-6 text-blue-400 shrink-0" />
+            <TabsContent value="data" className="space-y-12 animate-fade-in">
+               <div className="p-6 rounded-2xl bg-blue-500/5 border border-blue-500/20 flex gap-4 items-start">
+                 <Globe className="h-6 w-6 text-blue-400 shrink-0" />
                  <div>
-                    <h4 className="text-sm font-bold text-white uppercase tracking-tight">Deterministic Ledger Invariants</h4>
+                    <h4 className="text-sm font-bold text-white uppercase tracking-tight">Cross-Border Data Residency</h4>
                     <p className="text-xs text-muted-foreground italic leading-relaxed">
-                       Every transaction follows a rigid state machine: **CREATED -> PAID -> CREDITED**.
+                       Sovereign OS strictly segments ISO 20022 payloads from regional client identifying data.
                     </p>
                  </div>
               </div>
@@ -227,33 +236,14 @@ export default function LegalBoundPage() {
                         <CheckCircle2 className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">1. Double Credit Prevention</p>
-                        <p className="text-xs text-muted-foreground">Exactly-Once Ledger Enforcement</p>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">1. Localized PII Storage</p>
+                        <p className="text-xs text-muted-foreground">GDPR & National Data Localization Compliant</p>
                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
                     <p>
-                      Atomic database transactions lock the target account's balance field during write operations. This prevents race conditions and ensures that no merchant is credited twice for the same payment event.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="ma-2" className="border rounded-xl glass-panel px-4 overflow-hidden border-white/5">
-                  <AccordionTrigger className="hover:no-underline py-6">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-primary">
-                        <Globe className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-white uppercase tracking-widest">2. Self-Healing Recoveries</p>
-                        <p className="text-xs text-muted-foreground">Exponential Backoff Cron Protocols</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[13px] text-muted-foreground leading-relaxed space-y-4 pb-6 px-4">
-                    <p>
-                      In cases of regional telecommunications failure, the system's background crons automatically reconcile transactions with MFS gateways using exponential backoff (2^n) intervals, ensuring eventual settlement finality.
+                      While the Anycast ledger resides globally to minimize latency, Personally Identifiable Information (PII) such as NID and TIN records are strictly stored within localized database instances matching Bangladesh’s national data localization regulations.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
@@ -266,7 +256,7 @@ export default function LegalBoundPage() {
               <div className="space-y-2 text-center md:text-left">
                 <h4 className="text-lg font-bold text-white flex items-center justify-center md:justify-start gap-2">
                   <Fingerprint className="h-5 w-5 text-accent" />
-                  Legal Handshake Required
+                  Kernel Handshake Protocol v1.2
                 </h4>
                 <p className="text-xs text-muted-foreground">
                   Access to the Sirajganj Operational Pilot requires re-validation of your Identity Binding status.
@@ -280,7 +270,7 @@ export default function LegalBoundPage() {
                 {isRefreshing ? (
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
-                {isRefreshing ? "Refreshing..." : "Authorize Binding"}
+                {isRefreshing ? "Refreshing..." : "Authorize Handshake"}
                 {!isRefreshing && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </CardContent>
@@ -288,7 +278,7 @@ export default function LegalBoundPage() {
 
           <footer className="text-center pt-8 border-t border-white/5 space-y-2">
             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
-              Sovereign OS Sirajganj Pilot v1.2.0-stable • © 2024 FusionPay
+              Sovereign OS Sirajganj Hub v1.2.0-stable • © 2024 FusionPay
             </p>
           </footer>
         </main>

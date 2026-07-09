@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -74,9 +75,9 @@ export default function UBILMainframePage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setLogs(prev => [
-        "> [AUDIT] Forensic Intelligence Engine: 94.2% Memory Density.",
-        "> [AUDIT] Pattern Library: 14.2k nodes mapped.",
-        "> [SYNC] Anycast Grid: sub-10ms UX stabilized.",
+        "> [BOOT] Night-Watchman Protocol Initialized.",
+        "> [AUDIT] Exactly-Once Ledger Invariant: VERIFIED.",
+        "> [SYNC] Anycast Grid: 8.4ms UX stabilized.",
         ...prev
       ]);
     }, 1000);
@@ -87,9 +88,9 @@ export default function UBILMainframePage() {
     if (!events || events.length === 0) return;
     const latestEvent = events[0];
     if (latestEvent.type === 'AUTONOMOUS_SETTLEMENT_SUCCESS') {
-      setLogs(prev => [`> [AUTONOMOUS] Settled ${latestEvent.payload.count} পেন্ডিং পেমেন্ট।`, ...prev]);
+      setLogs(prev => [`> [AUTONOMOUS] Settled ${latestEvent.payload.count} pending signals.`, ...prev]);
     } else if (latestEvent.type === 'GOVERNANCE_VIOLATION') {
-      setLogs(prev => [`! [GOVERNANCE_BLOCK] Policy Violation: Profile mismatch on Node-04.`, ...prev]);
+      setLogs(prev => [`! [GOVERNANCE] Policy Block: NID/TIN Drift on Node-04.`, ...prev]);
     }
   }, [events]);
 
@@ -103,7 +104,7 @@ export default function UBILMainframePage() {
   const handleStartAutonomous = () => {
     startAutonomousWorker();
     setLogs(prev => [`$ nn-cli --start-autonomous --night-watchman`, `> Sovereign Worker Started... Cycle: 60s.`, ...prev]);
-    toast({ title: "Autonomous Engine Active", description: "সিস্টেম এখন নিজে থেকেই পেমেন্ট ক্রেডিট করবে।" });
+    toast({ title: "Night-Watchman Active", description: "Autonomous maintenance engine is now monitoring the mesh." });
   };
 
   const handleDispatchPulse = async () => {
@@ -132,10 +133,10 @@ export default function UBILMainframePage() {
       await sendPulseReport(userData.telegramChatId, reportText);
       
       emitEvent('FINANCE', 'DAILY_PULSE_DISPATCHED', 3, { chatId: userData.telegramChatId });
-      setLogs(prev => [`> [REPORT] Daily Integrity Pulse sent to Telegram.`, ...prev]);
-      toast({ title: "Pulse Report Dispatched", description: "চেক ইউর টেলিগ্রাম!" });
+      setLogs(prev => [`> [REPORT] Daily Integrity Pulse sent to Telegram Hub.`, ...prev]);
+      toast({ title: "Pulse Report Dispatched", description: "Executive summary sent to Telegram." });
     } catch (err) {
-      toast({ variant: "destructive", title: "Pulse Error", description: "এআই নোড বর্তমানে হাই-লোড প্রসেসিং এ আছে।" });
+      toast({ variant: "destructive", title: "Pulse Error", description: "Reasoning node timeout." });
     } finally {
       setIsSendingPulse(false);
     }
@@ -184,7 +185,7 @@ export default function UBILMainframePage() {
                 disabled={isAutonomousActive}
              >
                 <Rocket className="mr-1 h-3 w-3" />
-                Engine {isAutonomousActive ? "Active" : "Start"}
+                Night-Watchman {isAutonomousActive ? "Active" : "Start"}
              </Button>
           </div>
         </header>
@@ -218,10 +219,9 @@ export default function UBILMainframePage() {
                          <p key={i} className={cn(
                            "pl-1 border-l-2 py-0.5 border-white/5",
                            log.includes('[AUTONOMOUS]') ? "text-green-400" : 
-                           log.includes('[AGENT_COUNCIL]') ? "text-accent" :
-                           log.includes('[REPORT]') ? "text-primary" :
+                           log.includes('[BOOT]') ? "text-primary font-bold" :
                            log.includes('[SYNC]') ? "text-blue-400" :
-                           log.includes('[AUDIT]') ? "text-yellow-500 font-bold" :
+                           log.includes('[AUDIT]') ? "text-yellow-500" :
                            log.includes('!') ? "text-red-500 font-bold" :
                            "text-white/60"
                          )}>
@@ -238,12 +238,12 @@ export default function UBILMainframePage() {
                 <CardHeader className="p-4 md:p-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="min-w-0">
                     <CardTitle className="text-xs md:text-sm uppercase tracking-widest flex items-center gap-2">
-                      <Database className="h-4 w-4 text-accent" /> Ledger Extraction
+                      <Database className="h-4 w-4 text-accent" /> Signal Ledger
                     </CardTitle>
                   </div>
                   <div className="relative w-full md:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                    <Input placeholder="Filter signals or hashes..." className="pl-9 h-8 bg-secondary/30 border-white/5 text-[10px] rounded-lg" value={search} onChange={e => setSearch(e.target.value)} />
+                    <Input placeholder="Filter hashes..." className="pl-9 h-8 bg-secondary/30 border-white/5 text-[10px] rounded-lg" value={search} onChange={e => setSearch(e.target.value)} />
                   </div>
                 </CardHeader>
                 <CardContent className="p-0 flex-1 flex flex-col md:flex-row overflow-hidden">
@@ -262,8 +262,8 @@ export default function UBILMainframePage() {
                               onClick={() => setSelectedEvent(event)}
                             >
                                <div className="flex justify-between items-start mb-1">
-                                  <Badge variant={event.type.includes('BLOCK') ? 'destructive' : event.type === 'AGENT_DIRECTIVE_SYNCED' ? 'secondary' : 'default'} className="text-[7px] md:text-[8px] px-1 md:px-2 py-0">
-                                    {event.type.includes('BLOCK') ? 'POLICY' : event.type === 'AGENT_DIRECTIVE_SYNCED' ? 'AGENT' : event.status}
+                                  <Badge variant={event.type.includes('BLOCK') ? 'destructive' : 'default'} className="text-[7px] md:text-[8px] px-1 md:px-2 py-0">
+                                    {event.type.includes('BLOCK') ? 'POLICY' : event.status}
                                   </Badge>
                                   <span className="text-[7px] md:text-[8px] text-muted-foreground font-mono">{new Date(event.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                                </div>
@@ -280,45 +280,34 @@ export default function UBILMainframePage() {
                           <div className="flex items-center justify-between border-b border-white/10 pb-4">
                              <div className="min-w-0">
                                 <h4 className="text-base md:text-lg font-headline italic font-bold uppercase text-accent truncate">
-                                  {selectedEvent.type.includes('BLOCK') ? 'Policy Enforcement' : selectedEvent.type === 'AGENT_DIRECTIVE_SYNCED' ? 'Forensic Analyst' : 'Ledger Inspector'}
+                                  {selectedEvent.type.includes('BLOCK') ? 'Governance Guard' : 'Ledger Node Inspector'}
                                 </h4>
                              </div>
-                             {selectedEvent.type.includes('BLOCK') ? <ShieldAlert className="h-5 w-5 text-red-500" /> : selectedEvent.type === 'AGENT_DIRECTIVE_SYNCED' ? <BrainCircuit className="h-5 w-5 text-accent" /> : <Fingerprint className="h-5 w-5 text-accent" />}
+                             <Fingerprint className="h-5 w-5 text-accent" />
                           </div>
                           <div className={cn(
                             "p-3 md:p-4 rounded-xl border space-y-2",
                             selectedEvent.type.includes('BLOCK') ? "bg-red-500/10 border-red-500/30" : "bg-primary/5 border-primary/20"
                           )}>
                               <p className="text-[10px] md:text-[11px] text-white/90 italic leading-relaxed">
-                                  "{selectedEvent.routingReason || 'Mapped to Sovereign Grid.'}"
+                                  "{selectedEvent.routingReason || 'Validated via Exactly-Once Protocol.'}"
                               </p>
                           </div>
-                          <div className="grid grid-cols-1 gap-4">
-                             {selectedEvent.type !== 'AGENT_DIRECTIVE_SYNCED' && !selectedEvent.type.includes('BLOCK') ? (
-                               <div className="grid grid-cols-2 gap-4">
-                                 <div className="p-3 rounded-lg bg-secondary/20 border border-white/5">
-                                    <p className="text-[8px] font-bold text-muted-foreground uppercase">Amount</p>
-                                    <p className="text-sm font-bold text-white">${selectedEvent.amount}</p>
-                                 </div>
-                                 <div className="p-3 rounded-lg bg-secondary/20 border border-white/5">
-                                    <p className="text-[8px] font-bold text-muted-foreground uppercase">Bank</p>
-                                    <p className="text-sm font-bold text-white">{selectedEvent.senderBank}</p>
-                                 </div>
-                               </div>
-                             ) : (
-                               <div className="p-4 rounded-xl bg-black/40 border border-white/10 font-mono text-[10px] space-y-2">
-                                  <p className="text-accent uppercase">// {selectedEvent.type.includes('BLOCK') ? 'Policy Violation Trace' : 'Forensic Intelligence Trace'}</p>
-                                  <pre className="text-white/60 whitespace-pre-wrap">
-                                    {JSON.stringify(selectedEvent.payload, null, 2)}
-                                  </pre>
-                               </div>
-                             )}
+                          <div className="grid grid-cols-2 gap-4">
+                             <div className="p-3 rounded-lg bg-secondary/20 border border-white/5">
+                                <p className="text-[8px] font-bold text-muted-foreground uppercase">Value</p>
+                                <p className="text-sm font-bold text-white">${selectedEvent.amount}</p>
+                             </div>
+                             <div className="p-3 rounded-lg bg-secondary/20 border border-white/5">
+                                <p className="text-[8px] font-bold text-muted-foreground uppercase">Status</p>
+                                <p className="text-sm font-bold text-white">{selectedEvent.status}</p>
+                             </div>
                           </div>
                        </div>
                      ) : (
                        <div className="h-40 md:h-full flex flex-col items-center justify-center opacity-20 text-center">
                           <Database className="h-12 w-12 md:h-16 md:w-16 mb-2" />
-                          <p className="text-[8px] md:text-[10px] uppercase font-bold tracking-widest">Select Signal to Inspect</p>
+                          <p className="text-[8px] md:text-[10px] uppercase font-bold tracking-widest">Select Node Signal</p>
                        </div>
                      )}
                   </div>

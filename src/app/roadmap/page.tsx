@@ -69,7 +69,7 @@ const ROADMAP_PHASES = [
     icon: Network,
     date: "Q1 2024",
     progress: 100,
-    desc: "Establishing a server-authoritative ledger with exactly-once crediting and deterministic state machine logic.",
+    desc: "Establishing a server-authoritative ledger with exactly-once crediting and programmatic webhook integration.",
     items: [
       "Firestore Hardened Security Rules",
       "Transactional Balance Updates (Atomic)",
@@ -108,39 +108,13 @@ const ROADMAP_PHASES = [
 ];
 
 const READINESS_MATRIX = [
+  { category: "Security", item: "HMAC Secrets Configured", status: "PASS", icon: Key },
   { category: "Security", item: "Hunter Mode: Anomaly Profiling", status: "PASS", icon: Radar },
   { category: "Ledger", item: "Exactly-once Enforcement", status: "PASS", icon: CheckCircle2 },
   { category: "Reconciliation", item: "Self-healing Worker Active", status: "PASS", icon: RefreshCw },
   { category: "Comms", item: "Telegram Imperial Gateway", status: "PASS", icon: MessageSquare },
   { category: "Infra", item: "Anycast Latency < 8.4ms", status: "PASS", icon: Zap },
   { category: "Compliance", item: "Identity Binding (NID/TIN)", status: "PASS", icon: ShieldCheck }
-];
-
-const SOLVED_PROBLEMS = [
-  { 
-    title: "Exactly-Once Ledger", 
-    solution: "Prevents Double Credits via Firestore Transactions.",
-    icon: CheckCircle,
-    color: "text-green-400"
-  },
-  { 
-    title: "Stuck Payment Recovery", 
-    solution: "Self-healing Cron with Exponential Backoff logic.",
-    icon: RefreshCw,
-    color: "text-accent"
-  },
-  { 
-    title: "Regulatory Compliance", 
-    solution: "Identity Binding (NID/TIN) per BB/CIP rules.",
-    icon: ShieldCheck,
-    color: "text-blue-400"
-  },
-  { 
-    title: "Remote Imperial Control", 
-    solution: "Mobile-optimized Telegram Mini App interface.",
-    icon: Smartphone,
-    color: "text-yellow-400"
-  }
 ];
 
 export default function RoadmapPage() {
@@ -217,25 +191,6 @@ export default function RoadmapPage() {
             </p>
           </div>
 
-          <section className="space-y-8">
-             <h3 className="text-xl font-headline font-bold uppercase tracking-widest text-white border-l-4 border-l-accent pl-4">Operational Invariants (What We Solve)</h3>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {SOLVED_PROBLEMS.map((problem, i) => (
-                  <Card key={i} className="glass-panel border-white/5 hover:border-accent/30 transition-all">
-                     <CardHeader className="pb-2">
-                        <problem.icon className={cn("h-6 w-6 mb-2", problem.color)} />
-                        <CardTitle className="text-sm font-bold uppercase tracking-tight">{problem.title}</CardTitle>
-                     </CardHeader>
-                     <CardContent>
-                        <p className="text-xs text-muted-foreground leading-relaxed italic">
-                           {problem.solution}
-                        </p>
-                     </CardContent>
-                  </Card>
-                ))}
-             </div>
-          </section>
-
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
              <div className="xl:col-span-2 space-y-8">
                 <div className="relative space-y-12 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-accent before:via-primary before:to-secondary/20">
@@ -306,7 +261,7 @@ export default function RoadmapPage() {
                       </div>
                    </CardHeader>
                    <CardContent className="p-0">
-                      <ScrollArea className="h-[400px]">
+                      <ScrollArea className="h-[450px]">
                          <div className="divide-y divide-white/5">
                             {READINESS_MATRIX.map((item, i) => (
                                <div key={i} className="p-4 flex items-center justify-between group hover:bg-white/5 transition-colors">
@@ -358,7 +313,7 @@ export default function RoadmapPage() {
                         {isLaunching ? "Preflight Active..." : isLive ? "Commercial Live" : "Authorize Global Launch"}
                       </Button>
                       <p className="text-[9px] text-muted-foreground text-center italic leading-relaxed">
-                        "Preflight validates environment and ledger invariants for Sirajganj Operational Hub."
+                        "Preflight validates exactly-once ledger and identity binding invariants."
                       </p>
                    </div>
                 </Card>

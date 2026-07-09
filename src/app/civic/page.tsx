@@ -124,7 +124,7 @@ export default function CivicIntelligencePage() {
           <div className="flex-1 truncate">
             <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 text-blue-400">
               <Waves className="h-4 w-4 md:h-5 md:w-5 shrink-0" />
-              <span className="truncate">Sirajganj Civic Intelligence v1.2</span>
+              <span className="truncate uppercase">Sirajganj Civic Intelligence v1.2</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -143,7 +143,7 @@ export default function CivicIntelligencePage() {
             <div className="space-y-1">
               <h2 className="text-2xl md:text-3xl font-headline font-bold mb-1 uppercase tracking-tighter">Sirajganj <span className="text-blue-400">Spatial Profile</span></h2>
               <p className="text-xs md:text-sm text-muted-foreground italic max-w-2xl">
-                "Monitoring 2,402.05 km² alluvial territory. Topography: Mean elevation 7m above MSL. Hydrology: Active braided Jamuna channel."
+                "Monitoring 2,497.92 km² alluvial territory. 24°01' - 24°47' N lat, 89°15' - 89°59' E long. Mean elevation 7m above MSL."
               </p>
             </div>
             <div className="text-left md:text-right">
@@ -182,11 +182,11 @@ export default function CivicIntelligencePage() {
             </Card>
             <Card className="glass-panel border-l-4 border-l-primary">
               <CardHeader className="pb-2 p-4">
-                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2"><Droplets className="h-3 w-3" /> Area Coverage</CardTitle>
+                <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2"><Droplets className="h-3 w-3" /> Total Households</CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className="text-2xl font-bold">2,497 km²</div>
-                <p className="text-[10px] text-muted-foreground uppercase mt-1">Total Admin Units</p>
+                <div className="text-2xl font-bold">842,308</div>
+                <p className="text-[10px] text-muted-foreground uppercase mt-1">Census 2022 Data</p>
               </CardContent>
             </Card>
           </div>
@@ -198,7 +198,7 @@ export default function CivicIntelligencePage() {
                   <div className="flex justify-between items-center gap-2">
                     <CardTitle className="flex items-center gap-2 text-sm md:text-base uppercase italic tracking-tighter">
                       <ShieldAlert className="h-4 w-4 text-red-500" />
-                      Hydrological Inundation Extent (Simulation)
+                      Hydrological Inundation Extent (HEC-RAS 2D)
                     </CardTitle>
                   </div>
                 </CardHeader>
@@ -212,15 +212,15 @@ export default function CivicIntelligencePage() {
                          <div key={i} className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-2">
                             <p className={cn("text-[10px] font-bold uppercase", stat.color)}>{stat.period} Return</p>
                             <p className="text-2xl font-headline font-bold text-white">{stat.area}</p>
-                            <p className="text-[9px] text-muted-foreground italic">"{stat.label}"</p>
+                            <p className="text-[9px] text-muted-foreground italic">"Simulated Discharge"</p>
                          </div>
                        ))}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                        {[
-                         { range: "4.97m - 7.63m", label: "High Susceptibility", color: "text-red-400", desc: "Active river beds, low-lying chars, and deltaic silt zones." },
-                         { range: "7.63m - 10.29m", label: "Medium Susceptibility", color: "text-yellow-400", desc: "Agricultural floodplains subject to monsoonal surges." }
+                         { range: "Bahadurabad Gauge", label: "Calibration Station", color: "text-red-400", desc: "Active monitoring of braided Jamuna channel margins." },
+                         { range: "Kazipur Gauge", label: "Operational Station", color: "text-yellow-400", desc: "Modeling monsoonal surges across investigated reaches." }
                        ].map((zone, i) => (
                          <div key={i} className="p-3 rounded-lg bg-black/40 border border-white/5 space-y-1">
                             <div className="flex justify-between items-center">
@@ -233,7 +233,7 @@ export default function CivicIntelligencePage() {
                     </div>
                     
                     <div className="divide-y divide-white/5 pt-4">
-                      <p className="text-[10px] font-bold uppercase text-muted-foreground mb-3 tracking-widest">Active Incident Queue (Live Node)</p>
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground mb-3 tracking-widest">Active Gauge Signal (Live)</p>
                       {(!emergencies || emergencies.length === 0) && (
                         <div className="h-40 flex items-center justify-center text-muted-foreground italic text-xs">
                           No active flood surges reported in Investigation Reach.
@@ -246,8 +246,8 @@ export default function CivicIntelligencePage() {
                               <AlertTriangle className="h-5 w-5" />
                             </div>
                             <div>
-                              <p className="text-xs font-bold text-white uppercase">{ev.type} IN SIRAJGANJ</p>
-                              <p className="text-[10px] text-muted-foreground">{ev.location} • Elevation Hazard Level: {ev.severity}/5</p>
+                              <p className="text-xs font-bold text-white uppercase">{ev.type} DETECTED</p>
+                              <p className="text-[10px] text-muted-foreground">{ev.location} • Inundation Risk: HIGH</p>
                             </div>
                           </div>
                           <div className="flex gap-2">
@@ -259,7 +259,7 @@ export default function CivicIntelligencePage() {
                                 disabled={isAnalyzing}
                             >
                                 {isAnalyzing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <BrainCircuit className="h-3 w-3 mr-1" />}
-                                HEC-RAS Model
+                                RUN RIVERFLOW2D
                             </Button>
                           </div>
                         </div>
@@ -277,17 +277,16 @@ export default function CivicIntelligencePage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <div className="p-4 rounded-xl bg-black/60 border border-white/10 font-mono text-[11px] leading-relaxed">
-                      <p className="text-accent mb-2">// PEAK STAGE LEVEL CALCULATION</p>
-                      <p className="text-white text-lg">X = X̄ + K * σ</p>
+                      <p className="text-accent mb-2">// PEAK STAGE LEVEL (X)</p>
+                      <p className="text-white text-lg italic">X = X̄ + K * σ</p>
                       <div className="mt-4 text-[9px] text-muted-foreground space-y-1">
-                         <p>• X: Projected flood level for return period (T)</p>
                          <p>• X̄: Mean of historical peak levels</p>
-                         <p>• K: Gumbel frequency factor (Calibrated)</p>
-                         <p>• σ: Standard deviation of investigated dataset</p>
+                         <p>• K: Gumbel frequency factor (Calibrated per station)</p>
+                         <p>• σ: Standard deviation of investigated reaches</p>
                       </div>
                    </div>
                    <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                      "Utilized for modeling monsoonal surges and bank erosion risk across investigated reaches in Chauhali and Kazipur."
+                      "Utilized for modeling peak surge finality across Chauhali and Kazipur floodplains."
                    </p>
                 </CardContent>
               </Card>
@@ -298,7 +297,7 @@ export default function CivicIntelligencePage() {
                 <CardHeader className="p-4">
                   <CardTitle className="text-xs flex items-center gap-2 uppercase">
                     <BrainCircuit className="h-4 w-4 text-accent" />
-                    RIVERFLOW2D Analysis
+                    Hydro-Reasoning Engine
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-4">
@@ -307,15 +306,15 @@ export default function CivicIntelligencePage() {
                       <div className="p-3 rounded-lg bg-accent/10 border border-accent/20 space-y-2">
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] font-bold text-accent uppercase">Risk: {analysisResult.riskLevel}</span>
-                          <Badge variant="outline" className="text-[8px]">T=100yr Extent</Badge>
+                          <Badge variant="outline" className="text-[8px]">T=100yr Map</Badge>
                         </div>
                         <p className="text-[11px] text-white/90 italic leading-relaxed">
                           "{analysisResult.suggestedAction}"
                         </p>
-                        <p className="text-[9px] text-muted-foreground">Inundation Prob: 30% of investigated reach.</p>
+                        <p className="text-[9px] text-muted-foreground">Calibration: Bahadurabad Station.</p>
                       </div>
                       <Button className="w-full text-[10px] font-bold cyan-glow bg-accent text-background h-8 uppercase">
-                        Authorize Flood Response
+                        Deploy Rescue Node
                       </Button>
                     </div>
                   ) : (
@@ -324,7 +323,7 @@ export default function CivicIntelligencePage() {
                         <Radio className="h-5 w-5 text-muted-foreground animate-pulse" />
                       </div>
                       <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                        Select gauge signal (Kazipur/Chauhali) to trigger hydrodynamic response modeling.
+                        Select a hydrological gauge signal to trigger hydrodynamic response modeling.
                       </p>
                     </div>
                   )}
@@ -335,7 +334,7 @@ export default function CivicIntelligencePage() {
                 <CardHeader className="p-4">
                   <CardTitle className="text-xs flex items-center gap-2 uppercase font-bold text-blue-400">
                     <Activity className="h-4 w-4" />
-                    Structural Integrity
+                    Infrastructure Integrity
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-3">
@@ -348,13 +347,13 @@ export default function CivicIntelligencePage() {
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between text-[10px] font-bold">
-                      <span>Bridge Approach (Kazipur)</span>
-                      <span>91%</span>
+                      <span>Sirajganj Economic Zone</span>
+                      <span>98%</span>
                     </div>
-                    <Progress value={91} className="h-1 bg-blue-400/10 [&>div]:bg-blue-400" />
+                    <Progress value={98} className="h-1 bg-blue-400/10 [&>div]:bg-blue-400" />
                   </div>
                   <p className="text-[9px] text-muted-foreground mt-2 italic leading-tight">
-                    "Monitoring linear settlements and linear grid resilience along flood protection embankments."
+                    "Monitoring 1,041-acre industrial zone resilience against Jamuna braiding dynamics."
                   </p>
                 </CardContent>
               </Card>
