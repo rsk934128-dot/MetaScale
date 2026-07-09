@@ -36,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/ui/logo';
 import Link from 'next/link';
 
-const ADMIN_EMAIL = 'rubels1k994@gmail.com';
+const ADMIN_EMAIL = 'rsk934128@gmail.com';
 const DEFAULT_TEAM_ID = 'team_UJR6KEPUrWUszD8jdhiyjQgV';
 
 export default function LoginPage() {
