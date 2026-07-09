@@ -49,6 +49,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { generateTelegramLink } from "@/lib/telegram";
 import { PaymentLinkManager } from "@/components/finance/PaymentLinkManager";
 import { TonConnectButton, useTonAddress } from '@tonconnect/ui-react';
+import { BankSandboxModal } from "@/components/finance/BankSandboxModal";
 
 export default function FinancialIntelligence() {
   const { user } = useUser();
@@ -60,6 +61,7 @@ export default function FinancialIntelligence() {
   const [isMiniApp, setIsMiniApp] = useState(false);
   const [isDepositing, setIsDepositing] = useState(false);
   const [isMaintenance, setIsMaintenance] = useState(false);
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false);
 
   // Maintenance Check (Circuit Breaker)
   useEffect(() => {
@@ -213,6 +215,24 @@ export default function FinancialIntelligence() {
     }
   };
 
+  const handleBankLinkSuccess = async (account: any) => {
+    if (!firestore || !user?.uid) return;
+    try {
+      const bankRef = doc(firestore, 'users', user.uid, 'linked_banks', account.id);
+      await setDoc(bankRef, account);
+      
+      emitEvent('FINANCE', 'BANK_ACCOUNT_LINKED', 2, { 
+        bank: account.bankName, 
+        node: 'NODE-04-UK',
+        protocol: 'OPEN_BANKING_V2'
+      });
+      
+      toast({ title: "Banking Node Synced", description: `${account.bankName} has been bound to your Fiscal Command hub.` });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Binding Failed" });
+    }
+  };
+
   return (
     <div className={cn("flex min-h-screen", isMiniApp && "bg-black")}>
       {!isMiniApp && <AppSidebar />}
@@ -295,6 +315,13 @@ export default function FinancialIntelligence() {
                           {isDepositing ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : isMaintenance ? <Lock className="mr-2 h-3 w-3" /> : <Plus className="mr-2 h-3 w-3" />}
                           {isMaintenance ? "Maintenace Active" : "Deposit $1,000 via TON"}
                         </Button>
+                        <Button 
+                           variant="outline"
+                           className="h-9 font-bold uppercase text-[9px] border-accent/20 text-accent hover:bg-accent/10"
+                           onClick={() => setIsBankModalOpen(true)}
+                        >
+                           <Building2 className="mr-2 h-3 w-3" /> Connect Banking API
+                        </Button>
                         {!profile?.telegramLinked && (
                           <Button asChild className="bg-secondary text-white font-bold uppercase tracking-widest text-[9px] h-9 px-4 animate-pulse">
                              <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
@@ -362,7 +389,7 @@ export default function FinancialIntelligence() {
                        <Input 
                          type="number" 
                          placeholder="0.00" 
-                         className="bg-secondary/30 border-white/5 h-12 text-lg font-headline"
+                         className="bg-secondary/30 border-white/5 h-12 text-lg font-headline font-bold"
                          value={payoutAmount}
                          onChange={(e) => setPayoutAmount(e.target.value)}
                          disabled={isMaintenance}
@@ -383,7 +410,7 @@ export default function FinancialIntelligence() {
             <TabsContent value="history" className="animate-fade-in">
                 <Card className="glass-panel border-white/5">
                    <CardHeader className="p-6 border-b border-white/5 bg-white/5">
-                      <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2">
+                      <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2 text-accent">
                          <History className="h-4 w-4 text-accent" /> Settlement Ledger
                       </CardTitle>
                    </CardHeader>
@@ -422,6 +449,12 @@ export default function FinancialIntelligence() {
             </TabsContent>
           </Tabs>
         </main>
+        
+        <BankSandboxModal 
+           isOpen={isBankModalOpen} 
+           onClose={() => setIsBankModalOpen(false)} 
+           onSuccess={handleBankLinkSuccess} 
+        />
       </SidebarInset>
     </div>
   );

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -187,7 +186,7 @@ export default function APIDocsPage() {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <Card className="glass-panel border-white/5">
                      <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2 uppercase tracking-tighter">
+                        <CardTitle className="text-lg flex items-center gap-2 uppercase tracking-tighter text-white">
                            <BookOpen className="h-5 w-5 text-accent" />
                            Secure Integration
                         </CardTitle>
@@ -213,7 +212,7 @@ export default function APIDocsPage() {
 
                   <Card className="glass-panel border-white/5 bg-accent/5">
                      <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2 uppercase tracking-tighter">
+                        <CardTitle className="text-lg flex items-center gap-2 uppercase tracking-tighter text-white">
                            <Tag className="h-5 w-5 text-accent" />
                            Exchange Deposit (Memo)
                         </CardTitle>
@@ -237,7 +236,7 @@ export default function APIDocsPage() {
                   <Card className="glass-panel border-white/5">
                      <CardHeader>
                         <div className="w-10 h-10 rounded bg-accent/20 flex items-center justify-center text-accent mb-2"><Key className="h-5 w-5" /></div>
-                        <CardTitle className="text-sm uppercase tracking-widest">Key Storage</CardTitle>
+                        <CardTitle className="text-sm uppercase tracking-widest text-white">Key Storage</CardTitle>
                      </CardHeader>
                      <CardContent>
                         <p className="text-[11px] text-muted-foreground italic">Never embed secret keys in client-side code. Use environment variables exclusively.</p>
@@ -246,7 +245,7 @@ export default function APIDocsPage() {
                   <Card className="glass-panel border-white/5">
                      <CardHeader>
                         <div className="w-10 h-10 rounded bg-primary/20 flex items-center justify-center text-primary mb-2"><Shield className="h-5 w-5" /></div>
-                        <CardTitle className="text-sm uppercase tracking-widest">Least Privilege</CardTitle>
+                        <CardTitle className="text-sm uppercase tracking-widest text-white">Least Privilege</CardTitle>
                      </CardHeader>
                      <CardContent>
                         <p className="text-[11px] text-muted-foreground italic">Use Restricted API Keys to grant only the minimum permissions necessary.</p>
@@ -255,7 +254,7 @@ export default function APIDocsPage() {
                   <Card className="glass-panel border-white/5">
                      <CardHeader>
                         <div className="w-10 h-10 rounded bg-green-500/20 flex items-center justify-center text-green-400 mb-2"><History className="h-5 w-5" /></div>
-                        <CardTitle className="text-sm uppercase tracking-widest">Rotation</CardTitle>
+                        <CardTitle className="text-sm uppercase tracking-widest text-white">Rotation</CardTitle>
                      </CardHeader>
                      <CardContent>
                         <p className="text-[11px] text-muted-foreground italic">Periodically rotate your API keys to minimize risk if a key is compromised.</p>

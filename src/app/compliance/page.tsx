@@ -82,7 +82,7 @@ export default function KYBOrchestrationPage() {
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-6">
           <SidebarTrigger />
           <div className="flex-1">
-            <h1 className="text-lg font-headline font-bold flex items-center gap-2">
+            <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-white">
               <Fingerprint className="h-5 w-5 text-accent" />
               Regulated Trust Fabric (RFTF)
             </h1>
@@ -101,14 +101,14 @@ export default function KYBOrchestrationPage() {
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-3xl font-headline font-bold mb-2">Trust Orchestration Hub</h2>
+              <h2 className="text-3xl font-headline font-bold mb-2 uppercase italic tracking-tighter text-white">Trust <span className="text-accent">Orchestration</span></h2>
               <p className="text-muted-foreground">Managing cryptographic identity binding and continuous entity health.</p>
             </div>
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="border-accent/20 text-accent font-bold"
+                className="border-accent/20 text-accent font-bold h-9"
                 onClick={handleSimulateSync}
                 disabled={isSimulating}
               >
@@ -117,7 +117,7 @@ export default function KYBOrchestrationPage() {
               </Button>
               <Button 
                 size="sm" 
-                className="cyan-glow bg-accent text-background font-bold"
+                className="cyan-glow bg-accent text-background font-bold h-9"
                 onClick={handleRunAIAudit}
                 disabled={isAuditing}
               >
@@ -134,13 +134,13 @@ export default function KYBOrchestrationPage() {
                   <Badge variant="outline" className="text-[10px]">Entity Binding</Badge>
                   <AlertCircle className="h-4 w-4 text-yellow-500" />
                 </div>
-                <CardTitle className="text-lg mt-2">Rubelpay</CardTitle>
+                <CardTitle className="text-lg mt-2 text-white">Rubelpay</CardTitle>
                 <CardDescription className="text-xs font-bold uppercase">Drift Detected</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-2 rounded bg-secondary/30 text-[10px] space-y-1">
                   <div className="flex justify-between"><span>Reg Score:</span> <span className="text-yellow-500">48%</span></div>
-                  <div className="flex justify-between"><span>Jurisdiction:</span> <span>Bangladesh</span></div>
+                  <div className="flex justify-between"><span>Jurisdiction:</span> <span className="text-white">Bangladesh</span></div>
                 </div>
               </CardContent>
             </Card>
@@ -151,7 +151,7 @@ export default function KYBOrchestrationPage() {
                   <Badge variant="outline" className="text-[10px]">UBO Identity</Badge>
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
                 </div>
-                <CardTitle className="text-lg mt-2">Farid Sheikh</CardTitle>
+                <CardTitle className="text-lg mt-2 text-white">Farid Sheikh</CardTitle>
                 <CardDescription className="text-xs font-bold uppercase text-green-500">Verified</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -168,7 +168,7 @@ export default function KYBOrchestrationPage() {
                   <Badge variant="outline" className="text-[10px]">Settlement Tier</Badge>
                   <Lock className="h-4 w-4 text-red-500" />
                 </div>
-                <CardTitle className="text-lg mt-2">USDT Treasury</CardTitle>
+                <CardTitle className="text-lg mt-2 text-white">USDT Treasury</CardTitle>
                 <CardDescription className="text-xs font-bold uppercase text-red-400">Limited Payouts</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -184,18 +184,17 @@ export default function KYBOrchestrationPage() {
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             <div className="xl:col-span-2">
               <Tabs defaultValue="audit" className="space-y-6">
-                <TabsList className="bg-secondary/50 border border-white/5">
-                  <TabsTrigger value="audit">AI Risk Analysis</TabsTrigger>
-                  <TabsTrigger value="fabric">Fabric Map</TabsTrigger>
-                  <TabsTrigger value="sim">Simulation</TabsTrigger>
+                <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1">
+                  <TabsTrigger value="audit" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full">AI Risk Analysis</TabsTrigger>
+                  <TabsTrigger value="fabric" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full">Fabric Map</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="audit" className="space-y-6">
+                <TabsContent value="audit" className="space-y-6 animate-fade-in">
                   {auditResult ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
                       <Card className="glass-panel border-accent/20">
                         <CardHeader>
-                          <CardTitle className="text-sm flex items-center gap-2">
+                          <CardTitle className="text-sm flex items-center gap-2 uppercase text-white">
                             <TrendingDown className="h-4 w-4 text-accent" />
                             Predicted Failures
                           </CardTitle>
@@ -216,7 +215,7 @@ export default function KYBOrchestrationPage() {
 
                       <Card className="glass-panel border-blue-400/20">
                         <CardHeader>
-                          <CardTitle className="text-sm flex items-center gap-2">
+                          <CardTitle className="text-sm flex items-center gap-2 uppercase text-white">
                             <Zap className="h-4 w-4 text-blue-400" />
                             Self-Healing Plan
                           </CardTitle>
@@ -245,10 +244,10 @@ export default function KYBOrchestrationPage() {
                   )}
                 </TabsContent>
 
-                <TabsContent value="fabric">
-                  <Card className="glass-panel">
+                <TabsContent value="fabric" className="animate-fade-in">
+                  <Card className="glass-panel border-white/5">
                     <CardHeader>
-                      <CardTitle className="text-lg">Cryptographic Binding Map</CardTitle>
+                      <CardTitle className="text-lg uppercase text-white italic">Cryptographic Binding Map</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex flex-col md:flex-row items-center justify-between gap-8 p-12 border border-white/5 rounded-2xl bg-secondary/10 relative">
@@ -256,21 +255,21 @@ export default function KYBOrchestrationPage() {
                               <div className="w-20 h-20 rounded-xl bg-yellow-500/10 border-2 border-yellow-500/50 flex items-center justify-center">
                                 <Building2 className="h-10 w-10 text-yellow-500" />
                               </div>
-                              <span className="text-xs font-bold">Legal Entity</span>
+                              <span className="text-xs font-bold text-white uppercase">Legal Entity</span>
                            </div>
                            <div className="h-0.5 flex-1 bg-gradient-to-r from-yellow-500/50 to-green-500/50 relative" />
                            <div className="flex flex-col items-center gap-3">
                               <div className="w-20 h-20 rounded-xl bg-green-500/10 border-2 border-green-500 flex items-center justify-center">
                                 <UserCheck className="h-10 w-10 text-green-500" />
                               </div>
-                              <span className="text-xs font-bold">Verified UBO</span>
+                              <span className="text-xs font-bold text-white uppercase">Verified UBO</span>
                            </div>
                            <div className="h-0.5 flex-1 bg-gradient-to-r from-green-500 to-red-500/50 relative" />
                            <div className="flex flex-col items-center gap-3">
-                              <div className="w-20 h-20 rounded-xl bg-red-500/10 border-2 border-red-500/50 flex items-center justify-center">
+                              <div className="w-20 h-20 rounded-xl bg-red-500/10 border-2 border-red-500/20 flex items-center justify-center">
                                 <Wallet className="h-10 w-10 text-red-500" />
                               </div>
-                              <span className="text-xs font-bold">Bound Asset</span>
+                              <span className="text-xs font-bold text-white uppercase">Bound Asset</span>
                            </div>
                         </div>
                     </CardContent>
@@ -282,7 +281,7 @@ export default function KYBOrchestrationPage() {
             <div className="space-y-6">
               <Card className="glass-panel border-accent/20 bg-accent/5">
                 <CardHeader className="p-4">
-                   <CardTitle className="text-xs flex items-center gap-2 uppercase">
+                   <CardTitle className="text-xs flex items-center gap-2 uppercase text-white">
                       <ShieldAlert className="h-4 w-4 text-accent" />
                       Regulatory Drift
                    </CardTitle>
@@ -294,21 +293,21 @@ export default function KYBOrchestrationPage() {
                    </div>
                    <div className="space-y-1">
                       <div className="flex justify-between text-[10px] font-bold">
-                         <span>Jurisdiction Stability</span>
+                         <span className="text-white/60">Jurisdiction Stability</span>
                          <span className="text-green-400">Stable</span>
                       </div>
-                      <Progress value={82} className="h-1" />
+                      <Progress value={82} className="h-1 bg-accent/10" />
                    </div>
                 </CardContent>
               </Card>
 
               <Card className="glass-panel border-white/5">
                 <CardHeader className="p-4">
-                   <CardTitle className="text-xs uppercase">Policy Adapters</CardTitle>
+                   <CardTitle className="text-xs uppercase text-white">Policy Adapters</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-3">
                    {auditResult?.policyAdaptationSuggestions.map((policy: string, i: number) => (
-                     <div key={i} className="p-2 rounded bg-secondary/30 text-[10px] text-white/80 border border-white/5">
+                     <div key={i} className="p-2 rounded bg-secondary/30 text-[10px] text-white/80 border border-white/5 italic">
                         {policy}
                      </div>
                    )) || (

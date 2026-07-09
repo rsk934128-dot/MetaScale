@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -102,6 +101,7 @@ const infraNav = [
   { icon: Network, label: "42-Node Mesh", href: "/infrastructure" },
   { icon: Unplug, label: "UBIL Mainframe", href: "/ubil" },
   { icon: Smartphone, label: "SMS Reader", href: "/sms-reader" },
+  { icon: Sparkles, label: "Project 44: Enrich", href: "/enrichment" },
   { icon: Cpu, label: "AI Council", href: "/agents" },
   { icon: Database, label: "Knowledge Bank", href: "/library" },
   { icon: Mail, label: "Communication Plane", href: "/communications" },
@@ -127,11 +127,6 @@ export function AppSidebar() {
     if (isMobile) {
       setOpenMobile(false);
     }
-  };
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/login');
   };
 
   const isDashboardRoute = pathname !== '/' && pathname !== '/login';
@@ -358,7 +353,7 @@ export function AppSidebar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   className="text-[10px] font-bold uppercase tracking-widest text-red-400 focus:text-red-400"
-                  onClick={handleLogout}
+                  onClick={() => signOut(auth)}
                 >
                   <LogOut className="mr-2 h-3 w-3" /> Logout
                 </DropdownMenuItem>

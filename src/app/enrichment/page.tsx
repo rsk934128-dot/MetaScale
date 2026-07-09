@@ -88,8 +88,8 @@ export default function DataEnrichmentPortal() {
               <Badge className="bg-primary/10 text-primary border-primary/20 uppercase tracking-[0.3em] text-[10px] font-bold">
                  Intelligence Augmentation Layer
               </Badge>
-              <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic">Raw Data <span className="text-primary">Intelligence</span></h2>
-              <p className="text-muted-foreground max-w-2xl italic">
+              <h2 className="text-4xl font-headline font-bold tracking-tighter uppercase italic text-white">Raw Data <span className="text-primary">Intelligence</span></h2>
+              <p className="text-muted-foreground max-w-2xl italic leading-relaxed">
                 "Transforming low-level banking events into enriched financial intelligence nodes using Project 44 rails and P43 syntax."
               </p>
             </div>
@@ -107,7 +107,7 @@ export default function DataEnrichmentPortal() {
                 <CardContent className="p-4 pt-0 space-y-3">
                    <div className="text-4xl font-headline font-bold text-white">92.4%</div>
                    <Progress value={92} className="h-1 bg-primary/10 [&>div]:bg-primary" />
-                   <p className="text-[9px] text-muted-foreground italic">Mapping 42 parameters per node.</p>
+                   <p className="text-[9px] text-muted-foreground italic mt-2 uppercase tracking-tighter">Mapping 42 parameters per node.</p>
                 </CardContent>
              </Card>
              <Card className="glass-panel border-l-4 border-l-accent bg-accent/5">
@@ -116,7 +116,7 @@ export default function DataEnrichmentPortal() {
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                    <div className="text-3xl font-headline font-bold text-white">14.2k</div>
-                   <p className="text-[9px] text-muted-foreground italic mt-2 uppercase">Nodes mapped in Sovereign Grid.</p>
+                   <p className="text-[9px] text-muted-foreground italic mt-2 uppercase tracking-tighter">Nodes mapped in Sovereign Grid.</p>
                 </CardContent>
              </Card>
              <Card className="glass-panel border-l-4 border-l-green-500 bg-green-500/5">
@@ -125,7 +125,7 @@ export default function DataEnrichmentPortal() {
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                    <div className="text-3xl font-headline font-bold text-white">100%</div>
-                   <p className="text-[9px] text-muted-foreground italic mt-2 uppercase">Deterministic identity sync.</p>
+                   <p className="text-[9px] text-muted-foreground italic mt-2 uppercase tracking-tighter">Deterministic identity sync.</p>
                 </CardContent>
              </Card>
              <Card className="glass-panel border-l-4 border-l-yellow-500 bg-yellow-500/5">
@@ -134,7 +134,7 @@ export default function DataEnrichmentPortal() {
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                    <div className="text-3xl font-headline font-bold text-white">94.8%</div>
-                   <p className="text-[9px] text-muted-foreground italic mt-2 uppercase">Based on P43 logic trace.</p>
+                   <p className="text-[9px] text-muted-foreground italic mt-2 uppercase tracking-tighter">Based on P43 logic trace.</p>
                 </CardContent>
              </Card>
           </div>
@@ -144,7 +144,7 @@ export default function DataEnrichmentPortal() {
                <Card className="glass-panel border-white/5 h-[500px] flex flex-col">
                   <CardHeader className="border-b border-white/5 flex flex-row items-center justify-between">
                      <div>
-                        <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
+                        <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2 text-white">
                            <Layers className="h-4 w-4 text-primary" />
                            Live Enrichment Pipeline
                         </CardTitle>
@@ -166,7 +166,7 @@ export default function DataEnrichmentPortal() {
                      ) : (
                         <div className="flex-1 flex flex-col items-center justify-center space-y-6 opacity-20">
                            <Database className="h-16 w-16 text-primary animate-pulse" />
-                           <p className="text-sm font-bold uppercase tracking-[0.4em]">Awaiting Enrichment Trigger...</p>
+                           <p className="text-sm font-bold uppercase tracking-[0.4em] text-white">Awaiting Enrichment Trigger...</p>
                         </div>
                      )}
                   </CardContent>
@@ -176,7 +176,7 @@ export default function DataEnrichmentPortal() {
             <div className="space-y-6">
                <Card className="glass-panel border-primary/20 bg-primary/5 shadow-2xl">
                   <CardHeader>
-                     <CardTitle className="text-xs uppercase flex items-center gap-2">
+                     <CardTitle className="text-xs uppercase flex items-center gap-2 text-white">
                         <Cpu className="h-4 w-4 text-primary" />
                         P43 Syntax Feedback
                      </CardTitle>
@@ -187,11 +187,11 @@ export default function DataEnrichmentPortal() {
                      </p>
                      <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-2">
                         <div className="flex justify-between text-[9px] font-bold uppercase">
-                           <span>Logic Source</span>
+                           <span className="text-white/60">Logic Source</span>
                            <span className="text-accent">PROJECT_43_SDK</span>
                         </div>
                         <div className="flex justify-between text-[9px] font-bold uppercase">
-                           <span>Integration</span>
+                           <span className="text-white/60">Integration</span>
                            <span className="text-green-400">NOMINAL</span>
                         </div>
                      </div>
@@ -200,7 +200,7 @@ export default function DataEnrichmentPortal() {
 
                <Card className="glass-panel border-white/5">
                   <CardHeader className="p-4 border-b border-white/5">
-                    <CardTitle className="text-[10px] uppercase font-bold tracking-tighter flex items-center gap-2">
+                    <CardTitle className="text-[10px] uppercase font-bold tracking-tighter flex items-center gap-2 text-white">
                        <TrendingUp className="h-3 w-3 text-accent" />
                        Intelligence Drift
                     </CardTitle>
@@ -208,7 +208,7 @@ export default function DataEnrichmentPortal() {
                   <CardContent className="p-4 pt-0 space-y-4">
                     <div className="space-y-2">
                       <div className="flex justify-between text-[9px] font-bold uppercase">
-                        <span>Sanitization Quality</span>
+                        <span className="text-white/60">Sanitization Quality</span>
                         <span className="text-accent">98.2%</span>
                       </div>
                       <Progress value={98} className="h-1 bg-accent/10 [&>div]:bg-accent" />

@@ -80,7 +80,7 @@ export function BankSandboxModal({ isOpen, onClose, onSuccess }: BankSandboxModa
           <div className="mx-auto w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
             <Globe className="h-6 w-6 text-accent animate-pulse" />
           </div>
-          <DialogTitle className="text-center font-headline tracking-tight uppercase italic">
+          <DialogTitle className="text-center font-headline tracking-tight uppercase italic text-white">
             {step === "SELECT" ? "Connect to Fiscal Mesh" : step === "AUTH" ? "Identity Binding" : "Link Established"}
           </DialogTitle>
           <DialogDescription className="text-center text-xs uppercase tracking-widest font-bold opacity-60">
