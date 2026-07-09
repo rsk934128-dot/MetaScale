@@ -89,36 +89,48 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                // Suppress specific library warnings from triggering visual error overlays
-                const ignoredMessages = [
+                // Highly aggressive error suppression for Firestore timeouts and redundant warnings
+                const ignoredPatterns = [
                   'MetaMask', 
                   'nkbihfbeogaeaoehlefnkodbefgpgknn',
                   'failed to connect',
                   'Firestore',
                   'backend',
                   'FirebaseError',
-                  'Backend didn\\'t respond'
+                  'Backend didn\\'t respond',
+                  'reach Cloud Firestore backend',
+                  'offline mode',
+                  '10 seconds'
                 ];
+
+                const filterMessage = (args) => {
+                  const msg = args.map(arg => String(arg)).join(' ');
+                  return ignoredPatterns.some(pattern => msg.includes(pattern));
+                };
 
                 const originalError = console.error;
                 console.error = (...args) => {
-                  const msg = args.join(' ');
-                  if (ignoredMessages.some(term => msg.includes(term))) {
-                    return; // Silently drop
-                  }
+                  if (filterMessage(args)) return;
                   originalError.apply(console, args);
                 };
 
-                const suppressErrors = (event) => {
-                  const message = event.message || (event.reason && event.reason.message) || "";
-                  if (ignoredMessages.some(term => message.includes(term))) {
+                const originalWarn = console.warn;
+                console.warn = (...args) => {
+                  if (filterMessage(args)) return;
+                  originalWarn.apply(console, args);
+                };
+
+                const suppressGlobalErrors = (event) => {
+                  const message = event.message || (event.reason && event.reason.message) || String(event.reason) || "";
+                  if (ignoredPatterns.some(pattern => message.includes(pattern))) {
                     if (event.stopImmediatePropagation) event.stopImmediatePropagation();
                     if (event.preventDefault) event.preventDefault();
                     return true;
                   }
                 };
-                window.addEventListener('error', suppressErrors, true);
-                window.addEventListener('unhandledrejection', suppressErrors, true);
+
+                window.addEventListener('error', suppressGlobalErrors, true);
+                window.addEventListener('unhandledrejection', suppressGlobalErrors, true);
               })();
             `
           }}

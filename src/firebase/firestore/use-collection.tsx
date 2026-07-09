@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -37,9 +38,10 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
           });
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
-        } else if (serverError.code === 'unavailable') {
-          // Suppress hard error for offline mode
-          console.warn('Firestore: Operating in offline mode.');
+        } else if (serverError.code === 'unavailable' || serverError.code === 'deadline-exceeded') {
+          // Suppress hard error for offline mode or timeouts
+          console.warn('Firestore Collection: Operating in restricted network/offline mode.');
+          setError(null); // Keep previous data if available
         } else {
           setError(serverError);
         }

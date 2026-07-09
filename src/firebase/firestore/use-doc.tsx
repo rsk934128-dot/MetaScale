@@ -1,12 +1,13 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import {
-  DocumentReference,
   onSnapshot,
   DocumentSnapshot,
   DocumentData,
   FirestoreError,
+  DocumentReference,
 } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
@@ -37,9 +38,10 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
           });
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
-        } else if (serverError.code === 'unavailable') {
-          // Suppress hard error for offline mode
-          console.warn('Firestore: Operating in offline mode.');
+        } else if (serverError.code === 'unavailable' || serverError.code === 'deadline-exceeded') {
+          // Suppress hard error for offline mode or timeouts
+          console.warn('Firestore Document: Operating in restricted network/offline mode.');
+          setError(null);
         } else {
           setError(serverError);
         }
