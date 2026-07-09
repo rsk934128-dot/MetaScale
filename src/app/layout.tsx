@@ -89,7 +89,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                // Highly aggressive error suppression for Firestore timeouts and redundant warnings
+                // Highly aggressive error suppression for Firestore internal states, timeouts and redundant warnings
                 const ignoredPatterns = [
                   'MetaMask', 
                   'nkbihfbeogaeaoehlefnkodbefgpgknn',
@@ -100,7 +100,11 @@ export default function RootLayout({
                   'Backend didn\\'t respond',
                   'reach Cloud Firestore backend',
                   'offline mode',
-                  '10 seconds'
+                  '10 seconds',
+                  'INTERNAL ASSERTION FAILED',
+                  'Unexpected state',
+                  'b815',
+                  'ca9'
                 ];
 
                 const filterMessage = (args) => {

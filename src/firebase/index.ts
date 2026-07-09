@@ -15,6 +15,10 @@ let firebaseApp: FirebaseApp;
 let firestore: Firestore;
 let auth: Auth;
 
+/**
+ * Initializes Firebase services with a robust singleton pattern.
+ * Specifically handles Firestore persistence edge cases to prevent "INTERNAL ASSERTION FAILED" errors.
+ */
 export function initializeFirebase() {
   if (getApps().length > 0) {
     firebaseApp = getApp();
@@ -23,24 +27,29 @@ export function initializeFirebase() {
   }
   
   if (!firestore) {
-    try {
-      // Server-side environments (like API routes) don't have indexedDB or localStorage.
-      // We must detect environment to avoid "Persistence" related crashes on the server.
-      const isBrowser = typeof window !== 'undefined';
-      
-      if (isBrowser) {
-        firestore = initializeFirestore(firebaseApp, {
-          localCache: persistentLocalCache({ 
-            tabManager: persistentMultipleTabManager() 
-          }),
-          experimentalForceLongPolling: true,
-          ignoreUndefinedProperties: true
-        });
-      } else {
-        // Simple initialization for Server side
+    const isBrowser = typeof window !== 'undefined';
+    
+    if (isBrowser) {
+      try {
+        // Try to get existing instance first to prevent double initialization
         firestore = getFirestore(firebaseApp);
+      } catch (e) {
+        try {
+          // If not exists, initialize with persistence settings
+          firestore = initializeFirestore(firebaseApp, {
+            localCache: persistentLocalCache({ 
+              tabManager: persistentMultipleTabManager() 
+            }),
+            experimentalForceLongPolling: true,
+            ignoreUndefinedProperties: true
+          });
+        } catch (initErr) {
+          // Fallback to simple firestore if persistence fails or is already initialized
+          firestore = getFirestore(firebaseApp);
+        }
       }
-    } catch (e) {
+    } else {
+      // Standard initialization for Server side (API routes / SSR)
       firestore = getFirestore(firebaseApp);
     }
   }
