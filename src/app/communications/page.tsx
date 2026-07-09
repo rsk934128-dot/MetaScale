@@ -1,4 +1,3 @@
-
 "use client";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -159,7 +158,7 @@ export default function CommunicationPlanePage() {
                         </a>
                       </Button>
                       <p className="text-[9px] text-center text-muted-foreground italic">
-                        ভার্সেল ড্যাশবোর্ডে গিয়ে Settings > Environment Variables এ টোকেনটি যুক্ত করুন।
+                        ভার্সেল ড্যাশবোর্ডে গিয়ে Settings &gt; Environment Variables এ টোকেনটি যুক্ত করুন।
                       </p>
                     </div>
                   </div>
