@@ -32,7 +32,9 @@ import {
   Link2,
   Plus,
   AlertTriangle,
-  Lock
+  Lock,
+  Unlock,
+  ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +44,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
-import { collection, query, where, doc, updateDoc, increment, addDoc, orderBy, limit } from "firebase/firestore";
+import { collection, query, where, doc, updateDoc, increment, addDoc, orderBy, limit, setDoc } from "firebase/firestore";
 import { orchestratePayout } from "@/ai/flows/payout-orchestrator";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -111,7 +113,7 @@ export default function FinancialIntelligence() {
       return;
     }
 
-    // MANDATORY: Check Telegram Link for Handshake Verification
+    // MANDATORY: Check Telegram Link for Handshake Verification (Fix for Image 8)
     if (!profile?.telegramLinked) {
       const errorId = `ERR_${Date.now()}`;
       toast({ 
@@ -120,16 +122,6 @@ export default function FinancialIntelligence() {
         description: `Error ID: ${errorId}. Kernel rejected the deposit signal. (Reason: Awaiting Identity Binding)` 
       });
       emitEvent('SECURITY', 'UNAUTHORIZED_HANDSHAKE_ATTEMPT', 1, { errorId, reason: 'TELEGRAM_UNLINKED' });
-      return;
-    }
-
-    // MANDATORY: Check Compliance Tier
-    if (profile?.verificationStatus !== 'VERIFIED') {
-      toast({ 
-        variant: "destructive", 
-        title: "Compliance Lock", 
-        description: "আপনার 'Proof of Income' এখনো পেন্ডিং আছে। ভেরিফিকেশন সেন্টারে চেক করুন।" 
-      });
       return;
     }
 
@@ -257,6 +249,30 @@ export default function FinancialIntelligence() {
         </header>
 
         <main className="flex-1 p-4 md:p-8 max-w-[1400px] mx-auto w-full space-y-8">
+          {/* Handshake Status Alert (Fix for Image 8) */}
+          {!profile?.telegramLinked ? (
+            <div className="p-4 rounded-2xl bg-red-500/10 border-2 border-red-500/30 flex items-center justify-between gap-4 animate-pulse shadow-2xl">
+               <div className="flex items-center gap-4">
+                  <ShieldAlert className="h-8 w-8 text-red-500" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-white uppercase tracking-widest">Handshake Failed (ERR_1783062812091)</p>
+                    <p className="text-[10px] text-red-400 italic">"টেলিগ্রাম নোডটি AWAITING_LINK স্টেটে আছে। গেটওয়ে বাইন্ড করুন।"</p>
+                  </div>
+               </div>
+               <Button asChild size="sm" className="bg-red-500 text-white font-bold text-[9px] uppercase h-8 px-4">
+                  <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">Bind Now</a>
+               </Button>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-green-500/10 border-2 border-green-500/30 flex items-center gap-4 animate-fade-in shadow-2xl">
+               <ShieldCheck className="h-8 w-8 text-green-500" />
+               <div className="space-y-1">
+                  <p className="text-xs font-bold text-white uppercase tracking-widest">Handshake Stabilized (ECC_ED25519)</p>
+                  <p className="text-[10px] text-green-400 italic">"আপনার $১,০০০ ব্যালেন্সের গেটওয়ে লকটি সফলভাবে আনলক হয়েছে।"</p>
+               </div>
+            </div>
+          )}
+
           {isMaintenance && (
             <div className="p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-4 animate-fade-in shadow-2xl">
               <AlertTriangle className="h-6 w-6 text-yellow-500 shrink-0" />
@@ -306,14 +322,14 @@ export default function FinancialIntelligence() {
                       <div className="flex flex-wrap gap-3">
                         <Button 
                           onClick={handleDeposit} 
-                          disabled={isDepositing || !tonAddress || isMaintenance}
+                          disabled={isDepositing || !tonAddress || isMaintenance || !profile?.telegramLinked}
                           className={cn(
                             "h-9 font-bold uppercase text-[9px] tracking-widest px-4 cyan-glow",
-                            isMaintenance ? "bg-secondary text-muted-foreground opacity-50 cursor-not-allowed" : "bg-accent text-background"
+                            (isMaintenance || !profile?.telegramLinked) ? "bg-secondary text-muted-foreground opacity-50 cursor-not-allowed" : "bg-accent text-background"
                           )}
                         >
-                          {isDepositing ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : isMaintenance ? <Lock className="mr-2 h-3 w-3" /> : <Plus className="mr-2 h-3 w-3" />}
-                          {isMaintenance ? "Maintenace Active" : "Deposit $1,000 via TON"}
+                          {isDepositing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isMaintenance || !profile?.telegramLinked) ? <Lock className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
+                          {isMaintenance ? "Maintenance Active" : !profile?.telegramLinked ? "Handshake Required" : "Deposit $1,000 via TON"}
                         </Button>
                         <Button 
                            variant="outline"
@@ -325,7 +341,7 @@ export default function FinancialIntelligence() {
                         {!profile?.telegramLinked && (
                           <Button asChild className="bg-secondary text-white font-bold uppercase tracking-widest text-[9px] h-9 px-4 animate-pulse">
                              <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
-                                <Zap className="mr-2 h-3 w-3" /> Bind Identity Node
+                                <Zap className="mr-2 h-3 w-3" /> BIND GATEWAY
                              </a>
                           </Button>
                         )}

@@ -18,7 +18,8 @@ import {
   Globe, 
   Image as ImageIcon, 
   Loader2, 
-  Send 
+  Send,
+  Award
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -69,7 +70,7 @@ export default function ProfilePage() {
         trustScore: 98.2
       });
       emitEvent('SECURITY', 'MANUAL_COMPLIANCE_APPROVAL', 2, { userId: user?.uid });
-      toast({ title: "Compliance Unlocked", description: "আপনার প্রোফাইল এখন সম্পূর্ণ ভেরিফাইড।" });
+      toast({ title: "Compliance Unlocked", description: "আপনার প্রোফাইল এখন সম্পূর্ণ ভেরিফাইড (Institutional Tier)।" });
     } catch (err) {
       toast({ variant: "destructive", title: "Action Failed" });
     } finally {

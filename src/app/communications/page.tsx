@@ -134,7 +134,7 @@ export default function CommunicationPlanePage() {
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-              {/* Vercel Environment Configuration Section */}
+              {/* Vercel Environment Configuration Section (Fix for Image 13) */}
               <Card className="glass-panel border-l-4 border-l-primary bg-primary/5 overflow-hidden">
                 <CardHeader>
                   <CardTitle className="text-xl font-headline italic uppercase tracking-tighter flex items-center gap-3">
@@ -172,17 +172,20 @@ export default function CommunicationPlanePage() {
                         </a>
                       </Button>
                       <p className="text-[9px] text-center text-muted-foreground italic">
-                        Redeploy once settings are updated.
+                        ভার্সেল ড্যাশবোর্ডে গিয়ে Settings &gt; Environment Variables এ টোকেনটি যুক্ত করুন।
                       </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Telegram Gateway Section */}
+              {/* Telegram Gateway Section (Stabilized mode - Fix for Image 11) */}
               <Card className="glass-panel border-l-4 border-l-accent bg-accent/5 overflow-hidden">
                 <div className="absolute top-0 right-0 p-4">
-                  <Badge variant={profile?.telegramLinked ? "default" : "outline"} className={profile?.telegramLinked ? "bg-green-500/20 text-green-400 border-green-500/30" : "animate-pulse"}>
+                  <Badge variant={profile?.telegramLinked ? "default" : "outline"} className={cn(
+                    "text-[8px] uppercase tracking-widest font-bold",
+                    profile?.telegramLinked ? "bg-green-500/20 text-green-400 border-green-500/30" : "animate-pulse"
+                  )}>
                     {profile?.telegramLinked ? "MESH_BINDING: LINKED" : "AWAITING_LINK"}
                   </Badge>
                 </div>
@@ -195,7 +198,9 @@ export default function CommunicationPlanePage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <p className="text-sm text-white/80 leading-relaxed italic">
-                    "সরাসরি আপনার টেলিগ্রামে কার্নেল অ্যালার্ট এবং ওটিপি পেতে নিচের ৩টি ধাপ সম্পন্ন করুন। এটি সফল হলে 'AWAITING_LINK' পিলটি সবুজ হয়ে যাবে।"
+                    {profile?.telegramLinked 
+                      ? "আপনার সার্বভৌম কার্নেল এবং টেলিগ্রাম বটের মধ্যকার কানেকশন এখন সফলভাবে স্ট্যাবিলাইজড (ECC_ED25519)। সকল অটোনোমাস ডিরেক্টিভ এখন সচল।"
+                      : "সরাসরি আপনার টেলিগ্রামে কার্নেল অ্যালার্ট এবং ওটিপি পেতে নিচের ৩টি ধাপ সম্পন্ন করুন। এটি সফল হলে 'AWAITING_LINK' পিলটি সবুজ হয়ে যাবে।"}
                   </p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -214,26 +219,30 @@ export default function CommunicationPlanePage() {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <Button asChild className="h-11 bg-accent text-background font-bold uppercase tracking-widest text-[10px] cyan-glow">
+                      <Button asChild className={cn(
+                        "h-11 font-bold uppercase tracking-widest text-[10px] transition-all",
+                        profile?.telegramLinked ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-accent text-background cyan-glow"
+                      )}>
                         <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
-                          <Zap className="mr-2 h-4 w-4" /> BIND GATEWAY
+                          {profile?.telegramLinked ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <Zap className="mr-2 h-4 w-4" />}
+                          {profile?.telegramLinked ? "GATEWAY LINKED" : "BIND GATEWAY"}
                         </a>
                       </Button>
                       <Button 
                         variant="outline" 
                         className="h-11 border-white/5 bg-white/5 text-[10px] font-bold uppercase tracking-widest" 
                         onClick={handleSetWebhook} 
-                        disabled={isWebhookLoading}
+                        disabled={isWebhookLoading || profile?.telegramLinked}
                       >
                         {isWebhookLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                        SECURE WEBHOOK
+                        {profile?.telegramLinked ? "WEBHOOK ACTIVE" : "SECURE WEBHOOK"}
                       </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Action Plan */}
+              {/* Action Plan (Fix for Roadmap synchronization) */}
               <Card className="glass-panel border-white/5 bg-secondary/10">
                  <CardHeader>
                     <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
@@ -249,8 +258,11 @@ export default function CommunicationPlanePage() {
                          { step: 4, desc: "'Bind Gateway' ক্লিক করে বোটে /start লিখে পাঠান।" }
                        ].map((item, i) => (
                          <div key={i} className="flex gap-4 items-center">
-                            <div className="w-6 h-6 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-[10px] font-bold text-accent shrink-0">{item.step}</div>
-                            <p className="text-[11px] text-white/80">{item.desc}</p>
+                            <div className={cn(
+                              "w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-bold shrink-0",
+                              profile?.telegramLinked ? "bg-green-500/20 border-green-500 text-green-400" : "bg-accent/20 border-accent/40 text-accent"
+                            )}>{profile?.telegramLinked ? <CheckCircle2 className="h-3 w-3" /> : item.step}</div>
+                            <p className={cn("text-[11px]", profile?.telegramLinked ? "text-green-400/80 italic line-through" : "text-white/80")}>{item.desc}</p>
                          </div>
                        ))}
                     </div>
@@ -274,10 +286,17 @@ export default function CommunicationPlanePage() {
                       </div>
                       <div className="flex justify-between items-center text-[10px] font-bold">
                          <span className="text-muted-foreground uppercase">Status</span>
-                         <Badge variant="outline" className="text-[8px] border-accent/20 text-accent uppercase">Phase 4 Active</Badge>
+                         <Badge variant="outline" className={cn(
+                           "text-[8px] uppercase px-1",
+                           profile?.telegramLinked ? "border-green-500 text-green-400" : "border-accent/20 text-accent"
+                         )}>
+                           {profile?.telegramLinked ? "CONNECTED" : "Phase 4 Active"}
+                         </Badge>
                       </div>
                       <div className="p-2 rounded border border-accent/20 bg-accent/5 text-[9px] text-accent italic leading-relaxed">
-                         "টেলিগ্রাম হ্যান্ডশেক সফল হলে পেমেন্ট রিম্যাডিয়েশন এবং হাই-ভ্যালু পে-আউট অটোমেটিক্যালি আনলক হবে।"
+                         {profile?.telegramLinked 
+                           ? "টেলিগ্রাম হ্যান্ডশেক সফল হয়েছে। আপনার $১,০০০ ব্যালেন্সের গেটওয়ে লকটি সফলভাবে আনলক হয়েছে।"
+                           : "টেলিগ্রাম হ্যান্ডশেক সফল হলে পেমেন্ট রিম্যাডিয়েশন এবং হাই-ভ্যালু পে-আউট অটোমেটিক্যালি আনলক হবে।"}
                       </div>
                    </div>
                 </CardContent>
