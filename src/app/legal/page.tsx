@@ -28,7 +28,8 @@ import {
   Mail,
   CheckCircle2,
   Database,
-  Smartphone
+  Smartphone,
+  CreditCard
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -180,7 +181,6 @@ export default function LegalBoundPage() {
                     </p>
                   </AccordionContent>
                 </AccordionItem>
-                {/* ... other items ... */}
               </Accordion>
             </TabsContent>
 
@@ -366,5 +366,3 @@ export default function LegalBoundPage() {
     </div>
   );
 }
-
-import { CreditCard } from "lucide-react";

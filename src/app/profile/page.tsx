@@ -5,44 +5,34 @@ import { AppSidebar } from '@/components/layout/AppSidebar';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
-  User, 
   Fingerprint, 
   ShieldCheck, 
   Zap, 
-  Edit2,
-  RefreshCw,
-  FileText,
-  Upload,
-  BadgeCheck,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  ChevronRight,
-  Shield,
-  CreditCard,
-  Building2,
-  Globe,
-  Image as ImageIcon,
-  Loader2,
-  Lock,
-  Send,
-  TrendingUp
+  FileText, 
+  BadgeCheck, 
+  CheckCircle2, 
+  Clock, 
+  ChevronRight, 
+  Shield, 
+  Building2, 
+  Globe, 
+  Image as ImageIcon, 
+  Loader2, 
+  Send 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogDescription,
-  DialogFooter
+  DialogDescription
 } from "@/components/ui/dialog";
 import { useState, useMemo } from 'react';
-import { doc, setDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useKernel } from '@/components/kernel/KernelProvider';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -139,7 +129,6 @@ export default function ProfilePage() {
         </header>
 
         <main className="flex-1 p-8 max-w-[1200px] mx-auto w-full space-y-12">
-          {/* Profile Header */}
           <div className="flex flex-col md:flex-row items-center gap-8 p-8 rounded-3xl bg-accent/5 border border-white/5 relative overflow-hidden">
              <div className="absolute top-0 right-0 p-10 opacity-10"><Shield className="h-40 w-40 text-accent" /></div>
              <div className="relative w-32 h-32 rounded-full border-4 border-accent/30 p-1 bg-background z-10">
@@ -169,7 +158,6 @@ export default function ProfilePage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-             {/* Verification Checklist */}
              <div className="lg:col-span-2 space-y-6">
                 <div className="flex items-center justify-between">
                    <h3 className="text-lg font-headline font-bold uppercase tracking-widest text-white italic">Document <span className="text-accent">Status</span></h3>
@@ -193,7 +181,7 @@ export default function ProfilePage() {
                               <div className="flex items-center gap-5">
                                  <div className={cn(
                                    "p-3 rounded-xl border transition-all",
-                                   doc.pending ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-500" : "bg-green-500/10 border-green-500/30 text-green-500"
+                                   doc.pending ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-500" : "bg-green-500/10 border-green-500/30 text-green-400"
                                  )}>
                                     <doc.icon className="h-6 w-6" />
                                  </div>
@@ -219,7 +207,6 @@ export default function ProfilePage() {
                 </Card>
              </div>
 
-             {/* Limits & Capabilities Sidebar */}
              <div className="space-y-6">
                 <Card className="glass-panel border-accent/20 bg-accent/5">
                    <CardHeader className="pb-2">
@@ -252,21 +239,6 @@ export default function ProfilePage() {
                       </Button>
                    </CardContent>
                 </Card>
-
-                <Card className="glass-panel border-white/5 bg-secondary/10">
-                   <CardHeader className="pb-2">
-                      <CardTitle className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest flex items-center gap-2">
-                        <AlertCircle className="h-3 w-3" /> Operational Notice
-                      </CardTitle>
-                   </CardHeader>
-                   <CardContent>
-                      <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                         {profile?.verificationStatus === 'VERIFIED' ? 
-                           "All security corridors are stabilized. Node-04 handshake active." : 
-                           "Proof of Income is currently in review. Settlement speed may be limited to 50k/day until authorized."}
-                      </p>
-                   </CardContent>
-                </Card>
              </div>
           </div>
         </main>
@@ -290,7 +262,7 @@ export default function ProfilePage() {
              </div>
           </DialogContent>
         </Dialog>
-      </main>
+      </SidebarInset>
     </div>
   );
 }
