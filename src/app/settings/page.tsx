@@ -148,17 +148,17 @@ export default function SettingsPage() {
                         <div className="space-y-2">
                            <div className="w-8 h-8 rounded-full bg-accent text-background flex items-center justify-center font-bold text-xs">1</div>
                            <p className="text-xs font-bold text-white uppercase">App Info</p>
-                           <p className="text-[11px] text-muted-foreground leading-relaxed">আপনার মোবাইলের <span className="text-white font-bold italic">Settings > Apps > Sovereign OS</span> এ যান।</p>
+                           <p className="text-[11px] text-muted-foreground leading-relaxed">আপনার মোবাইলের <span className="text-white font-bold italic">Settings &gt; Apps &gt; Sovereign OS</span> এ যান।</p>
                         </div>
                         <div className="space-y-2">
                            <div className="w-8 h-8 rounded-full bg-accent text-background flex items-center justify-center font-bold text-xs">2</div>
                            <p className="text-xs font-bold text-white uppercase">Battery Usage</p>
-                           <p className="text-[11px] text-muted-foreground leading-relaxed"><span className="text-white font-bold italic">Battery</span> সেকশনে গিয়ে <span className="text-accent font-bold">"Unrestricted"</span> বা <span className="text-accent font-bold">"Don't Optimize"</span> সিলেক্ট করুন।</p>
+                           <p className="text-[11px] text-muted-foreground leading-relaxed"><span className="text-white font-bold italic">Battery</span> সেকশনে গিয়ে <span className="text-accent font-bold">&quot;Unrestricted&quot;</span> বা <span className="text-accent font-bold">&quot;Don&apos;t Optimize&quot;</span> সিলেক্ট করুন।</p>
                         </div>
                         <div className="space-y-2">
                            <div className="w-8 h-8 rounded-full bg-accent text-background flex items-center justify-center font-bold text-xs">3</div>
                            <p className="text-xs font-bold text-white uppercase">Auto-Start</p>
-                           <p className="text-[11px] text-muted-foreground leading-relaxed"><span className="text-white font-bold italic">Permissions</span> ট্যাবে গিয়ে <span className="text-accent font-bold">"Auto-start"</span> অন করে দিন।</p>
+                           <p className="text-[11px] text-muted-foreground leading-relaxed"><span className="text-white font-bold italic">Permissions</span> ট্যাবে গিয়ে <span className="text-accent font-bold">&quot;Auto-start&quot;</span> অন করে দিন।</p>
                         </div>
                      </div>
                      
@@ -178,7 +178,7 @@ export default function SettingsPage() {
                   <div className="space-y-1">
                     <p className="text-xs font-bold text-white uppercase">Privacy Protocol v1.2</p>
                     <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                      "FusionPay handles all hardware signals with end-to-end encryption (AES-256-GCM). Persistent mode allows the app to intercept SMS signals even when closed, ensuring 100% transaction integrity."
+                      &quot;FusionPay handles all hardware signals with end-to-end encryption (AES-256-GCM). Persistent mode allows the app to intercept SMS signals even when closed, ensuring 100% transaction integrity.&quot;
                     </p>
                   </div>
                </div>
