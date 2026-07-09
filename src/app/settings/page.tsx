@@ -24,12 +24,12 @@ export default function SettingsPage() {
     const status: Record<string, string> = {};
     
     // Check Notification
-    if ("Notification" in window) {
+    if (typeof window !== "undefined" && "Notification" in window) {
       status.notifications = Notification.permission;
     }
 
-    // Check Geolocation
-    if ("navigator" in window && "permissions" in navigator) {
+    // Check Geolocation & Hardware
+    if (typeof window !== "undefined" && "navigator" in window && "permissions" in navigator) {
       try {
         const geo = await navigator.permissions.query({ name: "geolocation" as any });
         status.location = geo.state;

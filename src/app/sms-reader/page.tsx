@@ -78,13 +78,14 @@ export default function SMSReaderPage() {
 
   const handleHandshake = async () => {
     setIsHandshaking(true);
-    emitEvent('INFRA', 'MOBILE_SIGNAL_HANDSHAKE', 2, { status: 'INITIATED' });
+    emitEvent('INFRA', 'MOBILE_SIGNAL_HANDSHAKE', 2, { status: 'INITIATED', mode: 'BACKGROUND_ACTIVE' });
     
+    // In a real environment, this would call navigator.serviceWorker.ready
     setTimeout(() => {
       setIsHandshaking(false);
       toast({
         title: "Node Handshake Complete",
-        description: "Mobile device is now an authorized interceptor.",
+        description: "Mobile device is now an authorized background interceptor.",
       });
     }, 1500);
   };
@@ -116,12 +117,10 @@ export default function SMSReaderPage() {
     };
 
     try {
-      // Even if offline, this will be cached and synced later automatically by Firestore
       await setDoc(doc(firestore, 'sms_signals', mockId), newSms);
-      
       toast({
         title: isOffline ? "Queued in Local Mesh" : "Signal Intercepted",
-        description: isOffline ? "ইন্টারনেট নেই। মেসেজটি অফলাইনে সেভ করা হয়েছে এবং ইন্টারনেটে আসলে সিঙ্ক হবে।" : "মেসেজটি সফলভাবে ধরা হয়েছে এবং সিস্টেমে সেভ করা হয়েছে।",
+        description: isOffline ? "ইন্টারনেট নেই। মেসেজটি অফলাইনে সেভ করা হয়েছে এবং ইন্টারনেটে আসলে সিঙ্ক হবে।" : "মেসেজটি ব্যাকগ্রাউন্ড নোডের মাধ্যমে সফলভাবে ধরা হয়েছে।",
       });
     } catch (err) {
       toast({ variant: "destructive", title: "Handshake Error" });
@@ -154,7 +153,7 @@ export default function SMSReaderPage() {
                className="border-accent/20 text-accent font-bold text-[10px] h-8"
              >
                 {isHandshaking ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Link2 className="h-3.5 w-3.5 mr-1.5" />}
-                Mobile Handshake
+                Background Handshake
              </Button>
              <Button size="sm" onClick={handleIntercept} disabled={isSyncing} className="cyan-glow bg-accent text-background font-bold text-[10px] h-8 px-4">
                 {isSyncing ? <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <CloudLightning className="h-3.5 w-3.5 mr-1.5" />}
@@ -166,10 +165,10 @@ export default function SMSReaderPage() {
         <main className="flex-1 p-8 max-w-[1600px] mx-auto w-full space-y-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
             <div className="space-y-2">
-              <Badge className="bg-accent/10 text-accent border-accent/20 uppercase tracking-[0.3em] text-[10px] font-bold px-3 py-1">Signal Interception v1.2</Badge>
-              <h2 className="text-3xl font-headline font-bold tracking-tighter uppercase italic">Offline <span className="text-accent">Resilience</span></h2>
+              <Badge className="bg-accent/10 text-accent border-accent/20 uppercase tracking-[0.3em] text-[10px] font-bold px-3 py-1">Background Signal v1.2</Badge>
+              <h2 className="text-3xl font-headline font-bold tracking-tighter uppercase italic">Always-On <span className="text-accent">Resilience</span></h2>
               <p className="text-muted-foreground text-sm italic max-w-2xl">
-                "ইন্টারনেট না থাকলেও আপনার মোবাইল থেকে আসা প্রতিটি এসএমএস লোকাল ক্যাশে সেভ হবে এবং ইন্টারনেটে আসার সাথে সাথে লেজারে রিফ্লেক্ট করবে।"
+                "অ্যাপটি ব্যাকগ্রাউন্ডে সক্রিয় থাকলে আপনার মোবাইলের প্রতিটি পেমেন্ট এসএমএস স্বয়ংক্রিয়ভাবে ট্র্যাক করা হবে।"
               </p>
             </div>
             
@@ -199,7 +198,7 @@ export default function SMSReaderPage() {
                      </CardTitle>
                      <div className="flex items-center gap-2">
                         <div className={cn("w-2 h-2 rounded-full", isOffline ? "bg-yellow-500 animate-pulse" : "bg-green-500")} />
-                        <span className="text-[9px] font-bold text-muted-foreground uppercase">{isOffline ? "Awaiting Sync" : "Handshake Stable"}</span>
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase">{isOffline ? "Awaiting Sync" : "Background Mode: OK"}</span>
                      </div>
                   </CardHeader>
                   <CardContent className="p-0 flex-1">
@@ -319,7 +318,7 @@ export default function SMSReaderPage() {
                   </CardHeader>
                   <CardContent className="p-4 space-y-4">
                      {[
-                       { label: "Offline Queue", status: isOffline ? "Active (Queued)" : "Synced", color: isOffline ? "text-yellow-500" : "text-green-400" },
+                       { label: "Background Node", status: "Enabled", color: "text-green-400" },
                        { label: "SMS Sharding", status: "Enabled", color: "text-accent" },
                        { label: "Audit Signature", status: "Valid", color: "text-accent" }
                      ].map((idx, i) => (

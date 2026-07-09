@@ -21,7 +21,9 @@ import {
   Unplug,
   Loader2,
   Play,
-  HeartPulse
+  HeartPulse,
+  Smartphone,
+  Battery
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,9 +42,10 @@ const MOCK_NODES = Array.from({ length: 42 }, (_, i) => ({
 }));
 
 export default function InfrastructureMeshPage() {
-  const { heartbeat } = useKernel();
+  const { heartbeat, emitEvent } = useKernel();
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isMobileActivating, setIsMobileActivating] = useState(false);
   const [simulationResult, setSimulationResult] = useState<{node04: number, avg: number} | null>(null);
   const { toast } = useToast();
 
@@ -55,6 +58,22 @@ export default function InfrastructureMeshPage() {
         description: "All 42 nodes reporting healthy status.",
       });
     }, 2000);
+  };
+
+  const handleActivateMobileNode = () => {
+    setIsMobileActivating(true);
+    emitEvent('INFRA', 'MOBILE_BACKGROUND_PROGRAM_INIT', 2, { 
+      device: 'MOBILE_HANDSET',
+      mode: 'ACTIVE_BACKGROUND_SYNC'
+    });
+
+    setTimeout(() => {
+      setIsMobileActivating(false);
+      toast({
+        title: "Mobile Node Active",
+        description: "মোবাইল ডিভাইসটি এখন ব্যাকগ্রাউন্ড নোড হিসেবে কার্নেলের সাথে যুক্ত। এটি অফলাইন সিঙ্ক এবং এসএমএস রিডার হিসেবে কাজ করবে।",
+      });
+    }, 3000);
   };
 
   const runPrioritySimulation = () => {
@@ -82,7 +101,7 @@ export default function InfrastructureMeshPage() {
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-6">
           <SidebarTrigger />
           <div className="flex-1">
-            <h1 className="text-lg font-headline font-bold flex items-center gap-2">
+            <h1 className="text-lg font-headline font-bold flex items-center gap-2 text-white">
               <Network className="h-5 w-5 text-accent" />
               Sovereign Infrastructure Mesh
             </h1>
@@ -99,8 +118,8 @@ export default function InfrastructureMeshPage() {
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
-          <div className="flex justify-between items-end">
-            <div>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+            <div className="space-y-1">
               <h2 className="text-3xl font-headline font-bold mb-2 uppercase italic tracking-tighter">42-Node <span className="text-accent">Distributed Grid</span></h2>
               <p className="text-muted-foreground italic">"Monitoring self-healing network capacity and geo-distributed anycast nodes."</p>
             </div>
@@ -147,13 +166,60 @@ export default function InfrastructureMeshPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
+               <Card className="glass-panel border-accent/20 bg-accent/5 overflow-hidden">
+                  <CardHeader className="flex flex-row items-center justify-between border-b border-white/5">
+                     <div className="space-y-1">
+                        <CardTitle className="text-lg flex items-center gap-2 uppercase tracking-tighter italic">
+                           <Smartphone className="h-5 w-5 text-accent" />
+                           Active Mobile Node Node-04
+                        </CardTitle>
+                        <CardDescription className="text-xs">Establish background program for offline resilience</CardDescription>
+                     </div>
+                     <Badge variant="outline" className="border-green-500/30 text-green-400 animate-pulse uppercase text-[8px]">Program Ready</Badge>
+                  </CardHeader>
+                  <CardContent className="p-8 flex flex-col md:flex-row items-center gap-8">
+                     <div className="flex-1 space-y-4">
+                        <p className="text-sm text-white/80 leading-relaxed italic">
+                          "এই প্রোগ্রামটি আপনার মোবাইল ডিভাইসে ব্যাকগ্রাউন্ডে চলবে। এটি অফলাইন থাকাকালীন এসএমএস ইন্টারসেপ্ট করতে এবং ইন্টারনেট আসলে অটো-সিঙ্ক করতে সাহায্য করবে। এটি ব্যবহারের ফলে ডিভাইসে সামান্য বেশি পাওয়ার খরচ হতে পারে।"
+                        </p>
+                        <div className="flex items-center gap-6">
+                           <div className="flex items-center gap-2">
+                              <Battery className="h-4 w-4 text-yellow-500" />
+                              <span className="text-[10px] font-bold uppercase text-muted-foreground">Power Usage: Normal+</span>
+                           </div>
+                           <div className="flex items-center gap-2">
+                              <Activity className="h-4 w-4 text-green-400" />
+                              <span className="text-[10px] font-bold uppercase text-muted-foreground">Sync Rate: T+0</span>
+                           </div>
+                        </div>
+                        <Button 
+                           onClick={handleActivateMobileNode} 
+                           disabled={isMobileActivating}
+                           className="w-full md:w-auto h-12 bg-accent text-background font-bold uppercase tracking-widest text-[10px] cyan-glow px-10"
+                        >
+                           {isMobileActivating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+                           Activate Mobile Node
+                        </Button>
+                     </div>
+                     <div className="w-full md:w-1/3 p-4 rounded-2xl bg-black/40 border border-white/10 flex flex-col items-center text-center space-y-3">
+                        <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
+                           <ShieldCheck className="h-6 w-6 text-accent" />
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-bold text-white uppercase tracking-widest">Handshake Status</p>
+                           <p className="text-[8px] text-muted-foreground italic mt-1 uppercase">Awaiting Activation...</p>
+                        </div>
+                     </div>
+                  </CardContent>
+               </Card>
+
                <Card className="glass-panel border-white/5">
                   <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-widest">
                      <Globe className="h-5 w-5 text-accent" />
                      Geo-Distributed Mesh Visualization
                   </CardTitle>
-                  <CardDescription>Live status of the distributed 42-node Sovereign anycast network.</CardDescription>
+                  <CardDescription className="text-xs">Live status of the distributed 42-node Sovereign anycast network.</CardDescription>
                   </CardHeader>
                   <CardContent>
                   <div className="grid grid-cols-6 sm:grid-cols-7 lg:grid-cols-14 gap-2">
@@ -173,71 +239,6 @@ export default function InfrastructureMeshPage() {
                         </div>
                      ))}
                   </div>
-                  </CardContent>
-               </Card>
-
-               <Card className="glass-panel border-accent/30 bg-accent/5 overflow-hidden relative">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-accent/20" />
-                  <CardHeader>
-                     <div className="flex justify-between items-start">
-                        <div>
-                           <CardTitle className="text-lg flex items-center gap-2 uppercase italic tracking-tighter">
-                              <Zap className="h-5 w-5 text-accent" />
-                              Node-04 Priority Simulator
-                           </CardTitle>
-                           <CardDescription className="text-xs">Compare Anycast Node-04 (UK) performance vs. Global Mesh Average</CardDescription>
-                        </div>
-                        <Button 
-                           size="sm" 
-                           className="bg-accent text-background font-bold text-[10px] cyan-glow h-9 px-6"
-                           onClick={runPrioritySimulation}
-                           disabled={isSimulating}
-                        >
-                           {isSimulating ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Play className="mr-2 h-3.5 w-3.5" />}
-                           Execute Test
-                        </Button>
-                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-6 pt-4">
-                     {isSimulating ? (
-                        <div className="py-12 flex flex-col items-center gap-4 opacity-50">
-                           <Activity className="h-10 w-10 text-accent animate-pulse" />
-                           <p className="text-[10px] font-bold uppercase tracking-[0.4em]">Intercepting Packet Trajectories...</p>
-                        </div>
-                     ) : simulationResult ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
-                           <div className="space-y-4">
-                              <div className="space-y-2">
-                                 <div className="flex justify-between items-end">
-                                    <p className="text-[10px] font-bold text-accent uppercase">Node-04 Latency (Pro Tier)</p>
-                                    <p className="text-xl font-headline font-bold text-white">{simulationResult.node04}ms</p>
-                                 </div>
-                                 <Progress value={simulationResult.node04 * 2} className="h-1.5 bg-accent/10 [&>div]:bg-accent" />
-                              </div>
-                              <div className="space-y-2">
-                                 <div className="flex justify-between items-end">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Global Average (Hobby Tier)</p>
-                                    <p className="text-xl font-headline font-bold text-white/60">{simulationResult.avg}ms</p>
-                                 </div>
-                                 <Progress value={simulationResult.avg} className="h-1.5 bg-white/5 [&>div]:bg-white/40" />
-                              </div>
-                           </div>
-                           <div className="p-4 rounded-xl bg-black/40 border border-white/10 flex flex-col justify-center items-center text-center space-y-2 shadow-inner">
-                              <div className="p-2 rounded bg-green-500/20 text-green-400">
-                                 <ArrowUpRight className="h-6 w-6" />
-                              </div>
-                              <h4 className="text-2xl font-headline font-bold text-green-400">80.3%</h4>
-                              <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest leading-relaxed">
-                                 LATTENCY OPTIMIZATION <br /> NOMINAL
-                              </p>
-                           </div>
-                        </div>
-                     ) : (
-                        <div className="py-16 text-center border border-dashed border-white/10 rounded-2xl bg-secondary/10">
-                           <Unplug className="h-10 w-10 text-muted-foreground mx-auto mb-4 opacity-20" />
-                           <p className="text-xs text-muted-foreground italic">Ready to run priority routing benchmarks.</p>
-                        </div>
-                     )}
                   </CardContent>
                </Card>
             </div>
