@@ -101,19 +101,6 @@ export default function CommunicationPlanePage() {
     }
   };
 
-  const handleRunAnalysis = async (email: any) => {
-    setAnalyzingId(email.id);
-    try {
-      const result = await analyzeCommunication({ emailBody: email.body, sender: email.sender });
-      setIntelligenceReport(result);
-      toast({ title: "Analysis Complete", description: `Threat Level: ${result.threatLevel}.` });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Analysis Failed" });
-    } finally {
-      setAnalyzingId(null);
-    }
-  };
-
   return (
     <div className="flex min-h-screen">
       <AppSidebar />
@@ -148,15 +135,15 @@ export default function CommunicationPlanePage() {
                   <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-4 items-start">
                      <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
                      <div className="space-y-1">
-                        <p className="text-xs font-bold text-white uppercase">Critical Action Required</p>
+                        <p className="text-xs font-bold text-white uppercase">Critical Action Required (401 Bypass)</p>
                         <p className="text-[10px] text-red-400 italic leading-relaxed">
-                          "নিশ্চিত করুন যে আপনার Vercel ড্যাশবোর্ডে **Deployment Protection** ডিজেবল করা আছে। পাসওয়ার্ড প্রটেকশন অন থাকলে টেলিগ্রাম সিগন্যালগুলো ৪০১ এরর দিয়ে ব্লক হয়ে যাবে।"
+                          "নিশ্চিত করুন যে আপনার Vercel ড্যাশবোর্ডে <b>Deployment Protection (Standard Protection)</b> ডিজেবল করা আছে। পাসওয়ার্ড প্রটেকশন অন থাকলে টেলিগ্রাম সিগন্যালগুলো ব্লক হয়ে যাবে।"
                         </p>
                      </div>
                   </div>
 
                   <p className="text-sm text-white/80 leading-relaxed italic">
-                    "আপনার বটের আসল টোকেন ভার্সেল (Vercel) ড্যাশবোর্ডে এনভায়রনমেন্ট ভেরিয়েবল হিসেবে সেট করুন এবং প্রজেক্টটি একবার **Redeploy** করুন।"
+                    "আপনার বটের আসল টোকেন ভার্সেল (Vercel) ড্যাশবোর্ডে এনভায়রনমেন্ট ভেরিয়েবল হিসেবে সেট করুন এবং প্রজেক্টটি একবার <b>Redeploy</b> করুন।"
                   </p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -172,9 +159,6 @@ export default function CommunicationPlanePage() {
                           <ExternalLink className="mr-2 h-4 w-4" /> Open Vercel Settings
                         </a>
                       </Button>
-                      <p className="text-[9px] text-center text-muted-foreground italic">
-                        ভার্সেল ড্যাশবোর্ডে গিয়ে Settings &gt; Environment Variables এ টোকেনটি যুক্ত করুন।
-                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -187,7 +171,7 @@ export default function CommunicationPlanePage() {
                     "text-[8px] uppercase tracking-widest font-bold",
                     profile?.telegramLinked ? "bg-green-500/20 text-green-400 border-green-500/30" : "animate-pulse"
                   )}>
-                    {profile?.telegramLinked ? "MESH_BINDING: CONNECTED" : "AWAITING_SYNC"}
+                    {profile?.telegramLinked ? "MESH_BINDING: LINKED" : "AWAITING_SYNC"}
                   </Badge>
                 </div>
                 <CardHeader>
@@ -226,7 +210,7 @@ export default function CommunicationPlanePage() {
                       )}>
                         <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
                           {profile?.telegramLinked ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <Zap className="mr-2 h-4 w-4" />}
-                          {profile?.telegramLinked ? "GATEWAY LINKED" : "LINK IDENTITY"}
+                          {profile?.telegramLinked ? "GATEWAY LINKED" : "Link identity"}
                         </a>
                       </Button>
                       <Button 
@@ -254,7 +238,7 @@ export default function CommunicationPlanePage() {
                     <div className="space-y-4">
                        {[
                          { step: 1, desc: "ভার্সেলে আসল টোকেন বসিয়ে Redeploy করুন।" },
-                         { step: 2, desc: "Vercel Settings থেকে Standard Protection ডিজেবল করুন।" },
+                         { step: 2, desc: "Vercel Settings থেকে Deployment Protection ডিজেবল করুন।" },
                          { step: 3, desc: "'Secure Webhook' বাটনে ক্লিক করে কানেকশন সিঙ্ক করুন।" },
                          { step: 4, desc: "'Link identity' ক্লিক করে বোটে /start লিখে পাঠান।" }
                        ].map((item, i) => (
@@ -277,7 +261,7 @@ export default function CommunicationPlanePage() {
                   <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-tighter">
                     <Key className="h-4 w-4 text-accent" />
                     Protocol Handshake
-                  </CardTitle>
+                  </Key>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-4">
                    <div className="space-y-3">
@@ -299,22 +283,6 @@ export default function CommunicationPlanePage() {
                            ? "টেলিগ্রাম হ্যান্ডশেক সফল হয়েছে। আপনার $১,০০০ ব্যালেন্সের গেটওয়ে লকটি সফলভাবে আনলক হয়েছে।"
                            : "টেলিগ্রাম হ্যান্ডশেক সফল হলে পেমেন্ট রিম্যাডিয়েশন এবং হাই-ভ্যালু পে-আউট অটোমেটিক্যালি আনলক হবে।"}
                       </div>
-                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="glass-panel border-white/5">
-                <CardHeader>
-                  <CardTitle className="text-xs uppercase flex items-center gap-2">
-                    <Unplug className="h-4 w-4 text-primary" /> Signal Debugger
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                   <div className="p-2 rounded bg-black/40 border border-white/5 font-mono text-[9px] space-y-1">
-                      <p className="text-white/40">&gt; probing_api.telegram.org...</p>
-                      <p className="text-green-400">&gt; telegram_node: OK</p>
-                      <p className="text-white/40">&gt; verifying_webhook_seal...</p>
-                      <p className={profile?.telegramLinked ? "text-green-400" : "text-yellow-500"}>&gt; mesh_binding: {profile?.telegramLinked ? "CONNECTED" : "AWAITING_SYNC"}</p>
                    </div>
                 </CardContent>
               </Card>

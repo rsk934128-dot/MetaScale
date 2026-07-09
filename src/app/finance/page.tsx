@@ -83,9 +83,6 @@ export default function FinancialIntelligence() {
       const tg = (window as any).Telegram.WebApp;
       tg.expand();
       tg.ready();
-      
-      // Notify kernel of Mini App detection
-      console.log(">>> [MINI_APP] Environment Initialized. User:", tg.initDataUnsafe?.user?.id);
     }
   }, []);
 
@@ -126,6 +123,15 @@ export default function FinancialIntelligence() {
         description: `Error ID: ${errorId}. Kernel rejected the deposit signal. (Reason: Awaiting Identity Binding)` 
       });
       emitEvent('SECURITY', 'UNAUTHORIZED_HANDSHAKE_ATTEMPT', 1, { errorId, reason: 'TELEGRAM_UNLINKED' });
+      return;
+    }
+
+    if (profile?.verificationStatus !== 'VERIFIED') {
+      toast({ 
+        variant: "destructive", 
+        title: "Compliance Block", 
+        description: "Proof of Income পেন্ডিং থাকায় $১,০০০ ডিপোজিটটি কার্নেল দ্বারা রিজেক্ট করা হয়েছে।" 
+      });
       return;
     }
 
@@ -264,7 +270,7 @@ export default function FinancialIntelligence() {
                   </div>
                </div>
                <Button asChild size="sm" className="bg-yellow-500 text-black font-bold text-[9px] uppercase h-8 px-4">
-                  <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">Bind Gateway</a>
+                  <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">Link identity</a>
                </Button>
             </div>
           ) : (
@@ -272,7 +278,7 @@ export default function FinancialIntelligence() {
                <ShieldCheck className="h-8 w-8 text-green-500" />
                <div className="space-y-1">
                   <p className="text-xs font-bold text-white uppercase tracking-widest">Identity Stabilized (CONNECTED)</p>
-                  <p className="text-[10px] text-green-400 italic">"আপনার মোবাইল নোডটি সফলভাবে সোভারেন কার্নেলের সাথে সিঙ্কড।"</p>
+                  <p className="text-[10px] text-green-400 italic">"আপনার মোবাইল নোডটি সফলভাবে সোভারেন কার্নেলের সাথে সিঙ্কড (ECC_ED25519)।"</p>
                </div>
             </div>
           )}
@@ -311,15 +317,17 @@ export default function FinancialIntelligence() {
                 <CardContent className="px-6 pb-6 flex flex-col md:flex-row items-center gap-6">
                    <div className="flex-1 space-y-4">
                       <p className="text-[11px] text-white/80 leading-relaxed italic">
-                        "টেলিগ্রাম হ্যান্ডশেক সফল হলে পেমেন্ট রিম্যাডিয়েশন এবং হাই-ভ্যালু পে-আউট অটোমেটিক্যালি আনলক হবে।"
+                        {profile?.telegramLinked 
+                          ? "টেলিগ্রাম হ্যান্ডশেক সফল হয়েছে। আপনার ওয়ালেট ডিপোজিট এবং হাই-ভ্যালু পে-আউট এখন সম্পূর্ণ আনলক।"
+                          : "টেলিগ্রাম হ্যান্ডশেক সফল হলে পেমেন্ট রিম্যাডিয়েশন এবং হাই-ভ্যালু পে-আউট অটোমেটিক্যালি আনলক হবে।"}
                       </p>
                       <div className="flex flex-wrap gap-3">
                         <Button 
                           onClick={handleDeposit} 
                           disabled={isDepositing || !tonAddress || isMaintenance || !profile?.telegramLinked}
                           className={cn(
-                            "h-9 font-bold uppercase text-[9px] tracking-widest px-4 cyan-glow",
-                            (isMaintenance || !profile?.telegramLinked) ? "bg-secondary text-muted-foreground opacity-50 cursor-not-allowed" : "bg-accent text-background"
+                            "h-9 font-bold uppercase text-[9px] tracking-widest px-4 cyan-glow transition-all",
+                            (isMaintenance || !profile?.telegramLinked) ? "bg-secondary text-muted-foreground opacity-50 cursor-not-allowed" : "bg-accent text-background hover:scale-105"
                           )}
                         >
                           {isDepositing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isMaintenance || !profile?.telegramLinked) ? <Lock className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
@@ -332,17 +340,10 @@ export default function FinancialIntelligence() {
                         >
                            <Building2 className="mr-2 h-3 w-3" /> Connect Banking API
                         </Button>
-                        {!profile?.telegramLinked && (
-                          <Button asChild className="bg-accent text-background font-bold uppercase tracking-widest text-[9px] h-9 px-4 cyan-glow">
-                             <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
-                                <Zap className="mr-2 h-3 w-3" /> Link identity
-                             </a>
-                          </Button>
-                        )}
                       </div>
                    </div>
                    <div className="flex flex-col gap-2 text-[8px] font-mono text-muted-foreground uppercase bg-black/20 p-3 rounded-xl border border-white/5">
-                      <span className="flex items-center gap-1.5"><ShieldCheck className="h-2.5 w-2.5 text-accent" /> Security: ECC_ED25519</span>
+                      <span className="flex items-center gap-1.5"><ShieldCheck className={cn("h-2.5 w-2.5", profile?.telegramLinked ? "text-green-400" : "text-accent")} /> Security: ECC_ED25519</span>
                       <span className="flex items-center gap-1.5"><Activity className="h-2.5 w-2.5 text-accent" /> Webhook: Active</span>
                       <span className="flex items-center gap-1.5"><Lock className="h-2.5 w-2.5 text-accent" /> Encryption: AES-256</span>
                    </div>

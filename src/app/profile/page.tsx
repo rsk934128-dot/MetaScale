@@ -54,11 +54,11 @@ export default function ProfilePage() {
   const { data: profile } = useDoc<any>(userRef);
 
   const verificationDocs = [
-    { id: 'p1', name: "Profile Picture", status: "APPROVED", date: "May 19, 2025", icon: ImageIcon },
-    { id: 'p2', name: "Bank Document", status: "APPROVED", date: "May 19, 2025", icon: Building2 },
-    { id: 'p3', name: "Passport", status: "APPROVED", date: "May 19, 2025", icon: Globe },
-    { id: 'p4', name: "National ID", status: "APPROVED", date: "May 19, 2025", icon: Fingerprint },
-    { id: 'p5', name: "Proof of Income", status: profile?.verificationStatus === 'VERIFIED' ? "APPROVED" : "IN REVIEW", date: "May 18, 2025", icon: FileText, pending: profile?.verificationStatus !== 'VERIFIED' },
+    { id: 'p1', name: "Profile Picture", status: "APPROVED", date: "July 09, 2026", icon: ImageIcon },
+    { id: 'p2', name: "Bank Document", status: "APPROVED", date: "July 09, 2026", icon: Building2 },
+    { id: 'p3', name: "Passport", status: "APPROVED", date: "July 09, 2026", icon: Globe },
+    { id: 'p4', name: "National ID", status: "APPROVED", date: "July 09, 2026", icon: Fingerprint },
+    { id: 'p5', name: "Proof of Income", status: profile?.verificationStatus === 'VERIFIED' ? "APPROVED" : "IN REVIEW", date: "July 09, 2026", icon: FileText, pending: profile?.verificationStatus !== 'VERIFIED' },
   ];
 
   const handleManualVerification = async () => {
@@ -165,7 +165,7 @@ export default function ProfilePage() {
                    {profile?.verificationStatus !== 'VERIFIED' && (
                      <Button 
                       size="sm" 
-                      className="bg-accent text-background font-bold text-[9px] h-8"
+                      className="bg-accent text-background font-bold text-[9px] h-8 cyan-glow"
                       onClick={handleManualVerification}
                       disabled={isVerifying}
                      >
