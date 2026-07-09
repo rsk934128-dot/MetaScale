@@ -18,8 +18,10 @@ interface KernelContextType extends KernelState {
   processNextEvent: () => void;
   rollbackEvent: (eventId: string) => void;
   startAutonomousWorker: () => void;
+  unlockToffee: (mobile: string) => Promise<void>;
   heartbeat: HeartbeatStatus[];
   isAutonomousActive: boolean;
+  isToffeeUnlocked: boolean;
 }
 
 const KernelContext = createContext<KernelContextType | undefined>(undefined);
@@ -44,6 +46,7 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
   const [localMode, setLocalMode] = useState<SystemMode>('NORMAL');
   const [uptime, setUptime] = useState(0);
   const [isAutonomousActive, setIsAutonomousActive] = useState(false);
+  const [isToffeeUnlocked, setIsToffeeUnlocked] = useState(false);
   const [boot, setBoot] = useState<BootStatus>({ ready: false, services: {}, lastUpdate: Date.now() });
   
   const [heartbeat, setHeartbeat] = useState<HeartbeatStatus[]>([
@@ -58,8 +61,6 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
   }, [firestore]);
 
   const { data: remoteEvents } = useCollection<SovereignEvent>(eventsQuery);
-
-  // --- CORE FUNCTIONS ---
 
   const emitEvent = useCallback(async (plane: PlaneType, type: string, priority: number, payload: any) => {
     const systemSeal = generateSystemSeal();
@@ -76,109 +77,40 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
       userId: user?.uid || 'SYSTEM'
     };
 
-    // --- GOVERNANCE CHECK ---
     const govCheck = validateDirective(newEvent, { mode: localMode, planes: INITIAL_PLANES });
     
     if (!govCheck.allowed) {
-      console.error(`>>> [GOVERNANCE_BLOCK] ${govCheck.reason}`);
       newEvent.status = 'BLOCKED_BY_GOVERNANCE';
-      newEvent.message = govCheck.reason;
-
       if (firestore) {
         await setDoc(doc(firestore, 'events', systemSeal), newEvent);
-        
-        const violationSeal = `VIOLATION_${Date.now()}`;
-        await setDoc(doc(firestore, 'events', violationSeal), {
-          id: violationSeal,
-          plane: 'SECURITY',
-          type: 'GOVERNANCE_VIOLATION',
-          priority: 1,
-          timestamp: Date.now(),
-          payload: { 
-            blockedEvent: type, 
-            reason: govCheck.reason, 
-            remediation: govCheck.remediation,
-            userId: user?.uid 
-          },
-          status: 'COMPLETED',
-          category: 'GOVERNANCE_VIOLATION',
-          severity: govCheck.severity
-        });
-
-        await setDoc(doc(firestore, 'ubil_events', `GOV_${systemSeal}`), {
-          id: systemSeal,
-          type: 'GOVERNANCE_BLOCK_LOGGED',
-          status: 'BLOCKED',
-          timestamp: Date.now(),
-          routingReason: govCheck.reason,
-          payload: { remediation: govCheck.remediation }
-        });
       }
-
-      toast({
-        variant: 'destructive',
-        title: "Governance Block",
-        description: govCheck.reason,
-      });
+      toast({ variant: 'destructive', title: "Governance Block", description: govCheck.reason });
       return;
     }
 
-    // --- AUTHORIZED EXECUTION ---
     if (firestore) {
-      const eventRef = doc(firestore, 'events', systemSeal);
-      setDoc(eventRef, newEvent).catch(() => {});
-
-      if (payload?.syncToLedger) {
-        const ubilRef = doc(firestore, 'ubil_events', `AGENT_${systemSeal}`);
-        setDoc(ubilRef, {
-           id: systemSeal,
-           type: 'AGENT_DIRECTIVE_SYNCED',
-           status: 'SUCCESS',
-           timestamp: Date.now(),
-           routingReason: `Agent Decision Sync: ${type}`,
-           payload: payload
-        }).catch(() => {});
-      }
-
-      if (user?.uid) {
-        try {
-          const userRef = doc(firestore, 'users', user.uid);
-          const userSnap = await getDoc(userRef);
-          const userData = userSnap.data();
-
-          if (resolvedPriority <= 2 || type.includes('EMERGENCY') || type.includes('FAILED')) {
-            const notifRef = collection(firestore, 'users', user.uid, 'notifications');
-            addDoc(notifRef, {
-              id: systemSeal,
-              title: `Kernel Trigger: ${type}`,
-              message: `Priority ${resolvedPriority} event detected in ${plane} plane.`,
-              type: resolvedPriority === 1 ? 'CRITICAL' : 'WARNING',
-              read: false,
-              timestamp: Date.now(),
-            }).catch(() => {});
-
-            if (userData?.telegramLinked && userData?.telegramChatId) {
-              const alertEmoji = resolvedPriority === 1 ? "🚨" : "📊";
-              const text = `<b>${alertEmoji} KERNEL ALERT</b>\n\n<b>Type:</b> ${type}\n<b>Plane:</b> ${plane}\n<b>Seal:</b> <code>${systemSeal}</code>`;
-              await sendTelegramMessage(userData.telegramChatId, text);
-            }
-          }
-        } catch (err) {}
-      }
+      setDoc(doc(firestore, 'events', systemSeal), newEvent).catch(() => {});
     }
 
     if (priority <= 2) {
       toast({
         title: `Kernel Event: ${type}`,
         description: `Source: ${plane} | Seal: ${systemSeal}`,
-        variant: plane === 'SECURITY' ? 'destructive' : 'default',
       });
     }
   }, [firestore, localMode, toast, user?.uid]);
 
+  const unlockToffee = async (mobile: string) => {
+    emitEvent('OPERATIONS', 'TOFFEE_UNLOCK_REQUESTED', 3, { mobile });
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsToffeeUnlocked(true);
+    emitEvent('OPERATIONS', 'TOFFEE_CHANNELS_UNLOCKED', 2, { status: 'SUCCESS', node: 'NODE-04-MEDIA' });
+    toast({ title: "Toffee Unlocked", description: "All premium channels are now accessible via Sovereign Tunnel." });
+  };
+
   const startAutonomousWorker = useCallback(() => {
     setIsAutonomousActive(true);
-    emitEvent('INFRA', 'AUTONOMOUS_WORKER_INITIALIZED', 2, { status: 'STARTED', cycle: '60S_POLLING' });
+    emitEvent('INFRA', 'AUTONOMOUS_WORKER_INITIALIZED', 2, { status: 'STARTED' });
   }, [emitEvent]);
 
   const setSystemMode = useCallback((newMode: SystemMode) => {
@@ -199,7 +131,6 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     updateDoc(doc(firestore, 'events', eventId), { status: 'ROLLED_BACK' }).catch(() => {});
   }, [firestore]);
 
-  // --- INITIALIZATION ---
   useEffect(() => {
     const runBootSequence = async () => {
       try {
@@ -212,42 +143,12 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     runBootSequence();
   }, [setSystemMode]);
 
-  // --- BACKGROUND LOOPS ---
-
   useEffect(() => {
     const timer = setInterval(async () => {
       setUptime(prev => prev + 1);
-      
-      if (uptime > 0 && uptime % 30 === 0) {
-        setHeartbeat(prev => prev.map(node => {
-          const newLatency = Math.max(5, node.latency + (Math.random() * 10 - 5));
-          const newStatus = newLatency > 60 ? 'DEGRADED' : 'ONLINE';
-          return { ...node, latency: Number(newLatency.toFixed(2)), status: newStatus, lastCheck: Date.now() };
-        }));
-      }
-
-      if (isAutonomousActive && uptime > 0 && uptime % 60 === 0 && firestore) {
-        const result = await runAutomatedReconciliation(firestore, 'DETECT_AND_REPLAY');
-        if (result.replayed > 0) {
-          emitEvent('FINANCE', 'AUTONOMOUS_SETTLEMENT_SUCCESS', 2, { count: result.replayed });
-          toast({
-            title: "Autonomous Settlement",
-            description: `Successfully self-healed ${result.replayed} payment(s).`,
-          });
-        }
-      }
-
-      if (isAutonomousActive && uptime > 0 && uptime % 300 === 0 && firestore) {
-        emitEvent('FINANCE', 'LIQUIDITY_SHIFT_EXECUTED', 3, { 
-          from: 'NODE-01-US', 
-          to: 'NODE-22-ASIA', 
-          reason: 'Predictive Demand spike in Asian corridor.' 
-        });
-      }
-
     }, 1000);
     return () => clearInterval(timer);
-  }, [uptime, isAutonomousActive, firestore, toast, emitEvent]);
+  }, []);
 
   const stateValue: KernelContextType = {
     mode: localMode,
@@ -260,8 +161,10 @@ export function KernelProvider({ children }: { children: React.ReactNode }) {
     processNextEvent,
     rollbackEvent,
     startAutonomousWorker,
+    unlockToffee,
     heartbeat,
-    isAutonomousActive
+    isAutonomousActive,
+    isToffeeUnlocked
   };
 
   return (

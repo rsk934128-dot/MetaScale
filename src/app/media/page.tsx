@@ -24,7 +24,10 @@ import {
   CheckCircle2,
   History,
   CloudLightning,
-  ShieldCheck
+  ShieldCheck,
+  Trophy,
+  Unlock,
+  Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +37,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import Link from "next/link";
 
 const MOCK_TRACKS = [
   { id: '1', title: 'Sovereign Frequency', artist: 'Kernel Beats', duration: '3:45', thumb: 'https://picsum.photos/seed/music1/400/400' },
@@ -49,7 +53,7 @@ export default function MediaIntelligencePage() {
   const [extractingId, setExtractingId] = useState<string | null>(null);
   const [extractProgress, setExtractProgress] = useState(0);
   const { toast } = useToast();
-  const { emitEvent } = useKernel();
+  const { emitEvent, isToffeeUnlocked } = useKernel();
 
   const handlePlay = (track: any) => {
     setCurrentTrack(track);
@@ -115,14 +119,44 @@ export default function MediaIntelligencePage() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            {/* Player Column */}
             <div className="xl:col-span-2 space-y-6">
-              <Card className="glass-panel border-l-4 border-l-primary overflow-hidden">
+              {/* Toffee Access Node */}
+              <Card className={cn(
+                "glass-panel border-l-4 overflow-hidden relative group transition-all",
+                isToffeeUnlocked ? "border-l-green-500 bg-green-500/5" : "border-l-accent bg-accent/5"
+              )}>
                 <div className="absolute top-0 right-0 p-4">
-                  <Badge className="bg-primary/10 text-primary border-primary/20 text-[8px] uppercase tracking-widest font-bold">
-                    Now Decrypting
+                  <Badge variant="outline" className={cn(
+                    "text-[8px] uppercase tracking-widest font-bold",
+                    isToffeeUnlocked ? "border-green-500 text-green-400" : "border-accent text-accent"
+                  )}>
+                    {isToffeeUnlocked ? "ACTIVE_NODE" : "LOCKED"}
                   </Badge>
                 </div>
+                <CardContent className="p-8 flex flex-col md:flex-row items-center gap-8">
+                  <div className="w-20 h-20 rounded-2xl bg-black/40 flex items-center justify-center border border-white/5 shrink-0 group-hover:scale-110 transition-transform">
+                    {isToffeeUnlocked ? <Unlock className="h-10 w-10 text-green-400" /> : <Trophy className="h-10 w-10 text-accent" />}
+                  </div>
+                  <div className="flex-1 space-y-3 text-center md:text-left">
+                    <h3 className="text-xl font-headline font-bold text-white uppercase italic">Toffee Live Corridor</h3>
+                    <p className="text-xs text-muted-foreground italic leading-relaxed">
+                      {isToffeeUnlocked 
+                        ? "Sovereign handshake সফল হয়েছে। এখন আপনি সকল প্রিমিয়াম চ্যানেল এবং লাইভ স্পোর্টস হাব উপভোগ করতে পারবেন।"
+                        : "টফি এক্সেস করতে এবং প্রিমিয়াম চ্যানেলগুলো আনলক করতে ফিফা হাব পোর্টালে লগইন সম্পন্ন করুন।"}
+                    </p>
+                    <Button asChild className={cn(
+                      "h-10 font-bold uppercase tracking-widest text-[9px] px-8 transition-all",
+                      isToffeeUnlocked ? "bg-green-500 text-white" : "bg-accent text-background cyan-glow"
+                    )}>
+                      <Link href="/fifa-hub">
+                        {isToffeeUnlocked ? "Enter Live Hub" : "Unlock with Sovereign Identity"}
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-panel border-l-4 border-l-primary overflow-hidden">
                 <CardContent className="p-8">
                   <div className="flex flex-col md:flex-row gap-8 items-center">
                     <div className="relative w-48 h-48 md:w-64 md:h-64 rounded-2xl overflow-hidden border border-white/10 shadow-2xl group">
@@ -181,61 +215,28 @@ export default function MediaIntelligencePage() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Extraction Queue */}
-              <Card className="glass-panel border-white/5">
-                <CardHeader className="p-4 border-b border-white/5 flex flex-row items-center justify-between">
-                  <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2">
-                    <CloudLightning className="h-4 w-4 text-primary" />
-                    Extraction Pipeline
-                  </CardTitle>
-                  <Badge variant="outline" className="text-[8px] opacity-50">DPE_ORDER_SEQUENTIAL</Badge>
-                </CardHeader>
-                <CardContent className="p-4 space-y-4">
-                  {extractingId ? (
-                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3">
-                       <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-3">
-                             <div className="p-2 rounded bg-primary/20 text-primary"><Download className="h-4 w-4" /></div>
-                             <div>
-                                <p className="text-[11px] font-bold text-white uppercase">Syncing to Local Node...</p>
-                                <p className="text-[9px] text-muted-foreground uppercase">Target: /mesh/storage/sko_media</p>
-                             </div>
-                          </div>
-                          <span className="text-xs font-mono text-primary font-bold">{extractProgress}%</span>
-                       </div>
-                       <Progress value={extractProgress} className="h-1 bg-primary/10" />
-                    </div>
-                  ) : (
-                    <div className="h-20 flex items-center justify-center border border-dashed border-white/5 rounded-xl text-muted-foreground italic text-[10px]">
-                       Pipeline Idle. No active extractions.
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
             </div>
 
-            {/* Sidebar Column */}
             <div className="space-y-6">
-               <Card className="glass-panel border-primary/20 bg-primary/5">
+               <Card className="glass-panel border-accent/20 bg-accent/5">
                   <CardHeader className="p-4">
                     <CardTitle className="text-xs flex items-center gap-2 uppercase">
-                      <Zap className="h-4 w-4 text-primary" />
-                      Mesh Intelligence
+                      <Zap className="h-4 w-4 text-accent" />
+                      Media Anycast
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 pt-0 space-y-4">
                      <div className="space-y-3">
                         <div className="flex justify-between items-center text-[10px] font-bold uppercase">
-                           <span className="text-muted-foreground">Encryption</span>
-                           <span className="text-green-400">CHACHA20-POLY1305</span>
+                           <span className="text-muted-foreground">Streaming Mode</span>
+                           <span className="text-green-400">P43_SECURE</span>
                         </div>
                         <div className="flex justify-between items-center text-[10px] font-bold uppercase">
-                           <span className="text-muted-foreground">Buffer Health</span>
-                           <span className="text-white">OPTIMAL (120s)</span>
+                           <span className="text-muted-foreground">Buffer</span>
+                           <span className="text-white">OPTIMAL</span>
                         </div>
-                        <div className="p-2 rounded border border-primary/20 bg-primary/5 text-[9px] text-primary/80 italic leading-relaxed">
-                           "Anycast routing is prioritizing Node-04 for low-latency PIS stream delivery. System mode: NORMAL."
+                        <div className="p-2 rounded border border-accent/20 bg-accent/5 text-[9px] text-accent italic leading-relaxed">
+                           "Media corridors are currently routed through Node-04 for high-bandwidth Toffee stream delivery."
                         </div>
                      </div>
                   </CardContent>
@@ -243,7 +244,7 @@ export default function MediaIntelligencePage() {
 
                <Card className="glass-panel border-white/5">
                   <CardHeader className="p-4 border-b border-white/5">
-                    <CardTitle className="text-xs uppercase tracking-tighter">Recommended Nodes</CardTitle>
+                    <CardTitle className="text-xs uppercase tracking-tighter">Featured Traces</CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
                     <ScrollArea className="h-[400px]">
