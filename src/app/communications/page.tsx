@@ -22,7 +22,9 @@ import {
   Lock,
   Key,
   Server,
-  Code2
+  Code2,
+  AlertTriangle,
+  Unplug
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,12 +35,6 @@ import { useKernel } from "@/components/kernel/KernelProvider";
 import { useUser, useFirestore, useDoc } from "@/firebase";
 import { generateTelegramLink, setTelegramWebhook } from "@/lib/telegram";
 import { doc } from "firebase/firestore";
-
-const MOCK_EMAILS = [
-  { id: '1', sender: 'alerts@infra.gov', subject: 'Sector 7 Node Latency Spike', body: 'Immediate attention required. Latency has exceeded 200ms in the anycast mesh.' },
-  { id: '2', sender: 'treasury@finance.gov', subject: 'Fiscal Disbursement Approval', body: 'Batch FALLBACK_P180_X92 requires imperial directive seal for amounts > $5000.' },
-  { id: '3', sender: 'public@civic.gov', subject: 'River Level Alert', body: 'Sensors in Sector 2 reporting 0.5m rise in last 30 minutes.' },
-];
 
 export default function CommunicationPlanePage() {
   const { user } = useUser();
@@ -85,12 +81,19 @@ export default function CommunicationPlanePage() {
       const origin = window.location.origin;
       const res = await setTelegramWebhook(origin);
       if (res?.ok) {
-        toast({ title: "Webhook Secured", description: "Telegram bot is now inter-linked with the Sovereign Kernel." });
+        toast({ title: "Webhook Secured", description: "টেলিগ্রাম বটের সাথে সোভারেন কার্নেলের সিঙ্ক সফল হয়েছে।" });
+        emitEvent('SECURITY', 'WEBHOOK_SYNC_SUCCESS', 2, { status: 'CONNECTED' });
       } else {
-        toast({ variant: "destructive", title: "Webhook Failed", description: res?.description || "Could not establish secure callback." });
+        const errorDesc = res?.description || "Unauthorized (Check Vercel Deployment Protection)";
+        toast({ 
+          variant: "destructive", 
+          title: "Webhook Failed", 
+          description: errorDesc
+        });
+        emitEvent('SECURITY', 'WEBHOOK_SYNC_FAILED', 1, { reason: errorDesc });
       }
     } catch (err) {
-      toast({ variant: "destructive", title: "Connection Error" });
+      toast({ variant: "destructive", title: "Connection Error", description: "ভার্সেল পাসওয়ার্ড প্রটেকশন অন থাকলে এটি ফেইল করতে পারে।" });
     } finally {
       setIsWebhookLoading(false);
     }
@@ -140,15 +143,25 @@ export default function CommunicationPlanePage() {
                   <CardDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Server-side Secrets Management</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-4 items-start">
+                     <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                     <div className="space-y-1">
+                        <p className="text-xs font-bold text-white uppercase">Critical Action Required</p>
+                        <p className="text-[10px] text-red-400 italic leading-relaxed">
+                          "নিশ্চিত করুন যে আপনার Vercel ড্যাশবোর্ডে **Deployment Protection** ডিজেবল করা আছে। পাসওয়ার্ড প্রটেকশন অন থাকলে টেলিগ্রাম সিগন্যালগুলো ৪০১ এরর দিয়ে ব্লক হয়ে যাবে।"
+                        </p>
+                     </div>
+                  </div>
+
                   <p className="text-sm text-white/80 leading-relaxed italic">
-                    "আপনার টেলিগ্রাম বটের টোকেন ভার্সেল (Vercel) ড্যাশবোর্ডে সেট আপ করতে নিচের লিঙ্কটি ব্যবহার করুন। এটি ছাড়া বট সিগন্যাল প্রসেস করতে পারবে না।"
+                    "আপনার বটের আসল টোকেন ভার্সেল (Vercel) ড্যাশবোর্ডে এনভায়রনমেন্ট ভেরিয়েবল হিসেবে সেট করুন এবং প্রজেক্টটি একবার **Redeploy** করুন।"
                   </p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2 font-mono text-[10px]">
-                      <p className="text-primary font-bold">// Required Variable</p>
+                      <p className="text-primary font-bold">// Mandatory Key</p>
                       <p className="text-white">KEY: <span className="text-accent">TELEGRAM_BOT_TOKEN</span></p>
-                      <p className="text-white">VALUE: <span className="text-muted-foreground">Your_Token_From_BotFather</span></p>
+                      <p className="text-white">VALUE: <span className="text-yellow-400">আপনার_আসল_টোকেন_এখানে</span></p>
                     </div>
 
                     <div className="flex flex-col gap-2 justify-center">
@@ -158,7 +171,7 @@ export default function CommunicationPlanePage() {
                         </a>
                       </Button>
                       <p className="text-[9px] text-center text-muted-foreground italic">
-                        ভার্সেল ড্যাশবোর্ডে গিয়ে Settings &gt; Environment Variables এ টোকেনটি যুক্ত করুন।
+                        Redeploy once settings are updated.
                       </p>
                     </div>
                   </div>
@@ -168,8 +181,8 @@ export default function CommunicationPlanePage() {
               {/* Telegram Gateway Section */}
               <Card className="glass-panel border-l-4 border-l-accent bg-accent/5 overflow-hidden">
                 <div className="absolute top-0 right-0 p-4">
-                  <Badge variant={profile?.telegramLinked ? "default" : "outline"} className={profile?.telegramLinked ? "bg-green-500/20 text-green-400" : "animate-pulse"}>
-                    {profile?.telegramLinked ? "GATEWAY_ACTIVE" : "AWAITING_LINK"}
+                  <Badge variant={profile?.telegramLinked ? "default" : "outline"} className={profile?.telegramLinked ? "bg-green-500/20 text-green-400 border-green-500/30" : "animate-pulse"}>
+                    {profile?.telegramLinked ? "MESH_BINDING: LINKED" : "AWAITING_LINK"}
                   </Badge>
                 </div>
                 <CardHeader>
@@ -177,11 +190,11 @@ export default function CommunicationPlanePage() {
                     <MessageSquare className="h-6 w-6 text-accent" />
                     Telegram Alert Gateway
                   </CardTitle>
-                  <CardDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground">@Coolrubelbank2bot • Security Sync</CardDescription>
+                  <CardDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground">ECC_ED25519 Security Sync</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <p className="text-sm text-white/80 leading-relaxed italic">
-                    "সরাসরি আপনার টেলিগ্রামে কার্নেল অ্যালার্ট, ওটিপি এবং সিকিউরিটি নোটিফিকেশন পেতে আপনার সোভারেন আইডি লিঙ্ক করুন।"
+                    "সরাসরি আপনার টেলিগ্রামে কার্নেল অ্যালার্ট এবং ওটিপি পেতে নিচের ৩টি ধাপ সম্পন্ন করুন। এটি সফল হলে 'AWAITING_LINK' পিলটি সবুজ হয়ে যাবে।"
                   </p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -190,8 +203,8 @@ export default function CommunicationPlanePage() {
                         <ShieldCheck className="h-3.5 w-3.5" /> Identity Status
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">Mesh Binding</span>
-                        <span className={profile?.telegramLinked ? "text-green-400 font-bold" : "text-red-400 font-bold"}>{profile?.telegramLinked ? "BOUND" : "UNLINKED"}</span>
+                        <span className="text-xs text-muted-foreground">Mesh Protocol</span>
+                        <span className={profile?.telegramLinked ? "text-green-400 font-bold" : "text-yellow-500 font-bold"}>{profile?.telegramLinked ? "STABILIZED" : "INITIALIZING"}</span>
                       </div>
                       <Button variant="ghost" className="w-full h-8 text-[9px] font-bold uppercase border border-white/5" onClick={handleTestOTP} disabled={isOtpLoading}>
                          {isOtpLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
@@ -202,7 +215,7 @@ export default function CommunicationPlanePage() {
                     <div className="flex flex-col gap-2">
                       <Button asChild className="h-11 bg-accent text-background font-bold uppercase tracking-widest text-[10px] cyan-glow">
                         <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
-                          <Zap className="mr-2 h-4 w-4" /> Initialize Gateway
+                          <Zap className="mr-2 h-4 w-4" /> BIND GATEWAY
                         </a>
                       </Button>
                       <Button 
@@ -212,30 +225,35 @@ export default function CommunicationPlanePage() {
                         disabled={isWebhookLoading}
                       >
                         {isWebhookLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                        Secure Webhook
+                        SECURE WEBHOOK
                       </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Security Alerts History / Keyboards simulation info */}
-              <Card className="glass-panel border-l-4 border-l-red-500">
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest">
-                    <ShieldAlert className="h-4 w-4 text-red-500" />
-                    Interactive Security Directives
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-4 rounded-xl bg-secondary/20 border border-white/5 space-y-4">
-                     <p className="text-xs text-white/70 italic">"টেলিগ্রামে পাঠানো হাই-ভ্যালু অ্যালার্টগুলোতে এখন সরাসরি এপ্রুভাল বাটন থাকবে।"</p>
-                     <div className="flex gap-2">
-                        <div className="px-3 py-2 rounded-lg bg-green-500/20 text-green-400 text-[10px] font-bold border border-green-500/30">APPROVE</div>
-                        <div className="px-3 py-2 rounded-lg bg-red-500/20 text-red-400 text-[10px] font-bold border border-red-500/30">REJECT</div>
-                     </div>
-                  </div>
-                </CardContent>
+              {/* Action Plan */}
+              <Card className="glass-panel border-white/5 bg-secondary/10">
+                 <CardHeader>
+                    <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                       <Activity className="h-4 w-4" /> Binding Action Plan
+                    </CardTitle>
+                 </CardHeader>
+                 <CardContent>
+                    <div className="space-y-4">
+                       {[
+                         { step: 1, desc: "ভার্সেলে আসল টোকেন বসিয়ে Redeploy করুন।" },
+                         { step: 2, desc: "Vercel Settings থেকে Standard Protection ডিজেবল করুন।" },
+                         { step: 3, desc: "'Secure Webhook' বাটনে ক্লিক করে কানেকশন সিঙ্ক করুন।" },
+                         { step: 4, desc: "'Bind Gateway' ক্লিক করে বোটে /start লিখে পাঠান।" }
+                       ].map((item, i) => (
+                         <div key={i} className="flex gap-4 items-center">
+                            <div className="w-6 h-6 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-[10px] font-bold text-accent shrink-0">{item.step}</div>
+                            <p className="text-[11px] text-white/80">{item.desc}</p>
+                         </div>
+                       ))}
+                    </div>
+                 </CardContent>
               </Card>
             </div>
 
@@ -244,22 +262,38 @@ export default function CommunicationPlanePage() {
                 <CardHeader>
                   <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-tighter">
                     <Key className="h-4 w-4 text-accent" />
-                    OTP Control Protocol
+                    Protocol Handshake
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-4">
                    <div className="space-y-3">
                       <div className="flex justify-between items-center text-[10px] font-bold">
-                         <span className="text-muted-foreground uppercase">TTL Threshold</span>
-                         <span className="text-white">5 Minutes</span>
-                      </div>
-                      <div className="flex justify-between items-center text-[10px] font-bold">
                          <span className="text-muted-foreground uppercase">Encryption</span>
                          <span className="text-green-400">ECC_ED25519</span>
                       </div>
-                      <div className="p-2 rounded border border-accent/20 bg-accent/5 text-[9px] text-accent italic leading-relaxed">
-                         "ওটিপি ভেরিফিকেশন এখন পেমেন্ট রিম্যাডিয়েশন এবং হাই-ভ্যালু পে-আউটের জন্য বাধ্যতামূলক।"
+                      <div className="flex justify-between items-center text-[10px] font-bold">
+                         <span className="text-muted-foreground uppercase">Status</span>
+                         <Badge variant="outline" className="text-[8px] border-accent/20 text-accent uppercase">Phase 4 Active</Badge>
                       </div>
+                      <div className="p-2 rounded border border-accent/20 bg-accent/5 text-[9px] text-accent italic leading-relaxed">
+                         "টেলিগ্রাম হ্যান্ডশেক সফল হলে পেমেন্ট রিম্যাডিয়েশন এবং হাই-ভ্যালু পে-আউট অটোমেটিক্যালি আনলক হবে।"
+                      </div>
+                   </div>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-panel border-white/5">
+                <CardHeader>
+                  <CardTitle className="text-xs uppercase flex items-center gap-2">
+                    <Unplug className="h-4 w-4 text-primary" /> Signal Debugger
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                   <div className="p-2 rounded bg-black/40 border border-white/5 font-mono text-[9px] space-y-1">
+                      <p className="text-white/40">&gt; probing_api.telegram.org...</p>
+                      <p className="text-green-400">&gt; telegram_node: OK</p>
+                      <p className="text-white/40">&gt; verifying_webhook_seal...</p>
+                      <p className={profile?.telegramLinked ? "text-green-400" : "text-yellow-500"}>&gt; mesh_binding: {profile?.telegramLinked ? "LINKED" : "UNLINKED"}</p>
                    </div>
                 </CardContent>
               </Card>
