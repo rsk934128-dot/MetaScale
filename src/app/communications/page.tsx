@@ -137,7 +137,7 @@ export default function CommunicationPlanePage() {
                      <div className="space-y-1">
                         <p className="text-xs font-bold text-white uppercase">Critical Action Required (401 Bypass)</p>
                         <p className="text-[10px] text-red-400 italic leading-relaxed">
-                          "নিশ্চিত করুন যে আপনার Vercel ড্যাশবোর্ডে <b>Deployment Protection (Standard Protection)</b> ডিজেবল করা আছে। পাসওয়ার্ড প্রটেকশন অন থাকলে টেলিগ্রাম সিগন্যালগুলো ব্লক হয়ে যাবে।"
+                          "নিশ্চিত করুন যে আপনার Vercel ড্যাশবোর্ড থেকে <b>Deployment Protection</b> ডিজেবল করা আছে। পাসওয়ার্ড প্রটেকশন অন থাকলে টেলিগ্রাম সিগন্যালগুলো ব্লক হয়ে যাবে।"
                         </p>
                      </div>
                   </div>
@@ -197,7 +197,7 @@ export default function CommunicationPlanePage() {
                         <span className="text-xs text-muted-foreground">Mesh Protocol</span>
                         <span className={profile?.telegramLinked ? "text-green-400 font-bold" : "text-yellow-500 font-bold"}>{profile?.telegramLinked ? "CONNECTED" : "INITIALIZING"}</span>
                       </div>
-                      <Button variant="ghost" className="w-full h-8 text-[9px] font-bold uppercase border border-white/5" onClick={handleTestOTP} disabled={isOtpLoading}>
+                      <Button variant="ghost" className="w-full h-8 text-[9px] font-bold uppercase border border-white/5" onClick={handleUserAction} disabled={isOtpLoading}>
                          {isOtpLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
                          Test Secure OTP
                       </Button>
@@ -261,7 +261,7 @@ export default function CommunicationPlanePage() {
                   <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-tighter">
                     <Key className="h-4 w-4 text-accent" />
                     Protocol Handshake
-                  </Key>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-4">
                    <div className="space-y-3">
