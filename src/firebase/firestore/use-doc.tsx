@@ -24,45 +24,56 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
     }
 
     let isMounted = true;
+    let unsubscribe: () => void = () => {};
 
-    const unsubscribe = onSnapshot(
-      ref,
-      (snapshot: DocumentSnapshot<T>) => {
-        if (!isMounted) return;
-        setData(snapshot.exists() ? ({ ...snapshot.data()!, id: snapshot.id } as T) : null);
-        setLoading(false);
-        setError(null);
-      },
-      async (serverError: FirestoreError) => {
-        if (!isMounted) return;
-        if (serverError.code === 'permission-denied') {
-          const permissionError = new FirestorePermissionError({
-            path: ref.path,
-            operation: 'get',
-          });
-          errorEmitter.emit('permission-error', permissionError);
-          setError(permissionError);
-        } else if (serverError.code === 'unavailable' || serverError.code === 'deadline-exceeded') {
-          // Suppress hard error for offline mode or timeouts
-          console.warn('Firestore Document: Operating in restricted network/offline mode.');
+    try {
+      unsubscribe = onSnapshot(
+        ref,
+        (snapshot: DocumentSnapshot<T>) => {
+          if (!isMounted) return;
+          setData(snapshot.exists() ? ({ ...snapshot.data()!, id: snapshot.id } as T) : null);
+          setLoading(false);
           setError(null);
-        } else {
-          // Ignore specific internal assertion failures from spreading to the UI
-          const msg = serverError.message || "";
-          if (!msg.includes('b815') && !msg.includes('ca9')) {
-            setError(serverError);
+        },
+        async (serverError: FirestoreError) => {
+          if (!isMounted) return;
+          if (serverError.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+              path: ref.path,
+              operation: 'get',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            setError(permissionError);
+          } else if (serverError.code === 'unavailable' || serverError.code === 'deadline-exceeded') {
+            console.warn('Firestore Document: Operating in restricted network/offline mode.');
+            setError(null);
+          } else {
+            const msg = serverError.message || "";
+            // Skip setting hard error for known internal SDK assertion failures
+            if (!msg.includes('b815') && !msg.includes('ca9')) {
+              setError(serverError);
+            } else {
+              console.debug("Firestore suppressed internal assertion (doc):", msg);
+            }
           }
+          setLoading(false);
         }
-        setLoading(false);
+      );
+    } catch (e: any) {
+      const msg = e.message || "";
+      if (!msg.includes('b815') && !msg.includes('ca9')) {
+        console.error("onSnapshot sync error (doc):", e);
       }
-    );
+    }
 
     return () => {
       isMounted = false;
-      try {
-        unsubscribe();
-      } catch (e) {
-        // Silent catch for potential internal SDK issues during unmount
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+        } catch (e) {
+          // Silent catch for potential internal SDK issues during unmount
+        }
       }
     };
   }, [ref]);

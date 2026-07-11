@@ -112,6 +112,7 @@ export default function RootLayout({
                   try {
                     const combined = args.map(arg => {
                       if (typeof arg === 'string') return arg;
+                      if (arg instanceof Error) return arg.message + ' ' + arg.stack;
                       try { return JSON.stringify(arg); } catch(e) { return String(arg); }
                     }).join(' ');
                     return isIgnored(combined);
@@ -133,7 +134,7 @@ export default function RootLayout({
                 };
 
                 window.addEventListener('error', (event) => {
-                  const message = event.message || (event.reason && event.reason.message) || String(event.reason) || "";
+                  const message = event.message || (event.error && event.error.message) || String(event.error) || "";
                   if (isIgnored(message)) {
                     event.stopImmediatePropagation();
                     event.preventDefault();
