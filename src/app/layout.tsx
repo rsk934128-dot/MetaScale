@@ -113,7 +113,14 @@ export default function RootLayout({
                 ];
 
                 const filterMessage = (args) => {
-                  const msg = args.map(arg => String(arg)).join(' ');
+                  const msg = args.map(arg => {
+                    try {
+                      if (typeof arg === 'string') return arg;
+                      return JSON.stringify(arg);
+                    } catch (e) {
+                      return String(arg);
+                    }
+                  }).join(' ');
                   return ignoredPatterns.some(pattern => msg.includes(pattern));
                 };
 
