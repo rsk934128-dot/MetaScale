@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -8,25 +9,17 @@ import {
   BarChart3, 
   TrendingUp, 
   DollarSign, 
-  PieChart, 
   ArrowUpRight, 
   Target, 
-  Users, 
   Zap, 
-  Briefcase, 
-  Rocket, 
   FileText,
   RefreshCw,
-  Download,
   ShieldCheck,
   Loader2,
   Activity,
-  Globe,
-  Network,
   Fingerprint,
   Lock,
   Sparkles,
-  Bot,
   BrainCircuit
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,7 +30,6 @@ import { useKernel } from "@/components/kernel/KernelProvider";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useCollection } from "@/firebase";
 import { collection, query, orderBy, limit } from "firebase/firestore";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -293,9 +285,6 @@ export default function RevenuePage() {
                     <div className="flex gap-3 pt-4">
                        <Button className="flex-1 h-12 bg-accent text-background font-bold uppercase tracking-widest text-[10px] cyan-glow" onClick={() => setShowReportDialog(false)}>
                           Archive Report
-                       </Button>
-                       <Button variant="outline" className="flex-1 h-12 border-white/10 text-[10px] font-bold uppercase tracking-widest" onClick={() => window.print()}>
-                          <Download className="mr-2 h-4 w-4" /> Export PDF
                        </Button>
                     </div>
                   </div>

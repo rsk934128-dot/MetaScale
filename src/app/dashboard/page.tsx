@@ -31,7 +31,9 @@ import {
   Scale,
   Hammer,
   Radar,
-  Power
+  Power,
+  Sparkles,
+  Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -41,21 +43,31 @@ import { cn } from "@/lib/utils";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { SystemMode } from "@/lib/kernel/types";
 import { Progress } from "@/components/ui/progress";
-import { useFirestore, useCollection, useDoc } from "@/firebase";
-import { collection, query, orderBy, limit, doc, updateDoc, setDoc } from "firebase/firestore";
+import { useFirestore, useCollection, useDoc, useUser } from "@/firebase";
+import { collection, query, orderBy, limit, doc, updateDoc, setDoc, getDoc } from "firebase/firestore";
 import { YieldFlow } from "@/components/charts/YieldFlow";
 import { HunterStream } from "@/components/dashboard/HunterStream";
 import { useToast } from "@/hooks/use-toast";
+import { generateDailyPulse } from "@/ai/flows/daily-integrity-report-flow";
+import { sendPulseReport } from "@/lib/telegram";
 
 export default function SovereignControlPlane() {
-  const { mode, setSystemMode, events, emitEvent } = useKernel();
+  const { mode, setSystemMode, events, emitEvent, heartbeat, isAutonomousActive, startAutonomousWorker } = useKernel();
   const [isSyncing, setIsSyncing] = useState(false);
   const [isUpdatingKillSwitch, setIsUpdatingKillSwitch] = useState(false);
+  const [isSendingPulse, setIsSendingPulse] = useState(false);
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
   const configRef = useMemo(() => firestore ? doc(firestore, 'system', 'config') : null, [firestore]);
   const { data: systemConfig } = useDoc<any>(configRef);
+
+  const ubilEventsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'ubil_events'), orderBy('timestamp', 'desc'), limit(10));
+  }, [firestore]);
+  const { data: remoteEvents } = useCollection<any>(ubilEventsQuery);
 
   const handleSyncAllNodes = () => {
     setIsSyncing(true);
@@ -63,6 +75,40 @@ export default function SovereignControlPlane() {
     setTimeout(() => {
       setIsSyncing(false);
     }, 2000);
+  };
+
+  const handleDispatchPulse = async () => {
+    if (!firestore || !user?.uid) return;
+    setIsSendingPulse(true);
+    
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.data();
+
+      if (!userData?.telegramChatId) {
+        toast({ variant: "destructive", title: "Gateway Unlinked", description: "প্রথমে টেলিগ্রাম আইডি লিঙ্ক করুন।" });
+        setIsSendingPulse(false);
+        return;
+      }
+
+      const reportText = await generateDailyPulse({
+        activeNodes: heartbeat.filter(n => n.status === 'ONLINE').length,
+        newConnections: 42,
+        totalTransactions: remoteEvents?.length || 0,
+        yieldRecycled: 42.5,
+        systemStatus: 'OPERATIONAL (Mil-Spec)'
+      });
+
+      await sendPulseReport(userData.telegramChatId, reportText);
+      
+      emitEvent('FINANCE', 'DAILY_PULSE_DISPATCHED', 3, { chatId: userData.telegramChatId });
+      toast({ title: "Pulse Report Dispatched", description: "Executive summary sent to Telegram." });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Pulse Error", description: "Reasoning node timeout." });
+    } finally {
+      setIsSendingPulse(false);
+    }
   };
 
   const toggleKillSwitch = async () => {
@@ -134,6 +180,20 @@ export default function SovereignControlPlane() {
           </div>
           <div className="flex items-center gap-2">
             <Button 
+                variant="outline" 
+                size="sm" 
+                className={cn(
+                  "border-primary/30 text-primary font-bold text-[8px] md:text-[10px] h-8",
+                  isSendingPulse && "opacity-50"
+                )}
+                onClick={handleDispatchPulse}
+                disabled={isSendingPulse}
+             >
+                {isSendingPulse ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                <span className="hidden xs:inline">Daily Pulse</span>
+                <span className="xs:hidden">Pulse</span>
+             </Button>
+            <Button 
               variant="outline"
               size="sm" 
               className={cn(
@@ -156,6 +216,21 @@ export default function SovereignControlPlane() {
         </header>
 
         <main className="flex-1 space-y-6 p-4 md:p-8 w-full max-w-none">
+          <div className="flex items-center gap-4 mb-2">
+             <Badge className={cn(
+               "h-7 px-4 text-[9px] font-bold uppercase tracking-widest",
+               isAutonomousActive ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-yellow-500/20 text-yellow-500 border-yellow-500/30"
+             )}>
+                <Bot className="h-3.5 w-3.5 mr-2" />
+                Autonomous Controller: {isAutonomousActive ? 'ACTIVE' : 'IDLE'}
+             </Badge>
+             {!isAutonomousActive && (
+               <Button variant="ghost" size="sm" className="h-7 text-[8px] font-bold uppercase text-accent" onClick={startAutonomousWorker}>
+                  Activate Night-Watchman
+               </Button>
+             )}
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 w-full">
              <Card className="glass-panel border-l-4 border-l-accent bg-accent/5">
                 <CardHeader className="p-4 pb-2">

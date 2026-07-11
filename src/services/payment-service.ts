@@ -17,6 +17,7 @@ import { sendFinancialAlert, sendSecurityAlert } from '@/lib/telegram';
 /**
  * Core Domain Service: Atomic Payment Credit Logic
  * Updated v1.8: Integrated Emergency Kill Switch & Maintenance Check.
+ * Updated v1.9: Integrated Autonomous AML Shielding (Hunter Mode).
  */
 export async function processPaymentCredit(
   firestore: Firestore, 
@@ -61,7 +62,7 @@ export async function processPaymentCredit(
     return { status: 'REJECTED_HANDSHAKE_REQUIRED', seal: sealHash };
   }
 
-  // 2. Proactive Threat Hunting (Hunter Mode)
+  // 2. Proactive Threat Hunting (Hunter Mode - AML Shield)
   if (userData && trigger !== 'SIMULATION') {
     try {
       const riskCheck = await runPredictiveAnalysis({
@@ -77,7 +78,7 @@ export async function processPaymentCredit(
           trustScore: userData.trustScore || 0,
           verificationStatus: userData.verificationStatus || 'UNVERIFIED',
           recentActivityCount: 0,
-          averageTxnAmount: 500,
+          averageTxnAmount: userData.averageTxnAmount || 500,
         },
         networkMetadata: {
           latency: 8.4
@@ -107,6 +108,12 @@ export async function processPaymentCredit(
       });
 
       if (riskCheck.riskScore > 80) {
+        // Blacklist user if critical risk (AML Shield)
+        await updateDoc(userRef, { 
+          verificationStatus: 'FLAGGED', 
+          trustScore: Math.max(0, (userData.trustScore || 0) - 50) 
+        });
+        
         return { status: 'BLOCKED_BY_GOVERNANCE', reason: riskCheck.reasoning, seal: sealHash };
       }
     } catch (err) {
@@ -201,7 +208,7 @@ export async function simulateStressTest(firestore: Firestore, userId: string, c
       userId: userId,
       externalTxnId: `EXT_SIM_${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
       provider: 'STRIPE', 
-      amount: 1.00,
+      amount: Math.floor(Math.random() * 5000) + 1, // Add variation for AML profile
       currency: 'USD',
       status: 'PAID',
       eventTime: Date.now()
