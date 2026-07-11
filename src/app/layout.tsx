@@ -89,7 +89,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                // Highly aggressive error suppression for Firestore internal states, timeouts and redundant warnings
+                // Aggressive error suppression for Firestore internal states, timeouts and redundant warnings
                 const ignoredPatterns = [
                   'MetaMask', 
                   'nkbihfbeogaeaoehlefnkodbefgpgknn',
@@ -173,7 +173,7 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body className="font-body antialiased bg-background text-foreground" suppressHydrationWarning>
+      <body className="font-body antialiased bg-background text-foreground" suppressHydrationWarning={true}>
         <FirebaseClientProvider>
           <KernelProvider>
             <AuthGuard>
