@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -37,7 +36,8 @@ import {
   Unlock,
   ShieldAlert,
   Key,
-  ShieldHalf
+  ShieldHalf,
+  QrCode
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +55,7 @@ import { generateTelegramLink } from "@/lib/telegram";
 import { PaymentLinkManager } from "@/components/finance/PaymentLinkManager";
 import { TonConnectButton, useTonAddress } from '@tonconnect/ui-react';
 import { BankSandboxModal } from "@/components/finance/BankSandboxModal";
+import { DirectQrTransfer } from "@/components/finance/DirectQrTransfer";
 
 export default function FinancialIntelligence() {
   const { user } = useUser();
@@ -366,14 +367,21 @@ export default function FinancialIntelligence() {
           </div>
 
           <Tabs defaultValue="links" className="space-y-8">
-            <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1">
-               <TabsTrigger value="links" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">Link Architect</TabsTrigger>
-               <TabsTrigger value="payout" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">Global Outbound</TabsTrigger>
-               <TabsTrigger value="history" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">Finality Audit</TabsTrigger>
+            <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1 overflow-x-auto">
+               <TabsTrigger value="links" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full">Link Architect</TabsTrigger>
+               <TabsTrigger value="qr-transfer" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full flex items-center gap-2">
+                 <QrCode className="h-3 w-3" /> QR Transfer
+               </TabsTrigger>
+               <TabsTrigger value="payout" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full">Global Outbound</TabsTrigger>
+               <TabsTrigger value="history" className="text-[10px] uppercase font-bold tracking-widest px-6 h-full">Finality Audit</TabsTrigger>
             </TabsList>
 
             <TabsContent value="links" className="animate-fade-in">
                <PaymentLinkManager />
+            </TabsContent>
+
+            <TabsContent value="qr-transfer" className="animate-fade-in">
+               <DirectQrTransfer />
             </TabsContent>
 
             <TabsContent value="payout" className="animate-fade-in">
