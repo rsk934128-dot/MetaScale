@@ -171,7 +171,7 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body className="font-body antialiased bg-background text-foreground">
+      <body className="font-body antialiased bg-background text-foreground" suppressHydrationWarning>
         <FirebaseClientProvider>
           <KernelProvider>
             <AuthGuard>
