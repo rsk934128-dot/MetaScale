@@ -94,7 +94,8 @@ export default function RootLayout({
                   'ca9',
                   'Fe":-1',
                   'WatchChangeAggregator',
-                  'WatchStream'
+                  'WatchStream',
+                  'PersistentListenStream'
                 ];
 
                 const isIgnored = (msg) => {

@@ -23,14 +23,18 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
       return;
     }
 
+    let isMounted = true;
+
     const unsubscribe = onSnapshot(
       ref,
       (snapshot: DocumentSnapshot<T>) => {
+        if (!isMounted) return;
         setData(snapshot.exists() ? ({ ...snapshot.data()!, id: snapshot.id } as T) : null);
         setLoading(false);
         setError(null);
       },
       async (serverError: FirestoreError) => {
+        if (!isMounted) return;
         if (serverError.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: ref.path,
@@ -43,13 +47,24 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
           console.warn('Firestore Document: Operating in restricted network/offline mode.');
           setError(null);
         } else {
-          setError(serverError);
+          // Ignore specific internal assertion failures from spreading to the UI
+          const msg = serverError.message || "";
+          if (!msg.includes('b815') && !msg.includes('ca9')) {
+            setError(serverError);
+          }
         }
         setLoading(false);
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      try {
+        unsubscribe();
+      } catch (e) {
+        // Silent catch for potential internal SDK issues during unmount
+      }
+    };
   }, [ref]);
 
   return { data, loading, error };

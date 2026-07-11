@@ -33,11 +33,12 @@ export function initializeFirebase() {
     if (isBrowser) {
       try {
         // Use specialized persistence settings to stabilize against ID: ca9 / b815 errors
+        // Single tab manager is more stable for development hot-reloads
         firestore = initializeFirestore(firebaseApp, {
           localCache: persistentLocalCache({ 
             tabManager: persistentSingleTabManager() 
           }),
-          // Force long polling and auto-detection to stabilize handshake in restricted networks
+          // Force long polling to stabilize handshake in restricted cloud IDE networks
           experimentalForceLongPolling: true,
           experimentalAutoDetectLongPolling: true,
           ignoreUndefinedProperties: true
