@@ -6,11 +6,12 @@ import { sendTelegramMessage, sendFinancialAlert, sendHealthReport, sendMaintena
 import { reconcileAndSettleLink, processPaymentCredit } from '@/services/payment-service';
 
 /**
- * Telegram Webhook Handler v1.9
- * Improved with Handshake Stabilization Confirmation (ECC_ED25519).
+ * Telegram Webhook Handler v2.0 (Debug Enhanced)
+ * Improved with Handshake Stabilization Confirmation and Diagnostic Commands.
  */
 export async function POST(req: Request) {
-  console.log(">>> [TELEGRAM_SIGNAL] Pulse detected at /api/telegram/webhook");
+  const timestamp = Date.now();
+  console.log(`>>> [TELEGRAM_SIGNAL] Pulse detected at ${new Date(timestamp).toISOString()}`);
 
   try {
     const { firestore } = initializeFirebase();
@@ -20,6 +21,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
+    console.log(">>> [SIGNAL_PAYLOAD]:", JSON.stringify(body));
 
     // 1. Handle Callback Queries (Approve/Reject from inline buttons)
     if (body.callback_query) {
@@ -52,11 +54,21 @@ export async function POST(req: Request) {
 
     console.log(`>>> [SIGNAL_IN] From: ${chatId} | Command: ${text}`);
 
+    // --- DIAGNOSTIC COMMANDS ---
+
+    // Diagnostic Test: /test
+    if (text === '/test') {
+      await sendTelegramMessage(chatId, "<b>🛰️ সিস্টেম অনলাইন আছে, বস!</b>\n\nকার্নেল সিগন্যাল রিসিভ করছে এবং বট এপিআই সঠিকভাবে কনফিগার করা আছে।");
+      return NextResponse.json({ ok: true });
+    }
+
     // --- COMMAND ROUTER ---
 
     // 2. Identity Binding & Handshake Stabilization: /start <uid>
     if (text.startsWith('/start ')) {
       const userId = text.split(' ')[1];
+      console.log(`>>> [HANDSHAKE_INIT] Attempting binding for User: ${userId}`);
+      
       const userRef = doc(firestore, 'users', userId);
       const userSnap = await getDoc(userRef);
 
@@ -83,7 +95,7 @@ export async function POST(req: Request) {
         });
 
       } else {
-        await sendTelegramMessage(chatId, "❌ <b>IDENTITY_NOT_FOUND</b>\n\nদয়া করে সঠিক লিঙ্ক ব্যবহার করুন।");
+        await sendTelegramMessage(chatId, "❌ <b>IDENTITY_NOT_FOUND</b>\n\nদয়া করে সঠিক লিঙ্ক ব্যবহার করুন। আপনার UID কি সঠিক?");
       }
     } 
     
@@ -119,6 +131,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   } catch (error: any) {
     console.error('>>> [SIGNAL_FATAL_ERROR]:', error.message);
+    
+    // Try to notify the user about the failure
+    try {
+      const body = await req.json();
+      const chatId = body?.message?.chat?.id?.toString();
+      if (chatId) {
+        await sendTelegramMessage(chatId, `<b>⚠️ KERNEL EXCEPTION DETECTED</b>\n\nলজিক প্রসেস করার সময় একটি ইন্টারনাল এরর হয়েছে।\n\nError: <code>${error.message}</code>`);
+      }
+    } catch (e) {
+      // Ignore secondary failures
+    }
+
     return NextResponse.json({ ok: true }); 
   }
 }
