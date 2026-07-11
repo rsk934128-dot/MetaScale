@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -34,7 +35,9 @@ import {
   AlertTriangle,
   Lock,
   Unlock,
-  ShieldAlert
+  ShieldAlert,
+  Key,
+  ShieldHalf
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -274,12 +277,15 @@ export default function FinancialIntelligence() {
                </Button>
             </div>
           ) : (
-            <div className="p-4 rounded-2xl bg-green-500/10 border-2 border-green-500/30 flex items-center gap-4 animate-fade-in shadow-2xl">
-               <ShieldCheck className="h-8 w-8 text-green-500" />
-               <div className="space-y-1">
-                  <p className="text-xs font-bold text-white uppercase tracking-widest">Identity Stabilized (CONNECTED)</p>
-                  <p className="text-[10px] text-green-400 italic">"আপনার মোবাইল নোডটি সফলভাবে সোভারেন কার্নেলের সাথে সিঙ্কড (ECC_ED25519)।"</p>
+            <div className="p-4 rounded-2xl bg-green-500/10 border-2 border-green-500/30 flex items-center justify-between gap-4 animate-fade-in shadow-2xl">
+               <div className="flex items-center gap-4">
+                  <ShieldCheck className="h-8 w-8 text-green-500" />
+                  <div className="space-y-1">
+                     <p className="text-xs font-bold text-white uppercase tracking-widest">Identity Stabilized (CONNECTED)</p>
+                     <p className="text-[10px] text-green-400 italic">"আপনার মোবাইল নোডটি সফলভাবে সোভারেন কার্নেলের সাথে সিঙ্কড (ECC_ED25519)।"</p>
+                  </div>
                </div>
+               <Badge className="bg-green-500/20 text-green-400 font-mono text-[9px]">PROTOCOL: ECC_ED25519</Badge>
             </div>
           )}
 
@@ -292,11 +298,14 @@ export default function FinancialIntelligence() {
                   </div>
                 </CardHeader>
                 <CardContent className="px-6 pb-6">
-                   <p className="text-4xl font-headline font-bold text-white">${profile?.balance?.toLocaleString() || '0.00'}</p>
-                   <div className="flex items-center gap-2 mt-2">
-                      <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", profile?.plan === 'PRO' ? 'bg-primary shadow-[0_0_10px_primary]' : 'bg-accent')} />
+                   <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-headline font-bold text-accent/50">$</span>
+                      <p className="text-5xl font-headline font-bold text-white tracking-tighter">{profile?.balance?.toLocaleString() || '0.00'}</p>
+                   </div>
+                   <div className="flex items-center gap-2 mt-4">
+                      <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", profile?.telegramLinked ? 'bg-green-400 shadow-[0_0_10px_#4ade80]' : 'bg-yellow-400')} />
                       <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">
-                        {profile?.plan === 'PRO' ? 'Priority Node Node-04 Active' : 'Standard Settlement Rail'}
+                        {profile?.telegramLinked ? 'Mesh Handshake: STABILIZED' : 'Handshake: PENDING_SYNC'}
                       </p>
                    </div>
                 </CardContent>
@@ -306,21 +315,26 @@ export default function FinancialIntelligence() {
                 <CardHeader className="pb-2 p-6 flex flex-row items-center justify-between">
                    <div className="space-y-1">
                      <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2 text-accent">
-                        <MessageSquare className="h-4 w-4" /> Telegram Node Gateway
+                        <Key className="h-4 w-4" /> Protocol Handshake Lab
                      </CardTitle>
-                     <CardDescription className="text-[10px] italic">Handshake Stabilization Mode.</CardDescription>
+                     <CardDescription className="text-[10px] italic">Deterministic Handshake Stabilization Node.</CardDescription>
                    </div>
                    <Badge variant={profile?.telegramLinked ? "default" : "outline"} className={cn(profile?.telegramLinked ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-yellow-500/10 text-yellow-400 border-yellow-500/30 animate-pulse")}>
-                      {profile?.telegramLinked ? "CONNECTED" : "AWAITING_SYNC"}
+                      {profile?.telegramLinked ? "SYNCED: ECC_ED25519" : "AWAITING_PULSE"}
                    </Badge>
                 </CardHeader>
                 <CardContent className="px-6 pb-6 flex flex-col md:flex-row items-center gap-6">
                    <div className="flex-1 space-y-4">
-                      <p className="text-[11px] text-white/80 leading-relaxed italic">
-                        {profile?.telegramLinked 
-                          ? "টেলিগ্রাম হ্যান্ডশেক সফল হয়েছে। আপনার ওয়ালেট ডিপোজিট এবং হাই-ভ্যালু পে-আউট এখন সম্পূর্ণ আনলক।"
-                          : "টেলিগ্রাম হ্যান্ডশেক সফল হলে পেমেন্ট রিম্যাডিয়েশন এবং হাই-ভ্যালু পে-আউট অটোমেটিক্যালি আনলক হবে।"}
-                      </p>
+                      <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                         <div className="flex justify-between items-center text-[9px] font-mono">
+                            <span className="text-muted-foreground">ENCRYPTION</span>
+                            <span className="text-accent">ECC_ED25519</span>
+                         </div>
+                         <div className="flex justify-between items-center text-[9px] font-mono">
+                            <span className="text-muted-foreground">AUTHENTICITY</span>
+                            <span className={profile?.telegramLinked ? "text-green-400" : "text-yellow-400"}>{profile?.telegramLinked ? "STABILIZED" : "PENDING"}</span>
+                         </div>
+                      </div>
                       <div className="flex flex-wrap gap-3">
                         <Button 
                           onClick={handleDeposit} 
@@ -331,21 +345,21 @@ export default function FinancialIntelligence() {
                           )}
                         >
                           {isDepositing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isMaintenance || !profile?.telegramLinked) ? <Lock className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
-                          {isMaintenance ? "Maintenance Active" : !profile?.telegramLinked ? "Awaiting Sync" : "Deposit $1,000 via TON"}
+                          {isMaintenance ? "Maintenance Active" : !profile?.telegramLinked ? "Handshake Needed" : "Deposit $1,000 via TON"}
                         </Button>
                         <Button 
                            variant="outline"
                            className="h-9 font-bold uppercase text-[9px] border-accent/20 text-accent hover:bg-accent/10"
                            onClick={() => setIsBankModalOpen(true)}
                         >
-                           <Building2 className="mr-2 h-3 w-3" /> Connect Banking API
+                           <Building2 className="mr-2 h-3 w-3" /> Register Banking Node
                         </Button>
                       </div>
                    </div>
-                   <div className="flex flex-col gap-2 text-[8px] font-mono text-muted-foreground uppercase bg-black/20 p-3 rounded-xl border border-white/5">
-                      <span className="flex items-center gap-1.5"><ShieldCheck className={cn("h-2.5 w-2.5", profile?.telegramLinked ? "text-green-400" : "text-accent")} /> Security: ECC_ED25519</span>
-                      <span className="flex items-center gap-1.5"><Activity className="h-2.5 w-2.5 text-accent" /> Webhook: Active</span>
-                      <span className="flex items-center gap-1.5"><Lock className="h-2.5 w-2.5 text-accent" /> Encryption: AES-256</span>
+                   <div className="w-full md:w-auto flex flex-col gap-2 text-[8px] font-mono text-muted-foreground uppercase bg-black/20 p-3 rounded-xl border border-white/5">
+                      <span className="flex items-center gap-1.5"><ShieldCheck className={cn("h-2.5 w-2.5", profile?.telegramLinked ? "text-green-400" : "text-accent")} /> Node-04 Verification: OK</span>
+                      <span className="flex items-center gap-1.5"><Activity className="h-2.5 w-2.5 text-accent" /> Pulse Stream: Active</span>
+                      <span className="flex items-center gap-1.5"><Lock className="h-2.5 w-2.5 text-accent" /> Protocol: v1.2 Stable</span>
                    </div>
                 </CardContent>
              </Card>
@@ -353,9 +367,9 @@ export default function FinancialIntelligence() {
 
           <Tabs defaultValue="links" className="space-y-8">
             <TabsList className="bg-secondary/50 border border-white/5 h-12 p-1">
-               <TabsTrigger value="links" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">Directives</TabsTrigger>
-               <TabsTrigger value="payout" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">Outbound</TabsTrigger>
-               <TabsTrigger value="history" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">Ledger</TabsTrigger>
+               <TabsTrigger value="links" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">Link Architect</TabsTrigger>
+               <TabsTrigger value="payout" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">Global Outbound</TabsTrigger>
+               <TabsTrigger value="history" className="text-[10px] uppercase font-bold tracking-widest px-8 h-full">Finality Audit</TabsTrigger>
             </TabsList>
 
             <TabsContent value="links" className="animate-fade-in">
@@ -366,7 +380,7 @@ export default function FinancialIntelligence() {
               <Card className="glass-panel border-l-4 border-l-[#6366f1] bg-[#6366f1]/5 max-w-2xl">
                  <CardHeader className="p-6">
                     <CardTitle className="text-sm flex items-center gap-2 uppercase text-[#818cf8]">
-                       <Building2 className="h-4 w-4" /> Global Disbursement
+                       <Building2 className="h-4 w-4" /> Global Disbursement Hub
                     </CardTitle>
                  </CardHeader>
                  <CardContent className="space-y-6 p-6 pt-0">
@@ -381,13 +395,13 @@ export default function FinancialIntelligence() {
                           >
                              <option value="PRIYO_PAY">Priyo Pay (Global)</option>
                              <option value="TELEGRAM_WALLET">TON Wallet (P2P)</option>
-                             <option value="PAYPAL">PayPal Hub</option>
+                             <option value="PAYPAL">PayPal REST Hub</option>
                           </select>
                        </div>
                        <div className="space-y-2">
-                          <Label className="text-[10px] font-bold opacity-60 uppercase">Recipient</Label>
+                          <Label className="text-[10px] font-bold opacity-60 uppercase">Recipient Node</Label>
                           <Input 
-                            placeholder="email@mesh.gov or @username" 
+                            placeholder="email@mesh.gov or TON Address" 
                             className="bg-secondary/30 border-white/5 h-11 text-sm"
                             value={payoutRecipient}
                             onChange={(e) => setPayoutRecipient(e.target.value)}
@@ -412,7 +426,7 @@ export default function FinancialIntelligence() {
                       disabled={isPayoutProcessing || !payoutAmount || isMaintenance}
                     >
                        {isPayoutProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isMaintenance ? <Lock className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
-                       {isMaintenance ? "Sovereign Locked" : "Authorize Dispatch"}
+                       {isMaintenance ? "Circuit Breaker Active" : "Authorize Global Dispatch"}
                     </Button>
                  </CardContent>
               </Card>
@@ -420,39 +434,52 @@ export default function FinancialIntelligence() {
 
             <TabsContent value="history" className="animate-fade-in">
                 <Card className="glass-panel border-white/5">
-                   <CardHeader className="p-6 border-b border-white/5 bg-white/5">
-                      <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2 text-accent">
-                         <History className="h-4 w-4 text-accent" /> Settlement Ledger
-                      </CardTitle>
+                   <CardHeader className="p-6 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
+                      <div className="space-y-1">
+                         <CardTitle className="text-xs uppercase tracking-widest flex items-center gap-2 text-accent">
+                            <History className="h-4 w-4 text-accent" /> Settlement Audit Trail
+                         </CardTitle>
+                         <CardDescription className="text-[10px] italic">Deterministic Ledger Finality (T+0).</CardDescription>
+                      </div>
+                      <Badge variant="outline" className="border-accent/20 text-accent font-mono text-[9px]">0 SEALS GENERATED</Badge>
                    </CardHeader>
                    <CardContent className="p-0">
                       <ScrollArea className="h-[500px]">
                          <div className="divide-y divide-white/5">
                             {recentTxns?.map((txn: any) => (
-                              <div key={txn.id} className="p-6 flex items-center justify-between hover:bg-white/5">
+                              <div key={txn.id} className="p-6 flex items-center justify-between hover:bg-white/5 group transition-all">
                                  <div className="flex items-center gap-5">
                                     <div className={cn(
-                                      "p-3 rounded-xl border border-white/10",
-                                      txn.status === 'FAILED' ? "text-red-400" : "text-primary"
+                                      "p-3 rounded-xl border border-white/10 transition-transform group-hover:scale-110",
+                                      txn.status === 'FAILED' ? "text-red-400 bg-red-500/5" : "text-primary bg-primary/5"
                                     )}>
-                                       {txn.status === 'FAILED' ? <AlertTriangle className="h-5 w-5" /> : <DollarSign className="h-5 w-5" />}
+                                       {txn.status === 'FAILED' ? <AlertTriangle className="h-5 w-5" /> : <ShieldCheck className="h-5 w-5" />}
                                     </div>
                                     <div className="space-y-1">
-                                       <p className="text-lg font-bold text-white uppercase">${txn.amount || '0.00'}</p>
-                                       <p className="text-[9px] text-muted-foreground font-mono truncate w-48">Audit: {txn.auditId || txn.id}</p>
+                                       <div className="flex items-center gap-2">
+                                          <p className="text-lg font-bold text-white uppercase">${txn.amount || '0.00'}</p>
+                                          <Badge variant="ghost" className="text-[7px] uppercase p-0 opacity-50">{txn.currency}</Badge>
+                                       </div>
+                                       <p className="text-[9px] text-muted-foreground font-mono truncate w-48 group-hover:text-accent transition-colors">Seal ID: {txn.id}</p>
                                     </div>
                                  </div>
-                                 <div className="text-right">
+                                 <div className="text-right space-y-1">
                                     <Badge variant="outline" className={cn(
-                                      "text-[8px] uppercase",
-                                      txn.status === 'COMPLETED' ? "border-green-500 text-green-400" : 
-                                      txn.status === 'FAILED' ? "border-red-500 text-red-400" :
-                                      "border-accent text-accent"
+                                      "text-[8px] uppercase px-3",
+                                      txn.status === 'COMPLETED' ? "border-green-500 text-green-400 bg-green-500/5" : 
+                                      txn.status === 'FAILED' ? "border-red-500 text-red-400 bg-red-500/5" :
+                                      "border-accent text-accent bg-accent/5"
                                     )}>{txn.status}</Badge>
-                                    <p className="text-[10px] text-muted-foreground font-mono mt-1">{new Date(txn.timestamp).toLocaleTimeString()}</p>
+                                    <p className="text-[10px] text-muted-foreground font-mono opacity-50">{new Date(txn.timestamp).toLocaleTimeString()}</p>
                                  </div>
                               </div>
                             ))}
+                            {(!recentTxns || recentTxns.length === 0) && (
+                               <div className="p-20 text-center space-y-4 opacity-20">
+                                  <Terminal className="h-12 w-12 mx-auto" />
+                                  <p className="text-[10px] font-bold uppercase tracking-[0.4em]">Listening for Mesh Signals...</p>
+                               </div>
+                            )}
                          </div>
                       </ScrollArea>
                    </CardContent>

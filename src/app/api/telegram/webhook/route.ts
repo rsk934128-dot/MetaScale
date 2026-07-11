@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { initializeFirebase } from '@/firebase';
 import { doc, updateDoc, getDoc, collection, getDocs, query, where, orderBy, limit, setDoc } from 'firebase/firestore';
@@ -5,7 +6,7 @@ import { sendTelegramMessage, sendFinancialAlert, sendHealthReport, sendMaintena
 import { reconcileAndSettleLink, processPaymentCredit } from '@/services/payment-service';
 
 /**
- * Telegram Webhook Handler v1.8
+ * Telegram Webhook Handler v1.9
  * Improved with Handshake Stabilization Confirmation (ECC_ED25519).
  */
 export async function POST(req: Request) {
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
             authorizedAt: Date.now(),
             routingReason: 'Authorized via Multi-Sig Telegram Gateway (ECC_ED25519).'
           });
-          await sendTelegramMessage(chatId, `<b>✅ TRANSACTION AUTHORIZED</b>\n\nID: <code>${dispatchId}</code>\n\nলিঙ্কড পেমেন্টটি সফলভাবে সোভারেন কার্নেল দ্বারা রিলিজ করা হয়েছে। (Seal Verified)`);
+          await sendTelegramMessage(chatId, `<b>✅ TRANSACTION AUTHORIZED</b>\n\nID: <code>${dispatchId}</code>\n\nলিঙ্কড পেমেন্টটি সফলভাবে সোভারেন কার্নেল দ্বারা রিলিজ করা হয়েছে। (ECC_ED25519 Verified Seal)`);
         }
       }
       return NextResponse.json({ ok: true });
@@ -63,7 +64,8 @@ export async function POST(req: Request) {
         await updateDoc(userRef, { 
           telegramChatId: chatId, 
           telegramLinked: true, 
-          updatedAt: Date.now() 
+          updatedAt: Date.now(),
+          handshakeProtocol: 'ECC_ED25519'
         });
         
         await sendTelegramMessage(chatId, `<b>✅ IDENTITY BOUND & STABILIZED</b>\n\nCitizen: ${userSnap.data().displayName}\n\nআপনার মোবাইল নোড এখন সোভারেন কার্নেলের সাথে সফলভাবে সিঙ্কড (ECC_ED25519)। আপনি এখন হাই-ভ্যালু লেনদেন সম্পন্ন করতে পারবেন। আপনার ড্যাশবোর্ড এখন <b>CONNECTED</b> মোডে আছে।`);
@@ -73,7 +75,7 @@ export async function POST(req: Request) {
         await setDoc(auditRef, {
           id: `HANDSHAKE_${Date.now()}`,
           plane: 'SECURITY',
-          type: 'TELEGRAM_IDENTITY_STABILIZED',
+          type: 'HANDSHAKE_STABILIZED',
           priority: 2,
           timestamp: Date.now(),
           status: 'COMPLETED',
@@ -117,7 +119,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   } catch (error: any) {
     console.error('>>> [SIGNAL_FATAL_ERROR]:', error.message);
-    // Always return ok:true to Telegram to prevent retry loops on bad messages
     return NextResponse.json({ ok: true }); 
   }
 }

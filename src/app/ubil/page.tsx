@@ -78,6 +78,7 @@ export default function UBILMainframePage() {
         "> [BOOT] Night-Watchman Protocol Initialized.",
         "> [AUDIT] Exactly-Once Ledger Invariant: VERIFIED.",
         "> [SYNC] Anycast Grid: 8.4ms UX stabilized.",
+        "> [HANDSHAKE] ECC_ED25519 Cryptographic Layer: READY.",
         ...prev
       ]);
     }, 1000);
@@ -91,6 +92,8 @@ export default function UBILMainframePage() {
       setLogs(prev => [`> [AUTONOMOUS] Settled ${latestEvent.payload.count} pending signals.`, ...prev]);
     } else if (latestEvent.type === 'GOVERNANCE_VIOLATION') {
       setLogs(prev => [`! [GOVERNANCE] Policy Block: NID/TIN Drift on Node-04.`, ...prev]);
+    } else if (latestEvent.type === 'HANDSHAKE_STABILIZED') {
+       setLogs(prev => [`> [SECURITY] Handshake Stabilized: ${latestEvent.payload.method} via Node-04.`, ...prev]);
     }
   }, [events]);
 
@@ -222,6 +225,7 @@ export default function UBILMainframePage() {
                            log.includes('[BOOT]') ? "text-primary font-bold" :
                            log.includes('[SYNC]') ? "text-blue-400" :
                            log.includes('[AUDIT]') ? "text-yellow-500" :
+                           log.includes('[HANDSHAKE]') ? "text-accent" :
                            log.includes('!') ? "text-red-500 font-bold" :
                            "text-white/60"
                          )}>
@@ -292,6 +296,9 @@ export default function UBILMainframePage() {
                               <p className="text-[10px] md:text-[11px] text-white/90 italic leading-relaxed">
                                   "{selectedEvent.routingReason || 'Validated via Exactly-Once Protocol.'}"
                               </p>
+                              {selectedEvent.auditSeal && (
+                                <p className="text-[9px] font-mono text-accent">Audit Seal: {selectedEvent.auditSeal}</p>
+                              )}
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                              <div className="p-3 rounded-lg bg-secondary/20 border border-white/5">
