@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth, useFirestore } from '@/firebase';
@@ -25,7 +26,8 @@ import {
   AlertCircle,
   Users,
   ChevronLeft,
-  Smartphone
+  Smartphone,
+  WifiOff
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -60,6 +62,7 @@ export default function LoginPage() {
 
   const getAuthErrorMessage = (errorCode: string) => {
     switch (errorCode) {
+      case 'auth/network-request-failed': return 'নেটওয়ার্ক সংযোগ বিচ্ছিন্ন হয়েছে। দয়া করে আপনার ইন্টারনেট কানেকশন চেক করুন এবং পুনরায় চেষ্টা করুন।';
       case 'auth/invalid-email': return 'ইমেইল অ্যাড্রেসটি সঠিক নয়।';
       case 'auth/wrong-password': return 'ভুল পাসওয়ার্ড দেওয়া হয়েছে।';
       case 'auth/user-not-found': return 'এই ইমেইল দিয়ে কোনো একাউন্ট পাওয়া যায়নি।';
@@ -118,7 +121,13 @@ export default function LoginPage() {
         router.replace('/dashboard');
       }
     } catch (error: any) {
-      if (error.code === 'auth/popup-closed-by-user') {
+      if (error.code === 'auth/network-request-failed') {
+        toast({
+          variant: "destructive",
+          title: "Network Failed",
+          description: "সার্ভারে কানেক্ট করা যাচ্ছে না। আপনার ইন্টারনেট সংযোগ যাচাই করুন।",
+        });
+      } else if (error.code === 'auth/popup-closed-by-user') {
         toast({
           title: "Sign-in Cancelled",
           description: "লগইন পপআপটি বন্ধ করা হয়েছে।",

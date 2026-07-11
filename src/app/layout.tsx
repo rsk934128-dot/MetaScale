@@ -104,7 +104,9 @@ export default function RootLayout({
                   'INTERNAL ASSERTION FAILED',
                   'Unexpected state',
                   'b815',
-                  'ca9'
+                  'ca9',
+                  'auth/network-request-failed',
+                  'network-request-failed'
                 ];
 
                 const filterMessage = (args) => {
