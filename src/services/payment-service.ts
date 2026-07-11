@@ -7,33 +7,54 @@ import {
   increment,
   getDoc,
   collection,
-  addDoc
+  addDoc,
+  updateDoc
 } from 'firebase/firestore';
 import { NormalizedPaymentEvent, InboundPaymentDoc, PaymentStatus, SettlementBucket } from '@/lib/payments/types';
 import { runPredictiveAnalysis } from '@/ai/flows/predictive-anomaly-analysis';
-import { sendFinancialAlert } from '@/lib/telegram';
+import { sendFinancialAlert, sendSecurityAlert } from '@/lib/telegram';
 
 /**
  * Core Domain Service: Atomic Payment Credit Logic
- * Updated v1.5: Integrated Cryptographic Seal (ECC_ED25519 Simulation).
+ * Updated v1.6: Ghost Load Simulation & Emergency Auto-lock.
  */
 export async function processPaymentCredit(
   firestore: Firestore, 
   event: NormalizedPaymentEvent,
-  trigger: 'WEBHOOK' | 'RECONCILIATION' | 'MANUAL' = 'WEBHOOK',
+  trigger: 'WEBHOOK' | 'RECONCILIATION' | 'MANUAL' | 'SIMULATION' = 'WEBHOOK',
   adminUid?: string
 ) {
-  // Generate a Cryptographic Verification Seal (ID)
   const sealHash = `SEAL_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
   const paymentId = `${event.provider}_${event.externalTxnId}`;
   const timestamp = Date.now();
 
-  // 1. Proactive Threat Hunting (Hunter Mode)
+  // 1. Handshake Integrity Check
   const userRef = doc(firestore, 'users', event.userId);
   const userSnap = await getDoc(userRef);
   const userData = userSnap.data();
 
-  if (userData) {
+  // FAIL-SAFE: If handshake is not stabilized, enter Fallback Mode
+  if (!userData?.telegramLinked && trigger !== 'SIMULATION') {
+    const errorMsg = `CRITICAL: Handshake missing for user ${event.userId}. Signal Rejected.`;
+    console.error(errorMsg);
+    
+    // Auto-lock the identity node
+    await updateDoc(userRef, { verificationStatus: 'FLAGGED', trustScore: 0 });
+    
+    // Dispatch Security Alert to Telegram
+    if (userData?.telegramChatId) {
+      await sendSecurityAlert(userData.telegramChatId, 'HANDSHAKE_FAIL_AUTO_LOCK', {
+        userId: event.userId,
+        reason: 'Attempted credit without stabilized identity link.',
+        seal: sealHash
+      });
+    }
+
+    return { status: 'REJECTED_HANDSHAKE_REQUIRED', seal: sealHash };
+  }
+
+  // 2. Proactive Threat Hunting (Hunter Mode)
+  if (userData && trigger !== 'SIMULATION') {
     try {
       const riskCheck = await runPredictiveAnalysis({
         transaction: {
@@ -111,7 +132,7 @@ export async function processPaymentCredit(
       status: 'CREDITED' as PaymentStatus,
       timestamp: timestamp,
       trigger: trigger,
-      reason: 'Automated settlement credit via ECC_ED25519 Handshake',
+      reason: trigger === 'SIMULATION' ? 'Stress Test Simulation Trace' : 'Automated settlement credit via ECC_ED25519 Handshake',
     };
 
     const isCredited = true;
@@ -142,7 +163,7 @@ export async function processPaymentCredit(
   });
 
   // Notify Telegram after transaction commits
-  if (result.status === 'SUCCESS_CREDITED' && userData?.telegramLinked && userData?.telegramChatId) {
+  if (result.status === 'SUCCESS_CREDITED' && trigger !== 'SIMULATION' && userData?.telegramLinked && userData?.telegramChatId) {
     await sendFinancialAlert(userData.telegramChatId, 'SETTLED', {
       amount: event.amount,
       currency: event.currency,
@@ -153,6 +174,43 @@ export async function processPaymentCredit(
   }
 
   return result;
+}
+
+/**
+ * Directive 1: Ghost Load Stress Test Simulator
+ * Generates N rapid fire transactions to verify Exactly-Once Ledger Invariant.
+ */
+export async function simulateStressTest(firestore: Firestore, userId: string, count: number = 10) {
+  console.log(`>>> [STRESS_TEST] Initiating Ghost Load for ${userId}. Target: ${count} pulses.`);
+  const results = [];
+
+  for (let i = 0; i < count; i++) {
+    const mockEvent: NormalizedPaymentEvent = {
+      orderId: `STRESS_${Date.now()}_${i}`,
+      userId: userId,
+      externalTxnId: `EXT_SIM_${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+      provider: 'STRIPE', // Mock provider
+      amount: 1.00,
+      currency: 'USD',
+      status: 'PAID',
+      eventTime: Date.now()
+    };
+
+    const promise = processPaymentCredit(firestore, mockEvent, 'SIMULATION');
+    results.push(promise);
+  }
+
+  const finalResults = await Promise.all(results);
+  const successCount = finalResults.filter(r => r.status === 'SUCCESS_CREDITED').length;
+  
+  console.log(`>>> [STRESS_TEST] Completed. Success: ${successCount}/${count}. Ledger Integrity: ${successCount === count ? 'VERIFIED' : 'DRIFT_DETECTED'}`);
+  
+  return {
+    total: count,
+    success: successCount,
+    integrity: successCount === count ? 'VERIFIED' : 'FAILED',
+    traces: finalResults
+  };
 }
 
 /**

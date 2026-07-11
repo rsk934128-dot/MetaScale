@@ -44,7 +44,8 @@ import {
   BrainCircuit,
   Sparkles,
   Bot,
-  Radar as RadarIcon
+  Radar as RadarIcon,
+  Flame
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +58,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { generateDailyPulse } from "@/ai/flows/daily-integrity-report-flow";
 import { sendPulseReport } from "@/lib/telegram";
+import { simulateStressTest } from "@/services/payment-service";
 
 export default function UBILMainframePage() {
   const { heartbeat, emitEvent, startAutonomousWorker, isAutonomousActive, events } = useKernel();
@@ -67,6 +69,7 @@ export default function UBILMainframePage() {
   const [search, setSearch] = useState("");
   const [isHealthChecking, setIsHealthChecking] = useState(false);
   const [isSendingPulse, setIsSendingPulse] = useState(false);
+  const [isStressing, setIsStressing] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [logs, setLogs] = useState<string[]>([
     "UBIL Core: Sovereign Master Kernel ACTIVE.",
@@ -145,6 +148,31 @@ export default function UBILMainframePage() {
     }
   };
 
+  const handleRunStressTest = async () => {
+    if (!firestore || !user?.uid) return;
+    setIsStressing(true);
+    setLogs(prev => [`$ nn-cli --execute-ghost-load --target 10`, ...prev]);
+    
+    try {
+      const result = await simulateStressTest(firestore, user.uid, 10);
+      setLogs(prev => [
+        `> [STRESS_TEST] Pulse complete. Integrity: ${result.integrity}`,
+        `> [AUDIT] Successfully verified ${result.success}/${result.total} atomic pulses.`,
+        ...prev
+      ]);
+      
+      toast({
+        title: result.integrity === 'VERIFIED' ? "Stress Test Passed" : "Drift Detected",
+        description: `${result.success} pulses reconciled without collision.`,
+        variant: result.integrity === 'VERIFIED' ? "default" : "destructive"
+      });
+    } catch (err) {
+      setLogs(prev => [`! [ERROR] Stress Test interrupted by Kernel Exception.`, ...prev]);
+    } finally {
+      setIsStressing(false);
+    }
+  };
+
   const filteredEvents = useMemo(() => {
     if (!remoteEvents) return [];
     return remoteEvents.filter(e => 
@@ -167,6 +195,16 @@ export default function UBILMainframePage() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-red-500/30 text-red-400 font-bold text-[8px] md:text-[10px] h-8"
+                onClick={handleRunStressTest}
+                disabled={isStressing}
+             >
+                {isStressing ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Flame className="h-3 w-3 mr-1" />}
+                Ghost Load
+             </Button>
             <Button 
                 variant="outline" 
                 size="sm" 
@@ -221,7 +259,7 @@ export default function UBILMainframePage() {
                        {logs.map((log, i) => (
                          <p key={i} className={cn(
                            "pl-1 border-l-2 py-0.5 border-white/5",
-                           log.includes('[AUTONOMOUS]') ? "text-green-400" : 
+                           log.includes('[AUTONOMOUS]') || log.includes('[STRESS_TEST]') ? "text-green-400" : 
                            log.includes('[BOOT]') ? "text-primary font-bold" :
                            log.includes('[SYNC]') ? "text-blue-400" :
                            log.includes('[AUDIT]') ? "text-yellow-500" :

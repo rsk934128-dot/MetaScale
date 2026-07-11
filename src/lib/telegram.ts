@@ -1,7 +1,8 @@
+
 /**
- * NoorNexus Telegram Gateway Utility v1.6
+ * NoorNexus Telegram Gateway Utility v1.7
  * Handles communication with @Coolrubelbank2bot
- * Updated v1.6: Robust Webhook Handshake Result Reporting.
+ * Updated v1.7: Added Security Alert for Handshake Failure.
  */
 
 // Securely fetch the token from environment variables
@@ -54,6 +55,19 @@ export async function sendHealthReport(chatId: string, stats: any) {
                `<b>Mesh Nodes:</b> 42/42 Active\n` +
                `<b>Latency:</b> 8.4ms\n\n` +
                `সিস্টেম বর্তমানে স্বাভাবিক গতিতে কাজ করছে। (Node-04 Stabilization: OK)`;
+  return await sendTelegramMessage(chatId, text);
+}
+
+/**
+ * Sends a security alert for breaches or handshake failures.
+ */
+export async function sendSecurityAlert(chatId: string, type: string, data: any) {
+  const text = `<b>🚨 SECURITY BREACH DETECTED</b>\n\n` +
+               `<b>Type:</b> <code>${type}</code>\n` +
+               `<b>User Node:</b> ${data.userId}\n` +
+               `<b>Reason:</b> ${data.reason}\n` +
+               `<b>Seal:</b> <code>${data.seal}</code>\n\n` +
+               `নিরাপত্তার স্বার্থে উক্ত আইডেন্টিটি নোডটি <b>AUTO-LOCKED</b> করা হয়েছে। অবিলম্বে ম্যানুয়াল অডিট প্রয়োজন।`;
   return await sendTelegramMessage(chatId, text);
 }
 
