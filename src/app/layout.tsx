@@ -92,13 +92,14 @@ export default function RootLayout({
                   'Unexpected state',
                   'b815',
                   'ca9',
-                  'Fe":-1',
+                  'Fe\":-1',
                   'WatchChangeAggregator',
                   'WatchStream',
                   'PersistentListenStream',
                   'TON_CONNECT_SDK',
                   'Failed to send analytics events',
-                  'auth/network-request-failed'
+                  'auth/network-request-failed',
+                  'TypeError: Failed to fetch'
                 ];
 
                 const isIgnored = (msg) => {
