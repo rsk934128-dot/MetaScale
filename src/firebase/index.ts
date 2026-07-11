@@ -18,7 +18,7 @@ let auth: Auth;
 
 /**
  * Initializes Firebase services with a robust singleton pattern.
- * Specifically handles Firestore persistence edge cases to prevent "INTERNAL ASSERTION FAILED" errors.
+ * Optimized for rapid handshake and error suppression.
  */
 export function initializeFirebase() {
   if (getApps().length > 0) {
@@ -33,7 +33,6 @@ export function initializeFirebase() {
     if (isBrowser) {
       try {
         // Use specialized persistence settings to stabilize against ID: ca9 / b815 errors
-        // Single tab manager is more stable for development hot-reloads
         firestore = initializeFirestore(firebaseApp, {
           localCache: persistentLocalCache({ 
             tabManager: persistentSingleTabManager() 

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -70,7 +71,7 @@ export default function FinancialIntelligence() {
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
 
-  // Maintenance Check (Circuit Breaker)
+  // Maintenance Check (Circuit Breaker - Moved to state to avoid hydration error)
   useEffect(() => {
     const checkMaintenance = () => {
       const hours = new Date().getUTCHours();

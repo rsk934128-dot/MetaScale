@@ -104,46 +104,34 @@ export default function RootLayout({
 
                 const isIgnored = (msg) => {
                   if (!msg) return false;
-                  const str = typeof msg === 'string' ? msg : JSON.stringify(msg);
+                  const str = typeof msg === 'string' ? msg : 
+                            (msg instanceof Error ? msg.message + msg.stack : JSON.stringify(msg));
                   return ignoredPatterns.some(pattern => str.includes(pattern));
-                };
-
-                const filterArgs = (args) => {
-                  try {
-                    const combined = args.map(arg => {
-                      if (typeof arg === 'string') return arg;
-                      if (arg instanceof Error) return arg.message + ' ' + arg.stack;
-                      try { return JSON.stringify(arg); } catch(e) { return String(arg); }
-                    }).join(' ');
-                    return isIgnored(combined);
-                  } catch (e) {
-                    return false;
-                  }
                 };
 
                 const originalError = console.error;
                 console.error = (...args) => {
-                  if (filterArgs(args)) return;
+                  const combined = args.map(arg => String(arg)).join(' ');
+                  if (isIgnored(combined)) return;
                   originalError.apply(console, args);
                 };
 
                 const originalWarn = console.warn;
                 console.warn = (...args) => {
-                  if (filterArgs(args)) return;
+                  const combined = args.map(arg => String(arg)).join(' ');
+                  if (isIgnored(combined)) return;
                   originalWarn.apply(console, args);
                 };
 
                 window.addEventListener('error', (event) => {
-                  const message = event.message || (event.error && event.error.message) || String(event.error) || "";
-                  if (isIgnored(message)) {
+                  if (isIgnored(event.message || (event.error && event.error.message))) {
                     event.stopImmediatePropagation();
                     event.preventDefault();
                   }
                 }, true);
 
                 window.addEventListener('unhandledrejection', (event) => {
-                  const message = (event.reason && event.reason.message) || String(event.reason) || "";
-                  if (isIgnored(message)) {
+                  if (isIgnored(event.reason && event.reason.message)) {
                     event.stopImmediatePropagation();
                     event.preventDefault();
                   }
