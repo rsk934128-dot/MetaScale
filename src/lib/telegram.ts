@@ -1,20 +1,20 @@
 /**
- * NoorNexus Telegram Gateway Utility v1.9
+ * NoorNexus Telegram Gateway Utility v2.0
  * Handles communication with @Coolrubelbank2bot
- * Updated v1.9: Added testToken function for real-time diagnostics.
+ * Updated v2.0: Robust Token Sanitization & Pre-flight Diagnostics.
  */
 
 // Securely fetch the token from environment variables
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const BASE_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 /**
- * Validate if the token is available to prevent runtime errors
+ * Validate if the token is available and formatted correctly
  */
 export function checkConfig() {
   const isPlaceholder = !BOT_TOKEN || 
                         BOT_TOKEN === 'your_token_here' || 
                         BOT_TOKEN === 'Your_Token_From_BotFather' ||
+                        BOT_TOKEN.trim() === '' ||
                         BOT_TOKEN.length < 20;
 
   if (isPlaceholder) {
@@ -27,24 +27,27 @@ export function checkConfig() {
  * Tests if the current token is valid by calling getMe
  */
 export async function testToken() {
-  if (!checkConfig()) return { ok: false, description: "Token is missing or invalid in environment." };
+  if (!checkConfig()) {
+    return { ok: false, description: "টোকেনটি এনভায়রনমেন্টে পাওয়া যায়নি অথবা এর নাম ভুল (Must be TELEGRAM_BOT_TOKEN)।" };
+  }
   
   try {
-    const response = await fetch(`${BASE_URL}/getMe`);
-    return await response.json();
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`);
+    const data = await response.json();
+    return data;
   } catch (error: any) {
-    return { ok: false, description: error.message };
+    return { ok: false, description: "নেটওয়ার্ক এরর: টেলিগ্রাম সার্ভারে পৌঁছানো যাচ্ছে না।" };
   }
 }
 
 export async function sendTelegramMessage(chatId: string, text: string, options: any = {}) {
   if (!checkConfig()) {
-    console.error(">>> [SIGNAL_HALTED] Cannot dispatch message: Missing Token.");
-    return { ok: false, description: "Token Missing" };
+    console.error(">>> [SIGNAL_HALTED] Cannot dispatch message: Missing or Invalid Token.");
+    return { ok: false, description: "Token Missing or Invalid" };
   }
   
   try {
-    const response = await fetch(`${BASE_URL}/sendMessage`, {
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -133,19 +136,6 @@ export async function sendFinancialAlert(chatId: string, type: 'LINK_CREATED' | 
 }
 
 /**
- * Sends billing related alerts.
- */
-export async function sendBillingAlert(chatId: string, type: 'UPGRADE' | 'OVERAGE' | 'SLA_BREACH', data: any) {
-  let text = "";
-  if (type === 'UPGRADE') {
-    text = `<b>🚀 SYSTEM UPGRADE SUCCESSFUL</b>\n\nআপনার একাউন্টটি সফলভাবে <b>${data.plan}</b> টিয়ারে উন্নীত করা হয়েছে।\n\n<b>নতুন সুবিধা:</b>\n• ${data.limit} API Requests\n• Priority Anycast (Node-04)\n• Managed WAF Protection`;
-  } else if (type === 'OVERAGE') {
-    text = `<b>⚠️ BILLING ALERT: OVERAGE</b>\n\nআপনার বর্তমান প্ল্যানের এপিআই লিমিট অতিক্রম করেছে।\n\n<b>অতিরিক্ত ট্রাফিক:</b> ${data.excess} Requests\n<b>চার্জ:</b> $${data.charge}\n\nএটি পরবর্তী বিলিং সাইকেলে অটো-সেটেল হবে।`;
-  }
-  return await sendTelegramMessage(chatId, text);
-}
-
-/**
  * Sends the Daily Integrity Pulse Report.
  */
 export async function sendPulseReport(chatId: string, reportText: string) {
@@ -188,13 +178,12 @@ export async function setTelegramWebhook(url: string) {
   
   try {
     const webhookUrl = `${url}/api/telegram/webhook`;
-    const response = await fetch(`${BASE_URL}/setWebhook`, {
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: webhookUrl }),
     });
     const result = await response.json();
-    console.log('>>> [WEBHOOK_SYNC_RESULT]:', result);
     return result;
   } catch (error: any) {
     console.error('Webhook Setup Error:', error.message);

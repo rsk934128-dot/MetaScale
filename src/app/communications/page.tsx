@@ -27,7 +27,9 @@ import {
   Unplug,
   Activity,
   Terminal,
-  Wifi
+  Wifi,
+  HelpCircle,
+  FileCode
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,7 +47,6 @@ export default function CommunicationPlanePage() {
   const firestore = useFirestore();
   const [isSyncing, setIsSyncing] = useState(false);
   const [isWebhookLoading, setIsWebhookLoading] = useState(false);
-  const [isOtpLoading, setIsOtpLoading] = useState(false);
   const [isTestingToken, setIsTestingToken] = useState(false);
   const [tokenStatus, setTokenStatus] = useState<'IDLE' | 'ACTIVE' | 'FAILED'>('IDLE');
   const [botInfo, setBotInfo] = useState<any>(null);
@@ -64,9 +65,11 @@ export default function CommunicationPlanePage() {
         setTokenStatus('ACTIVE');
         setBotInfo(res.result);
         toast({ title: "Gateway Alive", description: `Bot @${res.result.username} is responding.` });
+        emitEvent('SECURITY', 'TELEGRAM_TOKEN_VALIDATED', 3, { bot: res.result.username });
       } else {
         setTokenStatus('FAILED');
-        toast({ variant: "destructive", title: "Gateway Dead", description: res.description });
+        toast({ variant: "destructive", title: "Gateway Dead", description: res.description || "টোকেনটি অবৈধ বা এনভায়রনমেন্টে পাওয়া যায়নি।" });
+        emitEvent('SECURITY', 'TELEGRAM_TOKEN_INVALID', 1, { error: res.description });
       }
     } catch (err) {
       setTokenStatus('FAILED');
@@ -122,8 +125,8 @@ export default function CommunicationPlanePage() {
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-8 space-y-8">
               {/* Configuration Status Card */}
               <Card className="glass-panel border-l-4 border-l-primary bg-primary/5 overflow-hidden">
                 <CardHeader>
@@ -140,10 +143,8 @@ export default function CommunicationPlanePage() {
                         {tokenStatus === 'ACTIVE' ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <AlertTriangle className="h-4 w-4 text-red-500" />}
                       </div>
                       <div className="space-y-1">
-                        <p className="text-xs font-bold text-white uppercase">TELEGRAM_BOT_TOKEN</p>
-                        <p className="text-[10px] font-mono text-muted-foreground">
-                          {tokenStatus === 'ACTIVE' ? "0xValid_Auth_Node" : "MISSING_OR_INVALID"}
-                        </p>
+                        <p className="text-xs font-bold text-white uppercase tracking-widest">Variable Name</p>
+                        <code className="text-[10px] font-mono text-accent bg-accent/5 px-2 py-1 rounded border border-accent/20">TELEGRAM_BOT_TOKEN</code>
                       </div>
                       <Button 
                         onClick={handleTestConnection} 
@@ -178,16 +179,53 @@ export default function CommunicationPlanePage() {
                       </Button>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
 
-                  <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-4 items-start shadow-xl">
-                     <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
-                     <div className="space-y-1">
-                        <p className="text-xs font-bold text-white uppercase">Critical Setup (Vercel/Hosting)</p>
-                        <p className="text-[10px] text-red-400 italic leading-relaxed">
-                          "নিশ্চিত করুন আপনার হোস্টিং ড্যাশবোর্ডে <b>TELEGRAM_BOT_TOKEN</b> সঠিকভাবে যোগ করা হয়েছে। টোকেন আপডেট করার পর প্রজেক্টটি একবার <b>Redeploy</b> করতে ভুলবেন না।"
-                        </p>
-                     </div>
-                  </div>
+              {/* Troubleshooting Manual */}
+              <Card className="glass-panel border-white/5 bg-secondary/10 overflow-hidden">
+                <CardHeader className="bg-white/5 border-b border-white/5">
+                   <CardTitle className="text-xs uppercase flex items-center gap-2 text-white/70 tracking-widest">
+                      <HelpCircle className="h-4 w-4 text-accent" />
+                      Troubleshooting Manual (নির্দেশিকা)
+                   </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-6">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-4">
+                         <div className="flex items-start gap-4">
+                            <div className="h-6 w-6 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xs shrink-0">1</div>
+                            <div className="space-y-1">
+                               <p className="text-xs font-bold text-white uppercase">Name Mismatch Check</p>
+                               <p className="text-[11px] text-muted-foreground leading-relaxed italic">
+                                  আপনার হোস্টিং ড্যাশবোর্ডে (Vercel) ভেরিয়েবলের নাম অবশ্যই <b>TELEGRAM_BOT_TOKEN</b> হতে হবে। কোনো অতিরিক্ত অক্ষর বা সংখ্যা (যেমন ...TOKEN1) থাকা যাবে না।
+                               </p>
+                            </div>
+                         </div>
+                         <div className="flex items-start gap-4">
+                            <div className="h-6 w-6 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xs shrink-0">2</div>
+                            <div className="space-y-1">
+                               <p className="text-xs font-bold text-white uppercase">Redeploy Requirement</p>
+                               <p className="text-[11px] text-muted-foreground leading-relaxed italic">
+                                  এনভায়রনমেন্ট ভেরিয়েবল সেট বা আপডেট করার পর অবশ্যই প্রজেক্টটি একবার <b>Redeploy</b> করতে হবে। রি-ডেপ্লয় না করলে সার্ভার নতুন টোকেনটি চিনতে পারবে না।
+                               </p>
+                            </div>
+                         </div>
+                      </div>
+
+                      <div className="p-5 rounded-2xl bg-red-500/5 border border-red-500/20 space-y-4">
+                         <div className="flex items-center gap-2 text-red-400">
+                            <ShieldAlert className="h-4 w-4" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Critical Security Alert</span>
+                         </div>
+                         <p className="text-[11px] text-white/80 italic leading-relaxed">
+                            "আপনার টেলিগ্রাম বটের সিক্রেট টোকেনটি কখনো কোনো চ্যাট বক্সে বা পাবলিক ফোরামে শেয়ার করবেন না। এটি আপনার কার্নেলের মেইন চাবিকাঠি।"
+                         </p>
+                         <div className="pt-2">
+                            <Badge variant="outline" className="border-red-500/30 text-red-400 text-[8px] uppercase">Always Keep Tokens Private</Badge>
+                         </div>
+                      </div>
+                   </div>
                 </CardContent>
               </Card>
 
@@ -201,7 +239,7 @@ export default function CommunicationPlanePage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <p className="text-sm text-white/80 leading-relaxed italic">
-                    টোকেন ভ্যালিডেশন সফল হলে নিচের "Secure Webhook" বাটনে ক্লিক করুন। এটি আপনার সার্ভারকে টেলিগ্রাম সার্ভারের সাথে সরাসরি সংযুক্ত করবে।
+                    টোকেন ভ্যালিডেশন সফল হলে এবং রি-ডেপ্লয় করার পর "Secure Webhook" বাটনে ক্লিক করুন। এটি আপনার সার্ভারকে সরাসরি বটের সাথে কানেক্ট করবে।
                   </p>
                   
                   <div className="flex flex-col sm:flex-row gap-4">
@@ -224,7 +262,7 @@ export default function CommunicationPlanePage() {
               </Card>
             </div>
 
-            <div className="space-y-6">
+            <div className="lg:col-span-4 space-y-6">
               <Card className="glass-panel border-white/5">
                 <CardHeader className="p-4 border-b border-white/5 bg-white/5">
                   <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest text-white">
@@ -242,8 +280,8 @@ export default function CommunicationPlanePage() {
                       <p className={cn(profile?.telegramLinked ? "text-green-400" : "text-white/40")}>
                         &gt; Identity Bound: {profile?.telegramLinked ? "YES" : "NO"}
                       </p>
-                      <div className="p-2 rounded border border-accent/20 bg-accent/5 text-accent italic leading-relaxed mt-4">
-                         "টেলিগ্রাম হ্যান্ডশেক সফল হলে আপনার $১,০০০ ব্যালেন্সের গেটওয়ে লকটি স্বয়ংক্রিয়ভাবে আনলক হবে।"
+                      <div className="p-3 rounded border border-accent/20 bg-accent/5 text-accent italic leading-relaxed mt-4">
+                         "মনে রাখবেন: ভির্সেল-এ ভেরিয়েবল সেভ করার পর অবশ্যই একবার <b>REDEPLOY</b> বাটনে ক্লিক করতে হবে।"
                       </div>
                    </div>
                 </CardContent>
