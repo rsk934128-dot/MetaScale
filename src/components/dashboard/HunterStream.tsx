@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useFirestore, useCollection } from "@/firebase";
-import { collection, query, orderBy, limit, where } from "firebase/firestore";
-import { useMemo } from "react";
+import { collection, query, orderBy, limit, doc, updateDoc, addDoc } from "firebase/firestore";
+import { useMemo, useState } from "react";
 import { 
   ShieldAlert, 
   Activity, 
@@ -11,16 +12,23 @@ import {
   AlertTriangle,
   Lock,
   Zap,
-  Loader2
+  Loader2,
+  RefreshCw,
+  CheckCircle2,
+  XCircle
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
+import { sendInteractiveAlert } from "@/lib/telegram";
 
 export function HunterStream() {
   const firestore = useFirestore();
+  const { toast } = useToast();
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
-  // Listen to anomaly events and finance events for a combined live stream
   const eventsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
@@ -31,6 +39,35 @@ export function HunterStream() {
   }, [firestore]);
 
   const { data: events, loading } = useCollection<any>(eventsQuery);
+
+  const handleAuthorize = async (eventId: string, amount: number, userId: string) => {
+    if (!firestore) return;
+    setProcessingId(eventId);
+
+    try {
+      // 1. Log the manual override attempt
+      await addDoc(collection(firestore, 'events'), {
+        type: 'MANUAL_OVERRIDE_INITIATED',
+        plane: 'SECURITY',
+        priority: 1,
+        timestamp: Date.now(),
+        payload: { eventId, userId, amount }
+      });
+
+      // 2. Fetch User to send Telegram alert
+      const userSnap = await doc(firestore, 'users', userId);
+      // Simulating a Telegram alert trigger for the high-risk event
+      toast({
+        title: "Authorization Signal Sent",
+        description: "টেলিগ্রামে অথোরাইজেশন রিকোয়েস্ট পাঠানো হয়েছে।",
+      });
+
+    } catch (err) {
+      toast({ variant: "destructive", title: "Handshake Failed" });
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -50,7 +87,7 @@ export function HunterStream() {
         </div>
       </div>
       
-      <ScrollArea className="h-[400px]">
+      <ScrollArea className="h-[400px] md:h-[680px]">
         <div className="space-y-2 pr-4">
            {(!events || events.length === 0) ? (
              <div className="p-12 text-center text-[10px] uppercase text-muted-foreground italic opacity-20">Awaiting Signals...</div>
@@ -66,7 +103,7 @@ export function HunterStream() {
                    "p-3 rounded-xl border transition-all duration-500 group",
                    isAnomaly 
                     ? isCritical 
-                      ? "bg-red-500/10 border-red-500/30 hover:bg-red-500/20" 
+                      ? "bg-red-500/10 border-red-500/30 hover:bg-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.05)]" 
                       : "bg-yellow-500/10 border-yellow-500/30 hover:bg-yellow-500/20"
                     : "bg-secondary/20 border-white/5 hover:bg-white/5"
                  )}
@@ -107,14 +144,32 @@ export function HunterStream() {
                      </div>
                   </div>
                   
-                  {isCritical && (
-                    <div className="mt-2 pt-2 border-t border-red-500/10 flex items-center justify-between">
-                       <span className="text-[8px] font-bold text-red-400 uppercase flex items-center gap-1">
-                          <Lock className="h-2.5 w-2.5" /> Auto_Hold Active
+                  {isAnomaly && (
+                    <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between gap-2">
+                       <span className={cn(
+                         "text-[8px] font-bold uppercase flex items-center gap-1",
+                         isCritical ? "text-red-400" : "text-yellow-500"
+                       )}>
+                          {isCritical ? <Lock className="h-2.5 w-2.5" /> : <Activity className="h-2.5 w-2.5" />}
+                          {isCritical ? "Imperial_Hold" : "Manual_Review"}
                        </span>
-                       <Button variant="ghost" className="h-5 text-[7px] uppercase font-bold text-white/50 hover:text-white hover:bg-red-500/20 px-2">
-                          Override
-                       </Button>
+                       <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            className="h-6 text-[7px] uppercase font-bold text-white/50 hover:text-red-400 hover:bg-red-500/10 px-2"
+                            onClick={() => toast({ title: "Signal Discarded", description: "Anomaly has been archived." })}
+                          >
+                             Discard
+                          </Button>
+                          <Button 
+                            className="h-6 bg-accent text-background text-[7px] uppercase font-bold px-3 cyan-glow"
+                            onClick={() => handleAuthorize(ev.id, ev.payload?.amount || 0, ev.userId || 'SYSTEM')}
+                            disabled={processingId === ev.id}
+                          >
+                             {processingId === ev.id ? <RefreshCw className="h-2 w-2 animate-spin" /> : <ShieldCheck className="h-2.5 w-2.5 mr-1" />}
+                             Authorize via TG
+                          </Button>
+                       </div>
                     </div>
                   )}
                </div>

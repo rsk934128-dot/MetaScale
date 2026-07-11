@@ -1,3 +1,4 @@
+
 import { 
   Firestore, 
   doc, 
@@ -15,7 +16,7 @@ import { sendFinancialAlert, sendSecurityAlert } from '@/lib/telegram';
 
 /**
  * Core Domain Service: Atomic Payment Credit Logic
- * Updated v1.7: Enhanced Hunter Mode Logging for Live Command Center.
+ * Updated v1.8: Integrated Emergency Kill Switch & Maintenance Check.
  */
 export async function processPaymentCredit(
   firestore: Firestore, 
@@ -26,6 +27,14 @@ export async function processPaymentCredit(
   const sealHash = `SEAL_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
   const paymentId = `${event.provider}_${event.externalTxnId}`;
   const timestamp = Date.now();
+
+  // 0. Global Kill Switch Check
+  const configRef = doc(firestore, 'system', 'config');
+  const configSnap = await getDoc(configRef);
+  if (configSnap.exists() && configSnap.data().maintenance) {
+    console.error(">>> [SECURITY_LOCKDOWN] Payment rejected. Kill switch is ACTIVE.");
+    return { status: 'REJECTED_LOCKDOWN_ACTIVE', seal: sealHash };
+  }
 
   // 1. Handshake Integrity Check
   const userRef = doc(firestore, 'users', event.userId);
@@ -93,7 +102,8 @@ export async function processPaymentCredit(
         },
         status: riskCheck.riskScore > 80 ? 'BLOCKED_BY_GOVERNANCE' : 'COMPLETED',
         category: 'PREDICTIVE_ANOMALY',
-        severity: riskCheck.riskScore > 80 ? 'CRITICAL' : 'LOW'
+        severity: riskCheck.riskScore > 80 ? 'CRITICAL' : 'LOW',
+        userId: event.userId
       });
 
       if (riskCheck.riskScore > 80) {

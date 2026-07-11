@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -29,7 +30,8 @@ import {
   CreditCard,
   Scale,
   Hammer,
-  Radar
+  Radar,
+  Power
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -40,29 +42,20 @@ import { useKernel } from "@/components/kernel/KernelProvider";
 import { SystemMode } from "@/lib/kernel/types";
 import { Progress } from "@/components/ui/progress";
 import { useFirestore, useCollection, useDoc } from "@/firebase";
-import { collection, query, orderBy, limit, doc } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, setDoc } from "firebase/firestore";
 import { YieldFlow } from "@/components/charts/YieldFlow";
 import { HunterStream } from "@/components/dashboard/HunterStream";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SovereignControlPlane() {
-  const { mode, setSystemMode, events, emitEvent, processNextEvent, isAutonomousActive } = useKernel();
+  const { mode, setSystemMode, events, emitEvent } = useKernel();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isUpdatingKillSwitch, setIsUpdatingKillSwitch] = useState(false);
   const firestore = useFirestore();
-
-  const [isAutoMaintenance, setIsAutoMaintenance] = useState(false);
-  useEffect(() => {
-    const checkTime = () => {
-      const hours = new Date().getUTCHours();
-      setIsAutoMaintenance(hours >= 21 || hours < 2);
-    };
-    checkTime();
-    const interval = setInterval(checkTime, 60000);
-    return () => clearInterval(interval);
-  }, []);
+  const { toast } = useToast();
 
   const configRef = useMemo(() => firestore ? doc(firestore, 'system', 'config') : null, [firestore]);
   const { data: systemConfig } = useDoc<any>(configRef);
-  const isMaintenanceActive = systemConfig?.maintenance || isAutoMaintenance;
 
   const handleSyncAllNodes = () => {
     setIsSyncing(true);
@@ -72,24 +65,59 @@ export default function SovereignControlPlane() {
     }, 2000);
   };
 
+  const toggleKillSwitch = async () => {
+    if (!firestore) return;
+    setIsUpdatingKillSwitch(true);
+    
+    const nextMaintenanceState = !systemConfig?.maintenance;
+    
+    try {
+      await setDoc(doc(firestore, 'system', 'config'), { 
+        maintenance: nextMaintenanceState,
+        updatedAt: Date.now(),
+        updatedBy: 'IMPERIAL_OVERRIDE'
+      }, { merge: true });
+
+      emitEvent('SECURITY', 'KILL_SWITCH_TRIGGERED', 1, { 
+        active: nextMaintenanceState,
+        priority: 'CRITICAL'
+      });
+
+      toast({
+        title: nextMaintenanceState ? "EMERGENCY LOCKDOWN ACTIVE" : "SYSTEM RESTORED",
+        description: nextMaintenanceState ? "All payment gateways are now isolated." : "Global rails are back online.",
+        variant: nextMaintenanceState ? "destructive" : "default"
+      });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Override Failed" });
+    } finally {
+      setIsUpdatingKillSwitch(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-background relative w-full overflow-x-hidden">
-      {isMaintenanceActive && (
-        <div className="absolute inset-0 z-[100] bg-background/90 backdrop-blur-md flex items-center justify-center p-6 text-center animate-fade-in">
+      {systemConfig?.maintenance && (
+        <div className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-md flex items-center justify-center p-6 text-center animate-fade-in">
            <div className="max-w-md space-y-6">
-              <div className="w-20 h-20 rounded-full bg-yellow-500/20 border-2 border-yellow-500 flex items-center justify-center mx-auto animate-pulse">
-                <Hammer className="h-10 w-10 text-yellow-500" />
+              <div className="w-24 h-24 rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center mx-auto animate-pulse">
+                <ShieldAlert className="h-12 w-12 text-red-500" />
               </div>
-              <h2 className="text-3xl font-headline font-bold text-white uppercase italic tracking-tighter">System Under Maintenance</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                সোভারেন কার্নেল বর্তমানে আপগ্রেড করা হচ্ছে। শিডিউল: ২১:০০ - ০২:০০ ইউটিসি। জরুরি প্রয়োজনে টেলিগ্রাম কমান্ড ব্যবহার করুন।
+              <h2 className="text-3xl font-headline font-bold text-white uppercase italic tracking-tighter">Emergency Lockdown</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed italic">
+                "Sovereign Kernel is currently isolated via Imperial Kill Switch. No transactions are being authorized."
               </p>
-              <div className="p-4 rounded-xl bg-secondary/30 border border-white/5 font-mono text-[10px] text-accent">
-                &gt;&gt; CIRCUIT_BREAKER: ACTIVE (RESTRICTED_MODE)
+              <div className="flex flex-col gap-3">
+                <Button 
+                   className="bg-red-500 text-white font-bold h-12 uppercase text-xs"
+                   onClick={toggleKillSwitch}
+                   disabled={isUpdatingKillSwitch}
+                >
+                   {isUpdatingKillSwitch ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Power className="h-4 w-4 mr-2" />}
+                   Disable Kill Switch
+                </Button>
+                <p className="text-[9px] text-muted-foreground font-mono">CODE: ISO_LOCKDOWN_P180</p>
               </div>
-              <Button asChild variant="outline" className="border-accent/20 text-accent font-bold uppercase text-[10px]">
-                <a href="https://t.me/Coolrubelbank2bot" target="_blank" rel="noopener noreferrer">Contact Control Bot</a>
-              </Button>
            </div>
         </div>
       )}
@@ -105,9 +133,23 @@ export default function SovereignControlPlane() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline"
+              size="sm" 
+              className={cn(
+                "font-bold text-[9px] uppercase h-8 px-4 transition-all",
+                systemConfig?.maintenance ? "border-red-500/50 text-red-500" : "border-white/10 text-muted-foreground hover:text-red-400"
+              )}
+              onClick={toggleKillSwitch}
+              disabled={isUpdatingKillSwitch}
+            >
+              <Power className="h-3 w-3 mr-1.5" />
+              Kill Switch
+            </Button>
+            <div className="h-4 w-px bg-white/10 mx-2" />
             <Button size="sm" onClick={handleSyncAllNodes} disabled={isSyncing} className="cyan-glow text-[10px] font-bold h-8 bg-accent text-background px-4">
               {isSyncing ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <Zap className="h-3 w-3 mr-1.5" />}
-              <span className="hidden xs:inline">Sync All Nodes</span>
+              <span className="hidden xs:inline">Sync Nodes</span>
               <span className="xs:hidden">Sync</span>
             </Button>
           </div>
