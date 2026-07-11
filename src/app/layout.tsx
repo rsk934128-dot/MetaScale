@@ -105,8 +105,11 @@ export default function RootLayout({
                   'Unexpected state',
                   'b815',
                   'ca9',
+                  'Fe":-1',
                   'auth/network-request-failed',
-                  'network-request-failed'
+                  'network-request-failed',
+                  'WatchChangeAggregator',
+                  'WatchStream'
                 ];
 
                 const filterMessage = (args) => {

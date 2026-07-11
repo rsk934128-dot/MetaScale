@@ -32,21 +32,22 @@ export function initializeFirebase() {
     
     if (isBrowser) {
       try {
-        // First try to get any existing instance to prevent re-initialization conflicts
+        // Use standard initialization first if possible
         firestore = getFirestore(firebaseApp);
       } catch (e) {
         try {
-          // If not exists, initialize with a more stable persistence configuration
+          // If fallback needed, use specialized persistence settings
           firestore = initializeFirestore(firebaseApp, {
             localCache: persistentLocalCache({ 
               tabManager: persistentMultipleTabManager() 
             }),
-            // Use long polling to mitigate WebSocket handshake failures in restricted networks
+            // Force long polling and auto-detection to stabilize handshake in restricted networks
             experimentalForceLongPolling: true,
+            experimentalAutoDetectLongPolling: true,
             ignoreUndefinedProperties: true
           });
         } catch (initErr) {
-          // Fail-safe: Fallback to standard firestore instance without persistence if both fail
+          // Final fail-safe: Basic firestore without persistence
           firestore = getFirestore(firebaseApp);
         }
       }
