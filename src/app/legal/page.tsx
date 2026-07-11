@@ -29,7 +29,8 @@ import {
   CheckCircle2,
   Database,
   Smartphone,
-  CreditCard
+  CreditCard,
+  PenTool
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -42,6 +43,7 @@ import { useUser, useFirestore } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export default function LegalBoundPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -113,21 +115,38 @@ export default function LegalBoundPage() {
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-accent/5 border border-accent/20 relative overflow-hidden animate-fade-in shadow-2xl">
-             <div className="absolute top-0 right-0 p-4 opacity-10">
-                <RefreshCw className="h-20 w-20 text-accent" />
-             </div>
-             <div className="flex items-start gap-5 relative z-10">
-                <div className="p-3 rounded-xl bg-accent/20 border border-accent/30 text-accent shrink-0">
-                   <Info className="h-6 w-6" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+             <div className="p-5 rounded-2xl bg-accent/5 border border-accent/20 relative overflow-hidden shadow-2xl">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                   <RefreshCw className="h-20 w-20 text-accent" />
                 </div>
-                <div className="space-y-2">
-                   <h4 className="text-lg font-headline font-bold text-white uppercase italic tracking-tighter">Exactly-Once Ledger Mandate</h4>
-                   <p className="text-sm text-muted-foreground leading-relaxed italic">
-                      Compliant with Bank for International Settlements (BIS) standards for real-time gross settlement (RTGS). Atomic Locking via Firestore ensures absolute prevention of double-spending.
-                   </p>
+                <div className="flex items-start gap-5 relative z-10">
+                   <div className="p-3 rounded-xl bg-accent/20 border border-accent/30 text-accent shrink-0">
+                      <Info className="h-6 w-6" />
+                   </div>
+                   <div className="space-y-2">
+                      <h4 className="text-lg font-headline font-bold text-white uppercase italic tracking-tighter">Ledger Mandate</h4>
+                      <p className="text-xs text-muted-foreground leading-relaxed italic">
+                         Atomic Locking via Firestore ensures absolute prevention of double-spending.
+                      </p>
+                   </div>
                 </div>
              </div>
+
+             <Card className="glass-panel border-accent/40 bg-accent/5 overflow-hidden group hover:border-accent transition-all cursor-pointer shadow-[0_0_50px_rgba(0,242,255,0.1)]">
+                <Link href="/legal/agreement" className="flex items-center gap-6 p-6">
+                   <div className="p-4 rounded-2xl bg-accent text-background shadow-xl group-hover:scale-110 transition-transform">
+                      <PenTool className="h-8 w-8" />
+                   </div>
+                   <div className="space-y-1">
+                      <h4 className="text-lg font-headline font-bold text-white uppercase italic leading-none">System Integration Agreement</h4>
+                      <p className="text-[10px] text-accent uppercase font-bold tracking-widest">Master Protocol v1.2</p>
+                      <p className="text-[10px] text-muted-foreground italic mt-2 flex items-center gap-1">
+                         View Professional Draft <ArrowRight className="h-3 w-3" />
+                      </p>
+                   </div>
+                </Link>
+             </Card>
           </div>
 
           <Tabs defaultValue="terms" className="space-y-8">
