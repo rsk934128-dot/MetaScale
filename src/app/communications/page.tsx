@@ -25,16 +25,18 @@ import {
   Code2,
   AlertTriangle,
   Unplug,
-  Activity
+  Activity,
+  Terminal,
+  Wifi
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { analyzeCommunication } from "@/ai/flows/communication-intelligence";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { useUser, useFirestore, useDoc } from "@/firebase";
-import { generateTelegramLink, setTelegramWebhook } from "@/lib/telegram";
+import { generateTelegramLink, setTelegramWebhook, testToken } from "@/lib/telegram";
 import { doc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 
@@ -44,37 +46,33 @@ export default function CommunicationPlanePage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isWebhookLoading, setIsWebhookLoading] = useState(false);
   const [isOtpLoading, setIsOtpLoading] = useState(false);
-  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
-  const [intelligenceReport, setIntelligenceReport] = useState<any>(null);
+  const [isTestingToken, setIsTestingToken] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<'IDLE' | 'ACTIVE' | 'FAILED'>('IDLE');
+  const [botInfo, setBotInfo] = useState<any>(null);
+  
   const { toast } = useToast();
   const { emitEvent } = useKernel();
 
   const userRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: profile } = useDoc<any>(userRef);
 
-  const handleSyncGmail = () => {
-    setIsSyncing(true);
-    emitEvent('COMMUNICATION', 'GMAIL_SYNC_INITIATED', 4, { scope: 'INBOX_ONLY' });
-    setTimeout(() => {
-      setIsSyncing(false);
-      toast({
-        title: "Gmail Sync Complete",
-        description: "Successfully fetched 3 mission-critical messages.",
-      });
-    }, 2000);
-  };
-
-  const handleTestOTP = () => {
-    if (!profile?.telegramLinked) {
-      toast({ variant: "destructive", title: "Gateway Unlinked", description: "প্রথমে টেলিগ্রাম আইডি লিঙ্ক করুন।" });
-      return;
+  const handleTestConnection = async () => {
+    setIsTestingToken(true);
+    try {
+      const res = await testToken();
+      if (res.ok) {
+        setTokenStatus('ACTIVE');
+        setBotInfo(res.result);
+        toast({ title: "Gateway Alive", description: `Bot @${res.result.username} is responding.` });
+      } else {
+        setTokenStatus('FAILED');
+        toast({ variant: "destructive", title: "Gateway Dead", description: res.description });
+      }
+    } catch (err) {
+      setTokenStatus('FAILED');
+    } finally {
+      setIsTestingToken(false);
     }
-    setIsOtpLoading(true);
-    setTimeout(() => {
-      setIsOtpLoading(false);
-      toast({ title: "OTP Sent", description: "আপনার টেলিগ্রামে একটি সিকিউরিটি কোড পাঠানো হয়েছে।" });
-      emitEvent('SECURITY', 'TEST_OTP_DISPATCHED', 3, { chatId: profile.telegramChatId });
-    }, 1200);
   };
 
   const handleSetWebhook = async () => {
@@ -95,14 +93,14 @@ export default function CommunicationPlanePage() {
         emitEvent('SECURITY', 'WEBHOOK_SYNC_FAILED', 1, { reason: errorDesc });
       }
     } catch (err) {
-      toast({ variant: "destructive", title: "Connection Error", description: "ভার্সেল পাসওয়ার্ড প্রটেকশন অন থাকলে এটি ফেইল করতে পারে।" });
+      toast({ variant: "destructive", title: "Connection Error", description: "প্রোটোকল হ্যান্ডশেক রিজেক্ট করা হয়েছে।" });
     } finally {
       setIsWebhookLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-background">
       <AppSidebar />
       <SidebarInset>
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur px-6">
@@ -113,175 +111,139 @@ export default function CommunicationPlanePage() {
               Communication Plane
             </h1>
           </div>
-          <Button size="sm" onClick={handleSyncGmail} disabled={isSyncing} className="blue-glow text-xs font-bold">
-            {isSyncing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
-            Sync Gmail
-          </Button>
+          <div className="flex items-center gap-3">
+             <Badge variant="outline" className={cn(
+               "font-mono text-[10px] uppercase",
+               tokenStatus === 'ACTIVE' ? "border-green-500 text-green-400" : "border-red-500 text-red-400"
+             )}>
+                GATEWAY: {tokenStatus}
+             </Badge>
+          </div>
         </header>
 
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-              {/* Vercel Environment Configuration Section */}
+              {/* Configuration Status Card */}
               <Card className="glass-panel border-l-4 border-l-primary bg-primary/5 overflow-hidden">
                 <CardHeader>
-                  <CardTitle className="text-xl font-headline italic uppercase tracking-tighter flex items-center gap-3">
+                  <CardTitle className="text-xl font-headline italic uppercase tracking-tighter flex items-center gap-3 text-white">
                     <Server className="h-6 w-6 text-primary" />
-                    Vercel Configuration Node
+                    Infrastructure Diagnostics
                   </CardTitle>
-                  <CardDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Server-side Secrets Management</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-4 items-start">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-5 rounded-2xl bg-black/40 border border-white/10 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Environment Check</span>
+                        {tokenStatus === 'ACTIVE' ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <AlertTriangle className="h-4 w-4 text-red-500" />}
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold text-white uppercase">TELEGRAM_BOT_TOKEN</p>
+                        <p className="text-[10px] font-mono text-muted-foreground">
+                          {tokenStatus === 'ACTIVE' ? "0xValid_Auth_Node" : "MISSING_OR_INVALID"}
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={handleTestConnection} 
+                        disabled={isTestingToken}
+                        className="w-full h-10 bg-secondary/50 hover:bg-secondary border border-white/10 text-[10px] font-bold uppercase"
+                      >
+                        {isTestingToken ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <Wifi className="h-3 w-3 mr-2" />}
+                        Run Live Handshake
+                      </Button>
+                    </div>
+
+                    <div className="p-5 rounded-2xl bg-black/40 border border-white/10 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Bot Identity</span>
+                        <Bot className="h-4 w-4 text-accent" />
+                      </div>
+                      {botInfo ? (
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold text-white uppercase">{botInfo.first_name}</p>
+                          <p className="text-[10px] font-mono text-accent">@{botInfo.username}</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-1 opacity-30 italic">
+                          <p className="text-xs text-white uppercase tracking-tighter">Awaiting Discovery</p>
+                          <p className="text-[10px]">No info available</p>
+                        </div>
+                      )}
+                      <Button asChild className="w-full h-10 bg-accent text-background font-bold text-[10px] uppercase">
+                        <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer">
+                          Get Token from BotFather
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-4 items-start shadow-xl">
                      <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
                      <div className="space-y-1">
-                        <p className="text-xs font-bold text-white uppercase">Critical Action Required (401 Bypass)</p>
+                        <p className="text-xs font-bold text-white uppercase">Critical Setup (Vercel/Hosting)</p>
                         <p className="text-[10px] text-red-400 italic leading-relaxed">
-                          "নিশ্চিত করুন যে আপনার Vercel ড্যাশবোর্ড থেকে <b>Deployment Protection</b> ডিজেবল করা আছে। পাসওয়ার্ড প্রটেকশন অন থাকলে টেলিগ্রাম সিগন্যালগুলো ব্লক হয়ে যাবে।"
+                          "নিশ্চিত করুন আপনার হোস্টিং ড্যাশবোর্ডে <b>TELEGRAM_BOT_TOKEN</b> সঠিকভাবে যোগ করা হয়েছে। টোকেন আপডেট করার পর প্রজেক্টটি একবার <b>Redeploy</b> করতে ভুলবেন না।"
                         </p>
                      </div>
                   </div>
-
-                  <p className="text-sm text-white/80 leading-relaxed italic">
-                    "আপনার বটের আসল টোকেন ভার্সেল (Vercel) ড্যাশবোর্ডে এনভায়রনমেন্ট ভেরিয়েবল হিসেবে সেট করুন এবং প্রজেক্টটি একবার <b>Redeploy</b> করুন।"
-                  </p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2 font-mono text-[10px]">
-                      <p className="text-primary font-bold">// Mandatory Key</p>
-                      <p className="text-white">KEY: <span className="text-accent">TELEGRAM_BOT_TOKEN</span></p>
-                      <p className="text-white">VALUE: <span className="text-yellow-400">আপনার_আসল_টোকেন_এখানে</span></p>
-                    </div>
-
-                    <div className="flex flex-col gap-2 justify-center">
-                      <Button asChild className="h-11 blue-glow bg-primary text-white font-bold uppercase tracking-widest text-[10px]">
-                        <a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="mr-2 h-4 w-4" /> Open Vercel Settings
-                        </a>
-                      </Button>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
 
-              {/* Telegram Gateway Section (Stabilized mode) */}
+              {/* Telegram Gateway Section */}
               <Card className="glass-panel border-l-4 border-l-accent bg-accent/5 overflow-hidden">
-                <div className="absolute top-0 right-0 p-4">
-                  <Badge variant={profile?.telegramLinked ? "default" : "outline"} className={cn(
-                    "text-[8px] uppercase tracking-widest font-bold",
-                    profile?.telegramLinked ? "bg-green-500/20 text-green-400 border-green-500/30" : "animate-pulse"
-                  )}>
-                    {profile?.telegramLinked ? "MESH_BINDING: LINKED" : "AWAITING_SYNC"}
-                  </Badge>
-                </div>
                 <CardHeader>
-                  <CardTitle className="text-xl font-headline italic uppercase tracking-tighter flex items-center gap-3">
+                  <CardTitle className="text-xl font-headline italic uppercase tracking-tighter flex items-center gap-3 text-white">
                     <MessageSquare className="h-6 w-6 text-accent" />
-                    Telegram Alert Gateway
+                    Gateway Handshake
                   </CardTitle>
-                  <CardDescription className="text-xs uppercase font-bold tracking-widest text-muted-foreground">ECC_ED25519 Security Sync</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <p className="text-sm text-white/80 leading-relaxed italic">
-                    {profile?.telegramLinked 
-                      ? "আপনার সার্বভৌম কার্নেল এবং টেলিগ্রাম বটের মধ্যকার কানেকশন এখন সফলভাবে স্ট্যাবিলাইজড (CONNECTED)। সকল অটোনোমাস ডিরেক্টিভ এখন সচল।"
-                      : "সরাসরি আপনার টেলিগ্রামে কার্নেল অ্যালার্ট এবং ওটিপি পেতে নিচের ৩টি ধাপ সম্পন্ন করুন। এটি সফল হলে 'AWAITING_SYNC' পিলটি সবুজ হয়ে যাবে।"}
+                    টোকেন ভ্যালিডেশন সফল হলে নিচের "Secure Webhook" বাটনে ক্লিক করুন। এটি আপনার সার্ভারকে টেলিগ্রাম সার্ভারের সাথে সরাসরি সংযুক্ত করবে।
                   </p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-3">
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-accent uppercase">
-                        <ShieldCheck className="h-3.5 w-3.5" /> Identity Status
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">Mesh Protocol</span>
-                        <span className={profile?.telegramLinked ? "text-green-400 font-bold" : "text-yellow-500 font-bold"}>{profile?.telegramLinked ? "CONNECTED" : "INITIALIZING"}</span>
-                      </div>
-                      <Button variant="ghost" className="w-full h-8 text-[9px] font-bold uppercase border border-white/5" onClick={handleUserAction} disabled={isOtpLoading}>
-                         {isOtpLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
-                         Test Secure OTP
-                      </Button>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <Button asChild className={cn(
-                        "h-11 font-bold uppercase tracking-widest text-[10px] transition-all",
-                        profile?.telegramLinked ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-accent text-background cyan-glow"
-                      )}>
-                        <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
-                          {profile?.telegramLinked ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <Zap className="mr-2 h-4 w-4" />}
-                          {profile?.telegramLinked ? "GATEWAY LINKED" : "Link identity"}
-                        </a>
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="h-11 border-white/5 bg-white/5 text-[10px] font-bold uppercase tracking-widest" 
-                        onClick={handleSetWebhook} 
-                        disabled={isWebhookLoading || profile?.telegramLinked}
-                      >
-                        {isWebhookLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                        {profile?.telegramLinked ? "WEBHOOK ACTIVE" : "SECURE WEBHOOK"}
-                      </Button>
-                    </div>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Button 
+                      className="flex-1 h-14 bg-accent text-background font-bold uppercase tracking-widest text-[10px] cyan-glow"
+                      onClick={handleSetWebhook}
+                      disabled={isWebhookLoading || tokenStatus !== 'ACTIVE'}
+                    >
+                      {isWebhookLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                      Establish Secure Webhook
+                    </Button>
+                    <Button asChild variant="outline" className="flex-1 h-14 border-white/10 font-bold uppercase tracking-widest text-[10px]">
+                      <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
+                        <Zap className="mr-2 h-4 w-4 text-accent" />
+                        Link Identity to Bot
+                      </a>
+                    </Button>
                   </div>
                 </CardContent>
-              </Card>
-
-              {/* Action Plan */}
-              <Card className="glass-panel border-white/5 bg-secondary/10">
-                 <CardHeader>
-                    <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                       <Activity className="h-4 w-4" /> Binding Action Plan
-                    </CardTitle>
-                 </CardHeader>
-                 <CardContent>
-                    <div className="space-y-4">
-                       {[
-                         { step: 1, desc: "ভার্সেলে আসল টোকেন বসিয়ে Redeploy করুন।" },
-                         { step: 2, desc: "Vercel Settings থেকে Deployment Protection ডিজেবল করুন।" },
-                         { step: 3, desc: "'Secure Webhook' বাটনে ক্লিক করে কানেকশন সিঙ্ক করুন।" },
-                         { step: 4, desc: "'Link identity' ক্লিক করে বোটে /start লিখে পাঠান।" }
-                       ].map((item, i) => (
-                         <div key={i} className="flex gap-4 items-center">
-                            <div className={cn(
-                              "w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-bold shrink-0",
-                              profile?.telegramLinked ? "bg-green-500/20 border-green-500 text-green-400" : "bg-accent/20 border-accent/40 text-accent"
-                            )}>{profile?.telegramLinked ? <CheckCircle2 className="h-3 w-3" /> : item.step}</div>
-                            <p className={cn("text-[11px]", profile?.telegramLinked ? "text-green-400/80 italic line-through" : "text-white/80")}>{item.desc}</p>
-                         </div>
-                       ))}
-                    </div>
-                 </CardContent>
               </Card>
             </div>
 
             <div className="space-y-6">
-              <Card className="glass-panel border-accent/20 bg-accent/5">
-                <CardHeader>
-                  <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-tighter">
-                    <Key className="h-4 w-4 text-accent" />
-                    Protocol Handshake
+              <Card className="glass-panel border-white/5">
+                <CardHeader className="p-4 border-b border-white/5 bg-white/5">
+                  <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest text-white">
+                    <Terminal className="h-4 w-4 text-accent" />
+                    Handshake Log
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 pt-0 space-y-4">
-                   <div className="space-y-3">
-                      <div className="flex justify-between items-center text-[10px] font-bold">
-                         <span className="text-muted-foreground uppercase">Encryption</span>
-                         <span className="text-green-400">ECC_ED25519</span>
-                      </div>
-                      <div className="flex justify-between items-center text-[10px] font-bold">
-                         <span className="text-muted-foreground uppercase">Status</span>
-                         <Badge variant="outline" className={cn(
-                           "text-[8px] uppercase px-1",
-                           profile?.telegramLinked ? "border-green-500 text-green-400" : "border-accent/20 text-accent"
-                         )}>
-                           {profile?.telegramLinked ? "CONNECTED" : "AWAITING_SYNC"}
-                         </Badge>
-                      </div>
-                      <div className="p-2 rounded border border-accent/20 bg-accent/5 text-[9px] text-accent italic leading-relaxed">
-                         {profile?.telegramLinked 
-                           ? "টেলিগ্রাম হ্যান্ডশেক সফল হয়েছে। আপনার $১,০০০ ব্যালেন্সের গেটওয়ে লকটি সফলভাবে আনলক হয়েছে।"
-                           : "টেলিগ্রাম হ্যান্ডশেক সফল হলে পেমেন্ট রিম্যাডিয়েশন এবং হাই-ভ্যালু পে-আউট অটোমেটিক্যালি আনলক হবে।"}
+                <CardContent className="p-4">
+                   <div className="space-y-3 font-mono text-[9px] md:text-[10px] text-white/60">
+                      <p>&gt; Initializing pre-flight check...</p>
+                      <p className={cn(tokenStatus === 'ACTIVE' ? "text-green-400" : "text-yellow-500")}>
+                        &gt; BOT_TOKEN status: {tokenStatus === 'ACTIVE' ? "VALIDATED" : "AWAITING_TEST"}
+                      </p>
+                      <p>&gt; Checking Webhook tunnel...</p>
+                      <p className={cn(profile?.telegramLinked ? "text-green-400" : "text-white/40")}>
+                        &gt; Identity Bound: {profile?.telegramLinked ? "YES" : "NO"}
+                      </p>
+                      <div className="p-2 rounded border border-accent/20 bg-accent/5 text-accent italic leading-relaxed mt-4">
+                         "টেলিগ্রাম হ্যান্ডশেক সফল হলে আপনার $১,০০০ ব্যালেন্সের গেটওয়ে লকটি স্বয়ংক্রিয়ভাবে আনলক হবে।"
                       </div>
                    </div>
                 </CardContent>

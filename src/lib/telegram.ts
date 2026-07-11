@@ -1,7 +1,7 @@
 /**
- * NoorNexus Telegram Gateway Utility v1.8
+ * NoorNexus Telegram Gateway Utility v1.9
  * Handles communication with @Coolrubelbank2bot
- * Updated v1.8: Integrated robust checkConfig with Error Emitter sync.
+ * Updated v1.9: Added testToken function for real-time diagnostics.
  */
 
 // Securely fetch the token from environment variables
@@ -11,19 +11,30 @@ const BASE_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 /**
  * Validate if the token is available to prevent runtime errors
  */
-function checkConfig() {
+export function checkConfig() {
   const isPlaceholder = !BOT_TOKEN || 
                         BOT_TOKEN === 'your_token_here' || 
                         BOT_TOKEN === 'Your_Token_From_BotFather' ||
                         BOT_TOKEN.length < 20;
 
   if (isPlaceholder) {
-    if (typeof window === 'undefined') {
-      console.error(">>> [TELEGRAM_CRITICAL] TELEGRAM_BOT_TOKEN is missing or placeholder.");
-    }
     return false;
   }
   return true;
+}
+
+/**
+ * Tests if the current token is valid by calling getMe
+ */
+export async function testToken() {
+  if (!checkConfig()) return { ok: false, description: "Token is missing or invalid in environment." };
+  
+  try {
+    const response = await fetch(`${BASE_URL}/getMe`);
+    return await response.json();
+  } catch (error: any) {
+    return { ok: false, description: error.message };
+  }
 }
 
 export async function sendTelegramMessage(chatId: string, text: string, options: any = {}) {
@@ -172,7 +183,8 @@ export function generateTelegramLink(userId: string) {
 }
 
 export async function setTelegramWebhook(url: string) {
-  if (!checkConfig()) return { ok: false, description: "Bot Token Missing or Invalid in Environment Variables." };
+  const isConfigured = checkConfig();
+  if (!isConfigured) return { ok: false, description: "Bot Token Missing or Invalid in Environment Variables." };
   
   try {
     const webhookUrl = `${url}/api/telegram/webhook`;
