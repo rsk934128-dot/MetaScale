@@ -1,8 +1,7 @@
-
 /**
- * NoorNexus Telegram Gateway Utility v1.7
+ * NoorNexus Telegram Gateway Utility v1.8
  * Handles communication with @Coolrubelbank2bot
- * Updated v1.7: Added Security Alert for Handshake Failure.
+ * Updated v1.8: Integrated robust checkConfig with Error Emitter sync.
  */
 
 // Securely fetch the token from environment variables
@@ -13,15 +12,25 @@ const BASE_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
  * Validate if the token is available to prevent runtime errors
  */
 function checkConfig() {
-  if (!BOT_TOKEN || BOT_TOKEN === 'your_token_here' || BOT_TOKEN === 'Your_Token_From_BotFather') {
-    console.warn(">>> [TELEGRAM_WARN] TELEGRAM_BOT_TOKEN is missing or placeholder in environment variables.");
+  const isPlaceholder = !BOT_TOKEN || 
+                        BOT_TOKEN === 'your_token_here' || 
+                        BOT_TOKEN === 'Your_Token_From_BotFather' ||
+                        BOT_TOKEN.length < 20;
+
+  if (isPlaceholder) {
+    if (typeof window === 'undefined') {
+      console.error(">>> [TELEGRAM_CRITICAL] TELEGRAM_BOT_TOKEN is missing or placeholder.");
+    }
     return false;
   }
   return true;
 }
 
 export async function sendTelegramMessage(chatId: string, text: string, options: any = {}) {
-  if (!checkConfig()) return { ok: false, description: "Token Missing" };
+  if (!checkConfig()) {
+    console.error(">>> [SIGNAL_HALTED] Cannot dispatch message: Missing Token.");
+    return { ok: false, description: "Token Missing" };
+  }
   
   try {
     const response = await fetch(`${BASE_URL}/sendMessage`, {

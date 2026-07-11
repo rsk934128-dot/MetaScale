@@ -1,28 +1,41 @@
-
 import { NextResponse } from 'next/server';
 import { initializeFirebase } from '@/firebase';
-import { doc, updateDoc, getDoc, collection, getDocs, query, where, orderBy, limit, setDoc } from 'firebase/firestore';
-import { sendTelegramMessage, sendFinancialAlert, sendHealthReport, sendMaintenanceAlert } from '@/lib/telegram';
-import { reconcileAndSettleLink, processPaymentCredit } from '@/services/payment-service';
+import { doc, updateDoc, getDoc, collection, setDoc, addDoc } from 'firebase/firestore';
+import { sendTelegramMessage } from '@/lib/telegram';
 
 /**
- * Telegram Webhook Handler v2.1 (Command & Control Enabled)
- * Handles remote authorization signals (Approve/Reject) from the Governor.
+ * Telegram Webhook Handler v2.2 (Stability Enhanced)
+ * Handles remote authorization signals and logs config failures to Kernel.
  */
 export async function POST(req: Request) {
   const timestamp = Date.now();
-  console.log(`>>> [TELEGRAM_SIGNAL] Pulse detected at ${new Date(timestamp).toISOString()}`);
-
+  
   try {
     const { firestore } = initializeFirebase();
-    if (!firestore) {
-      console.error(">>> [FATAL_KERNEL] Firestore initialization failed.");
+    if (!firestore) return NextResponse.json({ ok: true });
+
+    // Internal check for Bot Token
+    if (!process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN.length < 20) {
+      console.error(">>> [API_HALT] Webhook received signal but BOT_TOKEN is missing.");
+      
+      // Log failure to Kernel Events for Dashboard Visibility
+      await addDoc(collection(firestore, 'events'), {
+        type: 'BRIDGE_BREACH',
+        plane: 'SECURITY',
+        priority: 1,
+        timestamp: Date.now(),
+        payload: { reason: 'CRITICAL_CONFIG_MISSING', component: 'TELEGRAM_GATEWAY' },
+        status: 'FAILED',
+        category: 'BRIDGE_BREACH',
+        severity: 'CRITICAL'
+      });
+      
       return NextResponse.json({ ok: true });
     }
 
     const body = await req.json();
 
-    // 1. Handle Callback Queries (Approve/Reject from inline buttons)
+    // 1. Handle Callback Queries (Approve/Reject)
     if (body.callback_query) {
       const { data, from } = body.callback_query;
       const chatId = from.id.toString();
@@ -51,7 +64,7 @@ export async function POST(req: Request) {
             rejectedAt: Date.now(),
             routingReason: 'Rejected by Governor via Telegram.'
           });
-          await sendTelegramMessage(chatId, `<b>❌ TRANSACTION REJECTED</b>\n\nID: <code>${dispatchId}</code>\n\nলেনদেনটি বাতিল করা হয়েছে এবং ফান্ড হোল্ড মোডে আছে।`);
+          await sendTelegramMessage(chatId, `<b>❌ TRANSACTION REJECTED</b>\n\nID: <code>${dispatchId}</code>\n\nলেনদেনটি বাতিল করা হয়েছে।`);
         }
       }
       return NextResponse.json({ ok: true });
@@ -64,7 +77,6 @@ export async function POST(req: Request) {
     const text = message.text.trim();
 
     // --- COMMAND ROUTER ---
-
     if (text === '/test') {
       await sendTelegramMessage(chatId, "<b>🛰️ সিস্টেম অনলাইন আছে, বস!</b>\n\nকার্নেল সিগন্যাল রিসিভ করছে।");
     } else if (text.startsWith('/start ')) {

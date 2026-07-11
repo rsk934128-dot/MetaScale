@@ -1,16 +1,14 @@
 'use client';
 
 import { ServiceStatus, BootStatus } from './types';
+import { validateEnvironment } from '@/services/config-validator';
 
 /**
  * @fileOverview NoorNexus Sovereign OS - Core Bootstrap Manager
- * Author: Sheikh Farid
- *
- * Handles system initialization, service loading, 
- * and secure API authentication at boot time.
+ * Updated v1.3: Integrated Config Validation to prevent Webhook Bottlenecks.
  */
 
-export type ServiceName = 'AuthService' | 'WalletLedger' | 'BankingAPI' | 'ShieldEngine';
+export type ServiceName = 'AuthService' | 'WalletLedger' | 'BankingAPI' | 'ShieldEngine' | 'GatewayValidator';
 
 export class SovereignBootManager {
   public isSystemReady: boolean = false;
@@ -19,7 +17,8 @@ export class SovereignBootManager {
     'AuthService': 'OFFLINE',
     'WalletLedger': 'OFFLINE',
     'BankingAPI': 'OFFLINE',
-    'ShieldEngine': 'OFFLINE'
+    'ShieldEngine': 'OFFLINE',
+    'GatewayValidator': 'OFFLINE'
   };
 
   constructor() {}
@@ -31,16 +30,19 @@ export class SovereignBootManager {
     console.log("%c[Boot] Initializing NoorNexus Sovereign OS...", "color: #00f2ff; font-weight: bold;");
 
     try {
-      // 1. Load ShieldEngine (Security First - Zero Trust Handshake)
+      // 1. Config Validation (Pre-flight check)
+      await this.runPreflightCheck();
+
+      // 2. Load ShieldEngine (Security First)
       await this.loadSecurityLayer();
 
-      // 2. Establish Global Banking API Tunnels
+      // 3. Establish Global Banking API Tunnels
       await this.connectGlobalBanking();
 
-      // 3. Initialize Distributed Wallet Ledger
+      // 4. Initialize Distributed Wallet Ledger
       await this.initWalletService();
 
-      // 4. Initialize Identity Mesh (Auth Service)
+      // 5. Initialize Identity Mesh
       await this.initAuthService();
 
       this.isSystemReady = true;
@@ -55,74 +57,68 @@ export class SovereignBootManager {
     }
   }
 
+  private async runPreflightCheck() {
+    this.services['GatewayValidator'] = 'INITIALIZING';
+    const validation = await validateEnvironment();
+    
+    if (!validation.success) {
+      this.services['GatewayValidator'] = 'FAILED';
+      throw new Error(`PREFLIGHT_FAIL: ${validation.message}`);
+    }
+    
+    this.services['GatewayValidator'] = 'ONLINE';
+    console.log("[GatewayValidator] Environment keys verified.");
+  }
+
   private async loadSecurityLayer() {
     this.services['ShieldEngine'] = 'INITIALIZING';
-    console.log("[ShieldEngine] Initializing security core...");
-    
     return new Promise((resolve) => {
       setTimeout(() => {
         this.services['ShieldEngine'] = 'ONLINE';
-        console.log("[ShieldEngine] Security layer active (AES-256-GCM).");
-        resolve(true);
-      }, 1000);
-    });
-  }
-
-  private async connectGlobalBanking() {
-    this.services['BankingAPI'] = 'INITIALIZING';
-    console.log("[BankingAPI] Establishing secure banking tunnels (ISO 20022)...");
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        this.services['BankingAPI'] = 'ONLINE';
-        console.log("[BankingAPI] Global banking connection established.");
-        resolve(true);
-      }, 1200);
-    });
-  }
-
-  private async initWalletService() {
-    this.services['WalletLedger'] = 'INITIALIZING';
-    console.log("[WalletLedger] Synchronizing distributed ledger...");
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        this.services['WalletLedger'] = 'ONLINE';
-        console.log("[WalletLedger] Ledger synchronization complete.");
-        resolve(true);
-      }, 800);
-    });
-  }
-
-  private async initAuthService() {
-    this.services['AuthService'] = 'INITIALIZING';
-    console.log("[AuthService] Linking Identity Mesh...");
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        this.services['AuthService'] = 'ONLINE';
-        console.log("[AuthService] Authentication service online.");
         resolve(true);
       }, 500);
     });
   }
 
-  /**
-   * Activates emergency containment protocols in case of boot failure.
-   */
-  private triggerFailsafeProtocol(error: Error) {
-    console.log("%c[Failsafe] Activating emergency containment...", "color: #f87171; font-weight: bold;");
-    console.log(`[Failsafe] Reason: ${error.message}`);
-    
-    // Set all services to failed
-    Object.keys(this.services).forEach(key => {
-      this.services[key as ServiceName] = 'FAILED';
+  private async connectGlobalBanking() {
+    this.services['BankingAPI'] = 'INITIALIZING';
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        this.services['BankingAPI'] = 'ONLINE';
+        resolve(true);
+      }, 500);
     });
   }
 
-  /**
-   * Returns a point-in-time status of the boot manager.
-   */
+  private async initWalletService() {
+    this.services['WalletLedger'] = 'INITIALIZING';
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        this.services['WalletLedger'] = 'ONLINE';
+        resolve(true);
+      }, 500);
+    });
+  }
+
+  private async initAuthService() {
+    this.services['AuthService'] = 'INITIALIZING';
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        this.services['AuthService'] = 'ONLINE';
+        resolve(true);
+      }, 500);
+    });
+  }
+
+  private triggerFailsafeProtocol(error: Error) {
+    console.log("%c[Failsafe] Activating emergency containment...", "color: #f87171; font-weight: bold;");
+    Object.keys(this.services).forEach(key => {
+      if (this.services[key as ServiceName] !== 'ONLINE') {
+        this.services[key as ServiceName] = 'FAILED';
+      }
+    });
+  }
+
   public getSystemStatus(): BootStatus {
     return {
       ready: this.isSystemReady,
@@ -132,5 +128,4 @@ export class SovereignBootManager {
   }
 }
 
-// Export a singleton instance for global use
 export const bootManager = new SovereignBootManager();
