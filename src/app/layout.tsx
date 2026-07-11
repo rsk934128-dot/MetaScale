@@ -97,7 +97,8 @@ export default function RootLayout({
                   'WatchStream',
                   'PersistentListenStream',
                   'TON_CONNECT_SDK',
-                  'Failed to send analytics events'
+                  'Failed to send analytics events',
+                  'auth/network-request-failed'
                 ];
 
                 const isIgnored = (msg) => {
