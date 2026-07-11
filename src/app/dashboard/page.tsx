@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -29,7 +28,8 @@ import {
   ChevronRight,
   CreditCard,
   Scale,
-  Hammer
+  Hammer,
+  Radar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -41,18 +41,18 @@ import { SystemMode } from "@/lib/kernel/types";
 import { Progress } from "@/components/ui/progress";
 import { useFirestore, useCollection, useDoc } from "@/firebase";
 import { collection, query, orderBy, limit, doc } from "firebase/firestore";
+import { YieldFlow } from "@/components/charts/YieldFlow";
+import { HunterStream } from "@/components/dashboard/HunterStream";
 
 export default function SovereignControlPlane() {
   const { mode, setSystemMode, events, emitEvent, processNextEvent, isAutonomousActive } = useKernel();
   const [isSyncing, setIsSyncing] = useState(false);
   const firestore = useFirestore();
 
-  // Maintenance Check (Local Logic - Moved to state to avoid hydration error)
   const [isAutoMaintenance, setIsAutoMaintenance] = useState(false);
   useEffect(() => {
     const checkTime = () => {
       const hours = new Date().getUTCHours();
-      // Maintenance window: 9 PM to 2 AM UTC
       setIsAutoMaintenance(hours >= 21 || hours < 2);
     };
     checkTime();
@@ -60,21 +60,9 @@ export default function SovereignControlPlane() {
     return () => clearInterval(interval);
   }, []);
 
-  // Remote Config Maintenance Check
   const configRef = useMemo(() => firestore ? doc(firestore, 'system', 'config') : null, [firestore]);
   const { data: systemConfig } = useDoc<any>(configRef);
   const isMaintenanceActive = systemConfig?.maintenance || isAutoMaintenance;
-
-  const isLive = useMemo(() => {
-    return events.some(e => e.type === 'COMMERCIAL_CHANNELS_OPEN' && e.status === 'COMPLETED');
-  }, [events]);
-
-  // Live Payment Ledger Sync
-  const paymentsQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'payments'), orderBy('eventTime', 'desc'), limit(10));
-  }, [firestore]);
-  const { data: recentPayments } = useCollection<any>(paymentsQuery);
 
   const handleSyncAllNodes = () => {
     setIsSyncing(true);
@@ -86,7 +74,6 @@ export default function SovereignControlPlane() {
 
   return (
     <div className="flex min-h-screen bg-background relative w-full overflow-x-hidden">
-      {/* Maintenance Overlay (Circuit Breaker Visual) */}
       {isMaintenanceActive && (
         <div className="absolute inset-0 z-[100] bg-background/90 backdrop-blur-md flex items-center justify-center p-6 text-center animate-fade-in">
            <div className="max-w-md space-y-6">
@@ -113,61 +100,55 @@ export default function SovereignControlPlane() {
           <SidebarTrigger />
           <div className="flex-1 truncate">
             <h1 className="text-sm md:text-lg font-headline font-bold flex items-center gap-2 uppercase italic tracking-tighter text-accent">
-              <Globe className="h-4 w-4 md:h-5 md:w-5 text-accent shrink-0 animate-logo-spin" />
-              <span className="truncate">Mission Control Hub</span>
+              <Radar className="h-4 w-4 md:h-5 md:w-5 text-accent shrink-0 animate-pulse" />
+              <span className="truncate">Operational Command Center</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            {isAutonomousActive && (
-               <Badge variant="outline" className="hidden sm:flex border-green-500/20 text-green-400 text-[8px] font-mono animate-pulse">
-                  <Scale className="mr-1 h-3 w-3" /> FISCAL_OPTIMIZER: ACTIVE
-               </Badge>
-            )}
             <Button size="sm" onClick={handleSyncAllNodes} disabled={isSyncing} className="cyan-glow text-[10px] font-bold h-8 bg-accent text-background px-4">
               {isSyncing ? <RefreshCw className="h-3 w-3 animate-spin mr-1.5" /> : <Zap className="h-3 w-3 mr-1.5" />}
-              <span className="hidden xs:inline">Sync Mesh Nodes</span>
+              <span className="hidden xs:inline">Sync All Nodes</span>
               <span className="xs:hidden">Sync</span>
             </Button>
           </div>
         </header>
 
         <main className="flex-1 space-y-6 p-4 md:p-8 w-full max-w-none">
-          {/* Key Metrics Grid - Full Width */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 w-full">
              <Card className="glass-panel border-l-4 border-l-accent bg-accent/5">
                 <CardHeader className="p-4 pb-2">
                    <CardTitle className="text-[9px] md:text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2">
-                      <DollarSign className="h-3 w-3 text-accent" /> Network Yield
+                      <DollarSign className="h-3 w-3 text-accent" /> Total Yield
                    </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-                   <div className="text-2xl md:text-4xl font-headline font-bold text-white">3.5%</div>
+                   <div className="text-2xl md:text-4xl font-headline font-bold text-white">$12.4M</div>
                 </CardContent>
              </Card>
              <Card className="glass-panel border-l-4 border-l-primary bg-primary/5">
                 <CardHeader className="p-4 pb-2">
                    <CardTitle className="text-[9px] md:text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2">
-                      <Target className="h-3 w-3 text-primary" /> Velocity
+                      <Target className="h-3 w-3 text-primary" /> Mesh Efficiency
                    </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-                   <div className="text-2xl md:text-4xl font-headline font-bold text-white">92.4%</div>
+                   <div className="text-2xl md:text-4xl font-headline font-bold text-white">99.9%</div>
                 </CardContent>
              </Card>
-             <Card className="glass-panel border-l-4 border-l-blue-400 bg-blue-400/5">
+             <Card className="glass-panel border-l-4 border-l-red-500 bg-red-500/5">
                 <CardHeader className="p-4 pb-2">
                    <CardTitle className="text-[9px] md:text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2">
-                      <Network className="h-3 w-3 text-blue-400" /> Mesh Sync
+                      <ShieldAlert className="h-3 w-3 text-red-400" /> Threats Blocked
                    </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-                   <div className="text-2xl md:text-4xl font-headline font-bold text-white">42/42</div>
+                   <div className="text-2xl md:text-4xl font-headline font-bold text-white">142</div>
                 </CardContent>
              </Card>
              <Card className="glass-panel border-l-4 border-l-green-500 bg-green-500/5">
                 <CardHeader className="p-4 pb-2">
                    <CardTitle className="text-[9px] md:text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-2">
-                      <ShieldCheck className="h-3 w-3 text-green-400" /> Audit Result
+                      <ShieldCheck className="h-3 w-3 text-green-400" /> Audit Integrity
                    </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
@@ -177,80 +158,56 @@ export default function SovereignControlPlane() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 w-full">
-            {/* Anycast Grid Visualization - Takes more space on ultra-wide */}
             <div className="lg:col-span-8 space-y-6">
-               <Card className="glass-panel border-white/5 relative overflow-hidden h-[400px] md:h-[600px] flex flex-col">
-                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #00f2ff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+               <Card className="glass-panel border-white/5 relative overflow-hidden h-[400px] md:h-[500px] flex flex-col">
                   <CardHeader className="border-b border-white/5 bg-white/5 relative z-10 p-6">
                      <div className="flex justify-between items-center">
                         <CardTitle className="text-xs md:text-sm uppercase tracking-widest flex items-center gap-2">
-                           <Globe className="h-4 w-4 text-accent" />
-                           Sovereign Anycast Infrastructure
+                           <Activity className="h-4 w-4 text-accent" />
+                           Dynamic Yield Flow
                         </CardTitle>
-                        <Badge variant="outline" className="text-[7px] md:text-[8px] font-mono border-green-500/30 text-green-400">
-                          {isLive ? "STATUS: LIVE_OP" : "STATUS: NOMINAL"}
-                        </Badge>
+                        <Badge variant="outline" className="text-[8px] font-mono border-accent/30 text-accent">P43_REASONING_ACTIVE</Badge>
                      </div>
                   </CardHeader>
-                  <CardContent className="flex-1 relative z-10 flex items-center justify-center p-6">
-                     <div className="relative w-full h-full bg-black/20 rounded-3xl border border-white/5 shadow-inner overflow-hidden group">
-                        <div className="absolute inset-0 flex items-center justify-center opacity-30">
-                           <div className="w-[85%] h-[85%] rounded-full border border-dashed border-accent/20 animate-logo-spin" />
-                        </div>
-                        <div className="absolute inset-0 p-8 md:p-16">
-                           <div className="grid grid-cols-6 md:grid-cols-14 gap-4 md:gap-12 h-full place-items-center">
-                              {Array.from({ length: 42 }).map((_, i) => (
-                                <div key={i} className="relative">
-                                   <div className={cn(
-                                     "w-1.5 md:w-3 h-1.5 md:h-3 rounded-full shadow-[0_0_15px_currentColor] animate-pulse",
-                                     i % 7 === 0 ? "text-primary" : i % 5 === 0 ? "text-green-400" : "text-accent"
-                                   )} />
-                                </div>
-                              ))}
-                           </div>
-                        </div>
-                        <div className="absolute bottom-6 left-6 space-y-1">
-                           <p className="text-[10px] md:text-xs font-bold text-white uppercase tracking-widest bg-black/60 px-3 py-1.5 rounded-lg border border-white/5">Primary Node: Node-04 (UK)</p>
-                        </div>
+                  <CardContent className="flex-1 relative z-10 p-6">
+                     <YieldFlow />
+                  </CardContent>
+               </Card>
+
+               <Card className="glass-panel border-accent/20 bg-accent/5 overflow-hidden">
+                  <CardHeader className="p-6 border-b border-white/5">
+                     <div className="flex justify-between items-center">
+                        <CardTitle className="text-xs md:text-sm uppercase tracking-widest flex items-center gap-2 text-accent">
+                           <Network className="h-4 w-4" />
+                           Anycast Global Mesh (42 Nodes)
+                        </CardTitle>
+                     </div>
+                  </CardHeader>
+                  <CardContent className="p-8">
+                     <div className="grid grid-cols-6 md:grid-cols-14 gap-4 md:gap-8 h-full place-items-center opacity-40">
+                        {Array.from({ length: 42 }).map((_, i) => (
+                          <div key={i} className="relative">
+                             <div className={cn(
+                               "w-2 md:w-3 h-2 md:h-3 rounded-full shadow-[0_0_10px_currentColor] animate-pulse",
+                               i % 7 === 0 ? "text-primary" : "text-accent"
+                             )} />
+                          </div>
+                        ))}
                      </div>
                   </CardContent>
                </Card>
             </div>
 
-            {/* Payment Ledger - Sidebar on desktop */}
             <div className="lg:col-span-4 space-y-6">
-               <Card className="glass-panel border-accent/20 bg-accent/5 shadow-2xl h-[400px] md:h-[600px] flex flex-col">
+               <Card className="glass-panel border-accent/20 bg-accent/5 shadow-2xl h-[400px] md:h-[770px] flex flex-col">
                   <CardHeader className="p-6 border-b border-white/10">
                      <CardTitle className="text-xs md:text-sm uppercase tracking-[0.2em] flex items-center gap-2 text-accent">
-                        <CreditCard className="h-4 w-4" />
-                        Live Signal Ledger
+                        <ShieldAlert className="h-4 w-4" />
+                        Hunter Mode Live Feed
                      </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-0 flex-1 overflow-hidden">
-                     <ScrollArea className="h-full">
-                        <div className="p-4 space-y-3">
-                           {(!recentPayments || recentPayments.length === 0) ? (
-                             <div className="h-40 flex items-center justify-center text-[9px] uppercase font-bold text-muted-foreground italic opacity-20">Listening for Global Signals...</div>
-                           ) : recentPayments.map((payment) => (
-                             <div key={payment.id} className="p-3 rounded-xl border border-white/5 bg-secondary/20 flex items-start gap-3 transition-all hover:border-accent/30 group">
-                                <div className={cn(
-                                  "w-1 h-8 rounded-full mt-1 shrink-0 transition-all group-hover:scale-y-110",
-                                  payment.status === 'PAID' || payment.status === 'CREDITED' ? 'bg-green-400' : 'bg-red-400'
-                                )} />
-                                <div className="flex-1 min-w-0">
-                                   <div className="flex justify-between items-center mb-0.5">
-                                      <span className="text-[10px] font-bold text-white uppercase truncate">{payment.provider}</span>
-                                      <span className="text-[10px] font-mono text-accent">+{payment.amount}</span>
-                                   </div>
-                                   <div className="flex items-center justify-between gap-1.5">
-                                      <span className="text-[8px] text-muted-foreground truncate">ID: {payment.externalTxnId.substring(0, 12)}...</span>
-                                      <Badge variant="ghost" className="text-[7px] px-1 py-0 border-white/10 uppercase opacity-50">{payment.status}</Badge>
-                                   </div>
-                                </div>
-                             </div>
-                           ))}
-                        </div>
-                     </ScrollArea>
+                  <CardContent className="p-4 flex-1 overflow-hidden">
+                     <HunterStream />
                   </CardContent>
                </Card>
             </div>

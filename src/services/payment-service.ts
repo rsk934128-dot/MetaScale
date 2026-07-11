@@ -1,4 +1,3 @@
-
 import { 
   Firestore, 
   doc, 
@@ -16,7 +15,7 @@ import { sendFinancialAlert, sendSecurityAlert } from '@/lib/telegram';
 
 /**
  * Core Domain Service: Atomic Payment Credit Logic
- * Updated v1.6: Ghost Load Simulation & Emergency Auto-lock.
+ * Updated v1.7: Enhanced Hunter Mode Logging for Live Command Center.
  */
 export async function processPaymentCredit(
   firestore: Firestore, 
@@ -76,25 +75,28 @@ export async function processPaymentCredit(
         }
       });
 
-      if (riskCheck.riskScore > 80) {
-        await addDoc(collection(firestore, 'events'), {
-          id: `BLOCK_${sealHash}`,
-          type: 'GOVERNANCE_BLOCK',
-          plane: 'SECURITY',
-          priority: 1,
-          timestamp: Date.now(),
-          payload: { 
-            paymentId, 
-            riskScore: riskCheck.riskScore, 
-            reason: riskCheck.reasoning,
-            category: riskCheck.threatCategory,
-            seal: sealHash
-          },
-          status: 'BLOCKED_BY_GOVERNANCE',
-          category: 'PREDICTIVE_ANOMALY',
-          severity: 'CRITICAL'
-        });
+      // Log the risk check result for the Operational Command Center
+      await addDoc(collection(firestore, 'events'), {
+        id: `RISK_${sealHash}`,
+        type: riskCheck.riskScore > 80 ? 'GOVERNANCE_BLOCK' : 'PREDICTIVE_RISK_CHECK',
+        plane: 'SECURITY',
+        priority: riskCheck.riskScore > 80 ? 1 : 4,
+        timestamp: Date.now(),
+        payload: { 
+          paymentId, 
+          riskScore: riskCheck.riskScore, 
+          reason: riskCheck.reasoning,
+          category: riskCheck.threatCategory,
+          brand: event.provider,
+          amount: event.amount,
+          seal: sealHash
+        },
+        status: riskCheck.riskScore > 80 ? 'BLOCKED_BY_GOVERNANCE' : 'COMPLETED',
+        category: 'PREDICTIVE_ANOMALY',
+        severity: riskCheck.riskScore > 80 ? 'CRITICAL' : 'LOW'
+      });
 
+      if (riskCheck.riskScore > 80) {
         return { status: 'BLOCKED_BY_GOVERNANCE', reason: riskCheck.reasoning, seal: sealHash };
       }
     } catch (err) {
@@ -178,7 +180,6 @@ export async function processPaymentCredit(
 
 /**
  * Directive 1: Ghost Load Stress Test Simulator
- * Generates N rapid fire transactions to verify Exactly-Once Ledger Invariant.
  */
 export async function simulateStressTest(firestore: Firestore, userId: string, count: number = 10) {
   console.log(`>>> [STRESS_TEST] Initiating Ghost Load for ${userId}. Target: ${count} pulses.`);
@@ -189,7 +190,7 @@ export async function simulateStressTest(firestore: Firestore, userId: string, c
       orderId: `STRESS_${Date.now()}_${i}`,
       userId: userId,
       externalTxnId: `EXT_SIM_${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-      provider: 'STRIPE', // Mock provider
+      provider: 'STRIPE', 
       amount: 1.00,
       currency: 'USD',
       status: 'PAID',
