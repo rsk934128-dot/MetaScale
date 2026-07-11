@@ -6,7 +6,7 @@ import {
   getFirestore, 
   initializeFirestore, 
   persistentLocalCache, 
-  persistentMultipleTabManager,
+  persistentSingleTabManager,
   Firestore
 } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
@@ -32,24 +32,19 @@ export function initializeFirebase() {
     
     if (isBrowser) {
       try {
-        // Use standard initialization first if possible
-        firestore = getFirestore(firebaseApp);
+        // Use specialized persistence settings to stabilize against ID: ca9 / b815 errors
+        firestore = initializeFirestore(firebaseApp, {
+          localCache: persistentLocalCache({ 
+            tabManager: persistentSingleTabManager() 
+          }),
+          // Force long polling and auto-detection to stabilize handshake in restricted networks
+          experimentalForceLongPolling: true,
+          experimentalAutoDetectLongPolling: true,
+          ignoreUndefinedProperties: true
+        });
       } catch (e) {
-        try {
-          // If fallback needed, use specialized persistence settings
-          firestore = initializeFirestore(firebaseApp, {
-            localCache: persistentLocalCache({ 
-              tabManager: persistentMultipleTabManager() 
-            }),
-            // Force long polling and auto-detection to stabilize handshake in restricted networks
-            experimentalForceLongPolling: true,
-            experimentalAutoDetectLongPolling: true,
-            ignoreUndefinedProperties: true
-          });
-        } catch (initErr) {
-          // Final fail-safe: Basic firestore without persistence
-          firestore = getFirestore(firebaseApp);
-        }
+        // Final fail-safe: Basic firestore without persistence
+        firestore = getFirestore(firebaseApp);
       }
     } else {
       // Standard initialization for Server side (API routes / SSR)

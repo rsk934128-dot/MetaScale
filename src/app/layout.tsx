@@ -73,23 +73,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-        
-        {/* Telegram WebApp Script */}
-        <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
-
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                // Aggressive error suppression for Firestore internal states, timeouts and redundant warnings
                 const ignoredPatterns = [
                   'MetaMask', 
                   'nkbihfbeogaeaoehlefnkodbefgpgknn',
@@ -106,50 +93,68 @@ export default function RootLayout({
                   'b815',
                   'ca9',
                   'Fe":-1',
-                  'auth/network-request-failed',
-                  'network-request-failed',
                   'WatchChangeAggregator',
                   'WatchStream'
                 ];
 
-                const filterMessage = (args) => {
-                  const msg = args.map(arg => {
-                    try {
+                const isIgnored = (msg) => {
+                  if (!msg) return false;
+                  const str = typeof msg === 'string' ? msg : JSON.stringify(msg);
+                  return ignoredPatterns.some(pattern => str.includes(pattern));
+                };
+
+                const filterArgs = (args) => {
+                  try {
+                    const combined = args.map(arg => {
                       if (typeof arg === 'string') return arg;
-                      return JSON.stringify(arg);
-                    } catch (e) {
-                      return String(arg);
-                    }
-                  }).join(' ');
-                  return ignoredPatterns.some(pattern => msg.includes(pattern));
+                      try { return JSON.stringify(arg); } catch(e) { return String(arg); }
+                    }).join(' ');
+                    return isIgnored(combined);
+                  } catch (e) {
+                    return false;
+                  }
                 };
 
                 const originalError = console.error;
                 console.error = (...args) => {
-                  if (filterMessage(args)) return;
+                  if (filterArgs(args)) return;
                   originalError.apply(console, args);
                 };
 
                 const originalWarn = console.warn;
                 console.warn = (...args) => {
-                  if (filterMessage(args)) return;
+                  if (filterArgs(args)) return;
                   originalWarn.apply(console, args);
                 };
 
-                const suppressGlobalErrors = (event) => {
+                window.addEventListener('error', (event) => {
                   const message = event.message || (event.reason && event.reason.message) || String(event.reason) || "";
-                  if (ignoredPatterns.some(pattern => message.includes(pattern))) {
-                    if (event.stopImmediatePropagation) event.stopImmediatePropagation();
-                    if (event.preventDefault) event.preventDefault();
-                    return true;
+                  if (isIgnored(message)) {
+                    event.stopImmediatePropagation();
+                    event.preventDefault();
                   }
-                };
+                }, true);
 
-                window.addEventListener('error', suppressGlobalErrors, true);
-                window.addEventListener('unhandledrejection', suppressGlobalErrors, true);
+                window.addEventListener('unhandledrejection', (event) => {
+                  const message = (event.reason && event.reason.message) || String(event.reason) || "";
+                  if (isIgnored(message)) {
+                    event.stopImmediatePropagation();
+                    event.preventDefault();
+                  }
+                }, true);
               })();
             `
           }}
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        
+        <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
 
         <Script id="google-consent-mode" strategy="beforeInteractive">
@@ -167,7 +172,6 @@ export default function RootLayout({
           `}
         </Script>
 
-        {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-N53RC4L541"
           strategy="afterInteractive"
