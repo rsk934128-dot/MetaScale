@@ -19,23 +19,20 @@ import { sendFinancialAlert, sendSecurityAlert } from '@/lib/telegram';
 
 /**
  * Core Domain Service: Atomic Payment Credit Logic
- * Updated v2.2: Added Mesh Account Verification & Secure QR Settlement.
+ * Updated v2.5: Imperial Manual Resolution Support.
  */
 
 /**
  * Verifies if a scanned address or ID belongs to an authorized mesh citizen.
  */
 export async function verifyMeshAccount(firestore: Firestore, identifier: string) {
-  // Check if identifier is a UID or Kernel ID
   const usersRef = collection(firestore, 'users');
   let userSnap;
 
-  // Try fetching by UID first
   const docRef = doc(firestore, 'users', identifier);
   userSnap = await getDoc(docRef);
 
   if (!userSnap.exists()) {
-    // Try fetching by Kernel ID
     const q = query(usersRef, where('kernelId', '==', identifier), limit(1));
     const querySnap = await getDocs(q);
     if (!querySnap.empty) {
@@ -59,6 +56,50 @@ export async function verifyMeshAccount(firestore: Firestore, identifier: string
   return { success: false, message: "UNAUTHORIZED_NODE_ADDRESS" };
 }
 
+/**
+ * Manually Resolves a stuck or flagged payment.
+ */
+export async function manuallyResolvePayment(
+  firestore: Firestore,
+  paymentId: string,
+  action: 'APPROVE' | 'REJECT',
+  adminId: string
+) {
+  const timestamp = Date.now();
+  const paymentRef = doc(firestore, 'payments', paymentId);
+  const paymentSnap = await getDoc(paymentRef);
+
+  if (!paymentSnap.exists()) throw new Error("PAYMENT_NOT_FOUND");
+  const paymentData = paymentSnap.data() as InboundPaymentDoc;
+
+  if (paymentData.isCredited && action === 'APPROVE') throw new Error("ALREADY_CREDITED");
+
+  if (action === 'REJECT') {
+    await updateDoc(paymentRef, {
+      status: 'REJECTED',
+      settlementBucket: 'DONE',
+      manualReviewRequired: false,
+      updatedAt: timestamp,
+      resolvedBy: adminId
+    });
+    return { status: 'SUCCESS_REJECTED' };
+  }
+
+  // If APPROVE, call the standard credit logic but bypass Hunter Mode
+  const normalized: NormalizedPaymentEvent = {
+    orderId: paymentData.orderId,
+    userId: paymentData.userId,
+    externalTxnId: paymentData.externalTxnId,
+    provider: paymentData.provider,
+    amount: paymentData.amount,
+    currency: paymentData.currency,
+    status: 'PAID',
+    eventTime: timestamp
+  };
+
+  return await processPaymentCredit(firestore, normalized, 'MANUAL', adminId);
+}
+
 export async function processPaymentCredit(
   firestore: Firestore, 
   event: NormalizedPaymentEvent,
@@ -69,25 +110,22 @@ export async function processPaymentCredit(
   const paymentId = `${event.provider}_${event.externalTxnId}`;
   const timestamp = Date.now();
 
-  // 0. Global Kill Switch Check
   const configRef = doc(firestore, 'system', 'config');
   const configSnap = await getDoc(configRef);
-  if (configSnap.exists() && configSnap.data().maintenance) {
+  if (configSnap.exists() && configSnap.data().maintenance && trigger !== 'MANUAL') {
     return { status: 'REJECTED_LOCKDOWN_ACTIVE', seal: sealHash };
   }
 
-  // 1. Handshake Integrity Check
   const userRef = doc(firestore, 'users', event.userId);
   const userSnap = await getDoc(userRef);
   const userData = userSnap.data();
 
-  if (!userData?.telegramLinked && trigger !== 'SIMULATION') {
+  if (!userData?.telegramLinked && trigger === 'WEBHOOK') {
     await updateDoc(userRef, { verificationStatus: 'FLAGGED', trustScore: 0 });
     return { status: 'REJECTED_HANDSHAKE_REQUIRED', seal: sealHash };
   }
 
-  // 2. Hunter Mode Check
-  if (userData && trigger !== 'SIMULATION') {
+  if (userData && trigger === 'WEBHOOK') {
     try {
       const riskCheck = await runPredictiveAnalysis({
         transaction: {
@@ -109,6 +147,19 @@ export async function processPaymentCredit(
 
       if (riskCheck.riskScore > 80) {
         await updateDoc(userRef, { verificationStatus: 'FLAGGED', trustScore: 30 });
+        // Mark for manual review instead of just blocking if it's high value
+        const paymentRef = doc(firestore, 'payments', paymentId);
+        await setDoc(paymentRef, {
+           ...event,
+           id: paymentId,
+           manualReviewRequired: true,
+           settlementBucket: 'READY_FOR_REPLAY',
+           primaryAnomaly: 'PREDICTIVE_ANOMALY',
+           riskScore: riskCheck.riskScore,
+           reason: riskCheck.reasoning,
+           updatedAt: timestamp
+        }, { merge: true });
+
         if (userData.telegramChatId) {
           await sendSecurityAlert(userData.telegramChatId, 'PREDICTIVE_BLOCK', {
             userId: event.userId,
@@ -141,7 +192,7 @@ export async function processPaymentCredit(
       status: 'CREDITED' as PaymentStatus,
       timestamp: timestamp,
       trigger: trigger,
-      reason: 'Automated settlement credit via Sovereign Kernel',
+      reason: trigger === 'MANUAL' ? `Manual approval by Admin: ${adminUid}` : 'Automated settlement credit via Sovereign Kernel',
     };
 
     const update: Partial<InboundPaymentDoc> = {
@@ -165,7 +216,6 @@ export async function processPaymentCredit(
     return { status: 'SUCCESS_CREDITED', paymentId, seal: sealHash };
   });
 
-  // Notify Telegram on Finality
   if (result.status === 'SUCCESS_CREDITED' && trigger !== 'SIMULATION' && userData?.telegramChatId) {
     await sendFinancialAlert(userData.telegramChatId, 'SETTLEMENT_FINALIZED', {
       amount: event.amount,
