@@ -4,8 +4,8 @@ import { doc, updateDoc, getDoc, collection, addDoc } from 'firebase/firestore';
 import { sendTelegramMessage } from '@/lib/telegram';
 
 /**
- * Telegram Webhook Handler v4.0 (Force Handshake)
- * Processes all incoming telegram updates and forces responses.
+ * Telegram Webhook Handler v5.0 (Approval Processing)
+ * Processes callbacks for transaction approvals and security directives.
  */
 export async function POST(req: Request) {
   try {
@@ -14,26 +14,14 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    // 1. Log incoming signal
-    await addDoc(collection(firestore, 'events'), {
-      type: 'TELEGRAM_SIGNAL_RECEIVED',
-      plane: 'SECURITY',
-      priority: 4,
-      timestamp: Date.now(),
-      payload: { 
-        from: body.message?.from?.username || body.callback_query?.from?.username || 'ANON',
-        text: body.message?.text || 'CALLBACK'
-      },
-      status: 'PROCESSING'
-    });
-
-    // 2. Handle Callback Queries
+    // 1. Handle Callback Queries (Approvals/Rejections)
     if (body.callback_query) {
       const { data, from } = body.callback_query;
       const chatId = from.id.toString();
 
       if (data.startsWith('APPROVE_')) {
         const dispatchId = data.replace('APPROVE_', '');
+        // Search in both ubil_events and payments for the seal
         const ubilRef = doc(firestore, 'ubil_events', dispatchId);
         const ubilSnap = await getDoc(ubilRef);
         
@@ -43,13 +31,29 @@ export async function POST(req: Request) {
             authorizedBy: from.username || from.id,
             authorizedAt: Date.now()
           });
+
+          await addDoc(collection(firestore, 'events'), {
+            type: 'MULTI_SIG_APPROVED',
+            plane: 'SECURITY',
+            priority: 1,
+            timestamp: Date.now(),
+            payload: { dispatchId, approvedBy: from.username }
+          });
+
           await sendTelegramMessage(chatId, `<b>✅ TRANSACTION AUTHORIZED</b>\n\nID: <code>${dispatchId}</code>\n\nকার্নেল সফলভাবে লিকুইডিটি রিলিজ করেছে।`);
+        } else {
+          await sendTelegramMessage(chatId, `<b>❌ ERROR:</b> Transaction seal not found or expired.`);
         }
+      } else if (data.startsWith('REJECT_')) {
+        const dispatchId = data.replace('REJECT_', '');
+        const ubilRef = doc(firestore, 'ubil_events', dispatchId);
+        await updateDoc(ubilRef, { status: 'REJECTED', rejectedBy: from.username });
+        await sendTelegramMessage(chatId, `<b>🚫 TRANSACTION REJECTED</b>\n\nID: <code>${dispatchId}</code>\n\nট্রানজ্যাকশনটি বাতিল করা হয়েছে।`);
       }
       return NextResponse.json({ ok: true });
     }
 
-    // 3. Handle Messages
+    // 2. Handle Messages
     const { message } = body;
     if (!message || !message.text) return NextResponse.json({ ok: true });
 
@@ -58,7 +62,6 @@ export async function POST(req: Request) {
 
     if (text.startsWith('/start')) {
       const userId = text.split(' ')[1];
-      
       if (!userId) {
         await sendTelegramMessage(chatId, "<b>🛰️ সোভারেন কার্নেল অনলাইন।</b>\n\nলিঙ্ক করার জন্য অ্যাপের 'Bind' বাটন ব্যবহার করুন।");
         return NextResponse.json({ ok: true });
@@ -74,13 +77,18 @@ export async function POST(req: Request) {
           updatedAt: Date.now()
         });
 
+        await addDoc(collection(firestore, 'events'), {
+          type: 'HANDSHAKE_STABILIZED',
+          plane: 'SECURITY',
+          priority: 2,
+          timestamp: Date.now(),
+          payload: { userId, chatId, method: 'ECC_ED25519' }
+        });
+
         await sendTelegramMessage(chatId, `<b>✅ IDENTITY STABILIZED</b>\n\nCitizen: ${userSnap.data().displayName}\n\nআপনার একাউন্টটি এখন সোভারেন কার্নেলের সাথে সফলভাবে লিঙ্কড। (Node-04)`);
       }
     } else if (text === '/status') {
-      await sendTelegramMessage(chatId, "<b>SYSTEM STATUS: NOMINAL</b>\n\nMesh Health: 100%\nNodes: 42/42 Active\nLatency: 8.4ms");
-    } else {
-      // Catch-all response for unknown commands
-      await sendTelegramMessage(chatId, "<b>🛰️ Sovereign Kernel Terminal</b>\n\nসাপোর্ট করা কমান্ডসমূহ:\n/start - আইডেন্টিটি লিঙ্ক\n/status - সিস্টেম হেলথ চেক");
+      await sendTelegramMessage(chatId, "<b>SYSTEM STATUS: NOMINAL</b>\n\nMesh Health: 100%\nNodes: 42/42 Active\nLatency: 8.4ms\nFinality: T+0");
     }
 
     return NextResponse.json({ ok: true });

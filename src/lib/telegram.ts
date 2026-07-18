@@ -1,46 +1,29 @@
-
 'use server';
 /**
- * NoorNexus Telegram Gateway Utility v4.0 (Force Handshake)
- * Handles communication with the Sovereign Bot.
+ * NoorNexus Telegram Gateway Utility v5.0 (Financial Execution)
+ * Handles communication, alerts, and interactive approvals.
  */
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7827860503:AAF-U-0jCAdDyla6_8qSmo9Mlp2-xxqZrHI';
 
-/**
- * Validate if the token is available and formatted correctly
- */
 export async function checkConfig() {
-  const isPlaceholder = !BOT_TOKEN || 
-                        BOT_TOKEN === 'your_token_here' || 
-                        BOT_TOKEN.trim() === '' ||
-                        BOT_TOKEN.length < 20;
-
-  return !isPlaceholder;
+  return !!BOT_TOKEN && BOT_TOKEN !== 'your_token_here' && BOT_TOKEN.length > 20;
 }
 
-/**
- * Tests if the current token is valid by calling getMe
- */
 export async function testToken() {
   const isConfigured = await checkConfig();
-  if (!isConfigured) {
-    return { ok: false, description: "টোকেনটি এনভায়রনমেন্টে পাওয়া যায়নি।" };
-  }
-  
+  if (!isConfigured) return { ok: false, description: "Token Missing" };
   try {
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`, { cache: 'no-store' });
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error: any) {
-    return { ok: false, description: "টেলিগ্রাম সার্ভারে পৌঁছানো যাচ্ছে না।" };
+    return { ok: false, description: "Network Error" };
   }
 }
 
 export async function sendTelegramMessage(chatId: string, text: string, options: any = {}) {
   const isConfigured = await checkConfig();
   if (!isConfigured) return { ok: false, description: "Token Missing" };
-  
   try {
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -52,41 +35,28 @@ export async function sendTelegramMessage(chatId: string, text: string, options:
         ...options
       }),
     });
-    const result = await response.json();
-    return result;
+    return await response.json();
   } catch (error) {
     return { ok: false, description: "Network Error" };
   }
 }
 
-/**
- * Sets the Webhook with high priority.
- */
 export async function setTelegramWebhook(url: string) {
   const isConfigured = await checkConfig();
   if (!isConfigured) return { ok: false, description: "Token Missing" };
-  
+  const baseUrl = url.replace(/\/$/, "");
+  const webhookUrl = `${baseUrl}/api/telegram/webhook`;
   try {
-    // Force absolute URL and remove trailing slashes
-    const baseUrl = url.replace(/\/$/, "");
-    const webhookUrl = `${baseUrl}/api/telegram/webhook`;
-    
-    console.log(`>>> [GATEWAY] Setting Webhook: ${webhookUrl}`);
-    
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook?url=${webhookUrl}&drop_pending_updates=true`, {
       method: 'POST',
       cache: 'no-store'
     });
-    const result = await response.json();
-    return result;
+    return await response.json();
   } catch (error: any) {
     return { ok: false, description: error.message };
   }
 }
 
-/**
- * Generates a dynamic link based on the actual bot info.
- */
 export async function generateTelegramLink(userId: string) {
   const botInfo = await testToken();
   const botUsername = botInfo?.result?.username || 'Coolrubelbank2bot';
@@ -94,8 +64,33 @@ export async function generateTelegramLink(userId: string) {
 }
 
 export async function sendFinancialAlert(chatId: string, type: string, data: any) {
-  let text = `<b>🛰️ FINANCIAL DIRECTIVE</b>\n\n<b>Type:</b> ${type}\n<b>Amount:</b> ${data.amount}\n<b>Seal:</b> <code>${data.seal}</code>`;
+  const text = `<b>🛰️ FINANCIAL DIRECTIVE</b>\n\n<b>Type:</b> ${type}\n<b>Amount:</b> ${data.amount} ${data.currency || 'USD'}\n<b>Provider:</b> ${data.provider || 'Internal'}\n<b>Seal:</b> <code>${data.seal || data.id}</code>`;
   return await sendTelegramMessage(chatId, text);
+}
+
+export async function sendSecurityAlert(chatId: string, type: string, data: any) {
+  const text = `<b>⚠️ SECURITY ALERT</b>\n\n<b>Threat:</b> ${type}\n<b>Reason:</b> ${data.reason}\n<b>User:</b> <code>${data.userId}</code>\n<b>Seal:</b> <code>${data.seal}</code>`;
+  return await sendTelegramMessage(chatId, text);
+}
+
+/**
+ * Sends an interactive approval request for high-value transactions.
+ */
+export async function sendInteractiveAlert(chatId: string, dispatchId: string, amount: string) {
+  const text = `<b>🚨 HIGH-VALUE DISBURSEMENT</b>\n\nএকটি বড় পেমেন্ট অনুমোদনের জন্য পেন্ডিং আছে।\n\n<b>Amount:</b> ${amount}\n<b>ID:</b> <code>${dispatchId}</code>\n\nআপনি কি এই ট্রানজ্যাকশনটি অনুমোদন করতে চান?`;
+  
+  const options = {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: "✅ Approve Transaction", callback_data: `APPROVE_${dispatchId}` },
+          { text: "❌ Reject", callback_data: `REJECT_${dispatchId}` }
+        ]
+      ]
+    }
+  };
+  
+  return await sendTelegramMessage(chatId, text, options);
 }
 
 export async function sendSecureOTP(chatId: string, otp: string) {
@@ -103,9 +98,6 @@ export async function sendSecureOTP(chatId: string, otp: string) {
   return await sendTelegramMessage(chatId, text);
 }
 
-/**
- * Sends a pulse report (formatted text) to a specific Telegram chat.
- */
 export async function sendPulseReport(chatId: string, text: string) {
   return await sendTelegramMessage(chatId, text);
 }
