@@ -198,7 +198,7 @@ export default function CommunicationPlanePage() {
                             <div className="space-y-1">
                                <p className="text-xs font-bold text-white uppercase">Name Mismatch Check</p>
                                <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-                                  আপনার হোস্টিং ড্যাশবোর্ডে (Vercel) ভেরিয়েবলের নাম অবশ্যই <b>TELEGRAM_BOT_TOKEN</b> হতে হবে। কোনো অতিরিক্ত অক্ষর বা সংখ্যা (যেমন ...TOKEN1) থাকা যাবে না।
+                                  আপনার হোস্টিং ড্যাশবোর্ড-এ (Vercel/Firebase) ভেরিয়েবল-এর নাম অবশ্যই <b>TELEGRAM_BOT_TOKEN</b> হতে হবে। কোনো অতিরিক্ত অক্ষর বা সংখ্যা (যেমন ...TOKEN1) থাকা যাবে না।
                                </p>
                             </div>
                          </div>
