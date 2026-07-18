@@ -70,6 +70,7 @@ export default function FinancialIntelligence() {
   const [isDepositing, setIsDepositing] = useState(false);
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+  const [tgLink, setTgLink] = useState("");
 
   // Maintenance Check (Circuit Breaker - Moved to state to avoid hydration error)
   useEffect(() => {
@@ -91,6 +92,12 @@ export default function FinancialIntelligence() {
       tg.ready();
     }
   }, []);
+
+  useEffect(() => {
+    if (user?.uid) {
+      generateTelegramLink(user.uid).then(setTgLink);
+    }
+  }, [user?.uid]);
 
   const userRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: profile } = useDoc<any>(userRef);
@@ -276,7 +283,7 @@ export default function FinancialIntelligence() {
                   </div>
                </div>
                <Button asChild size="sm" className="bg-yellow-500 text-black font-bold text-[9px] uppercase h-8 px-4">
-                  <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">Link identity</a>
+                  <a href={tgLink} target="_blank" rel="noopener noreferrer">Link identity</a>
                </Button>
             </div>
           ) : (

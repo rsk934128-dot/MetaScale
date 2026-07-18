@@ -57,6 +57,7 @@ export default function SovereignControlPlane() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isUpdatingKillSwitch, setIsUpdatingKillSwitch] = useState(false);
   const [isSendingPulse, setIsSendingPulse] = useState(false);
+  const [tgLink, setTgLink] = useState("");
   const firestore = useFirestore();
   const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
@@ -75,6 +76,12 @@ export default function SovereignControlPlane() {
     return query(collection(firestore, 'ubil_events'), orderBy('timestamp', 'desc'), limit(10));
   }, [firestore, user]);
   const { data: remoteEvents } = useCollection<any>(ubilEventsQuery);
+
+  useEffect(() => {
+    if (user?.uid) {
+      generateTelegramLink(user.uid).then(setTgLink);
+    }
+  }, [user?.uid]);
 
   const handleSyncAllNodes = () => {
     setIsSyncing(true);
@@ -241,7 +248,7 @@ export default function SovereignControlPlane() {
                 </div>
               </div>
               <Button asChild size="sm" className="bg-yellow-500 text-black font-bold text-[9px] uppercase h-8 px-4">
-                <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
+                <a href={tgLink} target="_blank" rel="noopener noreferrer">
                   <MessageSquare className="mr-2 h-3 w-3" /> Bind Now
                 </a>
               </Button>

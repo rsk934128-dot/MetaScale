@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useUser, useFirestore, useDoc } from '@/firebase';
@@ -32,12 +33,13 @@ import {
   DialogTitle, 
   DialogDescription
 } from "@/components/ui/dialog";
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { doc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useKernel } from '@/components/kernel/KernelProvider';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { generateTelegramLink } from "@/lib/telegram";
 
 export default function ProfilePage() {
   const { user } = useUser();
@@ -49,9 +51,16 @@ export default function ProfilePage() {
   const [isSubmittingLimit, setIsSubmittingLimit] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [limitForm, setLimitForm] = useState({ requestedAmount: "", reason: "" });
+  const [tgLink, setTgLink] = useState("");
 
   const userRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: profile } = useDoc<any>(userRef);
+
+  useEffect(() => {
+    if (user?.uid) {
+      generateTelegramLink(user.uid).then(setTgLink);
+    }
+  }, [user?.uid]);
 
   const verificationDocs = [
     { id: 'p1', name: "Profile Picture", status: "APPROVED", date: "July 09, 2026", icon: ImageIcon },
