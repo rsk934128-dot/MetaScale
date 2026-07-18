@@ -1,6 +1,6 @@
 'use server';
 /**
- * NoorNexus Telegram Gateway Utility v3.5 (Resilient Handshake)
+ * NoorNexus Telegram Gateway Utility v4.0 (Force Handshake)
  * Handles communication with the Sovereign Bot.
  */
 
@@ -59,40 +59,6 @@ export async function sendTelegramMessage(chatId: string, text: string, options:
 }
 
 /**
- * Sends the Daily Integrity Pulse Report.
- */
-export async function sendPulseReport(chatId: string, reportText: string) {
-  return await sendTelegramMessage(chatId, reportText);
-}
-
-/**
- * Sends an alert with Interactive Approval Buttons.
- */
-export async function sendInteractiveAlert(chatId: string, transactionId: string, amount: string) {
-  const text = `<b>🚨 PENDING AUTHORIZATION</b>\n\nএকটি হাই-ভ্যালু লেনদেন শনাক্ত করা হয়েছে।\n\n<b>ID:</b> <code>${transactionId}</code>\n<b>Amount:</b> $${amount}\n\nআপনি কি এই লেনদেনটি এপ্রুভ করতে চান?`;
-  
-  const keyboard = {
-    inline_keyboard: [
-      [
-        { text: "✅ Approve", callback_data: `APPROVE_${transactionId}` },
-        { text: "❌ Reject", callback_data: `REJECT_${transactionId}` }
-      ]
-    ]
-  };
-
-  return await sendTelegramMessage(chatId, text, { reply_markup: keyboard });
-}
-
-/**
- * Generates a dynamic link based on the actual bot info.
- */
-export async function generateTelegramLink(userId: string) {
-  const botInfo = await testToken();
-  const botUsername = botInfo?.result?.username || 'Coolrubelbank2bot';
-  return `https://t.me/${botUsername}?start=${userId}`;
-}
-
-/**
  * Sets the Webhook with high priority.
  */
 export async function setTelegramWebhook(url: string) {
@@ -100,7 +66,12 @@ export async function setTelegramWebhook(url: string) {
   if (!isConfigured) return { ok: false, description: "Token Missing" };
   
   try {
-    const webhookUrl = `${url}/api/telegram/webhook`;
+    // Force absolute URL and remove trailing slashes
+    const baseUrl = url.replace(/\/$/, "");
+    const webhookUrl = `${baseUrl}/api/telegram/webhook`;
+    
+    console.log(`>>> [GATEWAY] Setting Webhook: ${webhookUrl}`);
+    
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook?url=${webhookUrl}&drop_pending_updates=true`, {
       method: 'POST',
       cache: 'no-store'
@@ -113,20 +84,16 @@ export async function setTelegramWebhook(url: string) {
 }
 
 /**
- * Specific Alert helpers
+ * Generates a dynamic link based on the actual bot info.
  */
-export async function sendFinancialAlert(chatId: string, type: 'LINK_CREATED' | 'SETTLED' | 'REMOTE_SETTLE_INIT', data: any) {
-  let text = "";
-  if (type === 'LINK_CREATED') {
-    text = `<b>🆕 NEW PAYMENT LINK GENERATED</b>\n\n<b>Brand:</b> ${data.brand}\n<b>Amount:</b> ${data.amount} ${data.currency}\n<b>🔗 Link:</b> <code>${data.url}</code>`;
-  } else if (type === 'SETTLED') {
-    text = `<b>✅ PAYMENT SETTLED (T+0)</b>\n\n<b>Amount:</b> ${data.amount} ${data.currency}\n<b>Seal:</b> <code>${data.seal}</code>`;
-  }
-  return await sendTelegramMessage(chatId, text);
+export async function generateTelegramLink(userId: string) {
+  const botInfo = await testToken();
+  const botUsername = botInfo?.result?.username || 'Coolrubelbank2bot';
+  return `https://t.me/${botUsername}?start=${userId}`;
 }
 
-export async function sendSecurityAlert(chatId: string, type: string, data: any) {
-  const text = `<b>🚨 SECURITY ALERT</b>\n\n<b>Type:</b> ${type}\n<b>User:</b> ${data.userId}\n<b>Seal:</b> <code>${data.seal}</code>`;
+export async function sendFinancialAlert(chatId: string, type: string, data: any) {
+  let text = `<b>🛰️ FINANCIAL DIRECTIVE</b>\n\n<b>Type:</b> ${type}\n<b>Amount:</b> ${data.amount}\n<b>Seal:</b> <code>${data.seal}</code>`;
   return await sendTelegramMessage(chatId, text);
 }
 

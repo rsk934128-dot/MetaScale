@@ -35,10 +35,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { analyzeCommunication } from "@/ai/flows/communication-intelligence";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { useUser, useFirestore, useDoc } from "@/firebase";
-import { generateTelegramLink, setTelegramWebhook, testToken } from "@/lib/telegram";
+import { generateTelegramLink, setTelegramWebhook, testToken, sendTelegramMessage } from "@/lib/telegram";
 import { doc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +47,7 @@ export default function CommunicationPlanePage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isWebhookLoading, setIsWebhookLoading] = useState(false);
   const [isTestingToken, setIsTestingToken] = useState(false);
+  const [isSendingTest, setIsSendingTest] = useState(false);
   const [tokenStatus, setTokenStatus] = useState<'IDLE' | 'ACTIVE' | 'FAILED'>('IDLE');
   const [botInfo, setBotInfo] = useState<any>(null);
   const [tgLink, setTgLink] = useState("");
@@ -76,7 +76,6 @@ export default function CommunicationPlanePage() {
       } else {
         setTokenStatus('FAILED');
         toast({ variant: "destructive", title: "Gateway Dead", description: res.description || "টোকেনটি অবৈধ বা এনভায়রনমেন্টে পাওয়া যায়নি।" });
-        emitEvent('SECURITY', 'TELEGRAM_TOKEN_INVALID', 1, { error: res.description });
       }
     } catch (err) {
       setTokenStatus('FAILED');
@@ -94,18 +93,37 @@ export default function CommunicationPlanePage() {
         toast({ title: "Webhook Secured", description: "টেলিগ্রাম বটের সাথে সোভারেন কার্নেলের সিঙ্ক সফল হয়েছে।" });
         emitEvent('SECURITY', 'WEBHOOK_SYNC_SUCCESS', 2, { status: 'CONNECTED' });
       } else {
-        const errorDesc = res?.description || "Unauthorized (Check Vercel Deployment Protection)";
-        toast({ 
-          variant: "destructive", 
-          title: "Webhook Failed", 
-          description: errorDesc
-        });
-        emitEvent('SECURITY', 'WEBHOOK_SYNC_FAILED', 1, { reason: errorDesc });
+        const errorDesc = res?.description || "Unauthorized (Check Deployment Settings)";
+        toast({ variant: "destructive", title: "Webhook Failed", description: errorDesc });
       }
     } catch (err) {
       toast({ variant: "destructive", title: "Connection Error", description: "প্রোটোকল হ্যান্ডশেক রিজেক্ট করা হয়েছে।" });
     } finally {
       setIsWebhookLoading(false);
+    }
+  };
+
+  const handleSendTestMessage = async () => {
+    if (!profile?.telegramChatId) {
+      toast({ variant: "destructive", title: "Identity Not Linked", description: "প্রথমে 'Link identity' বাটন ব্যবহার করে বটের সাথে যুক্ত হোন।" });
+      return;
+    }
+
+    setIsSendingTest(true);
+    try {
+      const res = await sendTelegramMessage(
+        profile.telegramChatId, 
+        "<b>🛰️ TEST SIGNAL</b>\n\nসোভারেন কার্নেল থেকে এই মেসেজটি আপনার কাছে পৌঁছেছে। আপনার কমিউনিকেশন গেটওয়ে এখন পুরোপুরি কার্যকর।"
+      );
+      if (res.ok) {
+        toast({ title: "Signal Dispatched", description: "আপনার টেলিগ্রামে একটি টেস্ট মেসেজ পাঠানো হয়েছে।" });
+      } else {
+        toast({ variant: "destructive", title: "Signal Failed", description: res.description });
+      }
+    } catch (e) {
+      toast({ variant: "destructive", title: "Network Exception" });
+    } finally {
+      setIsSendingTest(false);
     }
   };
 
@@ -134,7 +152,6 @@ export default function CommunicationPlanePage() {
         <main className="flex-1 p-8 max-w-[1400px] mx-auto w-full space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-8 space-y-8">
-              {/* Configuration Status Card */}
               <Card className="glass-panel border-l-4 border-l-primary bg-primary/5 overflow-hidden">
                 <CardHeader>
                   <CardTitle className="text-xl font-headline italic uppercase tracking-tighter flex items-center gap-3 text-white">
@@ -189,54 +206,6 @@ export default function CommunicationPlanePage() {
                 </CardContent>
               </Card>
 
-              {/* Troubleshooting Manual */}
-              <Card className="glass-panel border-white/5 bg-secondary/10 overflow-hidden">
-                <CardHeader className="bg-white/5 border-b border-white/5">
-                   <CardTitle className="text-xs uppercase flex items-center gap-2 text-white/70 tracking-widest">
-                      <HelpCircle className="h-4 w-4 text-accent" />
-                      Troubleshooting Manual (নির্দেশিকা)
-                   </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 space-y-6">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-4">
-                         <div className="flex items-start gap-4">
-                            <div className="h-6 w-6 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xs shrink-0">1</div>
-                            <div className="space-y-1">
-                               <p className="text-xs font-bold text-white uppercase">Name Mismatch Check</p>
-                               <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-                                  আপনার হোস্টিং ড্যাশবোর্ড-এ (Vercel/Firebase) ভেরিয়েবল-এর নাম অবশ্যই <b>TELEGRAM_BOT_TOKEN</b> হতে হবে। কোনো অতিরিক্ত অক্ষর বা সংখ্যা থাকা যাবে না।
-                               </p>
-                            </div>
-                         </div>
-                         <div className="flex items-start gap-4">
-                            <div className="h-6 w-6 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xs shrink-0">2</div>
-                            <div className="space-y-1">
-                               <p className="text-xs font-bold text-white uppercase">Redeploy Requirement</p>
-                               <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-                                  ভেরিয়েবল সেট করার পর অবশ্যই প্রজেক্টটি একবার <b>Redeploy</b> করতে হবে। রি-ডেপ্লয় না করলে সার্ভার নতুন টোকেনটি চিনতে পারবে না।
-                               </p>
-                            </div>
-                         </div>
-                      </div>
-
-                      <div className="p-5 rounded-2xl bg-red-500/5 border border-red-500/20 space-y-4">
-                         <div className="flex items-center gap-2 text-red-400">
-                            <ShieldAlert className="h-4 w-4" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Critical Security Alert</span>
-                         </div>
-                         <p className="text-[11px] text-white/80 italic leading-relaxed">
-                            "আপনার বটের সিক্রেট টোকেনটি প্রোটেক্টেড রাখুন। এটি আপনার কার্নেলের মেইন চাবিকাঠি।"
-                         </p>
-                         <div className="pt-2">
-                            <Badge variant="outline" className="border-red-500/30 text-red-400 text-[8px] uppercase">Always Keep Tokens Private</Badge>
-                         </div>
-                      </div>
-                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Telegram Gateway Section */}
               <Card className="glass-panel border-l-4 border-l-accent bg-accent/5 overflow-hidden">
                 <CardHeader>
                   <CardTitle className="text-xl font-headline italic uppercase tracking-tighter flex items-center gap-3 text-white">
@@ -258,11 +227,13 @@ export default function CommunicationPlanePage() {
                       {isWebhookLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
                       Establish Secure Webhook
                     </Button>
-                    <Button asChild variant="outline" className="flex-1 h-14 border-white/10 font-bold uppercase tracking-widest text-[10px]">
-                      <a href={tgLink} target="_blank" rel="noopener noreferrer">
-                        <Zap className="mr-2 h-4 w-4 text-accent" />
-                        Link Identity to Bot
-                      </a>
+                    <Button 
+                      className="flex-1 h-14 bg-secondary text-white font-bold uppercase tracking-widest text-[10px] border border-white/10"
+                      onClick={handleSendTestMessage}
+                      disabled={isSendingTest || !profile?.telegramChatId}
+                    >
+                      {isSendingTest ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                      Send Test Signal
                     </Button>
                   </div>
                 </CardContent>
@@ -270,6 +241,40 @@ export default function CommunicationPlanePage() {
             </div>
 
             <div className="lg:col-span-4 space-y-6">
+              <Card className="glass-panel border-white/5 bg-secondary/10 overflow-hidden">
+                <CardHeader className="bg-white/5 border-b border-white/5">
+                   <CardTitle className="text-xs uppercase flex items-center gap-2 text-white/70 tracking-widest">
+                      <HelpCircle className="h-4 w-4 text-accent" />
+                      Configuration Guide
+                   </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-6">
+                   <div className="space-y-4">
+                      <div className="flex items-start gap-4">
+                         <div className="h-6 w-6 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xs shrink-0">1</div>
+                         <div className="space-y-1">
+                            <p className="text-xs font-bold text-white uppercase">Privacy Mode: OFF</p>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">
+                               বটফাদার-এ গিয়ে <b>Group Privacy</b> অবশ্যই <b>Disabled</b> থাকতে হবে।
+                            </p>
+                         </div>
+                      </div>
+                      <div className="flex items-start gap-4">
+                         <div className="h-6 w-6 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xs shrink-0">2</div>
+                         <div className="space-y-1">
+                            <p className="text-xs font-bold text-white uppercase">Redeploy Mandatory</p>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">
+                               টোকেন পরিবর্তন করার পর অবশ্যই একবার <b>Redeploy</b> করতে হবে।
+                            </p>
+                         </div>
+                      </div>
+                   </div>
+                   <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 text-[10px] text-red-400 font-bold uppercase text-center">
+                      ! Localhost is not supported for webhooks
+                   </div>
+                </CardContent>
+              </Card>
+
               <Card className="glass-panel border-white/5">
                 <CardHeader className="p-4 border-b border-white/5 bg-white/5">
                   <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-widest text-white">
@@ -287,9 +292,6 @@ export default function CommunicationPlanePage() {
                       <p className={cn(profile?.telegramLinked ? "text-green-400" : "text-white/40")}>
                         &gt; Identity Bound: {profile?.telegramLinked ? "YES" : "NO"}
                       </p>
-                      <div className="p-3 rounded border border-accent/20 bg-accent/5 text-accent italic leading-relaxed mt-4">
-                         "মনে রাখবেন: ভেরিয়েবল সেভ করার পর অবশ্যই একবার <b>REDEPLOY</b> বাটনে ক্লিক করতে হবে।"
-                      </div>
                    </div>
                 </CardContent>
               </Card>

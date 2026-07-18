@@ -4,8 +4,8 @@ import { doc, updateDoc, getDoc, collection, addDoc } from 'firebase/firestore';
 import { sendTelegramMessage } from '@/lib/telegram';
 
 /**
- * Telegram Webhook Handler v3.5 (Handshake Fixed)
- * Handles incoming signals and forces immediate response.
+ * Telegram Webhook Handler v4.0 (Force Handshake)
+ * Processes all incoming telegram updates and forces responses.
  */
 export async function POST(req: Request) {
   try {
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    // 1. Log incoming signal for the Hunter Mode Live Feed
+    // 1. Log incoming signal
     await addDoc(collection(firestore, 'events'), {
       type: 'TELEGRAM_SIGNAL_RECEIVED',
       plane: 'SECURITY',
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       status: 'PROCESSING'
     });
 
-    // 2. Handle Callback Queries (Approve/Reject)
+    // 2. Handle Callback Queries
     if (body.callback_query) {
       const { data, from } = body.callback_query;
       const chatId = from.id.toString();
@@ -75,19 +75,12 @@ export async function POST(req: Request) {
         });
 
         await sendTelegramMessage(chatId, `<b>✅ IDENTITY STABILIZED</b>\n\nCitizen: ${userSnap.data().displayName}\n\nআপনার একাউন্টটি এখন সোভারেন কার্নেলের সাথে সফলভাবে লিঙ্কড। (Node-04)`);
-        
-        // Log stabilization
-        await addDoc(collection(firestore, 'events'), {
-          type: 'HANDSHAKE_STABILIZED',
-          plane: 'SECURITY',
-          priority: 2,
-          timestamp: Date.now(),
-          payload: { userId, method: 'ECC_ED25519' },
-          status: 'COMPLETED'
-        });
       }
     } else if (text === '/status') {
       await sendTelegramMessage(chatId, "<b>SYSTEM STATUS: NOMINAL</b>\n\nMesh Health: 100%\nNodes: 42/42 Active\nLatency: 8.4ms");
+    } else {
+      // Catch-all response for unknown commands
+      await sendTelegramMessage(chatId, "<b>🛰️ Sovereign Kernel Terminal</b>\n\nসাপোর্ট করা কমান্ডসমূহ:\n/start - আইডেন্টিটি লিঙ্ক\n/status - সিস্টেম হেলথ চেক");
     }
 
     return NextResponse.json({ ok: true });
