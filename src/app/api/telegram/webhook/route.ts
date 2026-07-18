@@ -4,7 +4,7 @@ import { doc, updateDoc, getDoc, collection, setDoc, addDoc } from 'firebase/fir
 import { sendTelegramMessage } from '@/lib/telegram';
 
 /**
- * Telegram Webhook Handler v2.2 (Stability Enhanced)
+ * Telegram Webhook Handler v3.0 (Stabilized)
  * Handles remote authorization signals and logs config failures to Kernel.
  */
 export async function POST(req: Request) {
@@ -34,6 +34,20 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
+
+    // Log the raw signal for forensic auditing
+    await addDoc(collection(firestore, 'events'), {
+      type: 'TELEGRAM_SIGNAL_RECEIVED',
+      plane: 'SECURITY',
+      priority: 4,
+      timestamp: Date.now(),
+      payload: { 
+        hasCallback: !!body.callback_query,
+        hasMessage: !!body.message,
+        from: body.message?.from?.username || body.callback_query?.from?.username || 'ANON'
+      },
+      status: 'PROCESSING'
+    });
 
     // 1. Handle Callback Queries (Approve/Reject)
     if (body.callback_query) {
@@ -90,7 +104,20 @@ export async function POST(req: Request) {
           telegramLinked: true, 
           updatedAt: Date.now()
         });
+
+        // Log successful binding to Kernel
+        await addDoc(collection(firestore, 'events'), {
+          type: 'HANDSHAKE_STABILIZED',
+          plane: 'SECURITY',
+          priority: 2,
+          timestamp: Date.now(),
+          payload: { userId, chatId, method: 'ECC_ED25519' },
+          status: 'COMPLETED'
+        });
+
         await sendTelegramMessage(chatId, `<b>✅ IDENTITY BOUND</b>\n\nCitizen: ${userSnap.data().displayName}\n\nআপনার মোবাইল নোড এখন সোভারেন কার্নেলের সাথে সিঙ্কড।`);
+      } else {
+         console.error(`>>> [HANDSHAKE_FAIL] User not found: ${userId}`);
       }
     } else if (text === '/status') {
       await sendTelegramMessage(chatId, "<b>SYSTEM STATUS: NOMINAL</b>\n\nMesh Health: 100%\nHunter Mode: ACTIVE\nKill Switch: READY");

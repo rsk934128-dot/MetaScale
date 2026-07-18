@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -34,6 +33,8 @@ import {
   Power,
   Sparkles,
   Bot,
+  Radar as RadarIcon,
+  Flame,
   MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,13 +51,14 @@ import { YieldFlow } from "@/components/charts/YieldFlow";
 import { HunterStream } from "@/components/dashboard/HunterStream";
 import { useToast } from "@/hooks/use-toast";
 import { generateDailyPulse } from "@/ai/flows/daily-integrity-report-flow";
-import { sendPulseReport, generateTelegramLink } from "@/lib/telegram";
+import { sendPulseReport, generateTelegramLink, setTelegramWebhook } from "@/lib/telegram";
 
 export default function SovereignControlPlane() {
   const { mode, setSystemMode, events, emitEvent, heartbeat, isAutonomousActive, startAutonomousWorker } = useKernel();
   const [isSyncing, setIsSyncing] = useState(false);
   const [isUpdatingKillSwitch, setIsUpdatingKillSwitch] = useState(false);
   const [isSendingPulse, setIsSendingPulse] = useState(false);
+  const [isSyncingWebhook, setIsSyncingWebhook] = useState(false);
   const [tgLink, setTgLink] = useState("");
   const firestore = useFirestore();
   const { user, loading: authLoading } = useUser();
@@ -67,8 +69,8 @@ export default function SovereignControlPlane() {
   const { data: systemConfig } = useDoc<any>(configRef);
 
   // User profile fetch - only when user is logged in
-  const userProfileRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
-  const { data: userProfile } = useDoc<any>(userProfileRef);
+  const userRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
+  const { data: userProfile } = useDoc<any>(userRef);
 
   // Events fetch - only when auth is stable
   const ubilEventsQuery = useMemo(() => {
@@ -89,6 +91,23 @@ export default function SovereignControlPlane() {
     setTimeout(() => {
       setIsSyncing(false);
     }, 2000);
+  };
+
+  const handleEstablishWebhook = async () => {
+    setIsSyncingWebhook(true);
+    try {
+      const origin = window.location.origin;
+      const res = await setTelegramWebhook(origin);
+      if (res?.ok) {
+        toast({ title: "Webhook Stabilized", description: "সার্ভার এখন বটের সাথে কানেক্টেড।" });
+      } else {
+        toast({ variant: "destructive", title: "Sync Failed", description: res?.description || "Check configuration." });
+      }
+    } catch (e) {
+      toast({ variant: "destructive", title: "Handshake Error" });
+    } finally {
+      setIsSyncingWebhook(false);
+    }
   };
 
   const handleDispatchPulse = async () => {
@@ -239,7 +258,7 @@ export default function SovereignControlPlane() {
         <main className="flex-1 space-y-6 p-4 md:p-8 w-full max-w-none">
           {/* Proactive Gateway Linking Alert */}
           {userProfile && !userProfile.telegramLinked && (
-            <div className="p-4 rounded-2xl bg-yellow-500/10 border-2 border-yellow-500/30 flex items-center justify-between gap-4 animate-pulse shadow-2xl">
+            <div className="p-4 rounded-2xl bg-yellow-500/10 border-2 border-yellow-500/30 flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse shadow-2xl">
               <div className="flex items-center gap-4">
                 <ShieldAlert className="h-8 w-8 text-yellow-500" />
                 <div className="space-y-1">
@@ -247,11 +266,23 @@ export default function SovereignControlPlane() {
                   <p className="text-[10px] text-yellow-500/80 italic">"সিস্টেম ডিরেক্টিভস পাওয়ার জন্য আপনার টেলিগ্রাম লিঙ্ক করা জরুরি।"</p>
                 </div>
               </div>
-              <Button asChild size="sm" className="bg-yellow-500 text-black font-bold text-[9px] uppercase h-8 px-4">
-                <a href={tgLink} target="_blank" rel="noopener noreferrer">
-                  <MessageSquare className="mr-2 h-3 w-3" /> Bind Now
-                </a>
-              </Button>
+              <div className="flex gap-3">
+                <Button 
+                   variant="outline" 
+                   size="sm" 
+                   className="border-white/10 text-[9px] uppercase font-bold"
+                   onClick={handleEstablishWebhook}
+                   disabled={isSyncingWebhook}
+                >
+                   {isSyncingWebhook ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Globe className="mr-2 h-3 w-3" />}
+                   Sync Webhook
+                </Button>
+                <Button asChild size="sm" className="bg-yellow-500 text-black font-bold text-[9px] uppercase h-8 px-4">
+                  <a href={tgLink || "#"} target="_blank" rel="noopener noreferrer">
+                    <MessageSquare className="mr-2 h-3 w-3" /> Bind Now
+                  </a>
+                </Button>
+              </div>
             </div>
           )}
 

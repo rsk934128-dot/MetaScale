@@ -1,11 +1,12 @@
 'use server';
 /**
- * NoorNexus Telegram Gateway Utility v2.5 (Server Action Layer)
+ * NoorNexus Telegram Gateway Utility v3.0 (Sovereign Stabilization)
  * Handles communication with @Coolrubelbank2bot
  * Optimized for secure server-side execution of Telegram API calls.
  */
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const BOT_NAME = 'Coolrubelbank2bot';
 
 /**
  * Validate if the token is available and formatted correctly
@@ -170,7 +171,8 @@ export async function sendInteractiveAlert(chatId: string, transactionId: string
 }
 
 export async function generateTelegramLink(userId: string) {
-  return `https://t.me/Coolrubelbank2bot?start=${userId}`;
+  // Directly returns the link for the bot
+  return `https://t.me/${BOT_NAME}?start=${userId}`;
 }
 
 export async function setTelegramWebhook(url: string) {
