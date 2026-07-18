@@ -2,6 +2,13 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // 1. TOP PRIORITY: System Configuration (Publicly Readable for Heartbeat)
+    match /system/config {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -22,13 +29,13 @@ service cloud.firestore {
       return isMasterAdmin();
     }
 
-    // System Configuration Rules (Top Priority for Heartbeat)
-    match /system/{configId} {
-      allow read: if true; 
+    // Catch-all for other system documents if any
+    match /system/{any} {
+      allow read: if true;
       allow write: if isAdmin();
     }
 
-    // User Profile Rules
+    // 2. User Profile Rules
     match /users/{userId} {
       allow read: if isAuthenticated(); 
       allow create: if isOwner(userId);
@@ -47,7 +54,7 @@ service cloud.firestore {
       match /linked_banks/{bank} { allow read, write: if isOwner(userId) || isAdmin(); }
     }
 
-    // SMS Signals (Mobile Interception)
+    // 3. Operational Signal Rules
     match /sms_signals/{signalId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated(); 
@@ -91,7 +98,7 @@ service cloud.firestore {
 
     match /events/{event} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
+      allow create: if true;
     }
 
     match /civic/emergencies/active/{emergency} {

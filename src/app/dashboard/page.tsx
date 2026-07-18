@@ -58,15 +58,18 @@ export default function SovereignControlPlane() {
   const [isUpdatingKillSwitch, setIsUpdatingKillSwitch] = useState(false);
   const [isSendingPulse, setIsSendingPulse] = useState(false);
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
 
-  const configRef = useMemo(() => (firestore && user) ? doc(firestore, 'system', 'config') : null, [firestore, user]);
+  // Guarded config fetch - system/config is public but we wait for firestore init
+  const configRef = useMemo(() => (firestore) ? doc(firestore, 'system', 'config') : null, [firestore]);
   const { data: systemConfig } = useDoc<any>(configRef);
 
+  // User profile fetch - only when user is logged in
   const userProfileRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: userProfile } = useDoc<any>(userProfileRef);
 
+  // Events fetch - only when auth is stable
   const ubilEventsQuery = useMemo(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'ubil_events'), orderBy('timestamp', 'desc'), limit(10));

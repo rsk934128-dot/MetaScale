@@ -88,7 +88,8 @@ export default function RootLayout({
                   'Missing or insufficient permissions',
                   'Fe\":-1',
                   'WatchChangeAggregator',
-                  'TON_CONNECT_SDK'
+                  'TON_CONNECT_SDK',
+                  'system/config'
                 ];
 
                 const isIgnored = (msg) => {
