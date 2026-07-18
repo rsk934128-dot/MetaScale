@@ -16,6 +16,12 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
     }
 
+    // System Configuration Rules
+    match /system/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
     // User Profile Rules
     match /users/{userId} {
       allow read: if isAuthenticated(); 

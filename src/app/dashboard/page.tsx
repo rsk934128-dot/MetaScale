@@ -112,7 +112,7 @@ export default function SovereignControlPlane() {
   };
 
   const toggleKillSwitch = async () => {
-    if (!firestore) return;
+    if (!firestore || !user) return;
     setIsUpdatingKillSwitch(true);
     
     const nextMaintenanceState = !systemConfig?.maintenance;
@@ -121,12 +121,14 @@ export default function SovereignControlPlane() {
       await setDoc(doc(firestore, 'system', 'config'), { 
         maintenance: nextMaintenanceState,
         updatedAt: Date.now(),
-        updatedBy: 'IMPERIAL_OVERRIDE'
+        updatedBy: user.email || user.uid,
+        source: 'DASHBOARD_OVERRIDE'
       }, { merge: true });
 
       emitEvent('SECURITY', 'KILL_SWITCH_TRIGGERED', 1, { 
         active: nextMaintenanceState,
-        priority: 'CRITICAL'
+        priority: 'CRITICAL',
+        authorizedBy: user.email
       });
 
       toast({
@@ -134,8 +136,13 @@ export default function SovereignControlPlane() {
         description: nextMaintenanceState ? "All payment gateways are now isolated." : "Global rails are back online.",
         variant: nextMaintenanceState ? "destructive" : "default"
       });
-    } catch (err) {
-      toast({ variant: "destructive", title: "Override Failed" });
+    } catch (err: any) {
+      console.error("Override Error:", err);
+      toast({ 
+        variant: "destructive", 
+        title: "Override Failed", 
+        description: err.code === 'permission-denied' ? "Permission Denied: Admin role required." : "Signal interrupted." 
+      });
     } finally {
       setIsUpdatingKillSwitch(false);
     }
