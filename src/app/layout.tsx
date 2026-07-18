@@ -18,8 +18,8 @@ import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Sovereign OS | Global Fintech & Civic Infrastructure',
-  description: 'FusionPay Sovereign OS provides deterministic infrastructure for global settlements, civic intelligence, and AI-native financial mesh. Resilient to hydrological stressors in regions like Sirajganj.',
-  keywords: ['Fintech', 'Sovereign OS', 'Global Payout', 'AI Banking', 'ISO 20022', 'NoorNexus', 'Sirajganj', 'Hydrological Resilience'],
+  description: 'FusionPay Sovereign OS provides deterministic infrastructure for global settlements, civic intelligence, and AI-native financial mesh.',
+  keywords: ['Fintech', 'Sovereign OS', 'Global Payout', 'AI Banking', 'ISO 20022', 'NoorNexus'],
   authors: [{ name: 'Sheikh Farid', url: 'https://noornexus.com' }],
   openGraph: {
     title: 'Sovereign OS | Deterministic Infrastructure',
@@ -33,9 +33,6 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Sovereign OS',
-  },
-  formatDetection: {
-    telephone: false,
   },
 };
 
@@ -62,12 +59,7 @@ export default function RootLayout({
       "@type": "Organization",
       "name": "NoorNexus"
     },
-    "offers": {
-      "@type": "Offer",
-      "price": "0.00",
-      "priceCurrency": "USD"
-    },
-    "description": "Deterministic financial engine for global settlements, remote imperial control via Telegram, and resilient civic infrastructure management."
+    "description": "Deterministic financial engine for global settlements and remote imperial control."
   };
 
   return (
@@ -92,14 +84,11 @@ export default function RootLayout({
                   'Unexpected state',
                   'b815',
                   'ca9',
+                  'permission-denied',
+                  'Missing or insufficient permissions',
                   'Fe\":-1',
                   'WatchChangeAggregator',
-                  'WatchStream',
-                  'PersistentListenStream',
-                  'TON_CONNECT_SDK',
-                  'Failed to send analytics events',
-                  'auth/network-request-failed',
-                  'TypeError: Failed to fetch'
+                  'TON_CONNECT_SDK'
                 ];
 
                 const isIgnored = (msg) => {
@@ -114,13 +103,6 @@ export default function RootLayout({
                   const combined = args.map(arg => String(arg)).join(' ');
                   if (isIgnored(combined)) return;
                   originalError.apply(console, args);
-                };
-
-                const originalWarn = console.warn;
-                console.warn = (...args) => {
-                  const combined = args.map(arg => String(arg)).join(' ');
-                  if (isIgnored(combined)) return;
-                  originalWarn.apply(console, args);
                 };
 
                 window.addEventListener('error', (event) => {
@@ -150,36 +132,6 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-
-        <Script id="google-consent-mode" strategy="beforeInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            
-            gtag('consent', 'default', {
-              'ad_storage': 'denied',
-              'ad_user_data': 'denied',
-              'ad_personalization': 'denied',
-              'analytics_storage': 'denied',
-              'wait_for_update': 500
-            });
-          `}
-        </Script>
-
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-N53RC4L541"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-N53RC4L541', {
-              page_path: window.location.pathname,
-            });
-          `}
-        </Script>
       </head>
       <body className="font-body antialiased bg-background text-foreground" suppressHydrationWarning={true}>
         <FirebaseClientProvider>

@@ -75,13 +75,37 @@ export default function LoginPage() {
     }
   };
 
-  const updateOnlineStatus = async (uid: string) => {
+  const syncUserIdentity = async (uid: string, email: string | null, displayName: string | null) => {
     if (!firestore) return;
+    const isAdmin = email === ADMIN_EMAIL;
     const userRef = doc(firestore, 'users', uid);
-    await updateDoc(userRef, {
+    
+    const userSnap = await getDoc(userRef);
+    const updateData: any = {
+      uid: uid,
+      displayName: displayName || userSnap.data()?.displayName,
+      email: email,
       lastLogin: Date.now(),
-      isOnline: true
-    }).catch(() => {});
+      isOnline: true,
+    };
+
+    if (isAdmin) {
+      updateData.role = 'ADMIN';
+    }
+
+    if (!userSnap.exists()) {
+      updateData.kernelId = `SKO-${uid.substring(0, 6).toUpperCase()}`;
+      updateData.teamId = DEFAULT_TEAM_ID;
+      updateData.accountNumber = generateAccountNumber();
+      updateData.balance = 1000;
+      updateData.trustScore = 85.0;
+      updateData.verificationStatus = 'UNVERIFIED';
+      updateData.role = isAdmin ? 'ADMIN' : 'CITIZEN';
+      updateData.plan = 'FREE';
+      updateData.createdAt = serverTimestamp();
+    }
+
+    await setDoc(userRef, updateData, { merge: true });
   };
 
   const handleGoogleLogin = async () => {
@@ -94,57 +118,15 @@ export default function LoginPage() {
     try {
       const result = await signInWithPopup(auth, provider);
       if (result.user) {
-        const isAdmin = result.user.email === ADMIN_EMAIL;
-        const userRef = doc(firestore, 'users', result.user.uid);
-        
-        const userSnap = await getDoc(userRef);
-        const userData = {
-          uid: result.user.uid,
-          displayName: result.user.displayName,
-          email: result.user.email,
-          kernelId: `SKO-${result.user.uid.substring(0, 6).toUpperCase()}`,
-          teamId: DEFAULT_TEAM_ID,
-          lastLogin: Date.now(),
-          isOnline: true,
-          role: isAdmin ? 'ADMIN' : 'CITIZEN',
-          plan: 'FREE',
-          ...(userSnap.exists() ? {} : { 
-            accountNumber: generateAccountNumber(), 
-            balance: 1000,
-            trustScore: 85.0,
-            verificationStatus: 'UNVERIFIED'
-          })
-        };
-
-        await setDoc(userRef, userData, { merge: true });
+        await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
         toast({ title: "Identity Bound", description: "Sovereign Mesh link established successfully." });
         router.replace('/dashboard');
       }
     } catch (error: any) {
       if (error.code === 'auth/network-request-failed') {
-        toast({
-          variant: "destructive",
-          title: "Network Failed",
-          description: "সার্ভারে কানেক্ট করা যাচ্ছে না। আপনার ইন্টারনেট সংযোগ যাচাই করুন।",
-        });
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        toast({
-          title: "Sign-in Cancelled",
-          description: "লগইন পপআপটি বন্ধ করা হয়েছে।",
-        });
-      } else if (error.code === 'auth/popup-blocked') {
-        toast({
-          variant: "destructive",
-          title: "Popup Blocked",
-          description: "আপনার ব্রাউজার পপআপ ব্লক করেছে। সেটিংস চেক করুন অথবা ইমেইল দিয়ে লগইন করুন।",
-        });
+        toast({ variant: "destructive", title: "Network Failed", description: "সার্ভারে কানেক্ট করা যাচ্ছে না।" });
       } else {
-        console.error("Auth Error:", error);
-        toast({ 
-          variant: "destructive", 
-          title: "Auth Failed", 
-          description: getAuthErrorMessage(error.code) 
-        });
+        toast({ variant: "destructive", title: "Auth Failed", description: getAuthErrorMessage(error.code) });
       }
     } finally {
       setIsLoading(false);
@@ -158,28 +140,7 @@ export default function LoginPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: name });
-      
-      const isAdmin = email === ADMIN_EMAIL;
-      const userRef = doc(firestore, 'users', userCredential.user.uid);
-      const userData = {
-        uid: userCredential.user.uid,
-        displayName: name,
-        email: email,
-        mobile: mobile,
-        kernelId: `SKO-${userCredential.user.uid.substring(0, 6).toUpperCase()}`,
-        teamId: DEFAULT_TEAM_ID,
-        accountNumber: generateAccountNumber(),
-        balance: 1000.00,
-        role: isAdmin ? 'ADMIN' : 'CITIZEN',
-        plan: 'FREE',
-        trustScore: 85.0,
-        verificationStatus: 'UNVERIFIED',
-        createdAt: serverTimestamp(),
-        lastLogin: Date.now(),
-        isOnline: true,
-      };
-
-      await setDoc(userRef, userData);
+      await syncUserIdentity(userCredential.user.uid, email, name);
       toast({ title: "Protocol Established", description: "কার্নেল আইডেন্টিটি তৈরি হয়েছে।" });
       router.push('/dashboard');
     } catch (error: any) {
@@ -195,7 +156,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const res = await signInWithEmailAndPassword(auth, email, password);
-      await updateOnlineStatus(res.user.uid);
+      await syncUserIdentity(res.user.uid, res.user.email, res.user.displayName);
       toast({ title: "Access Granted", description: "ডিটারমিনিস্টিক লিঙ্ক সফলভাবে তৈরি হয়েছে।" });
       router.push('/dashboard');
     } catch (error: any) {
@@ -212,7 +173,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full bg-background flex items-center justify-center p-4 md:p-10 relative overflow-hidden">
-      {/* Back Button */}
       <div className="absolute top-4 left-4 md:top-8 md:left-8 z-50">
         <Button asChild variant="ghost" className="text-muted-foreground hover:text-accent transition-colors">
           <Link href="/">
@@ -241,7 +201,7 @@ export default function LoginPage() {
              <div className="space-y-1">
                 <p className="text-[11px] font-bold text-white uppercase">Telegram Mini App Detected</p>
                 <p className="text-[10px] text-white/80 leading-relaxed italic">
-                  পপআপ ব্লকিং এড়াতে সরাসরি <b>Email & Password</b> ব্যবহার করা নিরাপদ। গুগল লগইন কাজ না করলে এটি ব্যবহার করুন।
+                  পপআপ ব্লকিং এড়াতে সরাসরি <b>Email & Password</b> ব্যবহার করা নিরাপদ।
                 </p>
              </div>
           </div>
