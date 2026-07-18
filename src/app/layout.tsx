@@ -70,6 +70,12 @@ export default function RootLayout({
             __html: `
               (function() {
                 const ignoredPatterns = [
+                  'TON_CONNECT_SDK',
+                  'TonConnectError',
+                  'TON_CONNECT_SDK_ERROR',
+                  'Failed to send analytics events',
+                  'TypeError: Failed to fetch',
+                  'Unknown analytics API error',
                   'MetaMask', 
                   'nkbihfbeogaeaoehlefnkodbefgpgknn',
                   'failed to connect',
@@ -88,11 +94,6 @@ export default function RootLayout({
                   'Missing or insufficient permissions',
                   'Fe\":-1',
                   'WatchChangeAggregator',
-                  'TON_CONNECT_SDK',
-                  'TonConnectError',
-                  'TON_CONNECT_SDK_ERROR',
-                  'Failed to send analytics events',
-                  'TypeError: Failed to fetch',
                   'system/config'
                 ];
 
@@ -119,6 +120,19 @@ export default function RootLayout({
                   }).join(' ');
                   if (isIgnored(combined)) return;
                   originalError.apply(console, args);
+                };
+
+                const originalWarn = console.warn;
+                console.warn = (...args) => {
+                  const combined = args.map(arg => {
+                    try {
+                      return typeof arg === 'string' ? arg : JSON.stringify(arg);
+                    } catch (e) {
+                      return String(arg);
+                    }
+                  }).join(' ');
+                  if (isIgnored(combined)) return;
+                  originalWarn.apply(console, args);
                 };
 
                 window.addEventListener('error', (event) => {
