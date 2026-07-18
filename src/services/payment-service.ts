@@ -7,7 +7,11 @@ import {
   getDoc,
   collection,
   addDoc,
-  updateDoc
+  updateDoc,
+  query,
+  where,
+  getDocs,
+  limit
 } from 'firebase/firestore';
 import { NormalizedPaymentEvent, InboundPaymentDoc, PaymentStatus, SettlementBucket } from '@/lib/payments/types';
 import { runPredictiveAnalysis } from '@/ai/flows/predictive-anomaly-analysis';
@@ -15,8 +19,46 @@ import { sendFinancialAlert, sendSecurityAlert } from '@/lib/telegram';
 
 /**
  * Core Domain Service: Atomic Payment Credit Logic
- * Updated v2.0: Integrated Advanced Telegram Feedback & Multi-Sig Guard.
+ * Updated v2.2: Added Mesh Account Verification & Secure QR Settlement.
  */
+
+/**
+ * Verifies if a scanned address or ID belongs to an authorized mesh citizen.
+ */
+export async function verifyMeshAccount(firestore: Firestore, identifier: string) {
+  // Check if identifier is a UID or Kernel ID
+  const usersRef = collection(firestore, 'users');
+  let userSnap;
+
+  // Try fetching by UID first
+  const docRef = doc(firestore, 'users', identifier);
+  userSnap = await getDoc(docRef);
+
+  if (!userSnap.exists()) {
+    // Try fetching by Kernel ID
+    const q = query(usersRef, where('kernelId', '==', identifier), limit(1));
+    const querySnap = await getDocs(q);
+    if (!querySnap.empty) {
+      userSnap = querySnap.docs[0];
+    }
+  }
+
+  if (userSnap && userSnap.exists()) {
+    const data = userSnap.data();
+    return {
+      success: true,
+      uid: userSnap.id,
+      displayName: data.displayName,
+      kernelId: data.kernelId,
+      trustScore: data.trustScore,
+      verificationStatus: data.verificationStatus,
+      photoURL: data.photoURL || null
+    };
+  }
+
+  return { success: false, message: "UNAUTHORIZED_NODE_ADDRESS" };
+}
+
 export async function processPaymentCredit(
   firestore: Firestore, 
   event: NormalizedPaymentEvent,
