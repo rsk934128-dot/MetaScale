@@ -11,7 +11,8 @@ import {
   query,
   where,
   getDocs,
-  limit
+  limit,
+  setDoc
 } from 'firebase/firestore';
 import { NormalizedPaymentEvent, InboundPaymentDoc, PaymentStatus, SettlementBucket } from '@/lib/payments/types';
 import { runPredictiveAnalysis } from '@/ai/flows/predictive-anomaly-analysis';
@@ -19,7 +20,7 @@ import { sendFinancialAlert, sendSecurityAlert } from '@/lib/telegram';
 
 /**
  * Core Domain Service: Atomic Payment Credit Logic
- * Updated v2.5: Imperial Manual Resolution Support.
+ * Updated v2.6: Manual Deposit Request & Imperial Resolution Support.
  */
 
 /**
@@ -57,6 +58,61 @@ export async function verifyMeshAccount(firestore: Firestore, identifier: string
 }
 
 /**
+ * Initiates a deposit request that requires Admin approval.
+ */
+export async function initiateDepositRequest(
+  firestore: Firestore,
+  userId: string,
+  amount: number,
+  provider: string = 'MANUAL_DEPOSIT'
+) {
+  const timestamp = Date.now();
+  const externalTxnId = `DEP_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+  const paymentId = `${provider}_${externalTxnId}`;
+  
+  const depositDoc: Partial<InboundPaymentDoc> = {
+    id: paymentId,
+    orderId: `ORDER_${externalTxnId}`,
+    userId: userId,
+    externalTxnId: externalTxnId,
+    provider: provider as any,
+    amount: amount,
+    currency: 'USD',
+    status: 'PAID', // System marks as paid/received but not yet credited
+    eventTime: timestamp,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    isCredited: false,
+    credited: false,
+    manualReviewRequired: true,
+    settlementBucket: 'READY_FOR_REPLAY',
+    primaryAnomaly: 'PAIDNOTCREDITED',
+    replayCount: 0,
+    statusHistory: [{
+      status: 'PAID',
+      timestamp: timestamp,
+      reason: 'User initiated deposit request. Awaiting Imperial Authorization.',
+      trigger: 'MANUAL'
+    }]
+  };
+
+  await setDoc(doc(firestore, 'payments', paymentId), depositDoc);
+  
+  // Log to Global Ledger
+  await addDoc(collection(firestore, 'ubil_events'), {
+    id: paymentId,
+    type: 'DEPOSIT_REQUEST_SUBMITTED',
+    amount: amount,
+    status: 'PENDING_APPROVAL',
+    timestamp: timestamp,
+    userId: userId,
+    routingReason: "Manual deposit queued for Resolution Center."
+  });
+
+  return { success: true, paymentId, externalTxnId };
+}
+
+/**
  * Manually Resolves a stuck or flagged payment.
  */
 export async function manuallyResolvePayment(
@@ -76,7 +132,7 @@ export async function manuallyResolvePayment(
 
   if (action === 'REJECT') {
     await updateDoc(paymentRef, {
-      status: 'REJECTED',
+      status: 'ROLLED_BACK',
       settlementBucket: 'DONE',
       manualReviewRequired: false,
       updatedAt: timestamp,
@@ -85,7 +141,7 @@ export async function manuallyResolvePayment(
     return { status: 'SUCCESS_REJECTED' };
   }
 
-  // If APPROVE, call the standard credit logic but bypass Hunter Mode
+  // If APPROVE, call the standard credit logic but bypass Hunter Mode checks
   const normalized: NormalizedPaymentEvent = {
     orderId: paymentData.orderId,
     userId: paymentData.userId,
@@ -120,57 +176,59 @@ export async function processPaymentCredit(
   const userSnap = await getDoc(userRef);
   const userData = userSnap.data();
 
-  if (!userData?.telegramLinked && trigger === 'WEBHOOK') {
-    await updateDoc(userRef, { verificationStatus: 'FLAGGED', trustScore: 0 });
-    return { status: 'REJECTED_HANDSHAKE_REQUIRED', seal: sealHash };
-  }
+  // If not manual, perform security checks
+  if (trigger === 'WEBHOOK') {
+    if (!userData?.telegramLinked) {
+      await updateDoc(userRef, { verificationStatus: 'FLAGGED', trustScore: 0 });
+      return { status: 'REJECTED_HANDSHAKE_REQUIRED', seal: sealHash };
+    }
 
-  if (userData && trigger === 'WEBHOOK') {
-    try {
-      const riskCheck = await runPredictiveAnalysis({
-        transaction: {
-          amount: event.amount,
-          currency: event.currency,
-          provider: event.provider,
-          externalTxnId: event.externalTxnId,
-          nodeId: 'NODE-04-UK'
-        },
-        userContext: {
-          uid: event.userId,
-          trustScore: userData.trustScore || 0,
-          verificationStatus: userData.verificationStatus || 'UNVERIFIED',
-          recentActivityCount: 0,
-          averageTxnAmount: userData.averageTxnAmount || 500,
-        },
-        networkMetadata: { latency: 8.4 }
-      });
+    if (userData) {
+      try {
+        const riskCheck = await runPredictiveAnalysis({
+          transaction: {
+            amount: event.amount,
+            currency: event.currency,
+            provider: event.provider,
+            externalTxnId: event.externalTxnId,
+            nodeId: 'NODE-04-UK'
+          },
+          userContext: {
+            uid: event.userId,
+            trustScore: userData.trustScore || 0,
+            verificationStatus: userData.verificationStatus || 'UNVERIFIED',
+            recentActivityCount: 0,
+            averageTxnAmount: userData.averageTxnAmount || 500,
+          },
+          networkMetadata: { latency: 8.4 }
+        });
 
-      if (riskCheck.riskScore > 80) {
-        await updateDoc(userRef, { verificationStatus: 'FLAGGED', trustScore: 30 });
-        // Mark for manual review instead of just blocking if it's high value
-        const paymentRef = doc(firestore, 'payments', paymentId);
-        await setDoc(paymentRef, {
-           ...event,
-           id: paymentId,
-           manualReviewRequired: true,
-           settlementBucket: 'READY_FOR_REPLAY',
-           primaryAnomaly: 'PREDICTIVE_ANOMALY',
-           riskScore: riskCheck.riskScore,
-           reason: riskCheck.reasoning,
-           updatedAt: timestamp
-        }, { merge: true });
+        if (riskCheck.riskScore > 80) {
+          await updateDoc(userRef, { verificationStatus: 'FLAGGED', trustScore: 30 });
+          const paymentRef = doc(firestore, 'payments', paymentId);
+          await setDoc(paymentRef, {
+             ...event,
+             id: paymentId,
+             manualReviewRequired: true,
+             settlementBucket: 'READY_FOR_REPLAY',
+             primaryAnomaly: 'PREDICTIVE_ANOMALY',
+             riskScore: riskCheck.riskScore,
+             reason: riskCheck.reasoning,
+             updatedAt: timestamp
+          }, { merge: true });
 
-        if (userData.telegramChatId) {
-          await sendSecurityAlert(userData.telegramChatId, 'PREDICTIVE_BLOCK', {
-            userId: event.userId,
-            reason: riskCheck.reasoning,
-            seal: sealHash
-          });
+          if (userData.telegramChatId) {
+            await sendSecurityAlert(userData.telegramChatId, 'PREDICTIVE_BLOCK', {
+              userId: event.userId,
+              reason: riskCheck.reasoning,
+              seal: sealHash
+            });
+          }
+          return { status: 'BLOCKED_BY_GOVERNANCE', reason: riskCheck.reasoning, seal: sealHash };
         }
-        return { status: 'BLOCKED_BY_GOVERNANCE', reason: riskCheck.reasoning, seal: sealHash };
+      } catch (err) {
+        console.error("Hunter Mode Timeout:", err);
       }
-    } catch (err) {
-      console.error("Hunter Mode Timeout:", err);
     }
   }
 

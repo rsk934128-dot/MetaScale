@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
 import { collection, query, where, doc, updateDoc, increment, addDoc, orderBy, limit, setDoc } from "firebase/firestore";
 import { orchestratePayout } from "@/ai/flows/payout-orchestrator";
+import { initiateDepositRequest } from "@/services/payment-service";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { generateTelegramLink } from "@/lib/telegram";
@@ -91,24 +92,27 @@ export default function FinancialIntelligence() {
       return;
     }
 
+    if (!firestore || !user?.uid) return;
+
     setIsDepositing(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      if (userRef && firestore) {
-        await updateDoc(userRef, { balance: increment(1000) });
-        await addDoc(collection(firestore, 'events'), {
-          type: 'TON_DEPOSIT_RECEIVED',
-          plane: 'FINANCE',
-          status: 'COMPLETED',
-          amount: 1000,
-          currency: 'USD',
-          timestamp: Date.now(),
-          userId: user?.uid
+      // Create a pending deposit request instead of instant credit
+      const result = await initiateDepositRequest(firestore, user.uid, 1000, 'TON_DEPOSIT');
+      
+      if (result.success) {
+        emitEvent('FINANCE', 'DEPOSIT_REQUEST_SENT', 3, { 
+          amount: 1000, 
+          txnId: result.externalTxnId,
+          method: 'TON'
         });
-        toast({ title: "Deposit Successful", description: "$1,000 added to node balance." });
+        
+        toast({ 
+          title: "Request Sent to Admin", 
+          description: "$1,000 ডিপোজিট রিকোয়েস্ট পাঠানো হয়েছে। এডমিন অ্যাপ্রুভ করলে ব্যালেন্স যোগ হবে।",
+        });
       }
     } catch (err) {
-      toast({ variant: "destructive", title: "Kernel Error" });
+      toast({ variant: "destructive", title: "Kernel Error", description: "রিকোয়েস্ট প্রসেস করা সম্ভব হয়নি।" });
     } finally {
       setIsDepositing(false);
     }
@@ -236,7 +240,7 @@ export default function FinancialIntelligence() {
                           className="h-9 font-bold uppercase text-[9px] tracking-widest px-4 cyan-glow bg-accent text-background"
                         >
                           {isDepositing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                          Deposit $1,000 via TON
+                          Request $1,000 Deposit
                         </Button>
                         <Button 
                            variant="outline"
