@@ -89,19 +89,34 @@ export default function RootLayout({
                   'Fe\":-1',
                   'WatchChangeAggregator',
                   'TON_CONNECT_SDK',
+                  'TonConnectError',
+                  'TON_CONNECT_SDK_ERROR',
+                  'Failed to send analytics events',
+                  'TypeError: Failed to fetch',
                   'system/config'
                 ];
 
                 const isIgnored = (msg) => {
                   if (!msg) return false;
-                  const str = typeof msg === 'string' ? msg : 
-                            (msg instanceof Error ? msg.message + msg.stack : JSON.stringify(msg));
+                  let str = "";
+                  try {
+                    str = typeof msg === 'string' ? msg : 
+                          (msg instanceof Error ? msg.message + msg.stack : JSON.stringify(msg));
+                  } catch (e) {
+                    str = String(msg);
+                  }
                   return ignoredPatterns.some(pattern => str.includes(pattern));
                 };
 
                 const originalError = console.error;
                 console.error = (...args) => {
-                  const combined = args.map(arg => String(arg)).join(' ');
+                  const combined = args.map(arg => {
+                    try {
+                      return typeof arg === 'string' ? arg : JSON.stringify(arg);
+                    } catch (e) {
+                      return String(arg);
+                    }
+                  }).join(' ');
                   if (isIgnored(combined)) return;
                   originalError.apply(console, args);
                 };
