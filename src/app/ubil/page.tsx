@@ -45,19 +45,20 @@ import {
   Sparkles,
   Bot,
   Radar as RadarIcon,
-  Flame
+  Flame,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, useCollection, useUser } from "@/firebase";
+import { useFirestore, useCollection, useUser, useDoc } from "@/firebase";
 import { collection, query, orderBy, limit, doc, setDoc, getDoc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useKernel } from "@/components/kernel/KernelProvider";
 import { generateDailyPulse } from "@/ai/flows/daily-integrity-report-flow";
-import { sendPulseReport } from "@/lib/telegram";
+import { sendPulseReport, generateTelegramLink } from "@/lib/telegram";
 import { simulateStressTest } from "@/services/payment-service";
 
 export default function UBILMainframePage() {
@@ -74,6 +75,9 @@ export default function UBILMainframePage() {
   const [logs, setLogs] = useState<string[]>([
     "UBIL Core: Sovereign Master Kernel ACTIVE.",
   ]);
+
+  const userProfileRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
+  const { data: userProfile } = useDoc<any>(userProfileRef);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -118,11 +122,7 @@ export default function UBILMainframePage() {
     setIsSendingPulse(true);
     
     try {
-      const userRef = doc(firestore, 'users', user.uid);
-      const userSnap = await getDoc(userRef);
-      const userData = userSnap.data();
-
-      if (!userData?.telegramChatId) {
+      if (!userProfile?.telegramChatId) {
         toast({ variant: "destructive", title: "Gateway Unlinked", description: "প্রথমে টেলিগ্রাম আইডি লিঙ্ক করুন।" });
         setIsSendingPulse(false);
         return;
@@ -136,9 +136,9 @@ export default function UBILMainframePage() {
         systemStatus: 'OPERATIONAL (Mil-Spec)'
       });
 
-      await sendPulseReport(userData.telegramChatId, reportText);
+      await sendPulseReport(userProfile.telegramChatId, reportText);
       
-      emitEvent('FINANCE', 'DAILY_PULSE_DISPATCHED', 3, { chatId: userData.telegramChatId });
+      emitEvent('FINANCE', 'DAILY_PULSE_DISPATCHED', 3, { chatId: userProfile.telegramChatId });
       setLogs(prev => [`> [REPORT] Daily Integrity Pulse sent to Telegram Hub.`, ...prev]);
       toast({ title: "Pulse Report Dispatched", description: "Executive summary sent to Telegram." });
     } catch (err) {
@@ -232,6 +232,24 @@ export default function UBILMainframePage() {
         </header>
 
         <main className="flex-1 p-4 md:p-6 max-w-[1600px] mx-auto w-full space-y-6">
+          {/* Proactive Link Alert */}
+          {userProfile && !userProfile.telegramLinked && (
+            <div className="p-4 rounded-2xl bg-yellow-500/10 border-2 border-yellow-500/30 flex items-center justify-between gap-4 animate-pulse shadow-2xl">
+              <div className="flex items-center gap-4">
+                <ShieldAlert className="h-8 w-8 text-yellow-500" />
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-white uppercase tracking-widest">Awaiting Handshake</p>
+                  <p className="text-[10px] text-yellow-500/80 italic">"টেলিগ্রাম হ্যান্ডশেক ছাড়া পেমেন্ট অডিট এবং সিগন্যাল রিসিভ করা সম্ভব নয়।"</p>
+                </div>
+              </div>
+              <Button asChild size="sm" className="bg-yellow-500 text-black font-bold text-[9px] uppercase h-8 px-4">
+                <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
+                  <MessageSquare className="mr-2 h-3 w-3" /> Link Identity
+                </a>
+              </Button>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
              {heartbeat.slice(0, 4).map((node) => (
                <Card key={node.nodeId} className="glass-panel border-l-4 border-l-accent overflow-hidden">

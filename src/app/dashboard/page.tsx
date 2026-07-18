@@ -33,7 +33,8 @@ import {
   Radar,
   Power,
   Sparkles,
-  Bot
+  Bot,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -49,7 +50,7 @@ import { YieldFlow } from "@/components/charts/YieldFlow";
 import { HunterStream } from "@/components/dashboard/HunterStream";
 import { useToast } from "@/hooks/use-toast";
 import { generateDailyPulse } from "@/ai/flows/daily-integrity-report-flow";
-import { sendPulseReport } from "@/lib/telegram";
+import { sendPulseReport, generateTelegramLink } from "@/lib/telegram";
 
 export default function SovereignControlPlane() {
   const { mode, setSystemMode, events, emitEvent, heartbeat, isAutonomousActive, startAutonomousWorker } = useKernel();
@@ -62,6 +63,9 @@ export default function SovereignControlPlane() {
 
   const configRef = useMemo(() => (firestore && user) ? doc(firestore, 'system', 'config') : null, [firestore, user]);
   const { data: systemConfig } = useDoc<any>(configRef);
+
+  const userProfileRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
+  const { data: userProfile } = useDoc<any>(userProfileRef);
 
   const ubilEventsQuery = useMemo(() => {
     if (!firestore || !user) return null;
@@ -82,12 +86,12 @@ export default function SovereignControlPlane() {
     setIsSendingPulse(true);
     
     try {
-      const userRef = doc(firestore, 'users', user.uid);
-      const userSnap = await getDoc(userRef);
-      const userData = userSnap.data();
-
-      if (!userData?.telegramChatId) {
-        toast({ variant: "destructive", title: "Gateway Unlinked", description: "প্রথমে টেলিগ্রাম আইডি লিঙ্ক করুন।" });
+      if (!userProfile?.telegramChatId) {
+        toast({ 
+          variant: "destructive", 
+          title: "Gateway Unlinked", 
+          description: "আপনার টেলিগ্রাম আইডি লিঙ্ক করা নেই। হ্যান্ডশেক সম্পন্ন করুন।" 
+        });
         setIsSendingPulse(false);
         return;
       }
@@ -100,9 +104,9 @@ export default function SovereignControlPlane() {
         systemStatus: 'OPERATIONAL (Mil-Spec)'
       });
 
-      await sendPulseReport(userData.telegramChatId, reportText);
+      await sendPulseReport(userProfile.telegramChatId, reportText);
       
-      emitEvent('FINANCE', 'DAILY_PULSE_DISPATCHED', 3, { chatId: userData.telegramChatId });
+      emitEvent('FINANCE', 'DAILY_PULSE_DISPATCHED', 3, { chatId: userProfile.telegramChatId });
       toast({ title: "Pulse Report Dispatched", description: "Executive summary sent to Telegram." });
     } catch (err) {
       toast({ variant: "destructive", title: "Pulse Error", description: "Reasoning node timeout." });
@@ -223,6 +227,24 @@ export default function SovereignControlPlane() {
         </header>
 
         <main className="flex-1 space-y-6 p-4 md:p-8 w-full max-w-none">
+          {/* Proactive Gateway Linking Alert */}
+          {userProfile && !userProfile.telegramLinked && (
+            <div className="p-4 rounded-2xl bg-yellow-500/10 border-2 border-yellow-500/30 flex items-center justify-between gap-4 animate-pulse shadow-2xl">
+              <div className="flex items-center gap-4">
+                <ShieldAlert className="h-8 w-8 text-yellow-500" />
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-white uppercase tracking-widest">Imperial Gateway Unlinked</p>
+                  <p className="text-[10px] text-yellow-500/80 italic">"সিস্টেম ডিরেক্টিভস পাওয়ার জন্য আপনার টেলিগ্রাম লিঙ্ক করা জরুরি।"</p>
+                </div>
+              </div>
+              <Button asChild size="sm" className="bg-yellow-500 text-black font-bold text-[9px] uppercase h-8 px-4">
+                <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
+                  <MessageSquare className="mr-2 h-3 w-3" /> Bind Now
+                </a>
+              </Button>
+            </div>
+          )}
+
           <div className="flex items-center gap-4 mb-2">
              <Badge className={cn(
                "h-7 px-4 text-[9px] font-bold uppercase tracking-widest",
