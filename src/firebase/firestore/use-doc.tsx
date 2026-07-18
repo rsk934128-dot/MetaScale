@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
+import { getAuth } from 'firebase/auth';
 
 export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
   const [data, setData] = useState<T | null>(null);
@@ -37,7 +38,14 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
         },
         async (serverError: FirestoreError) => {
           if (!isMounted) return;
+          
+          const auth = getAuth();
           if (serverError.code === 'permission-denied') {
+            if (!auth.currentUser) {
+              console.debug("Firestore: Suppressing doc permission error (Not Logged In)");
+              setLoading(false);
+              return;
+            }
             const permissionError = new FirestorePermissionError({
               path: ref.path,
               operation: 'get',
@@ -49,11 +57,8 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
             setError(null);
           } else {
             const msg = serverError.message || "";
-            // Skip setting hard error for known internal SDK assertion failures
             if (!msg.includes('b815') && !msg.includes('ca9')) {
               setError(serverError);
-            } else {
-              console.debug("Firestore suppressed internal assertion (doc):", msg);
             }
           }
           setLoading(false);
@@ -71,9 +76,7 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
       if (unsubscribe) {
         try {
           unsubscribe();
-        } catch (e) {
-          // Silent catch for potential internal SDK issues during unmount
-        }
+        } catch (e) {}
       }
     };
   }, [ref]);

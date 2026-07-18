@@ -24,7 +24,7 @@ service cloud.firestore {
 
     // System Configuration Rules
     match /system/{configId} {
-      allow read: if isAuthenticated();
+      allow read: if true; // Allow public read for maintenance mode checks
       allow write: if isAdmin();
     }
 
@@ -50,7 +50,7 @@ service cloud.firestore {
     // SMS Signals (Mobile Interception)
     match /sms_signals/{signalId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated(); // Mobile node needs to push
+      allow create: if isAuthenticated(); 
       allow update, delete: if isAdmin();
     }
 
@@ -67,7 +67,7 @@ service cloud.firestore {
     }
 
     match /ubil_events/{event} {
-      allow read: if isAuthenticated() || isAdmin();
+      allow read: if isAuthenticated();
       allow create: if true;
       allow update, delete: if isAdmin();
     }

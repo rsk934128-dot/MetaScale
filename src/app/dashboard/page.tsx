@@ -60,13 +60,13 @@ export default function SovereignControlPlane() {
   const { user } = useUser();
   const { toast } = useToast();
 
-  const configRef = useMemo(() => firestore ? doc(firestore, 'system', 'config') : null, [firestore]);
+  const configRef = useMemo(() => (firestore && user) ? doc(firestore, 'system', 'config') : null, [firestore, user]);
   const { data: systemConfig } = useDoc<any>(configRef);
 
   const ubilEventsQuery = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return query(collection(firestore, 'ubil_events'), orderBy('timestamp', 'desc'), limit(10));
-  }, [firestore]);
+  }, [firestore, user]);
   const { data: remoteEvents } = useCollection<any>(ubilEventsQuery);
 
   const handleSyncAllNodes = () => {
