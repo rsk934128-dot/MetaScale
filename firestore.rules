@@ -22,9 +22,9 @@ service cloud.firestore {
       return isMasterAdmin();
     }
 
-    // System Configuration Rules
+    // System Configuration Rules (Top Priority for Heartbeat)
     match /system/{configId} {
-      allow read: if true; // Allow public read for maintenance mode checks
+      allow read: if true; 
       allow write: if isAdmin();
     }
 
