@@ -9,7 +9,7 @@ import { checkConfig } from '@/lib/telegram';
 
 export const validateEnvironment = async () => {
   // 1. Strict Telegram Token Check
-  const isTelegramConfigured = checkConfig();
+  const isTelegramConfigured = await checkConfig();
   const tokenName = 'TELEGRAM_BOT_TOKEN';
 
   if (!isTelegramConfigured) {

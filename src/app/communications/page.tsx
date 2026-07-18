@@ -50,12 +50,19 @@ export default function CommunicationPlanePage() {
   const [isTestingToken, setIsTestingToken] = useState(false);
   const [tokenStatus, setTokenStatus] = useState<'IDLE' | 'ACTIVE' | 'FAILED'>('IDLE');
   const [botInfo, setBotInfo] = useState<any>(null);
+  const [tgLink, setTgLink] = useState("");
   
   const { toast } = useToast();
   const { emitEvent } = useKernel();
 
   const userRef = useMemo(() => (firestore && user?.uid) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
   const { data: profile } = useDoc<any>(userRef);
+
+  useEffect(() => {
+    if (user?.uid) {
+      generateTelegramLink(user.uid).then(setTgLink);
+    }
+  }, [user?.uid]);
 
   const handleTestConnection = async () => {
     setIsTestingToken(true);
@@ -198,7 +205,7 @@ export default function CommunicationPlanePage() {
                             <div className="space-y-1">
                                <p className="text-xs font-bold text-white uppercase">Name Mismatch Check</p>
                                <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-                                  আপনার হোস্টিং ড্যাশবোর্ড-এ (Vercel/Firebase) ভেরিয়েবল-এর নাম অবশ্যই <b>TELEGRAM_BOT_TOKEN</b> হতে হবে। কোনো অতিরিক্ত অক্ষর বা সংখ্যা (যেমন ...TOKEN1) থাকা যাবে না।
+                                  আপনার হোস্টিং ড্যাশবোর্ড-এ (Vercel/Firebase) ভেরিয়েবল-এর নাম অবশ্যই <b>TELEGRAM_BOT_TOKEN</b> হতে হবে। কোনো অতিরিক্ত অক্ষর বা সংখ্যা থাকা যাবে না।
                                </p>
                             </div>
                          </div>
@@ -207,7 +214,7 @@ export default function CommunicationPlanePage() {
                             <div className="space-y-1">
                                <p className="text-xs font-bold text-white uppercase">Redeploy Requirement</p>
                                <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-                                  এনভায়রনমেন্ট ভেরিয়েবল সেট বা আপডেট করার পর অবশ্যই প্রজেক্টটি একবার <b>Redeploy</b> করতে হবে। রি-ডেপ্লয় না করলে সার্ভার নতুন টোকেনটি চিনতে পারবে না।
+                                  ভেরিয়েবল সেট করার পর অবশ্যই প্রজেক্টটি একবার <b>Redeploy</b> করতে হবে। রি-ডেপ্লয় না করলে সার্ভার নতুন টোকেনটি চিনতে পারবে না।
                                </p>
                             </div>
                          </div>
@@ -219,7 +226,7 @@ export default function CommunicationPlanePage() {
                             <span className="text-[10px] font-bold uppercase tracking-widest">Critical Security Alert</span>
                          </div>
                          <p className="text-[11px] text-white/80 italic leading-relaxed">
-                            "আপনার টেলিগ্রাম বটের সিক্রেট টোকেনটি কখনো কোনো চ্যাট বক্সে বা পাবলিক ফোরামে শেয়ার করবেন না। এটি আপনার কার্নেলের মেইন চাবিকাঠি।"
+                            "আপনার বটের সিক্রেট টোকেনটি প্রোটেক্টেড রাখুন। এটি আপনার কার্নেলের মেইন চাবিকাঠি।"
                          </p>
                          <div className="pt-2">
                             <Badge variant="outline" className="border-red-500/30 text-red-400 text-[8px] uppercase">Always Keep Tokens Private</Badge>
@@ -239,7 +246,7 @@ export default function CommunicationPlanePage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <p className="text-sm text-white/80 leading-relaxed italic">
-                    টোকেন ভ্যালিডেশন সফল হলে এবং রি-ডেপ্লয় করার পর "Secure Webhook" বাটনে ক্লিক করুন। এটি আপনার সার্ভারকে সরাসরি বটের সাথে কানেক্ট করবে।
+                    টোকেন ভ্যালিডেশন সফল হলে "Secure Webhook" বাটনে ক্লিক করুন। এটি আপনার সার্ভারকে সরাসরি বটের সাথে কানেক্ট করবে।
                   </p>
                   
                   <div className="flex flex-col sm:flex-row gap-4">
@@ -252,7 +259,7 @@ export default function CommunicationPlanePage() {
                       Establish Secure Webhook
                     </Button>
                     <Button asChild variant="outline" className="flex-1 h-14 border-white/10 font-bold uppercase tracking-widest text-[10px]">
-                      <a href={generateTelegramLink(user?.uid || '')} target="_blank" rel="noopener noreferrer">
+                      <a href={tgLink} target="_blank" rel="noopener noreferrer">
                         <Zap className="mr-2 h-4 w-4 text-accent" />
                         Link Identity to Bot
                       </a>
@@ -281,7 +288,7 @@ export default function CommunicationPlanePage() {
                         &gt; Identity Bound: {profile?.telegramLinked ? "YES" : "NO"}
                       </p>
                       <div className="p-3 rounded border border-accent/20 bg-accent/5 text-accent italic leading-relaxed mt-4">
-                         "মনে রাখবেন: ভির্সেল-এ ভেরিয়েবল সেভ করার পর অবশ্যই একবার <b>REDEPLOY</b> বাটনে ক্লিক করতে হবে।"
+                         "মনে রাখবেন: ভেরিয়েবল সেভ করার পর অবশ্যই একবার <b>REDEPLOY</b> বাটনে ক্লিক করতে হবে।"
                       </div>
                    </div>
                 </CardContent>

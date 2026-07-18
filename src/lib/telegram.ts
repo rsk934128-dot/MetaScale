@@ -1,19 +1,18 @@
+'use server';
 /**
- * NoorNexus Telegram Gateway Utility v2.0
+ * NoorNexus Telegram Gateway Utility v2.5 (Server Action Layer)
  * Handles communication with @Coolrubelbank2bot
- * Updated v2.0: Robust Token Sanitization & Pre-flight Diagnostics.
+ * Optimized for secure server-side execution of Telegram API calls.
  */
 
-// Securely fetch the token from environment variables
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 /**
  * Validate if the token is available and formatted correctly
  */
-export function checkConfig() {
+export async function checkConfig() {
   const isPlaceholder = !BOT_TOKEN || 
                         BOT_TOKEN === 'your_token_here' || 
-                        BOT_TOKEN === 'Your_Token_From_BotFather' ||
                         BOT_TOKEN.trim() === '' ||
                         BOT_TOKEN.length < 20;
 
@@ -27,7 +26,8 @@ export function checkConfig() {
  * Tests if the current token is valid by calling getMe
  */
 export async function testToken() {
-  if (!checkConfig()) {
+  const isConfigured = await checkConfig();
+  if (!isConfigured) {
     return { ok: false, description: "টোকেনটি এনভায়রনমেন্টে পাওয়া যায়নি অথবা এর নাম ভুল (Must be TELEGRAM_BOT_TOKEN)।" };
   }
   
@@ -41,7 +41,8 @@ export async function testToken() {
 }
 
 export async function sendTelegramMessage(chatId: string, text: string, options: any = {}) {
-  if (!checkConfig()) {
+  const isConfigured = await checkConfig();
+  if (!isConfigured) {
     console.error(">>> [SIGNAL_HALTED] Cannot dispatch message: Missing or Invalid Token.");
     return { ok: false, description: "Token Missing or Invalid" };
   }
@@ -168,12 +169,12 @@ export async function sendInteractiveAlert(chatId: string, transactionId: string
   return await sendTelegramMessage(chatId, text, { reply_markup: keyboard });
 }
 
-export function generateTelegramLink(userId: string) {
+export async function generateTelegramLink(userId: string) {
   return `https://t.me/Coolrubelbank2bot?start=${userId}`;
 }
 
 export async function setTelegramWebhook(url: string) {
-  const isConfigured = checkConfig();
+  const isConfigured = await checkConfig();
   if (!isConfigured) return { ok: false, description: "Bot Token Missing or Invalid in Environment Variables." };
   
   try {

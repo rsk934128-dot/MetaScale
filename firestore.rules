@@ -4,6 +4,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     // 1. TOP PRIORITY: System Configuration (Publicly Readable for Heartbeat)
+    // Always allow reading the kill-switch and maintenance status
     match /system/config {
       allow read: if true;
       allow write: if isAdmin();
@@ -29,7 +30,7 @@ service cloud.firestore {
       return isMasterAdmin();
     }
 
-    // Catch-all for other system documents if any
+    // Catch-all for other system documents
     match /system/{any} {
       allow read: if true;
       allow write: if isAdmin();
