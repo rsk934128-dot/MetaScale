@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * NoorNexus Telegram Gateway Utility v4.0 (Force Handshake)
@@ -99,5 +100,12 @@ export async function sendFinancialAlert(chatId: string, type: string, data: any
 
 export async function sendSecureOTP(chatId: string, otp: string) {
   const text = `<b>🔐 SECURITY OTP:</b> <code>${otp}</code>`;
+  return await sendTelegramMessage(chatId, text);
+}
+
+/**
+ * Sends a pulse report (formatted text) to a specific Telegram chat.
+ */
+export async function sendPulseReport(chatId: string, text: string) {
   return await sendTelegramMessage(chatId, text);
 }
